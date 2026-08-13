@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#deefff">
+  <title>Transcendido</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; margin: 0; overflow: hidden; }
+    body {
+      background: radial-gradient(circle at center, #ffffff 0 12%, #f7fbff 48%, #deefff 100%);
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      pointer-events: none;
+      animation: reveal 1.4s ease forwards;
+    }
+    @keyframes reveal {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body::before { animation: none; opacity: 0; }
+    }
+  </style>
+</head>
+<body></body>
+</html>
