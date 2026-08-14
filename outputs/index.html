@@ -120,6 +120,8 @@
         0 0 76px 27px rgba(200, 227, 255, .28);
       transition: transform 700ms cubic-bezier(.16, 1, .3, 1), box-shadow 500ms ease;
       animation: sun-breathe 4.8s ease-in-out infinite;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
     }
 
     .sun::before,
@@ -227,6 +229,8 @@
       clip-path: circle(0 at 50% 50%);
       background: radial-gradient(circle at center, #ffffff 0 24%, #f7fbff 54%, #deefff 100%);
       transition: clip-path 1.35s cubic-bezier(.65, 0, .18, 1);
+      will-change: clip-path;
+      transform: translateZ(0);
     }
 
     .burst-canvas,
@@ -451,6 +455,12 @@
       }
 
       function draw(time) {
+        if (transitioning) {
+          lastTime = time;
+          requestAnimationFrame(draw);
+          return;
+        }
+
         const deltaSeconds = Math.min((time - lastTime) / 1000, .05);
         lastTime = time;
         const targetSpeed = reducedMotion ? .16 : burstConfig.speed;
