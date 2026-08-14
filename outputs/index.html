@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#05030a">
   <title>Potala — Transcender</title>
+  <link rel="stylesheet" href="respiracao.css">
+  <script src="respiracao.js" defer></script>
   <style>
     :root {
       color-scheme: dark;
@@ -551,11 +553,17 @@
       addEventListener("pointercancel", stopHolding);
       addEventListener("blur", stopHolding);
       addEventListener("keydown", (event) => {
+        const breathingDialog = document.getElementById("breathing-dialog");
+        const otherButton = event.target instanceof HTMLButtonElement && event.target !== button;
+        if (breathingDialog?.open || otherButton) return;
         if (event.code !== "Space" && event.key !== " ") return;
         event.preventDefault();
         if (!event.repeat) holdButton();
       });
       addEventListener("keyup", (event) => {
+        const breathingDialog = document.getElementById("breathing-dialog");
+        const otherButton = event.target instanceof HTMLButtonElement && event.target !== button;
+        if (breathingDialog?.open || otherButton) return;
         if (event.code !== "Space" && event.key !== " ") return;
         event.preventDefault();
         stopHolding();
