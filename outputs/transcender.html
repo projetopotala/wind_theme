@@ -67,7 +67,7 @@
       animation: cloud-loop 16s ease-in-out infinite;
     }
 
-    .star-canvas,
+    .burst-canvas,
     .space-vignette {
       position: absolute;
       inset: 0;
@@ -75,7 +75,11 @@
       height: 100%;
     }
 
-    .star-canvas { z-index: -4; }
+    .burst-canvas {
+      z-index: -4;
+      mix-blend-mode: lighten;
+      filter: saturate(1.12) contrast(1.04);
+    }
 
     .space-vignette {
       z-index: -3;
@@ -212,7 +216,7 @@
       transition: clip-path 1.35s cubic-bezier(.65, 0, .18, 1);
     }
 
-    .star-canvas,
+    .burst-canvas,
     .transcend-control,
     .space-vignette {
       transition: opacity 1.05s ease;
@@ -222,7 +226,7 @@
       clip-path: circle(150% at 50% 50%);
     }
 
-    .is-transitioning .star-canvas,
+    .is-transitioning .burst-canvas,
     .is-transitioning .transcend-control,
     .is-transitioning .space-vignette {
       opacity: 0;
@@ -261,7 +265,7 @@
 </head>
 <body>
   <main class="experience" id="experience">
-    <canvas class="star-canvas" id="star-canvas" aria-hidden="true"></canvas>
+    <canvas class="burst-canvas" id="burst-canvas" aria-hidden="true"></canvas>
     <div class="space-vignette" aria-hidden="true"></div>
     <div class="sun" aria-hidden="true"></div>
     <div class="transition-overlay" aria-hidden="true"></div>
@@ -271,7 +275,7 @@
         aria-describedby="hold-instruction" aria-pressed="false">
         <span class="button-label">TRANSCENDER</span>
       </button>
-      <span class="control-caption" id="hold-instruction">SEGURE PARA ACELERAR</span>
+      <span class="control-caption" id="hold-instruction">SEGURE PARA TRANSCENDER</span>
     </section>
 
   </main>
@@ -281,44 +285,46 @@
       "use strict";
 
       const experience = document.getElementById("experience");
-      const canvas = document.getElementById("star-canvas");
+      const canvas = document.getElementById("burst-canvas");
       const button = document.getElementById("transcend-button");
       const caption = document.getElementById("hold-instruction");
       const context = canvas.getContext("2d", { alpha: true });
       const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const colors = [
-        "255,255,255",
-        "239,249,255",
-        "210,237,255",
-        "164,216,255",
-        "224,232,239",
-        "184,199,212"
-      ];
+      const burstConfig = {
+        animationType: "rotate3d",
+        intensity: 2,
+        speed: .5,
+        distort: 1,
+        rayCount: 24,
+        mixBlendMode: "lighten",
+        colors: ["#ff007a", "#4d3dff", "#ffffff"],
+        color0: "#dad8dc",
+        color1: "#5599d8",
+        color2: "#3e68da"
+      };
+
+      function hexToRgb(hex) {
+        const value = Number.parseInt(hex.slice(1), 16);
+        return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+      }
+
+      const accentColors = burstConfig.colors.map(hexToRgb);
+      const color0 = hexToRgb(burstConfig.color0);
+      const color1 = hexToRgb(burstConfig.color1);
+      const color2 = hexToRgb(burstConfig.color2);
 
       let width = 0;
       let height = 0;
-      let stars = [];
       let holding = false;
       let inputMode = null;
       let transitionTimer = 0;
       let transitioning = false;
-      let speed = reducedMotion ? .8 : 1.8;
       let centerX = 0;
       let centerY = 0;
-      let targetCenterX = 0;
-      let targetCenterY = 0;
+      let rotation = 0;
+      let currentSpeed = reducedMotion ? .16 : burstConfig.speed;
+      let currentIntensity = reducedMotion ? .75 : burstConfig.intensity;
       let lastTime = performance.now();
-
-      function createStar(depth) {
-        return {
-          x: (Math.random() - .5) * width * 2.1,
-          y: (Math.random() - .5) * height * 2.1,
-          z: depth ?? Math.random() * 1100 + 20,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          alpha: Math.random() * .72 + .24,
-          lineWidth: Math.random() * 1.35 + .45
-        };
-      }
 
       function resize() {
         const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -329,11 +335,8 @@
         canvas.style.width = width + "px";
         canvas.style.height = height + "px";
         context.setTransform(dpr, 0, 0, dpr, 0, 0);
-        centerX = targetCenterX = width / 2;
-        centerY = targetCenterY = height / 2;
-        const density = reducedMotion ? .00028 : .00068;
-        const count = Math.max(260, Math.min(920, Math.round(width * height * density)));
-        stars = Array.from({ length: count }, () => createStar());
+        centerX = width / 2;
+        centerY = height / 2;
       }
 
       function setHolding(active, mode) {
@@ -341,7 +344,7 @@
         inputMode = active ? mode : null;
         experience.classList.toggle("is-holding", active);
         button.setAttribute("aria-pressed", String(active && inputMode === "button"));
-        caption.textContent = active ? "SOLTE PARA DESACELERAR" : "SEGURE PARA ACELERAR";
+        caption.textContent = active && mode === "button" ? "CONTINUE SEGURANDO" : "SEGURE PARA TRANSCENDER";
       }
 
       function cancelTransitionTimer() {
@@ -372,44 +375,88 @@
       }
 
       function draw(time) {
-        const delta = Math.min((time - lastTime) / 16.667, 2.2);
+        const deltaSeconds = Math.min((time - lastTime) / 1000, .05);
         lastTime = time;
-        const targetSpeed = holding ? (reducedMotion ? 4 : 14) : (reducedMotion ? .8 : 1.8);
-        speed += (targetSpeed - speed) * (holding ? .055 : .035) * delta;
-        centerX += (targetCenterX - centerX) * .035 * delta;
-        centerY += (targetCenterY - centerY) * .035 * delta;
+        const targetSpeed = reducedMotion ? .16 : burstConfig.speed;
+        const targetIntensity = reducedMotion ? .75 : burstConfig.intensity;
+        const speedEase = 1 - Math.exp(-deltaSeconds * 2.6);
+        currentSpeed += (targetSpeed - currentSpeed) * speedEase;
+        currentIntensity += (targetIntensity - currentIntensity) * (1 - Math.exp(-deltaSeconds * 3.2));
+        rotation += deltaSeconds * currentSpeed * .34;
 
-        context.globalCompositeOperation = "destination-out";
-        context.fillStyle = holding ? "rgba(0,0,0,.42)" : "rgba(0,0,0,.68)";
-        context.fillRect(0, 0, width, height);
+        context.clearRect(0, 0, width, height);
+        context.save();
+        context.translate(centerX, centerY);
+        context.rotate(rotation);
+        const tilt = .86 + Math.sin(time * .00022 * currentSpeed) * .09 * burstConfig.distort;
+        context.scale(1, tilt);
         context.globalCompositeOperation = "lighter";
-        const focal = Math.min(width, height) * .96;
 
-        for (const star of stars) {
-          star.z -= speed * delta;
-          const tailDepth = star.z + speed * (holding ? 3.5 : 1.35);
-          const x = centerX + star.x / star.z * focal;
-          const y = centerY + star.y / star.z * focal;
-          const oldX = centerX + star.x / tailDepth * focal;
-          const oldY = centerY + star.y / tailDepth * focal;
+        const radius = Math.hypot(width, height) * .72;
+        const innerRadius = Math.max(22, Math.min(width, height) * .022);
 
-          if (star.z < 5 || x < -width * .25 || x > width * 1.25 || y < -height * .25 || y > height * 1.25) {
-            Object.assign(star, createStar(1100));
-            continue;
-          }
+        for (let index = 0; index < burstConfig.rayCount; index += 1) {
+          const accent = accentColors[index % accentColors.length];
+          const baseAngle = index / burstConfig.rayCount * Math.PI * 2;
+          const distortion = Math.sin(index * 1.71 + time * .0007 * currentSpeed) * .052 * burstConfig.distort;
+          const angle = baseAngle + distortion;
+          const pulse = .76 + .24 * Math.sin(time * .0011 * currentSpeed + index * 2.37);
+          const outerRadius = radius * (.91 + pulse * .15);
+          const spread = outerRadius * (.022 + .015 * (.5 + .5 * Math.sin(index * 2.11 + time * .00054)));
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+          const perpendicularX = -sin * spread;
+          const perpendicularY = cos * spread;
+          const startX = cos * innerRadius;
+          const startY = sin * innerRadius;
+          const endX = cos * outerRadius;
+          const endY = sin * outerRadius;
 
-          const proximity = 1 - Math.min(star.z / 1100, 1);
-          const brightness = Math.min(1, star.alpha * (.24 + proximity * 1.4));
+          const gradient = context.createLinearGradient(startX, startY, endX, endY);
+          gradient.addColorStop(0, `rgba(${color0.join(",")},0)`);
+          gradient.addColorStop(.12, `rgba(${color0.join(",")},${.12 * currentIntensity})`);
+          gradient.addColorStop(.4, `rgba(${color1.join(",")},${.2 * currentIntensity * pulse})`);
+          gradient.addColorStop(.7, `rgba(${accent.join(",")},${.24 * currentIntensity * pulse})`);
+          gradient.addColorStop(1, `rgba(${color2.join(",")},0)`);
+
           context.beginPath();
-          context.moveTo(oldX, oldY);
-          context.lineTo(x, y);
-          context.strokeStyle = `rgba(${star.color},${brightness})`;
-          context.lineWidth = star.lineWidth * (.35 + proximity * 2.1) * (holding ? 1.16 : 1);
-          context.lineCap = "round";
+          context.moveTo(startX - perpendicularX * .06, startY - perpendicularY * .06);
+          context.quadraticCurveTo(
+            cos * outerRadius * .52 - perpendicularX * .36,
+            sin * outerRadius * .52 - perpendicularY * .36,
+            endX - perpendicularX,
+            endY - perpendicularY
+          );
+          context.lineTo(endX + perpendicularX, endY + perpendicularY);
+          context.quadraticCurveTo(
+            cos * outerRadius * .52 + perpendicularX * .36,
+            sin * outerRadius * .52 + perpendicularY * .36,
+            startX + perpendicularX * .06,
+            startY + perpendicularY * .06
+          );
+          context.closePath();
+          context.fillStyle = gradient;
+          context.fill();
+
+          context.beginPath();
+          context.moveTo(cos * innerRadius * 1.2, sin * innerRadius * 1.2);
+          context.lineTo(cos * outerRadius * .84, sin * outerRadius * .84);
+          context.strokeStyle = `rgba(${accent.join(",")},${.1 * currentIntensity * pulse})`;
+          context.lineWidth = .65 + currentIntensity * .4;
           context.stroke();
         }
 
-        context.globalCompositeOperation = "source-over";
+        const coreGlow = context.createRadialGradient(0, 0, 0, 0, 0, innerRadius * 5.4);
+        coreGlow.addColorStop(0, `rgba(255,255,255,${.58 * currentIntensity})`);
+        coreGlow.addColorStop(.22, `rgba(${color0.join(",")},${.24 * currentIntensity})`);
+        coreGlow.addColorStop(.56, `rgba(${color1.join(",")},${.11 * currentIntensity})`);
+        coreGlow.addColorStop(1, "rgba(62,104,218,0)");
+        context.fillStyle = coreGlow;
+        context.beginPath();
+        context.arc(0, 0, innerRadius * 5.4, 0, Math.PI * 2);
+        context.fill();
+
+        context.restore();
         requestAnimationFrame(draw);
       }
 
@@ -419,15 +466,6 @@
       addEventListener("blur", stopHolding);
 
       experience.addEventListener("contextmenu", (event) => event.preventDefault());
-      experience.addEventListener("pointerdown", (event) => {
-        if (event.pointerType === "mouse" && event.button !== 0) return;
-        event.preventDefault();
-        setHolding(true, "screen");
-      });
-      experience.addEventListener("pointerleave", (event) => {
-        if (event.pointerType === "mouse" && event.buttons === 0) stopHolding();
-      });
-
       button.addEventListener("pointerdown", (event) => {
         if (event.pointerType === "mouse" && event.button !== 0) return;
         event.stopPropagation();
