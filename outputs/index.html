@@ -78,7 +78,20 @@
     .burst-canvas {
       z-index: -4;
       mix-blend-mode: lighten;
-      filter: saturate(1.12) contrast(1.04);
+      opacity: .58;
+      filter: saturate(.94) contrast(.98) blur(.2px);
+    }
+
+    .cloud-overlay {
+      position: absolute;
+      z-index: -2;
+      inset: -8%;
+      width: 116%;
+      height: 116%;
+      pointer-events: none;
+      transform-origin: center;
+      will-change: transform;
+      animation: cloud-loop 16s ease-in-out infinite;
     }
 
     .space-vignette {
@@ -217,6 +230,7 @@
     }
 
     .burst-canvas,
+    .cloud-overlay,
     .transcend-control,
     .space-vignette {
       transition: opacity 1.05s ease;
@@ -227,6 +241,7 @@
     }
 
     .is-transitioning .burst-canvas,
+    .is-transitioning .cloud-overlay,
     .is-transitioning .transcend-control,
     .is-transitioning .space-vignette {
       opacity: 0;
@@ -260,6 +275,7 @@
       .space-vignette { transition-duration: 120ms; }
       .sun { animation: none; }
       .experience::before { animation: none; }
+      .cloud-overlay { animation: none; }
     }
   </style>
 </head>
@@ -267,6 +283,7 @@
   <main class="experience" id="experience">
     <canvas class="burst-canvas" id="burst-canvas" aria-hidden="true"></canvas>
     <div class="space-vignette" aria-hidden="true"></div>
+    <canvas class="cloud-overlay" id="cloud-overlay" aria-hidden="true"></canvas>
     <div class="sun" aria-hidden="true"></div>
     <div class="transition-overlay" aria-hidden="true"></div>
 
@@ -286,14 +303,16 @@
 
       const experience = document.getElementById("experience");
       const canvas = document.getElementById("burst-canvas");
+      const cloudCanvas = document.getElementById("cloud-overlay");
       const button = document.getElementById("transcend-button");
       const caption = document.getElementById("hold-instruction");
       const context = canvas.getContext("2d", { alpha: true });
+      const cloudContext = cloudCanvas.getContext("2d", { alpha: true, willReadFrequently: true });
       const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
       const burstConfig = {
         animationType: "rotate3d",
         intensity: 2,
-        speed: .5,
+        speed: .24,
         distort: 1,
         rayCount: 24,
         mixBlendMode: "lighten",
@@ -325,6 +344,62 @@
       let currentSpeed = reducedMotion ? .16 : burstConfig.speed;
       let currentIntensity = reducedMotion ? .75 : burstConfig.intensity;
       let lastTime = performance.now();
+      let cloudReady = false;
+      let cloudRenderTimer = 0;
+
+      const backgroundMatch = getComputedStyle(experience).backgroundImage.match(
+        /url\(["']?(data:image\/png;base64,[^"')]+)["']?\)/
+      );
+      const cloudImage = new Image();
+
+      function renderCloudOverlay() {
+        if (!cloudReady) return;
+
+        const dpr = Math.min(devicePixelRatio || 1, 1.25);
+        const overlayWidth = width * 1.16;
+        const overlayHeight = height * 1.16;
+        cloudCanvas.width = Math.ceil(overlayWidth * dpr);
+        cloudCanvas.height = Math.ceil(overlayHeight * dpr);
+        cloudContext.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cloudContext.clearRect(0, 0, overlayWidth, overlayHeight);
+
+        const scale = Math.max(overlayWidth / cloudImage.naturalWidth, overlayHeight / cloudImage.naturalHeight);
+        const drawWidth = cloudImage.naturalWidth * scale;
+        const drawHeight = cloudImage.naturalHeight * scale;
+        const drawX = (overlayWidth - drawWidth) / 2;
+        const drawY = (overlayHeight - drawHeight) / 2;
+        cloudContext.drawImage(cloudImage, drawX, drawY, drawWidth, drawHeight);
+
+        const pixels = cloudContext.getImageData(0, 0, cloudCanvas.width, cloudCanvas.height);
+        const data = pixels.data;
+        for (let index = 0; index < data.length; index += 4) {
+          const red = data[index];
+          const green = data[index + 1];
+          const blue = data[index + 2];
+          const maximum = Math.max(red, green, blue);
+          const minimum = Math.min(red, green, blue);
+          const brightness = (red + green + blue) / 765;
+          const neutrality = 1 - (maximum - minimum) / 255;
+          const rawCloud = (brightness * .9 + neutrality * .62 - .72) / .38;
+          const cloudAmount = Math.max(0, Math.min(1, rawCloud));
+          const softened = cloudAmount * cloudAmount * (3 - 2 * cloudAmount);
+          data[index + 3] = Math.round(data[index + 3] * softened * .98);
+        }
+        cloudContext.putImageData(pixels, 0, 0);
+      }
+
+      function scheduleCloudOverlay() {
+        clearTimeout(cloudRenderTimer);
+        cloudRenderTimer = setTimeout(renderCloudOverlay, 100);
+      }
+
+      if (backgroundMatch) {
+        cloudImage.addEventListener("load", () => {
+          cloudReady = true;
+          renderCloudOverlay();
+        });
+        cloudImage.src = backgroundMatch[1];
+      }
 
       function resize() {
         const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -337,6 +412,7 @@
         context.setTransform(dpr, 0, 0, dpr, 0, 0);
         centerX = width / 2;
         centerY = height / 2;
+        scheduleCloudOverlay();
       }
 
       function setHolding(active, mode) {
@@ -382,7 +458,7 @@
         const speedEase = 1 - Math.exp(-deltaSeconds * 2.6);
         currentSpeed += (targetSpeed - currentSpeed) * speedEase;
         currentIntensity += (targetIntensity - currentIntensity) * (1 - Math.exp(-deltaSeconds * 3.2));
-        rotation += deltaSeconds * currentSpeed * .34;
+        rotation += deltaSeconds * currentSpeed * .18;
 
         context.clearRect(0, 0, width, height);
         context.save();
@@ -414,9 +490,9 @@
 
           const gradient = context.createLinearGradient(startX, startY, endX, endY);
           gradient.addColorStop(0, `rgba(${color0.join(",")},0)`);
-          gradient.addColorStop(.12, `rgba(${color0.join(",")},${.12 * currentIntensity})`);
-          gradient.addColorStop(.4, `rgba(${color1.join(",")},${.2 * currentIntensity * pulse})`);
-          gradient.addColorStop(.7, `rgba(${accent.join(",")},${.24 * currentIntensity * pulse})`);
+          gradient.addColorStop(.12, `rgba(${color0.join(",")},${.055 * currentIntensity})`);
+          gradient.addColorStop(.4, `rgba(${color1.join(",")},${.09 * currentIntensity * pulse})`);
+          gradient.addColorStop(.7, `rgba(${accent.join(",")},${.11 * currentIntensity * pulse})`);
           gradient.addColorStop(1, `rgba(${color2.join(",")},0)`);
 
           context.beginPath();
@@ -441,15 +517,15 @@
           context.beginPath();
           context.moveTo(cos * innerRadius * 1.2, sin * innerRadius * 1.2);
           context.lineTo(cos * outerRadius * .84, sin * outerRadius * .84);
-          context.strokeStyle = `rgba(${accent.join(",")},${.1 * currentIntensity * pulse})`;
+          context.strokeStyle = `rgba(${accent.join(",")},${.045 * currentIntensity * pulse})`;
           context.lineWidth = .65 + currentIntensity * .4;
           context.stroke();
         }
 
         const coreGlow = context.createRadialGradient(0, 0, 0, 0, 0, innerRadius * 5.4);
-        coreGlow.addColorStop(0, `rgba(255,255,255,${.58 * currentIntensity})`);
-        coreGlow.addColorStop(.22, `rgba(${color0.join(",")},${.24 * currentIntensity})`);
-        coreGlow.addColorStop(.56, `rgba(${color1.join(",")},${.11 * currentIntensity})`);
+        coreGlow.addColorStop(0, `rgba(255,255,255,${.26 * currentIntensity})`);
+        coreGlow.addColorStop(.22, `rgba(${color0.join(",")},${.11 * currentIntensity})`);
+        coreGlow.addColorStop(.56, `rgba(${color1.join(",")},${.05 * currentIntensity})`);
         coreGlow.addColorStop(1, "rgba(62,104,218,0)");
         context.fillStyle = coreGlow;
         context.beginPath();
