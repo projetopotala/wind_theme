@@ -210,7 +210,7 @@
     }
 
     .control-caption {
-      min-width: 180px;
+      min-width: 240px;
       color: rgba(247, 243, 255, .36);
       font-size: 7px;
       font-weight: 600;
@@ -296,7 +296,7 @@
         aria-describedby="hold-instruction" aria-pressed="false">
         <span class="button-label">TRANSCENDER</span>
       </button>
-      <span class="control-caption" id="hold-instruction">SEGURE PARA TRANSCENDER</span>
+      <span class="control-caption" id="hold-instruction">PRESSIONE O BOTÃO OU ESPAÇO PARA TRANSCENDER</span>
     </section>
 
   </main>
@@ -424,7 +424,7 @@
         inputMode = active ? mode : null;
         experience.classList.toggle("is-holding", active);
         button.setAttribute("aria-pressed", String(active && inputMode === "button"));
-        caption.textContent = active && mode === "button" ? "CONTINUE SEGURANDO" : "SEGURE PARA TRANSCENDER";
+        caption.textContent = active && mode === "button" ? "CONTINUE SEGURANDO" : "PRESSIONE O BOTÃO OU ESPAÇO PARA TRANSCENDER";
       }
 
       function cancelTransitionTimer() {
@@ -550,6 +550,16 @@
       addEventListener("pointerup", stopHolding);
       addEventListener("pointercancel", stopHolding);
       addEventListener("blur", stopHolding);
+      addEventListener("keydown", (event) => {
+        if (event.code !== "Space" && event.key !== " ") return;
+        event.preventDefault();
+        if (!event.repeat) holdButton();
+      });
+      addEventListener("keyup", (event) => {
+        if (event.code !== "Space" && event.key !== " ") return;
+        event.preventDefault();
+        stopHolding();
+      });
 
       experience.addEventListener("contextmenu", (event) => event.preventDefault());
       button.addEventListener("pointerdown", (event) => {
@@ -564,13 +574,13 @@
         stopHolding();
       });
       button.addEventListener("keydown", (event) => {
-        if ((event.key === " " || event.key === "Enter") && !event.repeat) {
+        if (event.key === "Enter" && !event.repeat) {
           event.preventDefault();
           holdButton();
         }
       });
       button.addEventListener("keyup", (event) => {
-        if (event.key === " " || event.key === "Enter") stopHolding();
+        if (event.key === "Enter") stopHolding();
       });
 
       resize();
