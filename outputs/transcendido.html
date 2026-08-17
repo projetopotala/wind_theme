@@ -4,443 +4,80 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#edf6fb">
-  <meta name="description" content="Instituto Potala — um espaço de presença, escuta e cuidado.">
   <title>Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
-  <style>
-    :root {
-      color-scheme: light;
-      --ink: #25485d;
-      --ink-soft: #617d8e;
-      --line: rgba(80, 126, 151, .18);
-      --serif: Georgia, "Times New Roman", serif;
-      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    html.physics-scroll { scroll-behavior: auto; }
-    body {
-      min-width: 320px;
-      min-height: 100%;
-      margin: 0;
-      overflow-x: hidden;
-      color: var(--ink);
-      background: #f8fbfd;
-      font-family: var(--sans);
-      -webkit-font-smoothing: antialiased;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      z-index: 100;
-      inset: 0;
-      background: #fff;
-      pointer-events: none;
-      animation: page-arrival 1.45s cubic-bezier(.4, 0, .2, 1) forwards;
-    }
-
-    a { color: inherit; }
-    button, a { -webkit-tap-highlight-color: transparent; }
-
-    .site-header {
-      position: fixed;
-      z-index: 40;
-      top: 0;
-      left: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding: 25px clamp(22px, 4.5vw, 70px);
-      pointer-events: none;
-    }
-
-    .brand, .header-link { pointer-events: auto; text-decoration: none; }
-    .brand { display: inline-flex; align-items: center; gap: 11px; font-size: 10px; font-weight: 750; letter-spacing: .27em; }
-    .brand-mark { position: relative; width: 22px; height: 22px; border: 1px solid rgba(63, 126, 162, .42); border-radius: 50%; }
-    .brand-mark::before, .brand-mark::after { content: ""; position: absolute; border: 1px solid rgba(63, 126, 162, .34); border-radius: 50%; }
-    .brand-mark::before { inset: 4px; }
-    .brand-mark::after { inset: 8px; background: rgba(98, 172, 211, .56); }
-
-    .header-link {
-      padding: 10px 15px;
-      border: 1px solid rgba(65, 119, 148, .18);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, .36);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: .17em;
-      transition: background 220ms ease, border-color 220ms ease, transform 220ms ease;
-    }
-
-    .header-link:hover { transform: translateY(-2px); border-color: rgba(65, 119, 148, .34); background: rgba(255, 255, 255, .64); }
-    .header-link:focus-visible, .primary-link:focus-visible { outline: 2px solid rgba(76, 157, 201, .7); outline-offset: 5px; }
-
-    .hero {
-      position: relative;
-      display: grid;
-      place-items: center;
-      min-height: 100svh;
-      overflow: hidden;
-      padding: 120px 24px 90px;
-      isolation: isolate;
-      background:
-        linear-gradient(to bottom, rgba(248, 251, 253, 0) 55%, rgba(248, 251, 253, .52) 80%, #f8fbfd 100%),
-        radial-gradient(circle at 50% 47%, rgba(255, 255, 255, .98) 0 11%, rgba(255, 255, 255, .56) 25%, transparent 48%),
-        radial-gradient(circle at 17% 18%, rgba(156, 212, 241, .47), transparent 31%),
-        radial-gradient(circle at 85% 76%, rgba(137, 195, 226, .37), transparent 32%),
-        linear-gradient(145deg, #eaf5fb 0%, #fbfdff 48%, #e4f2fa 100%);
-    }
-
-    .hero::before, .hero::after {
-      content: "";
-      position: absolute;
-      z-index: -1;
-      width: min(48vw, 680px);
-      aspect-ratio: 1;
-      border-radius: 50%;
-      filter: blur(5px);
-      opacity: .6;
-      animation: aura-drift 16s ease-in-out infinite alternate;
-    }
-
-    .hero::before { top: -24%; left: -14%; border: 1px solid rgba(255, 255, 255, .66); box-shadow: inset 0 0 90px rgba(255, 255, 255, .52), 0 0 100px rgba(111, 190, 231, .2); }
-    .hero::after { right: -17%; bottom: -31%; border: 1px solid rgba(119, 189, 226, .14); box-shadow: inset 0 0 110px rgba(255, 255, 255, .58), 0 0 90px rgba(111, 190, 231, .17); animation-delay: -8s; }
-
-    .hero-content { width: min(840px, 100%); text-align: center; }
-    .eyebrow { margin: 0 0 24px; color: rgba(50, 107, 139, .66); font-size: 10px; font-weight: 750; letter-spacing: .35em; text-transform: uppercase; transform: translateX(.175em); }
-    .hero h1 { margin: 0; color: #2f607b; font-family: var(--serif); font-size: clamp(66px, 12vw, 158px); font-weight: 400; letter-spacing: -.065em; line-height: .84; text-wrap: balance; text-shadow: 0 4px 38px rgba(255, 255, 255, .72); }
-
-    .fold-text { display: inline-block; white-space: pre-wrap; user-select: text; }
-    .fold-text-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-    .fold-text-visual { display: inline; }
-    .fold-text-segment { display: inline-block; line-height: inherit; perspective: 700px; transform-style: preserve-3d; vertical-align: baseline; }
-    .fold-text-piece { position: relative; display: inline-block; color: inherit; line-height: inherit; transform-style: preserve-3d; backface-visibility: hidden; transform-origin: 50% 0%; }
-    .fold-text.is-ready .fold-text-piece { opacity: 0; transform: rotateX(-92deg); will-change: transform, opacity; animation: fold-piece-in 800ms cubic-bezier(.22, 1, .36, 1) var(--fold-delay) forwards; }
-
-    .scroll-cue { position: absolute; bottom: 33px; left: 50%; display: grid; justify-items: center; gap: 10px; color: rgba(45, 91, 117, .48); font-size: 8px; font-weight: 750; letter-spacing: .24em; transform: translateX(-50%); }
-    .scroll-line { position: relative; width: 1px; height: 35px; overflow: hidden; background: rgba(53, 112, 145, .18); }
-    .scroll-line::after { content: ""; position: absolute; inset: 0; background: rgba(53, 112, 145, .62); transform: translateY(-100%); animation: scroll-line 2.1s ease-in-out infinite; }
-
-    .section { position: relative; padding: clamp(110px, 15vw, 210px) clamp(22px, 7vw, 116px); }
-    .section-inner { width: min(1180px, 100%); margin: 0 auto; }
-    .section-kicker { margin: 0 0 25px; color: rgba(57, 108, 136, .57); font-size: 9px; font-weight: 750; letter-spacing: .3em; text-transform: uppercase; }
-    .section-title { max-width: 850px; margin: 0; font-family: var(--serif); font-size: clamp(42px, 6.2vw, 84px); font-weight: 400; letter-spacing: -.045em; line-height: 1.02; text-wrap: balance; }
-    .section-intro { max-width: 620px; margin: 30px 0 0; color: var(--ink-soft); font-size: clamp(15px, 1.7vw, 18px); line-height: 1.75; }
-
-    .services { background: linear-gradient(180deg, #f8fbfd 0%, #edf6fb 100%); }
-    .service-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 74px; }
-    .service-card { position: relative; min-height: 340px; padding: 32px; overflow: hidden; border: 1px solid rgba(100, 150, 176, .17); border-radius: 28px; background: rgba(255, 255, 255, .55); box-shadow: 0 18px 55px rgba(58, 111, 140, .06); transition: transform 500ms cubic-bezier(.16, 1, .3, 1), border-color 400ms ease, box-shadow 400ms ease; }
-    .service-card::before { content: ""; position: absolute; right: -60px; bottom: -75px; width: 190px; height: 190px; border-radius: 50%; background: radial-gradient(circle, rgba(155, 211, 239, .34), transparent 68%); transition: transform 650ms ease; }
-    .service-card:hover { transform: translateY(-8px); border-color: rgba(100, 150, 176, .32); box-shadow: 0 26px 70px rgba(58, 111, 140, .12); }
-    .service-card:hover::before { transform: scale(1.25); }
-    .card-number { display: block; color: rgba(61, 121, 154, .46); font-family: var(--serif); font-size: 14px; }
-    .service-card h3 { margin: 115px 0 17px; font-family: var(--serif); font-size: clamp(25px, 2.8vw, 37px); font-weight: 400; line-height: 1.08; }
-    .service-card p { position: relative; z-index: 1; margin: 0; color: rgba(57, 84, 101, .62); font-size: 14px; line-height: 1.7; }
-
-    .institute { overflow: hidden; color: rgba(244, 251, 255, .95); background: #3f7898; }
-    .institute::before { content: ""; position: absolute; top: -30%; right: -12%; width: min(65vw, 850px); aspect-ratio: 1; border: 1px solid rgba(255, 255, 255, .12); border-radius: 50%; box-shadow: inset 0 0 140px rgba(255, 255, 255, .04); }
-    .institute .section-kicker { color: rgba(231, 247, 255, .58); }
-    .institute-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .65fr); gap: clamp(60px, 10vw, 150px); align-items: end; }
-    .institute-copy { margin: 0; color: rgba(236, 248, 255, .7); font-family: var(--serif); font-size: clamp(20px, 2.5vw, 29px); line-height: 1.6; }
-
-    .principles { background: #f7fbfd; }
-    .principle-list { margin: 75px 0 0; border-top: 1px solid var(--line); }
-    .principle { display: grid; grid-template-columns: 70px minmax(160px, .7fr) minmax(260px, 1fr); gap: 30px; align-items: center; min-height: 132px; border-bottom: 1px solid var(--line); }
-    .principle-index { color: rgba(60, 111, 139, .42); font-size: 10px; letter-spacing: .18em; }
-    .principle h3 { margin: 0; font-family: var(--serif); font-size: clamp(27px, 3.4vw, 43px); font-weight: 400; }
-    .principle p { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.7; }
-
-    .closing { display: grid; place-items: center; min-height: 86svh; overflow: hidden; text-align: center; background: radial-gradient(circle at center, rgba(255, 255, 255, .98) 0 15%, rgba(255, 255, 255, .38) 42%, transparent 70%), linear-gradient(140deg, #e3f2fa, #f9fcfe 52%, #dceef8); }
-    .closing-content { width: min(780px, 100%); }
-    .closing h2 { margin: 0; font-family: var(--serif); font-size: clamp(48px, 8vw, 104px); font-weight: 400; letter-spacing: -.055em; line-height: .96; }
-    .closing p { width: min(470px, 90%); margin: 29px auto 38px; color: var(--ink-soft); font-size: 16px; line-height: 1.7; }
-    .primary-link { display: inline-flex; align-items: center; min-height: 48px; padding: 0 23px; border: 1px solid rgba(64, 119, 149, .23); border-radius: 999px; background: rgba(255, 255, 255, .52); text-decoration: none; font-size: 9px; font-weight: 750; letter-spacing: .2em; transition: transform 240ms ease, background 240ms ease, box-shadow 240ms ease; }
-    .primary-link:hover { transform: translateY(-3px); background: rgba(255, 255, 255, .82); box-shadow: 0 12px 34px rgba(57, 108, 136, .12); }
-    .site-footer { display: flex; justify-content: space-between; gap: 20px; padding: 27px clamp(22px, 4.5vw, 70px) 40px; color: rgba(40, 78, 99, .5); background: #f3f9fc; font-size: 8px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
-
-    .js .reveal { opacity: 0; transform: translateY(46px); transition: opacity 1s cubic-bezier(.16, 1, .3, 1), transform 1.1s cubic-bezier(.16, 1, .3, 1); transition-delay: var(--delay, 0ms); }
-    .js .reveal.is-visible { opacity: 1; transform: translateY(0); }
-    .js .hero-content.reveal { transform: translateY(24px) scale(.985); }
-    .js .hero-content.reveal.is-visible { transform: translateY(0) scale(1); }
-
-    .gradual-blur {
-      position: fixed;
-      z-index: 60;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: clamp(8rem, 19vh, 13rem);
-      overflow: hidden;
-      pointer-events: none;
-      opacity: 0;
-      background: linear-gradient(to bottom, transparent 0%, rgba(239, 247, 251, .04) 42%, rgba(239, 247, 251, .28) 100%);
-      animation: blur-arrival 1s 1.1s ease-out forwards;
-    }
-    .gradual-blur-inner { position: relative; width: 100%; height: 100%; pointer-events: none; }
-    .gradual-blur-layer {
-      position: absolute;
-      inset: 0;
-      background: rgba(255, 255, 255, .006);
-      transform: translateZ(0);
-      will-change: backdrop-filter;
-    }
-
-    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-      .gradual-blur { background: linear-gradient(to bottom, rgba(239, 247, 251, 0), rgba(239, 247, 251, .88)); }
-    }
-
-    @keyframes page-arrival { 0%, 18% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
-    @keyframes blur-arrival { to { opacity: 1; } }
-    @keyframes aura-drift { to { transform: translate3d(4%, 5%, 0) scale(1.08); } }
-    @keyframes scroll-line { 0% { transform: translateY(-100%); } 55%, 100% { transform: translateY(110%); } }
-    @keyframes fold-piece-in { from { opacity: 0; transform: rotateX(-92deg); } to { opacity: 1; transform: rotateX(0deg); } }
-
-    @media (max-width: 850px) {
-      .service-grid { grid-template-columns: 1fr; }
-      .service-card { min-height: 270px; }
-      .service-card h3 { margin-top: 74px; }
-      .institute-layout { grid-template-columns: 1fr; }
-      .principle { grid-template-columns: 38px 1fr; padding: 28px 0; }
-      .principle p { grid-column: 2; }
-    }
-
-    @media (max-width: 560px) {
-      .site-header { padding-top: 19px; }
-      .brand { letter-spacing: .2em; }
-      .header-link { padding: 9px 12px; letter-spacing: .12em; }
-      .hero h1 { font-size: clamp(62px, 22vw, 94px); }
-      .section { padding-top: 105px; padding-bottom: 105px; }
-      .section-title { font-size: 44px; }
-      .service-grid { margin-top: 48px; }
-      .service-card { padding: 27px; border-radius: 23px; }
-      .site-footer { flex-direction: column; align-items: center; text-align: center; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-      body::before { animation: none; opacity: 0; visibility: hidden; }
-      .hero::before, .hero::after, .scroll-line::after, .gradual-blur { animation: none; }
-      .gradual-blur { opacity: 1; }
-      .js .reveal, .js .hero-content.reveal { opacity: 1; transform: none; transition: none; }
-      .fold-text.is-ready .fold-text-piece { opacity: 1; transform: none; animation: none; }
-    }
-  </style>
+  <link rel="stylesheet" href="secoes.css">
+  <script src="secoes.js" defer></script>
 </head>
-<body>
-  <header class="site-header">
-    <a class="brand" href="#inicio" aria-label="Instituto Potala — início">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span>POTALA</span>
-    </a>
-  </header>
+<body data-section="inicio" data-entry="center" data-has-intro="true" data-story-page="true">
+  <section class="welcome-view story-opening" id="inicio" data-story-section="inicio" aria-label="Bem-vindo">
+    <div class="opening-panel">
+      <div class="opening-halo" aria-hidden="true"></div>
+      <h1 class="page-title fold-text" data-fold-text="Bem-vindo.">Bem-vindo.</h1>
+      <button class="down-hint" type="button" data-scroll-to="atendimentos" aria-label="Descer para Atendimentos">↓</button>
+    </div>
+  </section>
 
-  <main>
-    <section class="hero" id="inicio">
-      <div class="hero-content reveal is-visible">
-        <h1 class="fold-text" data-fold-text="Bem-vindo.">Bem-vindo.</h1>
-      </div>
-      <div class="scroll-cue" aria-hidden="true"><span>DESCUBRA</span><span class="scroll-line"></span></div>
-    </section>
-
-    <section class="section services" id="atendimentos">
-      <div class="section-inner">
-        <div class="reveal">
-          <p class="section-kicker">01 · Atendimentos</p>
-          <h2 class="section-title">Cuidado que começa pela escuta.</h2>
-          <p class="section-intro">Cada percurso começa de um lugar diferente. Os atendimentos acolhem o momento de cada pessoa e ajudam a encontrar o caminho mais adequado.</p>
-        </div>
-        <div class="service-grid">
-          <article class="service-card reveal" style="--delay: 80ms"><span class="card-number">01</span><h3>Atendimento individual</h3><p>Um encontro reservado para olhar com presença para o que pede atenção agora.</p></article>
-          <article class="service-card reveal" style="--delay: 160ms"><span class="card-number">02</span><h3>Vivências em grupo</h3><p>Experiências compartilhadas que aproximam pessoas, práticas e novos modos de perceber.</p></article>
-          <article class="service-card reveal" style="--delay: 240ms"><span class="card-number">03</span><h3>Orientação inicial</h3><p>Uma primeira conversa para compreender o momento e indicar uma possibilidade de percurso.</p></article>
+  <main class="story-flow" aria-label="Seções do Instituto Potala">
+    <section class="story-chapter story-chapter--left" id="atendimentos" data-story-section="atendimentos" data-scroll-path="diagonal-up-right">
+      <div class="chapter-stage">
+        <div class="environment-panel">
+          <span class="chapter-index" aria-hidden="true">01</span>
+          <span class="chapter-orbit chapter-orbit--wide" aria-hidden="true"></span>
+          <h2 class="chapter-title">Atendimentos</h2>
         </div>
       </div>
     </section>
 
-    <section class="section institute" id="instituto">
-      <div class="section-inner institute-layout">
-        <div class="reveal"><p class="section-kicker">02 · O Instituto</p><h2 class="section-title">Um lugar para voltar a si.</h2></div>
-        <p class="institute-copy reveal" style="--delay: 150ms">O Potala nasce como um espaço de encontro: entre escuta e silêncio, cuidado e descoberta, presença e transformação.</p>
-      </div>
-    </section>
-
-    <section class="section principles" id="caminhos">
-      <div class="section-inner">
-        <div class="reveal"><p class="section-kicker">03 · Nosso caminho</p><h2 class="section-title">O que sustenta cada encontro.</h2></div>
-        <div class="principle-list">
-          <article class="principle reveal"><span class="principle-index">01</span><h3>Presença</h3><p>Estar por inteiro, com tempo e atenção para o que se apresenta.</p></article>
-          <article class="principle reveal"><span class="principle-index">02</span><h3>Escuta</h3><p>Acolher cada história sem pressa, criando espaço para novas compreensões.</p></article>
-          <article class="principle reveal"><span class="principle-index">03</span><h3>Cuidado</h3><p>Construir caminhos possíveis com delicadeza, respeito e consciência.</p></article>
+    <section class="story-chapter story-chapter--right story-chapter--cool" id="atividades" data-story-section="atividades" data-scroll-path="down">
+      <div class="chapter-stage">
+        <div class="environment-panel">
+          <span class="chapter-index" aria-hidden="true">02</span>
+          <span class="chapter-orbit" aria-hidden="true"></span>
+          <h2 class="chapter-title">Atividades</h2>
         </div>
       </div>
     </section>
 
-    <section class="section closing" id="contato">
-      <div class="closing-content reveal">
-        <p class="section-kicker">Continue a jornada</p>
-        <h2>Seu caminho pode começar aqui.</h2>
-        <p>Conheça os atendimentos e descubra qual experiência faz sentido para o seu momento.</p>
-        <a class="primary-link" href="#atendimentos">CONHECER ATENDIMENTOS</a>
+    <section class="story-chapter story-chapter--center story-chapter--light" id="cursos" data-story-section="cursos" data-scroll-path="left">
+      <div class="chapter-stage">
+        <div class="environment-panel">
+          <span class="chapter-index" aria-hidden="true">03</span>
+          <span class="chapter-orbit chapter-orbit--wide" aria-hidden="true"></span>
+          <h2 class="chapter-title">Cursos</h2>
+        </div>
+      </div>
+    </section>
+
+    <section class="story-chapter story-chapter--left story-chapter--deep" id="programacao" data-story-section="programacao" data-scroll-path="diagonal-down-right">
+      <div class="chapter-stage">
+        <div class="environment-panel">
+          <span class="chapter-index" aria-hidden="true">04</span>
+          <span class="chapter-orbit" aria-hidden="true"></span>
+          <h2 class="chapter-title">Programação</h2>
+        </div>
+      </div>
+    </section>
+
+    <section class="story-chapter story-chapter--right story-chapter--mist" id="saude-integrativa" data-story-section="saude-integrativa" data-scroll-path="up-left">
+      <div class="chapter-stage">
+        <div class="environment-panel">
+          <span class="chapter-index" aria-hidden="true">05</span>
+          <span class="chapter-orbit chapter-orbit--wide" aria-hidden="true"></span>
+          <h2 class="chapter-title chapter-title--long">Saúde Integrativa</h2>
+        </div>
+      </div>
+    </section>
+
+    <section class="story-chapter story-chapter--center story-chapter--final" id="cultura" data-story-section="cultura" data-scroll-path="arc-right">
+      <div class="chapter-stage">
+        <div class="environment-panel">
+          <span class="chapter-index" aria-hidden="true">06</span>
+          <span class="chapter-orbit" aria-hidden="true"></span>
+          <h2 class="chapter-title">Cultura</h2>
+        </div>
       </div>
     </section>
   </main>
-
-  <footer class="site-footer"><span>Instituto Potala</span><span>Presença · Escuta · Cuidado</span></footer>
-
-  <div class="gradual-blur" id="gradual-blur" aria-hidden="true"><div class="gradual-blur-inner"></div></div>
-
-  <script>
-    (() => {
-      "use strict";
-      const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      function mountFoldText(root) {
-        const text = root.dataset.foldText || root.textContent || "";
-        const screenReaderText = document.createElement("span");
-        const visualText = document.createElement("span");
-        screenReaderText.className = "fold-text-sr-only";
-        screenReaderText.textContent = text;
-        visualText.className = "fold-text-visual";
-        visualText.setAttribute("aria-hidden", "true");
-
-        Array.from(text).forEach((character, index) => {
-          const segment = document.createElement("span");
-          const piece = document.createElement("span");
-          segment.className = "fold-text-segment";
-          piece.className = "fold-text-piece";
-          piece.dataset.foldHinge = "top";
-          piece.style.setProperty("--fold-delay", `${520 + index * 60}ms`);
-          piece.textContent = character === " " ? "\u00a0" : character;
-          segment.appendChild(piece);
-          visualText.appendChild(segment);
-        });
-
-        root.replaceChildren(screenReaderText, visualText);
-        root.classList.add("is-ready");
-      }
-
-      document.querySelectorAll("[data-fold-text]").forEach(mountFoldText);
-
-      function initPhysicalScroll() {
-        if (reducedMotion || !matchMedia("(pointer: fine)").matches) return;
-
-        const root = document.documentElement;
-        let current = scrollY;
-        let target = scrollY;
-        let animationFrame = 0;
-        let lastFrame = performance.now();
-
-        root.classList.add("physics-scroll");
-
-        const maxScroll = () => Math.max(0, root.scrollHeight - innerHeight);
-        const clampScroll = (value) => Math.max(0, Math.min(maxScroll(), value));
-
-        function animateScroll(now) {
-          const timeScale = Math.min(2.2, Math.max(.5, (now - lastFrame) / 16.667));
-          lastFrame = now;
-          const distance = target - current;
-          const easing = 1 - Math.pow(.88, timeScale);
-          current = clampScroll(current + distance * easing);
-          scrollTo(0, current);
-
-          if (Math.abs(target - current) > .3) {
-            animationFrame = requestAnimationFrame(animateScroll);
-          } else {
-            current = target;
-            animationFrame = 0;
-            scrollTo(0, target);
-          }
-        }
-
-        function moveTo(nextTarget) {
-          target = clampScroll(nextTarget);
-          if (animationFrame) return;
-          current = scrollY;
-          lastFrame = performance.now();
-          animationFrame = requestAnimationFrame(animateScroll);
-        }
-
-        addEventListener("wheel", (event) => {
-          if (event.ctrlKey || event.defaultPrevented || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
-          event.preventDefault();
-          const multiplier = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? innerHeight : 1;
-          const delta = Math.max(-420, Math.min(420, event.deltaY * multiplier * 1.18));
-          moveTo(target + delta);
-        }, { passive: false });
-
-        document.querySelectorAll('a[href^="#"]').forEach((link) => {
-          link.addEventListener("click", (event) => {
-            const destination = document.querySelector(link.getAttribute("href"));
-            if (!destination) return;
-            event.preventDefault();
-            moveTo(destination.getBoundingClientRect().top + scrollY);
-          });
-        });
-
-        addEventListener("scroll", () => {
-          if (animationFrame) return;
-          current = scrollY;
-          target = scrollY;
-        }, { passive: true });
-
-        addEventListener("resize", () => {
-          target = clampScroll(target);
-          current = clampScroll(current);
-        }, { passive: true });
-      }
-
-      initPhysicalScroll();
-      const revealItems = document.querySelectorAll(".reveal:not(.is-visible)");
-
-      if (reducedMotion || !("IntersectionObserver" in window)) {
-        revealItems.forEach((item) => item.classList.add("is-visible"));
-      } else {
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            entry.target.classList.add("is-visible");
-            observer.unobserve(entry.target);
-          });
-        }, { threshold: 0.16, rootMargin: "0px 0px -7%" });
-        revealItems.forEach((item) => observer.observe(item));
-      }
-
-      function createGradualBlur({ strength = 2, divCount = 8, exponential = true, opacity = 1 } = {}) {
-        const inner = document.querySelector("#gradual-blur .gradual-blur-inner");
-        if (!inner) return;
-        const increment = 100 / divCount;
-
-        for (let index = 1; index <= divCount; index += 1) {
-          let progress = index / divCount;
-          progress = progress * progress * (3 - 2 * progress);
-          const blur = exponential ? Math.pow(2, progress * 4) * 0.0625 * strength : 0.0625 * (progress * divCount + 1) * strength;
-          const p1 = Math.round((increment * index - increment) * 10) / 10;
-          const p2 = Math.round(increment * index * 10) / 10;
-          const p3 = Math.round((increment * index + increment) * 10) / 10;
-          const p4 = Math.round((increment * index + increment * 2) * 10) / 10;
-          let gradient = `transparent ${p1}%, black ${p2}%`;
-          if (p3 <= 100) gradient += `, black ${p3}%`;
-          if (p4 <= 100) gradient += `, transparent ${p4}%`;
-
-          const layer = document.createElement("div");
-          layer.className = "gradual-blur-layer";
-          layer.style.maskImage = `linear-gradient(to bottom, ${gradient})`;
-          layer.style.webkitMaskImage = `linear-gradient(to bottom, ${gradient})`;
-          layer.style.backdropFilter = `blur(${blur.toFixed(3)}rem)`;
-          layer.style.webkitBackdropFilter = `blur(${blur.toFixed(3)}rem)`;
-          layer.style.opacity = String(opacity);
-          inner.appendChild(layer);
-        }
-      }
-
-      createGradualBlur({ strength: 5.5, divCount: 10, exponential: true, opacity: 1 });
-    })();
-  </script>
 </body>
 </html>
