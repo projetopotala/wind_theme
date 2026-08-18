@@ -54,6 +54,30 @@
       background-size: cover;
     }
 
+    .arrival-video {
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      pointer-events: none;
+      opacity: .86;
+      filter: saturate(.92) contrast(.98) brightness(.94);
+    }
+
+    .experience { background: #05030a; }
+
+    .burst-canvas,
+    .sun,
+    .cloud-overlay,
+    .experience::before { display: none; }
+
+    .transcend-control { z-index: 2; }
+
+    .experience.has-arrival-video::before { opacity: .18; }
+
     .experience::before {
       content: "";
       position: absolute;
@@ -153,75 +177,91 @@
         0 0 104px 36px rgba(190, 222, 255, .36);
     }
 
-    .transcend-control {
-      position: absolute;
-      left: 50%;
-      bottom: clamp(28px, 5.2vh, 58px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 13px;
-      transform: translateX(-50%);
-    }
+.transcend-control {
+  position: absolute;
+  left: 50%;
+  bottom: max(clamp(28px, 5.2vh, 58px), calc(env(safe-area-inset-bottom) + 20px));
+  display: grid;
+  place-items: center;
+  transform: translateX(-50%);
+}
 
     .transcend-button {
       position: relative;
       display: grid;
       place-items: center;
-      width: 142px;
-      height: 52px;
+      width: min(42vw, 184px);
+      height: 42px;
       padding: 0;
       overflow: hidden;
-      cursor: default;
+      cursor: grab;
       touch-action: none;
-      border: 1px solid rgba(238, 243, 247, .42);
+      border: 1px solid rgba(238, 243, 247, .34);
       border-radius: 999px;
       outline: none;
-      color: var(--paper);
-      background: rgba(98, 108, 118, .22);
-      box-shadow: inset 0 0 18px rgba(255, 255, 255, .05), 0 8px 30px rgba(25, 48, 67, .14);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      transition: border-color 250ms ease, background 250ms ease, box-shadow 350ms ease, transform 220ms ease;
+      background: rgba(8, 20, 32, .16);
+      box-shadow: inset 0 0 14px rgba(255, 255, 255, .05);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: border-color 250ms ease, background 250ms ease, box-shadow 350ms ease;
     }
 
-    .transcend-button:hover {
-      border-color: rgba(255, 255, 255, .72);
-      transform: translateY(-2px);
+    .transcend-button::before,
+    .transcend-button::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: 22px;
+      left: 22px;
+      height: 1px;
+      border-radius: 999px;
+      transform: translateY(-50%);
     }
+
+    .transcend-button::before { background: rgba(255, 255, 255, .24); }
+
+    .transcend-button::after {
+      background: rgba(255, 255, 255, .74);
+      box-shadow: 0 0 8px rgba(255, 255, 255, .38);
+      transform: translateY(-50%) scaleX(var(--drag-progress, 0));
+      transform-origin: left center;
+    }
+
+    .drag-thumb {
+      position: relative;
+      z-index: 2;
+      justify-self: start;
+      width: 30px;
+      height: 30px;
+      margin-left: 6px;
+      border: 1px solid rgba(255, 255, 255, .62);
+      border-radius: 50%;
+      background: radial-gradient(circle at 37% 32%, #ffffff 0 16%, #f3f8fa 62%, #c8dae3 100%);
+      box-shadow: 0 0 10px rgba(255, 255, 255, .38), 0 3px 10px rgba(5, 27, 43, .14);
+      transform: translate3d(var(--drag-x, 0px), 0, 0);
+      transition: transform 360ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease, filter 260ms ease;
+      will-change: transform;
+    }
+
+    .transcend-button.is-dragging { cursor: grabbing; }
+    .transcend-button.is-dragging .drag-thumb { transition: none; }
 
     .transcend-button:focus-visible {
-      outline: 2px solid var(--cyan);
+      outline: 2px solid rgba(255, 255, 255, .88);
       outline-offset: 8px;
     }
 
-    .button-label {
-      position: relative;
-      z-index: 2;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: .2em;
-      transform: translateX(.1em);
-    }
-
     .is-holding .transcend-button {
-      border-color: rgba(255, 255, 255, .68);
-      background: rgba(108, 118, 128, .32);
-      box-shadow: inset 0 0 22px rgba(255, 255, 255, .08), 0 0 24px rgba(220, 235, 246, .12);
-      transform: translateY(-1px) scale(1.02);
+      border-color: rgba(255, 255, 255, .7);
+      background: rgba(225, 243, 250, .12);
+      box-shadow: inset 0 0 18px rgba(255, 255, 255, .1), 0 0 24px rgba(220, 242, 252, .16);
     }
 
-    .control-caption {
-      min-width: 240px;
-      color: rgba(247, 243, 255, .36);
-      font-size: 7px;
-      font-weight: 600;
-      letter-spacing: .28em;
-      text-align: center;
-      transition: color 300ms ease;
+    .is-holding .drag-thumb {
+      filter: brightness(1.08);
+      box-shadow: 0 0 10px 3px rgba(255, 255, 255, .66), 0 0 26px rgba(214, 241, 255, .34);
+      animation: drag-hold-pulse .8s ease-in-out infinite alternate;
     }
-
-    .is-holding .control-caption { color: rgba(101, 251, 210, .74); }
 
     .transition-overlay {
       position: absolute;
@@ -270,9 +310,13 @@
       50% { transform: translate3d(1.8%, -1.2%, 0) scale(1.1); }
     }
 
+    @keyframes drag-hold-pulse {
+      to { transform: translate3d(var(--drag-x, 0px), 0, 0) scale(1.08); }
+    }
+
     @media (max-width: 640px) {
       .experience { min-height: 460px; }
-      .transcend-control { bottom: 27px; }
+      .transcend-button { width: min(calc(100vw - 52px), 184px); }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -287,18 +331,20 @@
 </head>
 <body>
   <main class="experience" id="experience">
+    <video class="arrival-video" id="arrival-video" autoplay muted playsinline preload="auto" aria-hidden="true">
+      <source src="media/chegada.mp4" type="video/mp4">
+    </video>
     <canvas class="burst-canvas" id="burst-canvas" aria-hidden="true"></canvas>
     <div class="space-vignette" aria-hidden="true"></div>
     <canvas class="cloud-overlay" id="cloud-overlay" aria-hidden="true"></canvas>
     <div class="sun" aria-hidden="true"></div>
     <div class="transition-overlay" aria-hidden="true"></div>
 
-    <section class="transcend-control" aria-label="Controle de velocidade">
+    <section class="transcend-control" aria-label="Acesso à experiência">
       <button class="transcend-button" id="transcend-button" type="button"
-        aria-describedby="hold-instruction" aria-pressed="false">
-        <span class="button-label">TRANSCENDER</span>
+        aria-label="Arraste e segure para entrar" aria-pressed="false">
+        <span class="drag-thumb" aria-hidden="true"></span>
       </button>
-      <span class="control-caption" id="hold-instruction">PRESSIONE O BOTÃO OU ESPAÇO PARA TRANSCENDER</span>
     </section>
 
   </main>
@@ -308,10 +354,11 @@
       "use strict";
 
       const experience = document.getElementById("experience");
+      const arrivalVideo = document.getElementById("arrival-video");
       const canvas = document.getElementById("burst-canvas");
       const cloudCanvas = document.getElementById("cloud-overlay");
       const button = document.getElementById("transcend-button");
-      const caption = document.getElementById("hold-instruction");
+      const dragThumb = button.querySelector(".drag-thumb");
       const context = canvas.getContext("2d", { alpha: true });
       const cloudContext = cloudCanvas.getContext("2d", { alpha: true, willReadFrequently: true });
       const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -328,6 +375,17 @@
         color2: "#3e68da"
       };
 
+      arrivalVideo.addEventListener("loadeddata", () => {
+        experience.classList.add("has-arrival-video");
+      }, { once: true });
+      arrivalVideo.addEventListener("ended", () => {
+        arrivalVideo.pause();
+        experience.classList.add("arrival-video-finished");
+      });
+      arrivalVideo.play().catch(() => {
+        // The original sky remains visible if autoplay is unavailable.
+      });
+
       function hexToRgb(hex) {
         const value = Number.parseInt(hex.slice(1), 16);
         return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
@@ -342,6 +400,11 @@
       let height = 0;
       let holding = false;
       let inputMode = null;
+      let dragging = false;
+      let dragPointerId = null;
+      let dragStartX = 0;
+      let dragStartProgress = 0;
+      let dragProgress = 0;
       let transitionTimer = 0;
       let transitioning = false;
       let centerX = 0;
@@ -421,12 +484,19 @@
         scheduleCloudOverlay();
       }
 
+      function setDragProgress(value) {
+        dragProgress = Math.max(0, Math.min(1, value));
+        const travel = Math.max(1, button.clientWidth - dragThumb.offsetWidth - 12);
+        button.style.setProperty("--drag-progress", dragProgress.toFixed(3));
+        button.style.setProperty("--drag-x", `${(travel * dragProgress).toFixed(1)}px`);
+        button.setAttribute("aria-valuenow", String(Math.round(dragProgress * 100)));
+      }
+
       function setHolding(active, mode) {
         holding = active;
         inputMode = active ? mode : null;
         experience.classList.toggle("is-holding", active);
-        button.setAttribute("aria-pressed", String(active && inputMode === "button"));
-        caption.textContent = active && mode === "button" ? "CONTINUE SEGURANDO" : "PRESSIONE O BOTÃO OU ESPAÇO PARA TRANSCENDER";
+        button.setAttribute("aria-pressed", String(active));
       }
 
       function cancelTransitionTimer() {
@@ -435,7 +505,7 @@
       }
 
       function beginTransition() {
-        if (!holding || inputMode !== "button" || transitioning) return;
+        if (!holding || transitioning) return;
         transitioning = true;
         experience.classList.add("is-transitioning");
         button.setAttribute("aria-disabled", "true");
@@ -454,6 +524,36 @@
         if (transitioning) return;
         cancelTransitionTimer();
         setHolding(false, null);
+      }
+
+      function updateDrag(event) {
+        if (!dragging || event.pointerId !== dragPointerId || transitioning) return;
+        const travel = Math.max(1, button.clientWidth - dragThumb.offsetWidth - 12);
+        const nextProgress = dragStartProgress + (event.clientX - dragStartX) / travel;
+        setDragProgress(nextProgress >= .985 ? 1 : nextProgress);
+
+        if (dragProgress >= .985) {
+          if (!holding) {
+            setHolding(true, "drag");
+            beginTransition();
+          }
+        } else if (holding && inputMode === "drag") {
+          stopHolding();
+        }
+      }
+
+      function resetDrag() {
+        button.classList.remove("is-dragging");
+        setDragProgress(0);
+      }
+
+      function stopDrag(event) {
+        if (!dragging || (event && event.pointerId !== dragPointerId)) return;
+        button.releasePointerCapture?.(dragPointerId);
+        dragging = false;
+        dragPointerId = null;
+        stopHolding();
+        if (!transitioning) resetDrag();
       }
 
       function draw(time) {
@@ -549,9 +649,12 @@
       }
 
       addEventListener("resize", resize);
-      addEventListener("pointerup", stopHolding);
-      addEventListener("pointercancel", stopHolding);
-      addEventListener("blur", stopHolding);
+      addEventListener("pointerup", stopDrag);
+      addEventListener("pointercancel", stopDrag);
+      addEventListener("blur", () => {
+        if (dragging) stopDrag();
+        else stopHolding();
+      });
       addEventListener("keydown", (event) => {
         const breathingDialog = document.getElementById("breathing-dialog");
         const otherButton = event.target instanceof HTMLButtonElement && event.target !== button;
@@ -574,13 +677,18 @@
         if (event.pointerType === "mouse" && event.button !== 0) return;
         event.stopPropagation();
         event.preventDefault();
+        if (transitioning) return;
+        dragging = true;
+        dragPointerId = event.pointerId;
+        dragStartX = event.clientX;
+        dragStartProgress = dragProgress;
+        button.classList.add("is-dragging");
         button.setPointerCapture?.(event.pointerId);
-        holdButton();
+        updateDrag(event);
       });
-      button.addEventListener("pointerup", (event) => {
-        event.stopPropagation();
-        stopHolding();
-      });
+      button.addEventListener("pointermove", updateDrag);
+      button.addEventListener("pointerup", stopDrag);
+      button.addEventListener("pointercancel", stopDrag);
       button.addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.repeat) {
           event.preventDefault();
@@ -592,7 +700,7 @@
       });
 
       resize();
-      requestAnimationFrame(draw);
+      setDragProgress(0);
     })();
   </script>
 </body>

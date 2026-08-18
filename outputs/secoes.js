@@ -7,35 +7,235 @@
   const isStoryPage = body.dataset.storyPage === "true";
   const storySections = [...document.querySelectorAll("[data-story-section]")];
   const chapters = [...document.querySelectorAll(".story-chapter")];
+  const journeyRoad = document.getElementById("journey-road");
+  const journeyRoadContext = journeyRoad?.getContext("2d", { alpha: true });
   let siteNav = null;
   let navigating = false;
   let navigationTimer = 0;
   let ticking = false;
-  let pointerTargetX = 0;
-  let pointerTargetY = 0;
-  let pointerX = 0;
-  let pointerY = 0;
-  let pointerFrame = 0;
-  let rotationFrame = 0;
-  let rotationLastTime = 0;
-  const rotationStates = new WeakMap();
   let wheelTailFrame = 0;
   let wheelTailTimer = 0;
   let wheelTailStart = 0;
   let wheelTailOrigin = 0;
   let wheelTailDistance = 0;
+  let journeyRoadAnchors = [];
+  let journeyMilestones = [];
+  let journeyRoadWidth = 104;
 
   const siteSections = [
     { key: "inicio", label: "Início", href: "transcendido.html#inicio" },
-    { key: "atendimentos", label: "Atendimentos", href: "transcendido.html#atendimentos" },
-    { key: "atividades", label: "Atividades", href: "transcendido.html#atividades" },
-    { key: "cursos", label: "Cursos", href: "transcendido.html#cursos" },
-    { key: "programacao", label: "Programação", href: "transcendido.html#programacao" },
-    { key: "saude-integrativa", label: "Saúde Integrativa", href: "transcendido.html#saude-integrativa" },
-    { key: "cultura", label: "Cultura", href: "transcendido.html#cultura" }
+    { key: "atendimentos", label: "Atendimentos", href: "atendimentos.html" },
+    { key: "atividades", label: "Atividades", href: "atividades.html" },
+    { key: "cursos", label: "Cursos", href: "cursos.html" },
+    { key: "programacao", label: "Programação", href: "programacao.html" },
+    { key: "saude-integrativa", label: "Saúde Integrativa", href: "saude-integrativa.html" },
+    { key: "cultura", label: "Cultura", href: "cultura.html" }
   ];
 
   const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
+  const smoothstep = (value) => value * value * (3 - 2 * value);
+
+  function documentTopFor(element) {
+    return element.getBoundingClientRect().top + body.scrollTop;
+  }
+
+  function buildJourneyRoadAnchors() {
+    if (!journeyRoadContext) return;
+
+    const verticalStep = innerHeight * (innerWidth <= 720 ? 1.06 : 1.18);
+    const turnDrop = innerHeight * (innerWidth <= 720 ? .42 : .54);
+    const horizontalStep = innerWidth * (innerWidth <= 720 ? .98 : 1.08);
+    const secondTurnWidth = innerWidth * (innerWidth <= 720 ? .28 : .36);
+    journeyRoadAnchors = chapters.map((chapter, index) => {
+      if (index === 0) return { x: 0, y: 0 };
+      if (index === 1) return { x: 0, y: verticalStep };
+      if (index === 2) return { x: horizontalStep, y: verticalStep + turnDrop };
+      if (index === 3) return { x: horizontalStep * 2, y: verticalStep + turnDrop };
+      return {
+        x: horizontalStep * 2 + secondTurnWidth,
+        y: verticalStep + turnDrop + verticalStep * (index - 3)
+      };
+    });
+    journeyMilestones = chapters.map(documentTopFor);
+  }
+
+  function resizeJourneyRoad() {
+    if (!journeyRoadContext) return;
+
+    const dpr = Math.min(devicePixelRatio || 1, 1.75);
+    journeyRoad.width = Math.max(1, Math.round(innerWidth * dpr));
+    journeyRoad.height = Math.max(1, Math.round(innerHeight * dpr));
+    journeyRoadContext.setTransform(dpr, 0, 0, dpr, 0, 0);
+    journeyRoadWidth = innerWidth <= 720
+      ? clamp(innerWidth * .72, 230, 340)
+      : clamp(innerWidth * .44, 480, 820);
+    buildJourneyRoadAnchors();
+  }
+
+  function traceJourneyRoadLine(context, points) {
+    context.beginPath();
+    context.moveTo(points[0].x, points[0].y);
+    context.lineTo(points[1].x, points[1].y);
+    context.lineTo(points[2].x, points[2].y);
+
+    const turnStart = points[2];
+    const turnEnd = points[3];
+    const turnWidth = turnEnd.x - turnStart.x;
+    const turnHeight = turnEnd.y - turnStart.y;
+    context.bezierCurveTo(
+      turnStart.x,
+      turnStart.y + turnHeight * .72,
+      turnEnd.x - turnWidth * .58,
+      turnEnd.y,
+      turnEnd.x,
+      turnEnd.y
+    );
+
+    context.lineTo(points[4].x, points[4].y);
+
+    const secondTurnStart = points[4];
+    const secondTurnEnd = points[5];
+    const secondTurnWidth = secondTurnEnd.x - secondTurnStart.x;
+    const secondTurnHeight = secondTurnEnd.y - secondTurnStart.y;
+    context.bezierCurveTo(
+      secondTurnStart.x + secondTurnWidth * .72,
+      secondTurnStart.y,
+      secondTurnEnd.x,
+      secondTurnEnd.y - secondTurnHeight * .58,
+      secondTurnEnd.x,
+      secondTurnEnd.y
+    );
+
+    points.slice(6).forEach((point) => context.lineTo(point.x, point.y));
+  }
+
+  function cubicPoint(from, controlA, controlB, to, progress) {
+    const inverse = 1 - progress;
+    return {
+      x: inverse ** 3 * from.x
+        + 3 * inverse ** 2 * progress * controlA.x
+        + 3 * inverse * progress ** 2 * controlB.x
+        + progress ** 3 * to.x,
+      y: inverse ** 3 * from.y
+        + 3 * inverse ** 2 * progress * controlA.y
+        + 3 * inverse * progress ** 2 * controlB.y
+        + progress ** 3 * to.y
+    };
+  }
+
+  function journeyCameraPosition() {
+    if (!journeyRoadAnchors.length || !journeyMilestones.length) return { x: 0, y: 0 };
+    if (body.scrollTop <= journeyMilestones[0]) {
+      const entryStart = Math.max(0, journeyMilestones[0] - innerHeight * .36);
+      const entryProgress = smoothstep(clamp(
+        (body.scrollTop - entryStart) / Math.max(1, journeyMilestones[0] - entryStart),
+        0,
+        1
+      ));
+      return {
+        x: journeyRoadAnchors[0].x,
+        y: journeyRoadAnchors[0].y - innerHeight * 1.08 * (1 - entryProgress)
+      };
+    }
+
+    for (let index = 0; index < journeyMilestones.length - 1; index += 1) {
+      const start = journeyMilestones[index];
+      const end = journeyMilestones[index + 1];
+      if (body.scrollTop > end) continue;
+
+      const progress = smoothstep(clamp((body.scrollTop - start) / Math.max(1, end - start), 0, 1));
+      const from = journeyRoadAnchors[index];
+      const to = journeyRoadAnchors[index + 1];
+      if (index === 1) {
+        const turnWidth = to.x - from.x;
+        const turnHeight = to.y - from.y;
+        return cubicPoint(
+          from,
+          { x: from.x, y: from.y + turnHeight * .72 },
+          { x: to.x - turnWidth * .58, y: to.y },
+          to,
+          progress
+        );
+      }
+      if (index === 3) {
+        const turnWidth = to.x - from.x;
+        const turnHeight = to.y - from.y;
+        return cubicPoint(
+          from,
+          { x: from.x + turnWidth * .72, y: from.y },
+          { x: to.x, y: to.y - turnHeight * .58 },
+          to,
+          progress
+        );
+      }
+      return {
+        x: from.x + (to.x - from.x) * progress,
+        y: from.y + (to.y - from.y) * progress
+      };
+    }
+
+    return journeyRoadAnchors.at(-1);
+  }
+
+  function drawJourneyRoad() {
+    if (!journeyRoadContext || journeyRoadAnchors.length < 2) return;
+
+    const context = journeyRoadContext;
+    const introFade = clamp((body.scrollTop - innerHeight * .16) / Math.max(1, innerHeight * .68), 0, 1);
+    journeyRoad.style.setProperty("--road-opacity", (introFade * .88).toFixed(3));
+    context.clearRect(0, 0, innerWidth, innerHeight);
+    if (introFade <= .001) return;
+
+    const camera = journeyCameraPosition();
+    const route = [
+      { x: journeyRoadAnchors[0].x, y: journeyRoadAnchors[0].y - innerHeight * 1.16 },
+      ...journeyRoadAnchors,
+      { x: journeyRoadAnchors.at(-1).x, y: journeyRoadAnchors.at(-1).y + innerHeight * 1.16 }
+    ];
+    const points = route.map((point) => ({
+      x: innerWidth * .5 + point.x - camera.x,
+      y: innerHeight * .5 + point.y - camera.y
+    }));
+
+    const shoulderGradient = context.createLinearGradient(0, 0, innerWidth, 0);
+    shoulderGradient.addColorStop(0, "rgba(107, 84, 66, .5)");
+    shoulderGradient.addColorStop(.5, "rgba(164, 133, 103, .72)");
+    shoulderGradient.addColorStop(1, "rgba(107, 84, 66, .5)");
+
+    context.save();
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.shadowColor = "rgba(75, 62, 52, .16)";
+    context.shadowBlur = 24;
+    context.lineWidth = journeyRoadWidth + 30;
+    context.strokeStyle = shoulderGradient;
+    traceJourneyRoadLine(context, points);
+    context.stroke();
+    context.restore();
+
+    const asphaltGradient = context.createLinearGradient(0, 0, innerWidth, 0);
+    asphaltGradient.addColorStop(0, "rgba(73, 86, 88, .84)");
+    asphaltGradient.addColorStop(.5, "rgba(63, 75, 76, .92)");
+    asphaltGradient.addColorStop(1, "rgba(73, 86, 88, .84)");
+
+    context.save();
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.lineWidth = journeyRoadWidth;
+    context.strokeStyle = asphaltGradient;
+    traceJourneyRoadLine(context, points);
+    context.stroke();
+
+    context.setLineDash(innerWidth <= 720 ? [24, 22] : [32, 28]);
+    context.lineDashOffset = reducedMotion ? 0 : -(body.scrollTop * .34);
+    context.lineWidth = innerWidth <= 720 ? 2.8 : 3.4;
+    context.strokeStyle = "rgba(248, 251, 252, .82)";
+    context.shadowColor = "rgba(255, 255, 255, .26)";
+    context.shadowBlur = 5;
+    traceJourneyRoadLine(context, points);
+    context.stroke();
+    context.restore();
+  }
 
   function currentFileName() {
     return decodeURIComponent(location.pathname.split("/").pop() || "").toLowerCase();
@@ -98,7 +298,7 @@
   }
 
   function mountSiteNav() {
-    if (currentFileName() === "transcender.html") return null;
+    if (["transcender.html", "transcendido.html"].includes(currentFileName())) return null;
 
     const nav = document.createElement("nav");
     const list = document.createElement("ul");
@@ -162,46 +362,22 @@
     root.classList.add("is-ready");
   }
 
-  function mountParallaxLayers(chapter) {
-    const stage = chapter.querySelector(".environment-panel") || chapter.querySelector(".chapter-stage");
-    if (!stage || stage.querySelector(".parallax-layer")) return;
+  function mountSectionLink(chapter) {
+    const section = siteSections.find((item) => item.key === chapter.dataset.storySection);
+    const panel = chapter.querySelector(".environment-panel");
+    if (!section || !panel) return;
 
-    const farLayer = document.createElement("span");
-    const nearLayer = document.createElement("span");
-    farLayer.className = "parallax-layer parallax-layer--far";
-    nearLayer.className = "parallax-layer parallax-layer--near";
-    farLayer.setAttribute("aria-hidden", "true");
-    nearLayer.setAttribute("aria-hidden", "true");
-    stage.prepend(farLayer);
-    stage.appendChild(nearLayer);
-  }
+    panel.tabIndex = 0;
+    panel.setAttribute("role", "link");
+    panel.setAttribute("aria-label", `Abrir ${section.label}`);
 
-  function updatePointerParallax() {
-    pointerFrame = 0;
-    pointerX += (pointerTargetX - pointerX) * .085;
-    pointerY += (pointerTargetY - pointerY) * .085;
-
-    body.style.setProperty("--mouse-bg-x", `${(-pointerX * 8).toFixed(2)}px`);
-    body.style.setProperty("--mouse-bg-y", `${(-pointerY * 6).toFixed(2)}px`);
-    body.style.setProperty("--mouse-far-x", `${(-pointerX * 11).toFixed(2)}px`);
-    body.style.setProperty("--mouse-far-y", `${(-pointerY * 9).toFixed(2)}px`);
-    body.style.setProperty("--mouse-orbit-x", `${(pointerX * 18).toFixed(2)}px`);
-    body.style.setProperty("--mouse-orbit-y", `${(pointerY * 14).toFixed(2)}px`);
-    body.style.setProperty("--mouse-title-x", `${(pointerX * 8).toFixed(2)}px`);
-    body.style.setProperty("--mouse-title-y", `${(pointerY * 6).toFixed(2)}px`);
-    body.style.setProperty("--mouse-near-x", `${(pointerX * 38).toFixed(2)}px`);
-    body.style.setProperty("--mouse-near-y", `${(pointerY * 30).toFixed(2)}px`);
-    body.style.setProperty("--mouse-near-rotate", `${(pointerX * 2.4).toFixed(2)}deg`);
-    body.style.setProperty("--mouse-opening-x", `${(pointerX * 20).toFixed(2)}px`);
-    body.style.setProperty("--mouse-opening-y", `${(pointerY * 15).toFixed(2)}px`);
-
-    if (Math.abs(pointerTargetX - pointerX) > .001 || Math.abs(pointerTargetY - pointerY) > .001) {
-      pointerFrame = requestAnimationFrame(updatePointerParallax);
-    }
-  }
-
-  function requestPointerUpdate() {
-    if (!pointerFrame) pointerFrame = requestAnimationFrame(updatePointerParallax);
+    const openSection = () => navigateDirect(section.href);
+    panel.addEventListener("click", openSection);
+    panel.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      openSection();
+    });
   }
 
   function maxScrollableDistance() {
@@ -249,72 +425,11 @@
     wheelTailTimer = setTimeout(startWheelTail, 70);
   }
 
-  function entryVectorFor(path) {
-    switch (path) {
-      case "diagonal-up-right": return { x: -1, y: 1 };
-      case "down": return { x: 0, y: 1 };
-      case "left": return { x: 1, y: 0 };
-      case "diagonal-down-right": return { x: -1, y: -1 };
-      case "up-left": return { x: 1, y: 1 };
-      case "arc-right": return { x: -1, y: 0 };
-      default: return { x: 0, y: 1 };
-    }
-  }
-
-  function rotationStateFor(chapter, index = 0) {
-    let state = rotationStates.get(chapter);
-    if (state) return state;
-
-    state = {
-      active: false,
-      angle: index * 43,
-      direction: index % 2 === 0 ? 1 : -1,
-      speed: 1,
-      slowUntil: 0,
-      wasCentered: false
-    };
-    rotationStates.set(chapter, state);
-    return state;
-  }
-
-  function updateAmbientRotation(timestamp) {
-    const delta = rotationLastTime ? clamp(timestamp - rotationLastTime, 0, 48) : 16.67;
-    rotationLastTime = timestamp;
-    let hasActiveChapter = false;
-
-    chapters.forEach((chapter, index) => {
-      const state = rotationStateFor(chapter, index);
-      if (!state.active) return;
-
-      hasActiveChapter = true;
-      const targetSpeed = timestamp < state.slowUntil ? .14 : 1;
-      const responseTime = targetSpeed < state.speed ? 260 : 520;
-      const blend = 1 - Math.exp(-delta / responseTime);
-      state.speed += (targetSpeed - state.speed) * blend;
-      state.angle = (state.angle + delta * .0085 * state.speed * state.direction + 360) % 360;
-
-      chapter.style.setProperty("--ambient-rotate", `${state.angle.toFixed(2)}deg`);
-      chapter.style.setProperty("--ambient-counter-rotate", `${(-state.angle * .42).toFixed(2)}deg`);
-    });
-
-    if (hasActiveChapter) {
-      rotationFrame = requestAnimationFrame(updateAmbientRotation);
-    } else {
-      rotationFrame = 0;
-      rotationLastTime = 0;
-    }
-  }
-
-  function requestRotationUpdate() {
-    if (!reducedMotion && !rotationFrame) {
-      rotationFrame = requestAnimationFrame(updateAmbientRotation);
-    }
-  }
-
   function updateStoryMotion() {
     ticking = false;
     const maxScroll = Math.max(1, body.scrollHeight - body.clientHeight);
     body.style.setProperty("--page-progress", (body.scrollTop / maxScroll).toFixed(4));
+    drawJourneyRoad();
 
     const opening = document.querySelector(".story-opening");
     if (opening) {
@@ -330,98 +445,44 @@
       opening.style.setProperty("--opening-opacity", (1 - openingExit * .95).toFixed(3));
     }
 
+    const camera = journeyCameraPosition();
+    const storyReveal = clamp((body.scrollTop - innerHeight * .52) / Math.max(1, innerHeight * .42), 0, 1);
+
     chapters.forEach((chapter, index) => {
       const rect = chapter.getBoundingClientRect();
       const travel = Math.max(1, rect.height - innerHeight);
       const progress = clamp(-rect.top / travel, 0, 1);
-      const direction = index % 2 === 0 ? 1 : -1;
-      const centered = progress - .5;
+      const routePoint = journeyRoadAnchors[index] || { x: 0, y: 0 };
+      const sceneX = routePoint.x - camera.x;
+      const sceneY = routePoint.y - camera.y;
+      const normalizedDistance = Math.hypot(
+        sceneX / Math.max(1, innerWidth * .9),
+        sceneY / Math.max(1, innerHeight * .9)
+      );
+      const sceneVisibility = clamp(1 - normalizedDistance / 1.08, 0, 1) * storyReveal;
       const motionScale = innerWidth <= 720 ? .46 : innerWidth <= 1000 ? .72 : 1;
-      const sceneScale = innerWidth <= 720 ? .72 : 1;
-      const entryVector = entryVectorFor(chapter.dataset.scrollPath);
-      const nextChapter = chapters[index + 1];
-      const nextEntryVector = nextChapter ? entryVectorFor(nextChapter.dataset.scrollPath) : { x: 0, y: 0 };
-      const approach = index === 0
-        ? clamp(-rect.top / Math.max(1, innerHeight * .24), 0, 1)
-        : clamp((innerHeight - rect.top) / Math.max(1, innerHeight * .86), 0, 1);
-      const entryEase = 1 - Math.pow(1 - approach, 3);
-      const exitProgress = nextChapter ? clamp((progress - .5) / .5, 0, 1) : 0;
-      const exitEase = exitProgress * exitProgress * exitProgress
-        * (exitProgress * (exitProgress * 6 - 15) + 10);
-      const rotationState = rotationStateFor(chapter, index);
-      const reachedCenter = index === 0 ? entryEase >= .985 : rect.top <= innerHeight * .015;
-      const isCentered = reachedCenter && exitProgress <= .08;
-      rotationState.active = entryEase > .015 && exitEase < .995;
-      if (isCentered && !rotationState.wasCentered) {
-        rotationState.slowUntil = performance.now() + 1500;
-      }
-      rotationState.wasCentered = isCentered;
-      const sceneDistanceX = innerWidth * .72 * sceneScale;
-      const sceneDistanceY = innerHeight * .82 * sceneScale;
-      const stageScrollCompensationY = index === 0 ? 0 : Math.max(rect.top, 0) * entryEase;
-      const sceneX = (1 - entryEase) * entryVector.x * sceneDistanceX - exitEase * nextEntryVector.x * sceneDistanceX;
-      const sceneY = (1 - entryEase) * entryVector.y * sceneDistanceY
-        - stageScrollCompensationY
-        - exitEase * nextEntryVector.y * sceneDistanceY;
-      let titleX = 0;
-      let titleY = 0;
+      chapter.classList.toggle("is-visible", sceneVisibility > .18);
+      chapter.classList.toggle("is-on-route", normalizedDistance < 1.38);
+      chapter.classList.toggle("is-clickable", sceneVisibility > .72);
+      chapter.style.zIndex = `${Math.max(1, Math.round(sceneVisibility * 100))}`;
 
-      switch (chapter.dataset.scrollPath) {
-        case "diagonal-up-right":
-          titleX = centered * 190;
-          titleY = -centered * 130;
-          break;
-        case "down":
-          titleX = Math.sin(progress * Math.PI) * 22;
-          titleY = centered * 170;
-          break;
-        case "left":
-          titleX = -centered * 220;
-          titleY = Math.sin(progress * Math.PI) * -24;
-          break;
-        case "diagonal-down-right":
-          titleX = centered * 180;
-          titleY = centered * 125;
-          break;
-        case "up-left":
-          titleX = -centered * 155;
-          titleY = -centered * 165;
-          break;
-        case "arc-right":
-          titleX = centered * 200;
-          titleY = (.5 - Math.sin(progress * Math.PI)) * 92;
-          break;
-        default:
-          titleY = centered * 80;
-      }
-
-      titleX *= motionScale;
-      titleY *= motionScale;
+      const titleX = clamp(-sceneX * .045, -54, 54) * motionScale;
+      const titleY = clamp(-sceneY * .038, -42, 42) * motionScale;
+      const proximity = 1 - clamp(normalizedDistance, 0, 1);
 
       chapter.style.setProperty("--chapter-y", `${(-titleY * .3).toFixed(1)}px`);
       chapter.style.setProperty("--chapter-x", `${(-titleX * .28).toFixed(1)}px`);
-      chapter.style.setProperty("--chapter-orbit-x", `${(-titleX * .72 + centered * 38 * direction).toFixed(1)}px`);
-      chapter.style.setProperty("--chapter-orbit-y", `${(-titleY * .54).toFixed(1)}px`);
       chapter.style.setProperty("--chapter-title-x", `${titleX.toFixed(1)}px`);
       chapter.style.setProperty("--chapter-title-y", `${titleY.toFixed(1)}px`);
       chapter.style.setProperty("--chapter-index-y", `${(-titleY * .2).toFixed(1)}px`);
-      chapter.style.setProperty("--chapter-light-x", `${(-18 + progress * 36).toFixed(1)}%`);
-      chapter.style.setProperty("--chapter-scale", (0.95 + progress * .1).toFixed(3));
-      chapter.style.setProperty("--chapter-rotate", `${(-7 + progress * 14).toFixed(1)}deg`);
-      chapter.style.setProperty("--parallax-far-x", `${(-titleX * .2 + centered * 34 * direction * motionScale).toFixed(1)}px`);
-      chapter.style.setProperty("--parallax-far-y", `${(-titleY * .22).toFixed(1)}px`);
-      chapter.style.setProperty("--parallax-near-x", `${(titleX * 1.42 + centered * 62 * direction * motionScale).toFixed(1)}px`);
-      chapter.style.setProperty("--parallax-near-y", `${(titleY * 1.3).toFixed(1)}px`);
-      chapter.style.setProperty("--parallax-far-scale", (0.96 + progress * .08).toFixed(3));
-      chapter.style.setProperty("--parallax-near-scale", (0.92 + progress * .16).toFixed(3));
-      chapter.style.setProperty("--parallax-near-rotate", `${(-8 + progress * 16).toFixed(1)}deg`);
+      chapter.style.setProperty("--chapter-light-x", `${(-12 + proximity * 24).toFixed(1)}%`);
+      chapter.style.setProperty("--chapter-scale", (0.96 + proximity * .04).toFixed(3));
+      chapter.style.setProperty("--chapter-rotate", `${((progress - .5) * 7).toFixed(1)}deg`);
       chapter.style.setProperty("--scene-x", `${sceneX.toFixed(1)}px`);
       chapter.style.setProperty("--scene-y", `${sceneY.toFixed(1)}px`);
-      chapter.style.setProperty("--scene-scale", (0.965 + entryEase * .035 - exitEase * .04).toFixed(3));
-      chapter.style.setProperty("--scene-opacity", Math.max(.08, entryEase * (1 - exitEase * .9)).toFixed(3));
+      chapter.style.setProperty("--scene-scale", (1 - Math.min(.055, normalizedDistance * .035)).toFixed(3));
     });
 
-    requestRotationUpdate();
     updateSiteNavActive();
   }
 
@@ -433,9 +494,10 @@
 
   siteNav = mountSiteNav();
   document.querySelectorAll("[data-fold-text]").forEach(mountFoldText);
-  chapters.forEach(mountParallaxLayers);
+  chapters.forEach(mountSectionLink);
+  resizeJourneyRoad();
 
-  if (chapters.length) {
+  if (chapters.length && !isStoryPage) {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         entry.target.classList.toggle("is-visible", entry.isIntersecting && entry.intersectionRatio >= .12);
@@ -450,25 +512,14 @@
     });
   });
 
-  if (!reducedMotion && matchMedia("(pointer: fine)").matches) {
-    body.addEventListener("pointermove", (event) => {
-      pointerTargetX = clamp((event.clientX / Math.max(1, innerWidth) - .5) * 2, -1, 1);
-      pointerTargetY = clamp((event.clientY / Math.max(1, innerHeight) - .5) * 2, -1, 1);
-      requestPointerUpdate();
-    }, { passive: true });
-
-    body.addEventListener("pointerleave", () => {
-      pointerTargetX = 0;
-      pointerTargetY = 0;
-      requestPointerUpdate();
-    }, { passive: true });
-  }
-
   body.addEventListener("scroll", requestStoryUpdate, { passive: true });
   if (isStoryPage && !reducedMotion) {
     body.addEventListener("wheel", handleStoryWheel, { passive: false });
   }
-  addEventListener("resize", requestStoryUpdate, { passive: true });
+  addEventListener("resize", () => {
+    resizeJourneyRoad();
+    requestStoryUpdate();
+  }, { passive: true });
 
   requestAnimationFrame(() => {
     if (isStoryPage && location.hash) {
