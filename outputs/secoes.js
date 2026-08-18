@@ -187,10 +187,13 @@
     if (introFade <= .001) return;
 
     const camera = journeyCameraPosition();
+    // Extend the first and last segments well beyond the camera. This keeps the
+    // rounded road caps outside the viewport while the visitor enters or exits
+    // the journey, rather than showing them as a circular road end.
     const route = [
-      { x: journeyRoadAnchors[0].x, y: journeyRoadAnchors[0].y - innerHeight * 1.16 },
+      { x: journeyRoadAnchors[0].x, y: journeyRoadAnchors[0].y - innerHeight * 2.35 },
       ...journeyRoadAnchors,
-      { x: journeyRoadAnchors.at(-1).x, y: journeyRoadAnchors.at(-1).y + innerHeight * 1.16 }
+      { x: journeyRoadAnchors.at(-1).x, y: journeyRoadAnchors.at(-1).y + innerHeight * 2.35 }
     ];
     const points = route.map((point) => ({
       x: innerWidth * .5 + point.x - camera.x,
