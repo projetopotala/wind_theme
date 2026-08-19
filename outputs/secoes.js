@@ -43,9 +43,12 @@
     if (!journeyRoadContext) return;
 
     const verticalStep = innerHeight * (innerWidth <= 720 ? 1.06 : 1.18);
-    const turnDrop = innerHeight * (innerWidth <= 720 ? .42 : .54);
-    const horizontalStep = innerWidth * (innerWidth <= 720 ? .98 : 1.08);
-    const secondTurnWidth = innerWidth * (innerWidth <= 720 ? .28 : .36);
+    // Give every information stop a long, straight stretch of road. The
+    // curves then happen completely outside the viewport while a panel is
+    // being shown, instead of bending behind the content.
+    const turnDrop = innerHeight * (innerWidth <= 720 ? 1.12 : 1.3);
+    const horizontalStep = innerWidth * (innerWidth <= 720 ? 1.35 : 1.55);
+    const secondTurnWidth = innerWidth * (innerWidth <= 720 ? 1.15 : 1.35);
     journeyRoadAnchors = chapters.map((chapter, index) => {
       if (index === 0) return { x: 0, y: 0 };
       if (index === 1) return { x: 0, y: verticalStep };
@@ -59,6 +62,36 @@
     journeyMilestones = chapters.map(documentTopFor);
   }
 
+  function journeyLayoutFor(chapter) {
+    const position = chapter?.dataset.roadPosition || "center";
+    const compact = innerWidth <= 720;
+    const roadSide = compact ? innerWidth * .43 : Math.min(innerWidth * .34, 560);
+    const panelSide = compact ? innerWidth * .16 : Math.min(innerWidth * .23, 440);
+    const roadVertical = compact ? innerHeight * .41 : innerHeight * .36;
+    const panelVertical = compact ? innerHeight * .19 : innerHeight * .2;
+
+    if (position === "left") {
+      return { road: { x: -roadSide, y: 0 }, panel: { x: panelSide, y: 0 } };
+    }
+    if (position === "right") {
+      return { road: { x: roadSide, y: 0 }, panel: { x: -panelSide, y: 0 } };
+    }
+    if (position === "bottom") {
+      return { road: { x: 0, y: roadVertical }, panel: { x: 0, y: -panelVertical } };
+    }
+    if (position === "top") {
+      return { road: { x: 0, y: -roadVertical }, panel: { x: 0, y: panelVertical } };
+    }
+    return { road: { x: 0, y: 0 }, panel: { x: 0, y: 0 } };
+  }
+
+  function interpolatePoint(from, to, progress) {
+    return {
+      x: from.x + (to.x - from.x) * progress,
+      y: from.y + (to.y - from.y) * progress
+    };
+  }
+
   function resizeJourneyRoad() {
     if (!journeyRoadContext) return;
 
@@ -67,8 +100,8 @@
     journeyRoad.height = Math.max(1, Math.round(innerHeight * dpr));
     journeyRoadContext.setTransform(dpr, 0, 0, dpr, 0, 0);
     journeyRoadWidth = innerWidth <= 720
-      ? clamp(innerWidth * .72, 230, 340)
-      : clamp(innerWidth * .44, 480, 820);
+      ? clamp(innerWidth * .34, 120, 170)
+      : clamp(innerWidth * .17, 220, 340);
     buildJourneyRoadAnchors();
   }
 
@@ -126,6 +159,7 @@
   function journeyCameraPosition() {
     if (!journeyRoadAnchors.length || !journeyMilestones.length) return { x: 0, y: 0 };
     if (body.scrollTop <= journeyMilestones[0]) {
+      const firstRoadFrame = journeyLayoutFor(chapters[0]).road;
       const entryStart = Math.max(0, journeyMilestones[0] - innerHeight * .36);
       const entryProgress = smoothstep(clamp(
         (body.scrollTop - entryStart) / Math.max(1, journeyMilestones[0] - entryStart),
@@ -133,8 +167,8 @@
         1
       ));
       return {
-        x: journeyRoadAnchors[0].x,
-        y: journeyRoadAnchors[0].y - innerHeight * 1.08 * (1 - entryProgress)
+        x: journeyRoadAnchors[0].x - firstRoadFrame.x,
+        y: journeyRoadAnchors[0].y - firstRoadFrame.y - innerHeight * 1.08 * (1 - entryProgress)
       };
     }
 
@@ -143,38 +177,52 @@
       const end = journeyMilestones[index + 1];
       if (body.scrollTop > end) continue;
 
-      const progress = smoothstep(clamp((body.scrollTop - start) / Math.max(1, end - start), 0, 1));
+      const scrollProgress = clamp((body.scrollTop - start) / Math.max(1, end - start), 0, 1);
+      // Keep the camera on each straight while its information is present.
+      // The route only travels between 36% and 64% of the interval, when both
+      // neighbouring panels have already cleared the viewport.
+      const progress = smoothstep(clamp((scrollProgress - .36) / .28, 0, 1));
       const from = journeyRoadAnchors[index];
       const to = journeyRoadAnchors[index + 1];
+      const fromFrame = journeyLayoutFor(chapters[index]).road;
+      const toFrame = journeyLayoutFor(chapters[index + 1]).road;
+      const roadFrame = interpolatePoint(fromFrame, toFrame, progress);
+      let routePoint;
       if (index === 1) {
         const turnWidth = to.x - from.x;
         const turnHeight = to.y - from.y;
-        return cubicPoint(
+        routePoint = cubicPoint(
           from,
           { x: from.x, y: from.y + turnHeight * .72 },
           { x: to.x - turnWidth * .58, y: to.y },
           to,
           progress
         );
-      }
-      if (index === 3) {
+      } else if (index === 3) {
         const turnWidth = to.x - from.x;
         const turnHeight = to.y - from.y;
-        return cubicPoint(
+        routePoint = cubicPoint(
           from,
           { x: from.x + turnWidth * .72, y: from.y },
           { x: to.x, y: to.y - turnHeight * .58 },
           to,
           progress
         );
+      } else {
+        routePoint = interpolatePoint(from, to, progress);
       }
       return {
-        x: from.x + (to.x - from.x) * progress,
-        y: from.y + (to.y - from.y) * progress
+        x: routePoint.x - roadFrame.x,
+        y: routePoint.y - roadFrame.y
       };
     }
 
-    return journeyRoadAnchors.at(-1);
+    const finalAnchor = journeyRoadAnchors.at(-1);
+    const finalRoadFrame = journeyLayoutFor(chapters.at(-1)).road;
+    return {
+      x: finalAnchor.x - finalRoadFrame.x,
+      y: finalAnchor.y - finalRoadFrame.y
+    };
   }
 
   function drawJourneyRoad() {
@@ -210,7 +258,7 @@
     context.lineJoin = "round";
     context.shadowColor = "rgba(75, 62, 52, .16)";
     context.shadowBlur = 24;
-    context.lineWidth = journeyRoadWidth + 30;
+    context.lineWidth = journeyRoadWidth + 14;
     context.strokeStyle = shoulderGradient;
     traceJourneyRoadLine(context, points);
     context.stroke();
@@ -456,16 +504,38 @@
       const travel = Math.max(1, rect.height - innerHeight);
       const progress = clamp(-rect.top / travel, 0, 1);
       const routePoint = journeyRoadAnchors[index] || { x: 0, y: 0 };
-      const sceneX = routePoint.x - camera.x;
-      const sceneY = routePoint.y - camera.y;
-      const normalizedDistance = Math.hypot(
-        sceneX / Math.max(1, innerWidth * .9),
-        sceneY / Math.max(1, innerHeight * .9)
+      const layout = journeyLayoutFor(chapter);
+      const relativeX = routePoint.x - camera.x - layout.road.x;
+      const relativeY = routePoint.y - camera.y - layout.road.y;
+      const previousGap = index > 0
+        ? journeyMilestones[index] - journeyMilestones[index - 1]
+        : journeyMilestones[1] - journeyMilestones[0];
+      const nextGap = index < journeyMilestones.length - 1
+        ? journeyMilestones[index + 1] - journeyMilestones[index]
+        : previousGap;
+      const nearestGap = Math.min(previousGap, nextGap);
+      const holdRadius = nearestGap * .1;
+      const releaseRadius = nearestGap * .35;
+      const focusDistance = Math.abs(body.scrollTop - journeyMilestones[index]);
+      const releaseProgress = clamp(
+        (focusDistance - holdRadius) / Math.max(1, releaseRadius - holdRadius),
+        0,
+        1
       );
-      const sceneVisibility = clamp(1 - normalizedDistance / 1.08, 0, 1) * storyReveal;
+      const chapterPresence = 1 - smoothstep(releaseProgress);
+      const exitProgress = 1 - chapterPresence;
+      const exitX = Math.sign(layout.panel.x) * exitProgress * innerWidth * (innerWidth <= 720 ? .5 : .66);
+      const exitY = Math.sign(layout.panel.y) * exitProgress * innerHeight * (innerWidth <= 720 ? .62 : .72);
+      const sceneX = relativeX + layout.panel.x + exitX;
+      const sceneY = relativeY + layout.panel.y + exitY;
+      const normalizedDistance = Math.hypot(
+        relativeX / Math.max(1, innerWidth * .9),
+        relativeY / Math.max(1, innerHeight * .9)
+      );
+      const sceneVisibility = clamp(1 - normalizedDistance / 1.08, 0, 1) * chapterPresence * storyReveal;
       const motionScale = innerWidth <= 720 ? .46 : innerWidth <= 1000 ? .72 : 1;
       chapter.classList.toggle("is-visible", sceneVisibility > .18);
-      chapter.classList.toggle("is-on-route", normalizedDistance < 1.38);
+      chapter.classList.toggle("is-on-route", chapterPresence > .015 && normalizedDistance < 1.24);
       chapter.classList.toggle("is-clickable", sceneVisibility > .72);
       chapter.style.zIndex = `${Math.max(1, Math.round(sceneVisibility * 100))}`;
 
@@ -484,6 +554,7 @@
       chapter.style.setProperty("--scene-x", `${sceneX.toFixed(1)}px`);
       chapter.style.setProperty("--scene-y", `${sceneY.toFixed(1)}px`);
       chapter.style.setProperty("--scene-scale", (1 - Math.min(.055, normalizedDistance * .035)).toFixed(3));
+      chapter.style.setProperty("--scene-opacity", (chapterPresence * storyReveal).toFixed(3));
     });
 
     updateSiteNavActive();
