@@ -64,9 +64,9 @@ export function buildJourneyLayout(regions, viewport = {}) {
 
     const center = sampleSegment(straight, .5);
     const side = mobile
-      ? (index % 2 === 0 ? -1 : 1)
+      ? (index % 2 === 0 ? 1 : -1)
       : (region.roadPlacement === "left" ? -1 : 1);
-    const roadOffsetX = side * width * (mobile ? .29 : .24);
+    const roadOffsetX = side * width * (mobile ? .33 : .3);
     checkpoints.push({
       id: region.id,
       x: center.x,

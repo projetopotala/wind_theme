@@ -23,6 +23,24 @@ function roadOffsetForScroll(scrollCenter, regions, checkpoints) {
   return checkpoints.at(-1)?.roadOffsetX || 0;
 }
 
+function roadProgressForScroll(scrollCenter, elements, layout) {
+  let covered = 0;
+  for (let index = 0; index < layout.segments.length; index += 1) {
+    const segment = layout.segments[index];
+    const element = elements[index];
+    if (!element) break;
+    const start = element.offsetTop;
+    const end = start + element.offsetHeight;
+    if (scrollCenter < start) return clamp(covered / layout.totalLength);
+    if (scrollCenter <= end) {
+      const local = clamp((scrollCenter - start) / Math.max(1, end - start));
+      return clamp((covered + segment.length * local) / layout.totalLength);
+    }
+    covered += segment.length;
+  }
+  return 1;
+}
+
 function mountSoundResume(root, enabled) {
   if (!enabled) return () => {};
   const audio = document.createElement("audio");
@@ -105,8 +123,11 @@ export function createHomeController({
     dirty = false;
     const viewportHeight = innerHeight;
     const scrollTop = scrollY;
-    const available = Math.max(1, document.documentElement.scrollHeight - viewportHeight);
-    const journeyProgress = clamp(scrollTop / available);
+    const journeyProgress = roadProgressForScroll(
+      scrollTop + viewportHeight * .5,
+      mounted.pathSections,
+      road.layout,
+    );
     road.setProgress(journeyProgress);
     road.setOffset(roadOffsetForScroll(scrollTop + viewportHeight * .5, mounted.regions, road.layout.checkpoints));
 
@@ -188,6 +209,19 @@ export function mountHomeJourney() {
   const root = document.getElementById("journey-root");
   const canvas = document.getElementById("journey-road");
   activeController = createHomeController({ root, canvas });
-  window.addEventListener("pagehide", () => activeController?.destroy(), { once: true });
+  const onPageHide = (event) => {
+    if (!event.persisted) activeController?.destroy();
+  };
+  const onPageShow = (event) => {
+    if (event.persisted) window.dispatchEvent(new Event("resize"));
+  };
+  const destroy = activeController.destroy.bind(activeController);
+  activeController.destroy = () => {
+    window.removeEventListener("pagehide", onPageHide);
+    window.removeEventListener("pageshow", onPageShow);
+    destroy();
+  };
+  window.addEventListener("pagehide", onPageHide);
+  window.addEventListener("pageshow", onPageShow);
   return activeController;
 }

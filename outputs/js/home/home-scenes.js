@@ -138,6 +138,7 @@ export function mountJourney(root, { regions, discoveries }) {
   return {
     regions: [...root.querySelectorAll(".journey-region")],
     silences: [...root.querySelectorAll(".journey-silence")],
+    pathSections: [...root.querySelectorAll(".journey-region, .journey-silence")],
     discoveries: [...root.querySelectorAll(".journey-discovery")],
   };
 }

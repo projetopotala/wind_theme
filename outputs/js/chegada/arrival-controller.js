@@ -62,6 +62,33 @@ if (arrival && visual && canvas && dragButton) {
     soundEnabled = Boolean(event.detail?.enabled);
   };
   const onVisibilityChange = () => document.hidden ? scene.pause() : scene.resume();
+  const cleanup = () => {
+    cancelAnimationFrame(scrollFrame);
+    drag.destroy();
+    scene.destroy();
+    window.removeEventListener("scroll", queueScroll);
+    window.removeEventListener("resize", queueScroll);
+    window.removeEventListener("pointermove", updatePointer);
+    window.removeEventListener("pagehide", onPageHide);
+    window.removeEventListener("pageshow", onPageShow);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    document.removeEventListener("potala:breath-state", onBreathState);
+    document.removeEventListener("potala:sound-state", onSoundState);
+  };
+  const onPageHide = (event) => {
+    if (event.persisted) scene.pause();
+    else cleanup();
+  };
+  const onPageShow = (event) => {
+    if (!event.persisted) return;
+    delete document.documentElement.dataset.transitioning;
+    document.documentElement.classList.remove("is-crossing");
+    document.body.classList.remove("is-arrival-transitioning");
+    drag.reset();
+    lastScrollY = window.scrollY;
+    scene.resume();
+    queueScroll();
+  };
 
   window.addEventListener("scroll", queueScroll, { passive: true });
   window.addEventListener("resize", queueScroll, { passive: true });
@@ -69,17 +96,7 @@ if (arrival && visual && canvas && dragButton) {
   document.addEventListener("visibilitychange", onVisibilityChange);
   document.addEventListener("potala:breath-state", onBreathState);
   document.addEventListener("potala:sound-state", onSoundState);
+  window.addEventListener("pagehide", onPageHide);
+  window.addEventListener("pageshow", onPageShow);
   updateScroll();
-
-  window.addEventListener("pagehide", () => {
-    cancelAnimationFrame(scrollFrame);
-    drag.destroy();
-    scene.destroy();
-    window.removeEventListener("scroll", queueScroll);
-    window.removeEventListener("resize", queueScroll);
-    window.removeEventListener("pointermove", updatePointer);
-    document.removeEventListener("visibilitychange", onVisibilityChange);
-    document.removeEventListener("potala:breath-state", onBreathState);
-    document.removeEventListener("potala:sound-state", onSoundState);
-  }, { once: true });
 }

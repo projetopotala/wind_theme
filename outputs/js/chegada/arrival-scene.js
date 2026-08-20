@@ -190,7 +190,9 @@ export function createArrivalScene({
 
   const fallback = (reason) => {
     canvas.hidden = true;
-    canvas.closest(".arrival-visual")?.classList.add("is-fallback");
+    const visual = canvas.closest(".arrival-visual");
+    visual?.classList.remove("is-scene-ready");
+    visual?.classList.add("is-fallback", "is-scene-fallback");
     emit("potala:scene-fallback", { reason });
   };
 

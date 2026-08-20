@@ -20,7 +20,10 @@ function tracePath(layout) {
   const path = new Path2D();
   const first = layout.segments[0];
   if (!first) return path;
-  path.moveTo(first.from.x, first.from.y);
+  path.moveTo(
+    first.from.x - first.direction.x * layout.height * 3,
+    first.from.y - first.direction.y * layout.height * 3,
+  );
   for (const segment of layout.segments) {
     if (segment.kind === "curve") {
       path.quadraticCurveTo(segment.control.x, segment.control.y, segment.to.x, segment.to.y);
@@ -28,6 +31,11 @@ function tracePath(layout) {
       path.lineTo(segment.to.x, segment.to.y);
     }
   }
+  const last = layout.segments.at(-1);
+  path.lineTo(
+    last.to.x + last.direction.x * layout.height * 3,
+    last.to.y + last.direction.y * layout.height * 3,
+  );
   return path;
 }
 
@@ -35,6 +43,7 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
   if (!canvas) throw new TypeError("canvas é obrigatório para a estrada");
   const context = canvas.getContext("2d", { alpha: true });
   if (!context) return { setProgress() {}, resize() {}, destroy() {} };
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   let width = Math.max(320, viewport.width || innerWidth);
   let height = Math.max(480, viewport.height || innerHeight);
@@ -87,7 +96,7 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     context.strokeStyle = "rgba(244, 246, 239, .86)";
     context.lineWidth = Math.max(2, roadWidth * .018);
     context.setLineDash([Math.max(24, roadWidth * .25), Math.max(28, roadWidth * .3)]);
-    context.lineDashOffset = -progress * 80;
+    context.lineDashOffset = reducedMotion ? 0 : -progress * 80;
     context.stroke(path);
     context.restore();
   }
