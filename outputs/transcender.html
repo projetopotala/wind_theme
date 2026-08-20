@@ -9,7 +9,7 @@
   <link rel="preload" href="media/chegada-landscape.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="respiracao.css">
   <link rel="stylesheet" href="css/chegada-scene.css">
-  <script src="respiracao.js" defer></script>
+  <script type="module" src="respiracao.js"></script>
   <script type="module" src="js/chegada/arrival-controller.js"></script>
 </head>
 <body>
@@ -36,6 +36,43 @@
         <span>CHEGADA</span>
         <i></i>
       </div>
+
+      <button class="breath-launcher" id="breath-launcher" type="button"
+        aria-controls="breathing-guide" aria-expanded="false">
+        <span class="breath-launcher-mark" aria-hidden="true"></span>
+        <span>RESPIRAR</span>
+      </button>
+
+      <section class="breathing-guide" id="breathing-guide" aria-labelledby="breathing-phase" hidden>
+        <button class="breath-close" id="breath-close" type="button" aria-label="Sair da respiração">
+          <span aria-hidden="true"></span>
+        </button>
+        <p class="breathing-kicker">Respiração · Técnica 3-3-3</p>
+        <div class="breathing-visual" aria-hidden="true">
+          <span class="breathing-ring"></span>
+          <div class="breathing-orb" id="breathing-orb">
+            <span id="breathing-countdown">3</span>
+          </div>
+        </div>
+        <p class="breathing-phase" id="breathing-phase" aria-live="polite">PREPARE-SE</p>
+        <p class="breathing-cycle" id="breathing-cycle">CICLO 0 DE 8</p>
+        <div class="breathing-track" aria-label="Progresso da respiração">
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="breathing-actions">
+          <button id="breathing-restart" type="button" hidden>Recomeçar</button>
+          <button id="breathing-start" type="button">Iniciar</button>
+          <button id="breathing-stop" type="button" hidden>Pausar</button>
+        </div>
+      </section>
+
+      <button class="ambient-sound" id="ambient-sound" type="button"
+        aria-label="Ativar som ambiente" aria-pressed="false">
+        <span class="ambient-sound-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>SOM</span>
+      </button>
+      <audio id="ambient-audio" src="musica-fundo.mp3" loop preload="none"></audio>
 
       <div class="arrival-scroll-cue" aria-hidden="true">
         <span></span>

@@ -19,7 +19,6 @@ if (arrival && visual && canvas && dragButton) {
 
   let scrollFrame = 0;
   let transitioning = false;
-  let breathObserver;
 
   const updateScroll = () => {
     scrollFrame = 0;
@@ -59,24 +58,6 @@ if (arrival && visual && canvas && dragButton) {
     globalKeyboard: true,
   });
 
-  const phaseFromDialog = (dialog) => {
-    if (!dialog?.open || dialog.classList.contains("phase-complete")) return "idle";
-    if (dialog.classList.contains("phase-inhale")) return "inhale";
-    if (dialog.classList.contains("phase-hold")) return "hold";
-    if (dialog.classList.contains("phase-exhale")) return "exhale";
-    if (document.getElementById("breathing-stop")?.textContent === "CONTINUAR") return "paused";
-    return "idle";
-  };
-
-  const connectBreathing = () => {
-    const dialog = document.getElementById("breathing-dialog");
-    if (!dialog) return;
-    const sync = () => scene.setBreathState(phaseFromDialog(dialog));
-    breathObserver = new MutationObserver(sync);
-    breathObserver.observe(dialog, { attributes: true, attributeFilter: ["class", "open"] });
-    sync();
-  };
-
   const onBreathState = (event) => scene.setBreathState(event.detail?.phase || "idle");
   const onVisibilityChange = () => document.hidden ? scene.pause() : scene.resume();
 
@@ -85,12 +66,10 @@ if (arrival && visual && canvas && dragButton) {
   window.addEventListener("pointermove", updatePointer, { passive: true });
   document.addEventListener("visibilitychange", onVisibilityChange);
   document.addEventListener("potala:breath-state", onBreathState);
-  window.addEventListener("load", connectBreathing, { once: true });
   updateScroll();
 
   window.addEventListener("pagehide", () => {
     cancelAnimationFrame(scrollFrame);
-    breathObserver?.disconnect();
     drag.destroy();
     scene.destroy();
     window.removeEventListener("scroll", queueScroll);
