@@ -2,6 +2,7 @@ import { consumeHandoff } from "../core/travessia-state.js";
 import { JOURNEY_DISCOVERIES, JOURNEY_REGIONS } from "./journey-data.js";
 import { createHomeRoad } from "./home-road.js";
 import { mountJourney, presenceForDistance } from "./home-scenes.js";
+import { createLateralExploration } from "./lateral-exploration.js";
 
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
 const lerp = (from, to, progress) => from + (to - from) * progress;
@@ -71,6 +72,14 @@ export function createHomeController({
   const road = createHomeRoad(canvas, { regions: data.regions });
   const handoff = consumeHandoff();
   const removeSound = mountSoundResume(root, handoff.soundEnabled === true);
+  const lateralControllers = data.regions.flatMap((region, index) => {
+    if (!region.lateral) return [];
+    const stage = mounted.regions[index]?.querySelector(".region-stage");
+    return stage ? [createLateralExploration(stage, {
+      limit: Math.min(340, Math.max(210, innerWidth * .24)),
+      reducedMotion,
+    })] : [];
+  });
   let frameId = 0;
   let dirty = true;
   let destroyed = false;
@@ -163,6 +172,7 @@ export function createHomeController({
       destroyed = true;
       cancelAnimationFrame(frameId);
       road.destroy();
+      lateralControllers.forEach((controller) => controller.destroy());
       removeSound();
       window.removeEventListener("scroll", requestUpdate);
       window.removeEventListener("resize", onResize);
