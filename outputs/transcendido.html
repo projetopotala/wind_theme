@@ -3,149 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#edf6fb">
-  <title>Instituto Potala</title>
+  <meta name="theme-color" content="#edf1ed">
+  <meta name="description" content="Percorra o Ecossistema Potala: cuidado, conhecimento, atividades, pessoas, cultura e inspiração.">
+  <title>Instituto Potala — A Travessia</title>
   <script>document.documentElement.classList.add("js");</script>
   <link rel="stylesheet" href="secoes.css">
-  <script src="secoes.js" defer></script>
+  <script type="module" src="secoes.js"></script>
 </head>
-<body data-section="inicio" data-entry="center" data-has-intro="true" data-story-page="true">
+<body data-story-page="true">
+  <a class="skip-link" href="#journey-root">Ir para a jornada</a>
   <canvas class="journey-road" id="journey-road" aria-hidden="true"></canvas>
+  <div class="journey-entry-road" aria-hidden="true"><span></span></div>
+  <main id="journey-root" aria-label="Travessia pelo Ecossistema Potala"></main>
 
-  <section class="welcome-view story-opening" id="inicio" data-story-section="inicio" aria-label="Bem-vindo">
-    <div class="opening-panel">
-      <div class="opening-halo" aria-hidden="true"></div>
-      <h1 class="page-title fold-text" data-fold-text="Bem-vindo.">Bem-vindo.</h1>
-      <button class="down-hint" type="button" data-scroll-to="atendimentos" aria-label="Descer para Atendimentos">↓</button>
-    </div>
-  </section>
-
-  <main class="story-flow" aria-label="Seções do Instituto Potala">
-    <section class="story-chapter story-chapter--left" id="atendimentos" data-story-section="atendimentos" data-road-position="left" data-scroll-path="diagonal-up-right">
-      <div class="chapter-stage">
-        <div class="environment-panel">
-          <span class="chapter-index" aria-hidden="true">01</span>
-          <span class="chapter-orbit chapter-orbit--wide" aria-hidden="true"></span>
-          <div class="chapter-content">
-            <h2 class="chapter-title">Atendimentos</h2>
-            <div class="chapter-details">
-              <p>Um espaço de escuta, acolhimento e orientação para o momento que você está vivendo.</p>
-              <ul class="chapter-tags" aria-label="Exemplos de atendimentos">
-                <li>Escuta individual</li>
-                <li>Vivências em grupo</li>
-                <li>Orientação inicial</li>
-              </ul>
-              <span class="chapter-link-label">Conhecer atendimentos <b aria-hidden="true">↗</b></span>
-            </div>
-          </div>
-        </div>
-      </div>
+  <noscript>
+    <section class="journey-noscript" aria-labelledby="journey-noscript-title">
+      <h1 id="journey-noscript-title">Ecossistema Potala</h1>
+      <p>Escolha um caminho para continuar:</p>
+      <ul>
+        <li><a href="https://www.institutopotala.com/quemsomos">Quem somos</a></li>
+        <li><a href="atendimentos.html">Atendimentos</a></li>
+        <li><a href="cursos.html">Cursos</a></li>
+        <li><a href="atividades.html">Atividades</a></li>
+        <li><a href="https://www.institutopotala.com/terapias">Profissionais</a></li>
+        <li><a href="programacao.html">Programação</a></li>
+        <li><a href="cultura.html">Arte e cultura</a></li>
+        <li><a href="https://www.institutopotala.com/">Inspiração</a></li>
+      </ul>
     </section>
-
-    <section class="story-chapter story-chapter--right story-chapter--cool" id="atividades" data-story-section="atividades" data-road-position="right" data-scroll-path="down">
-      <div class="chapter-stage">
-        <div class="environment-panel">
-          <span class="chapter-index" aria-hidden="true">02</span>
-          <span class="chapter-orbit" aria-hidden="true"></span>
-          <div class="chapter-content">
-            <h2 class="chapter-title">Atividades</h2>
-            <div class="chapter-details">
-              <p>Práticas compartilhadas para desacelerar, criar presença e cultivar novas formas de estar.</p>
-              <ul class="chapter-tags" aria-label="Exemplos de atividades">
-                <li>Meditação</li>
-                <li>Movimento consciente</li>
-                <li>Rodas de conversa</li>
-              </ul>
-              <span class="chapter-link-label">Ver atividades <b aria-hidden="true">↗</b></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="story-chapter story-chapter--center story-chapter--light story-chapter--horizontal" id="cursos" data-story-section="cursos" data-road-position="bottom" data-scroll-path="horizontal-right" data-story-axis="horizontal-right">
-      <div class="chapter-stage">
-        <div class="environment-panel">
-          <span class="chapter-index" aria-hidden="true">03</span>
-          <span class="chapter-orbit chapter-orbit--wide" aria-hidden="true"></span>
-          <div class="chapter-content">
-            <h2 class="chapter-title">Cursos</h2>
-            <div class="chapter-details">
-              <p>Experiências de aprendizagem que aproximam conhecimento, prática e transformação cotidiana.</p>
-              <ul class="chapter-tags" aria-label="Exemplos de cursos">
-                <li>Formações livres</li>
-                <li>Oficinas temáticas</li>
-                <li>Encontros online</li>
-              </ul>
-              <span class="chapter-link-label">Explorar cursos <b aria-hidden="true">↗</b></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="story-chapter story-chapter--left story-chapter--deep story-chapter--horizontal" id="programacao" data-story-section="programacao" data-road-position="top" data-scroll-path="horizontal-right" data-story-axis="horizontal-right">
-      <div class="chapter-stage">
-        <div class="environment-panel">
-          <span class="chapter-index" aria-hidden="true">04</span>
-          <span class="chapter-orbit" aria-hidden="true"></span>
-          <div class="chapter-content">
-            <h2 class="chapter-title">Programação</h2>
-            <div class="chapter-details">
-              <p>Uma agenda em movimento com encontros, práticas e experiências abertas à comunidade.</p>
-              <ul class="chapter-tags" aria-label="Exemplos de programação">
-                <li>Esta semana</li>
-                <li>Próximos encontros</li>
-                <li>Eventos especiais</li>
-              </ul>
-              <span class="chapter-link-label">Acessar programação <b aria-hidden="true">↗</b></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="story-chapter story-chapter--right story-chapter--mist" id="saude-integrativa" data-story-section="saude-integrativa" data-road-position="right" data-scroll-path="down">
-      <div class="chapter-stage">
-        <div class="environment-panel">
-          <span class="chapter-index" aria-hidden="true">05</span>
-          <span class="chapter-orbit chapter-orbit--wide" aria-hidden="true"></span>
-          <div class="chapter-content">
-            <h2 class="chapter-title chapter-title--long">Saúde Integrativa</h2>
-            <div class="chapter-details">
-              <p>Cuidado que considera corpo, mente e relações, respeitando o ritmo e a singularidade de cada pessoa.</p>
-              <ul class="chapter-tags" aria-label="Exemplos de saúde integrativa">
-                <li>Bem-estar</li>
-                <li>Autocuidado</li>
-                <li>Práticas integradas</li>
-              </ul>
-              <span class="chapter-link-label">Conhecer esta área <b aria-hidden="true">↗</b></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="story-chapter story-chapter--center story-chapter--final" id="cultura" data-story-section="cultura" data-road-position="left" data-scroll-path="down">
-      <div class="chapter-stage">
-        <div class="environment-panel">
-          <span class="chapter-index" aria-hidden="true">06</span>
-          <span class="chapter-orbit" aria-hidden="true"></span>
-          <div class="chapter-content">
-            <h2 class="chapter-title">Cultura</h2>
-            <div class="chapter-details">
-              <p>Arte, memória e criação como caminhos para ampliar o encontro e a sensibilidade coletiva.</p>
-              <ul class="chapter-tags" aria-label="Exemplos de cultura">
-                <li>Exposições</li>
-                <li>Apresentações</li>
-                <li>Laboratórios criativos</li>
-              </ul>
-              <span class="chapter-link-label">Descobrir cultura <b aria-hidden="true">↗</b></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
+  </noscript>
 </body>
 </html>
