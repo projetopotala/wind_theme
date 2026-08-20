@@ -1,7 +1,7 @@
 # Portal Potala — A Travessia
 
-**Data:** 20 de agosto de 2026  
-**Status:** especificação de design aprovada para revisão final  
+**Data:** 20 de agosto de 2026
+**Status:** especificação de design aprovada para revisão final
 **Escopo:** adaptação da Chegada (`outputs/transcender.html`) e da Home (`outputs/transcendido.html`)
 
 ## 1. Objetivo
@@ -396,4 +396,3 @@ A implementação só estará completa quando:
 - desktop e mobile mantiverem a mesma narrativa;
 - nenhum recurso atual obrigatório tiver sido removido;
 - performance e ausência de erros tiverem sido verificadas antes da publicação.
-

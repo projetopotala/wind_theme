@@ -149,7 +149,7 @@ test("falha de storage retorna estado seguro", () => {
 
 - [ ] **Step 2: Rodar o teste e confirmar a falha**
 
-Run: node --test tests/potala/travessia-state.test.mjs  
+Run: node --test tests/potala/travessia-state.test.mjs
 Expected: FAIL com ERR_MODULE_NOT_FOUND para travessia-state.js.
 
 - [ ] **Step 3: Implementar matemática e estado mínimos**
@@ -256,10 +256,10 @@ createServer(async (request, response) => {
 
 - [ ] **Step 6: Rodar o teste e o smoke test do servidor**
 
-Run: npm run test:portal  
+Run: npm run test:portal
 Expected: 3 testes PASS.
 
-Run: npm run preview:portal  
+Run: npm run preview:portal
 Expected: servidor informa http://127.0.0.1:4173/ e GET / responde 200.
 
 - [ ] **Step 7: Commit**
@@ -350,7 +350,7 @@ console.log("Assets Potala dentro do orçamento.");
 
 - [ ] **Step 7: Comprimir somente se a validação falhar e rodar novamente**
 
-Run: npm run validate:portal  
+Run: npm run validate:portal
 Expected: “Assets Potala dentro do orçamento.”
 
 - [ ] **Step 8: Commit**
@@ -409,7 +409,7 @@ test("respiração altera o ambiente de forma limitada", () => {
 
 - [ ] **Step 2: Rodar o teste e confirmar a falha**
 
-Run: node --test tests/potala/arrival-scene.test.mjs  
+Run: node --test tests/potala/arrival-scene.test.mjs
 Expected: FAIL com ERR_MODULE_NOT_FOUND.
 
 - [ ] **Step 3: Implementar computeArrivalState e os shaders**
@@ -508,7 +508,7 @@ Importar chegada-scene.css e arrival-controller.js como module. Preservar tempor
 
 - [ ] **Step 6: Rodar testes**
 
-Run: npm run test:portal  
+Run: npm run test:portal
 Expected: testes de estado e cena PASS.
 
 - [ ] **Step 7: Cumprir o primeiro meaningful preview**
@@ -572,7 +572,7 @@ test("a contagem restante é 3, 2, 1", () => {
 
 - [ ] **Step 2: Rodar e confirmar falha**
 
-Run: node --test tests/potala/breathing-timeline.test.mjs  
+Run: node --test tests/potala/breathing-timeline.test.mjs
 Expected: FAIL com módulo ausente.
 
 - [ ] **Step 3: Implementar o cálculo puro**
@@ -646,7 +646,7 @@ arrival-controller.js escuta potala:breath-state e chama scene.setBreathState(de
 
 - [ ] **Step 7: Rodar testes**
 
-Run: npm run test:portal  
+Run: npm run test:portal
 Expected: timeline, estado e cena PASS.
 
 - [ ] **Step 8: Commit**
@@ -694,7 +694,7 @@ test("continua a partir do progresso atual", () => {
 
 - [ ] **Step 2: Rodar e confirmar falha**
 
-Run: node --test tests/potala/drag-controller.test.mjs  
+Run: node --test tests/potala/drag-controller.test.mjs
 Expected: FAIL com módulo ausente.
 
 - [ ] **Step 3: Implementar dragProgress e createDragController**
@@ -739,7 +739,7 @@ No navegador local: entrar por scroll, voltar, entrar por drag, voltar, avançar
 
 - [ ] **Step 8: Rodar testes e commit**
 
-Run: npm run test:portal  
+Run: npm run test:portal
 Expected: todos PASS.
 
 ~~~bash
@@ -808,7 +808,7 @@ test("relações apontam para conteúdo existente", () => {
 
 - [ ] **Step 2: Rodar e confirmar falha**
 
-Run: node --test tests/potala/journey-data.test.mjs  
+Run: node --test tests/potala/journey-data.test.mjs
 Expected: FAIL com módulo ausente.
 
 - [ ] **Step 3: Implementar as oito regiões**
@@ -849,7 +849,7 @@ transcendido.html deve conter main#journey-root e um noscript com lista semânti
 
 - [ ] **Step 6: Rodar testes e commit**
 
-Run: npm run test:portal  
+Run: npm run test:portal
 Expected: dados e relações PASS.
 
 ~~~bash
@@ -907,7 +907,7 @@ test("mobile mantém painel e estrada em lados opostos", () => {
 
 - [ ] **Step 2: Rodar e confirmar falha**
 
-Run: node --test tests/potala/journey-layout.test.mjs  
+Run: node --test tests/potala/journey-layout.test.mjs
 Expected: FAIL com módulo ausente.
 
 - [ ] **Step 3: Implementar a rota por segmentos**
@@ -948,7 +948,7 @@ Remover wheelTailFrame, wheelTailTimer, handleStoryWheel e o listener wheel pass
 
 - [ ] **Step 6: Rodar testes**
 
-Run: npm run test:portal  
+Run: npm run test:portal
 Expected: continuidade, clearance e mobile PASS.
 
 - [ ] **Step 7: Commit**
@@ -1078,7 +1078,7 @@ test("é simétrico", () => {
 
 - [ ] **Step 2: Rodar e confirmar falha**
 
-Run: node --test tests/potala/lateral-exploration.test.mjs  
+Run: node --test tests/potala/lateral-exploration.test.mjs
 Expected: FAIL com módulo ausente.
 
 - [ ] **Step 3: Implementar a curva elástica**
@@ -1105,7 +1105,7 @@ home-scenes valida region.lateral antes de criar o controlador. Nenhuma outra re
 
 - [ ] **Step 7: Rodar testes e commit**
 
-Run: npm run test:portal  
+Run: npm run test:portal
 Expected: elasticidade e simetria PASS.
 
 ~~~bash
@@ -1165,7 +1165,7 @@ test("home mantém fallback e não intercepta wheel", () => {
 
 - [ ] **Step 2: Rodar e confirmar as falhas específicas**
 
-Run: node --test tests/potala/portal-html.test.mjs  
+Run: node --test tests/potala/portal-html.test.mjs
 Expected: FAIL nos atributos/contratos ainda ausentes; não aceitar erro de sintaxe.
 
 - [ ] **Step 3: Completar semântica e foco**
@@ -1200,10 +1200,10 @@ Confirmar por código:
 
 - [ ] **Step 7: Rodar testes**
 
-Run: npm run test:portal  
+Run: npm run test:portal
 Expected: todos os testes PASS.
 
-Run: npm run validate:portal  
+Run: npm run validate:portal
 Expected: assets dentro do orçamento.
 
 - [ ] **Step 8: Commit**
@@ -1228,22 +1228,22 @@ git commit -m "fix: harden travessia accessibility and fallbacks"
 
 - [ ] **Step 1: Rodar a suíte da superfície Potala**
 
-Run: npm run test:portal  
+Run: npm run test:portal
 Expected: todos PASS, zero skipped.
 
 - [ ] **Step 2: Rodar orçamento de mídia**
 
-Run: npm run validate:portal  
+Run: npm run validate:portal
 Expected: todos os sete assets presentes e abaixo dos limites.
 
 - [ ] **Step 3: Verificar formatação Git**
 
-Run: git diff --check  
+Run: git diff --check
 Expected: nenhuma saída.
 
 - [ ] **Step 4: Rodar build do projeto hospedeiro sem modificá-lo**
 
-Run: npm run build  
+Run: npm run build
 Expected: exit 0. Se falhar por problema preexistente em app, registrar separadamente e não alterar app para mascarar a falha.
 
 - [ ] **Step 5: Iniciar preview e validar Chegada em desktop**
