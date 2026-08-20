@@ -1,0 +1,405 @@
+:root {
+  color-scheme: dark;
+  --arrival-ink: #161a18;
+  --arrival-ivory: #efe8d8;
+  --arrival-gold: #cbb48b;
+  --drag-progress: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--arrival-ink);
+  scroll-behavior: auto;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--arrival-ink);
+  color: var(--arrival-ivory);
+  font-family: Georgia, "Times New Roman", serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.arrival {
+  position: relative;
+  min-height: 185vh;
+  min-height: 185svh;
+  background: var(--arrival-ink);
+  touch-action: pan-y;
+}
+
+.arrival-sticky {
+  position: sticky;
+  top: 0;
+  isolation: isolate;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  min-height: 480px;
+  overflow: hidden;
+  background: #3e443f;
+}
+
+.arrival-visual,
+.arrival-fallback,
+.arrival-fallback img,
+.arrival-canvas,
+.arrival-atmosphere,
+.arrival-horizon,
+.arrival-transition {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.arrival-visual {
+  z-index: 0;
+  overflow: hidden;
+  background: #4c504b;
+}
+
+.arrival-fallback {
+  display: block;
+  margin: 0;
+}
+
+.arrival-fallback img {
+  display: block;
+  object-fit: cover;
+  transform: scale(1.025);
+  filter: saturate(.78) contrast(.94) brightness(.86);
+  transition: opacity 1.4s ease;
+}
+
+.arrival-canvas {
+  z-index: 1;
+  display: block;
+  opacity: 0;
+  transition: opacity 1.6s cubic-bezier(.22, .72, .24, 1);
+}
+
+.arrival-visual.is-scene-ready .arrival-canvas {
+  opacity: 1;
+}
+
+.arrival-visual.is-scene-ready .arrival-fallback img {
+  opacity: .01;
+}
+
+.arrival-atmosphere {
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(16, 20, 19, .14) 0%, transparent 34%, rgba(15, 18, 17, .17) 100%),
+    linear-gradient(90deg, rgba(12, 14, 13, .23) 0%, transparent 27%, transparent 74%, rgba(13, 15, 14, .16) 100%);
+  transition: opacity 1.2s ease;
+}
+
+.arrival-horizon {
+  z-index: 3;
+  pointer-events: none;
+  opacity: calc(.08 + var(--arrival-progress, 0) * .26);
+  background: radial-gradient(circle at 50% 55%, rgba(236, 200, 137, .32), transparent 28%);
+  mix-blend-mode: screen;
+  transition: opacity .25s linear;
+}
+
+.arrival-identity {
+  position: absolute;
+  z-index: 10;
+  top: max(28px, calc(env(safe-area-inset-top) + 18px));
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateX(-50%);
+  color: rgba(244, 237, 220, .76);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .34em;
+  pointer-events: none;
+}
+
+.arrival-mark {
+  position: relative;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid rgba(237, 219, 182, .52);
+  border-radius: 50%;
+}
+
+.arrival-mark::before,
+.arrival-mark i {
+  content: "";
+  display: block;
+  border: 1px solid rgba(237, 219, 182, .52);
+  border-radius: 50%;
+}
+
+.arrival-mark::before {
+  width: 9px;
+  height: 9px;
+}
+
+.arrival-mark i {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: rgba(244, 237, 220, .72);
+}
+
+.arrival-presence {
+  position: absolute;
+  z-index: 10;
+  top: 12.5%;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  transform: translateX(-50%);
+  color: rgba(239, 230, 210, .66);
+  font-size: clamp(10px, .78vw, 13px);
+  letter-spacing: .48em;
+  pointer-events: none;
+  transition: opacity .5s ease, transform .7s ease;
+}
+
+.arrival-presence i {
+  width: 1px;
+  height: 24px;
+  background: linear-gradient(rgba(229, 208, 169, .6), transparent);
+}
+
+.arrival-scroll-cue {
+  position: absolute;
+  z-index: 10;
+  right: max(24px, 4vw);
+  top: 50%;
+  width: 1px;
+  height: 120px;
+  background: rgba(237, 224, 199, .18);
+  pointer-events: none;
+}
+
+.arrival-scroll-cue span {
+  position: absolute;
+  top: calc(var(--arrival-progress, 0) * 104px);
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(244, 229, 200, .88);
+  box-shadow: 0 0 16px rgba(239, 205, 144, .5);
+  transform: translate(-50%, -50%);
+}
+
+.arrival-drag {
+  position: absolute;
+  z-index: 20;
+  bottom: max(26px, calc(env(safe-area-inset-bottom) + 20px));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.transcend-button {
+  position: relative;
+  width: clamp(174px, 15vw, 224px);
+  height: 48px;
+  padding: 6px;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  border: 1px solid rgba(241, 231, 211, .36);
+  border-radius: 999px;
+  outline: none;
+  background: rgba(24, 27, 25, .28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 12px 34px rgba(4, 6, 5, .12);
+  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(9px);
+}
+
+.transcend-button:focus-visible {
+  border-color: rgba(255, 246, 225, .9);
+  box-shadow: 0 0 0 3px rgba(224, 204, 165, .24);
+}
+
+.drag-track {
+  position: absolute;
+  right: 15px;
+  left: 52px;
+  top: 50%;
+  height: 1px;
+  overflow: hidden;
+  background: rgba(242, 233, 215, .26);
+}
+
+.drag-track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(243, 226, 192, .88);
+  transform: translateX(calc((var(--drag-progress) - 1) * 100%));
+}
+
+.drag-thumb {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  left: 6px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(250, 247, 239, .94);
+  box-shadow: 0 4px 18px rgba(9, 12, 10, .24), 0 0 20px rgba(232, 211, 172, .16);
+  transform: translateX(calc(var(--drag-progress) * (clamp(174px, 15vw, 224px) - 48px)));
+  transition: transform .78s cubic-bezier(.2, .8, .2, 1), box-shadow .4s ease;
+}
+
+.drag-thumb i {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-top: 1px solid #6d665b;
+  border-right: 1px solid #6d665b;
+  transform: translateX(-1px) rotate(45deg);
+}
+
+.transcend-button.is-dragging {
+  cursor: grabbing;
+}
+
+.transcend-button.is-dragging .drag-thumb {
+  transition: none;
+  box-shadow: 0 4px 22px rgba(9, 12, 10, .28), 0 0 28px rgba(245, 220, 172, .32);
+}
+
+.transcend-button.is-key-active .drag-thumb {
+  transform: translateX(calc(clamp(174px, 15vw, 224px) - 48px)) scale(.94);
+}
+
+.transcend-button.is-complete .drag-thumb {
+  box-shadow: 0 0 44px rgba(255, 239, 202, .7);
+}
+
+.arrival-transition {
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  background: #edf1ed;
+  transform: scaleY(0);
+  transform-origin: center bottom;
+}
+
+body.is-arrival-transitioning .arrival-transition {
+  opacity: 1;
+  transform: scaleY(1);
+  transition: transform 1.15s cubic-bezier(.64, 0, .24, 1), opacity .5s ease;
+}
+
+body.is-arrival-transitioning .arrival-identity,
+body.is-arrival-transitioning .arrival-presence,
+body.is-arrival-transitioning .arrival-drag {
+  opacity: 0;
+  transition: opacity .45s ease;
+}
+
+.arrival-noscript {
+  position: fixed;
+  z-index: 100;
+  inset: auto 0 24px;
+  margin: 0;
+  text-align: center;
+}
+
+.arrival-noscript a {
+  color: white;
+}
+
+@media (max-width: 720px) {
+  .arrival {
+    min-height: 170svh;
+  }
+
+  .arrival-identity {
+    top: max(22px, calc(env(safe-area-inset-top) + 14px));
+  }
+
+  .arrival-presence {
+    top: 15%;
+  }
+
+  .arrival-scroll-cue {
+    top: 44%;
+    right: 18px;
+    height: 92px;
+  }
+
+  .arrival-scroll-cue span {
+    top: calc(var(--arrival-progress, 0) * 76px);
+  }
+
+  .arrival-drag {
+    bottom: max(20px, calc(env(safe-area-inset-bottom) + 14px));
+  }
+
+  .transcend-button {
+    width: 178px;
+    height: 44px;
+  }
+
+  .drag-thumb {
+    top: 5px;
+    left: 5px;
+    width: 32px;
+    height: 32px;
+    transform: translateX(calc(var(--drag-progress) * 134px));
+  }
+
+  .transcend-button.is-key-active .drag-thumb {
+    transform: translateX(134px) scale(.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .arrival {
+    min-height: 120svh;
+  }
+
+  .arrival-canvas {
+    display: none;
+  }
+
+  .arrival-visual.is-scene-ready .arrival-fallback img {
+    opacity: 1;
+  }
+
+  .arrival-fallback img,
+  .arrival-presence,
+  .drag-thumb,
+  .arrival-transition {
+    transition-duration: .01ms !important;
+  }
+}
