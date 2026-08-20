@@ -1,0 +1,183 @@
+import { consumeHandoff } from "../core/travessia-state.js";
+import { JOURNEY_DISCOVERIES, JOURNEY_REGIONS } from "./journey-data.js";
+import { createHomeRoad } from "./home-road.js";
+import { mountJourney, presenceForDistance } from "./home-scenes.js";
+
+const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
+const lerp = (from, to, progress) => from + (to - from) * progress;
+const motionDirections = [
+  [0, 1], [.7, .7], [-.7, .7], [1, 0], [1, 0], [0, 1], [-.7, .7], [0, 1],
+];
+
+function roadOffsetForScroll(scrollCenter, regions, checkpoints) {
+  const centers = regions.map((region) => region.offsetTop + region.offsetHeight * .5);
+  if (!centers.length) return 0;
+  if (scrollCenter <= centers[0]) return checkpoints[0]?.roadOffsetX || 0;
+  for (let index = 0; index < centers.length - 1; index += 1) {
+    if (scrollCenter <= centers[index + 1]) {
+      const progress = clamp((scrollCenter - centers[index]) / Math.max(1, centers[index + 1] - centers[index]));
+      return lerp(checkpoints[index]?.roadOffsetX || 0, checkpoints[index + 1]?.roadOffsetX || 0, progress);
+    }
+  }
+  return checkpoints.at(-1)?.roadOffsetX || 0;
+}
+
+function mountSoundResume(root, enabled) {
+  if (!enabled) return () => {};
+  const audio = document.createElement("audio");
+  audio.src = "musica-fundo.mp3";
+  audio.loop = true;
+  audio.preload = "none";
+  const button = document.createElement("button");
+  button.className = "journey-sound";
+  button.type = "button";
+  button.textContent = "Retomar som";
+  button.setAttribute("aria-pressed", "false");
+  root.after(audio, button);
+
+  const toggle = async () => {
+    if (!audio.paused) {
+      audio.pause();
+      button.textContent = "Retomar som";
+      button.setAttribute("aria-pressed", "false");
+      return;
+    }
+    try {
+      audio.volume = .24;
+      await audio.play();
+      button.textContent = "Silenciar";
+      button.setAttribute("aria-pressed", "true");
+    } catch {
+      button.textContent = "Som indisponível";
+    }
+  };
+  button.addEventListener("click", toggle);
+  return () => {
+    button.removeEventListener("click", toggle);
+    audio.pause();
+    button.remove();
+    audio.remove();
+  };
+}
+
+export function createHomeController({
+  root,
+  canvas,
+  data = { regions: JOURNEY_REGIONS, discoveries: JOURNEY_DISCOVERIES },
+} = {}) {
+  if (!root || !canvas) throw new TypeError("root e canvas são obrigatórios");
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const mounted = mountJourney(root, data);
+  const road = createHomeRoad(canvas, { regions: data.regions });
+  const handoff = consumeHandoff();
+  const removeSound = mountSoundResume(root, handoff.soundEnabled === true);
+  let frameId = 0;
+  let dirty = true;
+  let destroyed = false;
+
+  if (handoff.entry) {
+    document.documentElement.classList.add("entry-from-arrival");
+    requestAnimationFrame(() => document.documentElement.classList.remove("entry-from-arrival"));
+  }
+
+  function syncRoadSides() {
+    const checkpoints = road.layout.checkpoints;
+    mounted.regions.forEach((region, index) => {
+      const checkpoint = checkpoints[index];
+      if (!checkpoint) return;
+      region.dataset.roadSide = checkpoint.roadPlacement;
+      region.style.setProperty("--road-offset", `${checkpoint.roadOffsetX}px`);
+    });
+  }
+
+  function update() {
+    frameId = 0;
+    if (!dirty || destroyed || document.hidden) return;
+    dirty = false;
+    const viewportHeight = innerHeight;
+    const scrollTop = scrollY;
+    const available = Math.max(1, document.documentElement.scrollHeight - viewportHeight);
+    const journeyProgress = clamp(scrollTop / available);
+    road.setProgress(journeyProgress);
+    road.setOffset(roadOffsetForScroll(scrollTop + viewportHeight * .5, mounted.regions, road.layout.checkpoints));
+
+    let activeRegion = null;
+    let activePresence = 0;
+    mounted.regions.forEach((region, index) => {
+      const rect = region.getBoundingClientRect();
+      const before = rect.top > viewportHeight * .16;
+      const after = rect.bottom < viewportHeight * .84;
+      const signedDistance = before
+        ? rect.top - viewportHeight * .16
+        : after
+          ? -(viewportHeight * .84 - rect.bottom)
+          : 0;
+      const presence = presenceForDistance(Math.abs(signedDistance), viewportHeight);
+      const movement = clamp(Math.abs(signedDistance) / viewportHeight);
+      const direction = motionDirections[index % motionDirections.length];
+      const sign = signedDistance >= 0 ? 1 : -1;
+      const amplitude = reducedMotion ? 0 : movement * Math.min(innerWidth * .16, 210);
+      region.style.setProperty("--region-presence", presence.toFixed(4));
+      region.style.setProperty("--region-x", `${(direction[0] * amplitude * sign).toFixed(1)}px`);
+      region.style.setProperty("--region-y", `${(direction[1] * amplitude * sign).toFixed(1)}px`);
+      region.classList.toggle("is-present", presence > .08);
+      if (presence > activePresence) {
+        activePresence = presence;
+        activeRegion = region;
+      }
+    });
+
+    mounted.regions.forEach((region) => {
+      const link = region.querySelector(".region-link");
+      if (region === activeRegion && activePresence > .72) link?.setAttribute("aria-current", "location");
+      else link?.removeAttribute("aria-current");
+    });
+  }
+
+  function requestUpdate() {
+    dirty = true;
+    if (!frameId && !document.hidden) frameId = requestAnimationFrame(update);
+  }
+
+  function onResize() {
+    road.resize();
+    syncRoadSides();
+    requestUpdate();
+  }
+
+  function onVisibilityChange() {
+    if (!document.hidden) requestUpdate();
+  }
+
+  window.addEventListener("scroll", requestUpdate, { passive: true });
+  window.addEventListener("resize", onResize, { passive: true });
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  syncRoadSides();
+  document.body.classList.add("is-ready");
+  requestUpdate();
+
+  return {
+    mounted,
+    road,
+    destroy() {
+      destroyed = true;
+      cancelAnimationFrame(frameId);
+      road.destroy();
+      removeSound();
+      window.removeEventListener("scroll", requestUpdate);
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    },
+  };
+}
+
+let activeController;
+
+export function mountHomeJourney() {
+  activeController?.destroy();
+  const root = document.getElementById("journey-root");
+  const canvas = document.getElementById("journey-road");
+  activeController = createHomeController({ root, canvas });
+  window.addEventListener("pagehide", () => activeController?.destroy(), { once: true });
+  return activeController;
+}
