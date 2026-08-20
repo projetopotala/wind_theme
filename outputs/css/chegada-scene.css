@@ -6,6 +6,10 @@
   --drag-progress: 0;
 }
 
+@view-transition {
+  navigation: auto;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -59,6 +63,7 @@ a {
 .arrival-canvas,
 .arrival-atmosphere,
 .arrival-horizon,
+.arrival-transition-road,
 .arrival-transition {
   position: absolute;
   inset: 0;
@@ -225,7 +230,7 @@ a {
   padding: 6px;
   overflow: hidden;
   cursor: grab;
-  touch-action: none;
+  touch-action: pan-y;
   border: 1px solid rgba(241, 231, 211, .36);
   border-radius: 999px;
   outline: none;
@@ -309,10 +314,39 @@ a {
   transform-origin: center bottom;
 }
 
+.arrival-transition-road {
+  z-index: 61;
+  left: 50%;
+  width: clamp(132px, 20vw, 270px);
+  height: 112%;
+  pointer-events: none;
+  opacity: 0;
+  background: #686e6b;
+  border-right: clamp(4px, .5vw, 8px) solid #b7a58d;
+  border-left: clamp(4px, .5vw, 8px) solid #b7a58d;
+  transform: translate(-50%, 105%);
+}
+
+.arrival-transition-road span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  background: repeating-linear-gradient(to bottom, rgba(241, 242, 236, .88) 0 34px, transparent 34px 66px);
+  transform: translateX(-50%);
+}
+
 body.is-arrival-transitioning .arrival-transition {
   opacity: 1;
   transform: scaleY(1);
   transition: transform 1.15s cubic-bezier(.64, 0, .24, 1), opacity .5s ease;
+}
+
+body.is-arrival-transitioning .arrival-transition-road {
+  opacity: 1;
+  transform: translate(-50%, -5%);
+  transition: transform .72s cubic-bezier(.5, 0, .25, 1), opacity .24s ease;
 }
 
 body.is-arrival-transitioning .arrival-identity,

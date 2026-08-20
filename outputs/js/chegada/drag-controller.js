@@ -1,15 +1,23 @@
 import { clamp } from "../core/math.js";
 
-export const dragProgress = (distance, availableDistance) =>
-  availableDistance > 0 ? clamp(distance / availableDistance) : 0;
+export function dragProgress(startProgress, startX, currentX, travel) {
+  if (arguments.length <= 2) {
+    return startX > 0 ? clamp(startProgress / startX) : 0;
+  }
+  return clamp(startProgress + (currentX - startX) / Math.max(1, travel));
+}
 
-export function createDragController({
-  button,
-  thumb = button?.querySelector(".drag-thumb"),
-  onComplete = () => {},
-  completionThreshold = 0.92,
-  globalKeyboard = false,
-} = {}) {
+export function createDragController(elementOrOptions = {}, controllerOptions = {}) {
+  const options = elementOrOptions instanceof HTMLElement
+    ? { ...controllerOptions, button: elementOrOptions }
+    : elementOrOptions;
+  const {
+    button,
+    thumb = button?.querySelector(".drag-thumb"),
+    onComplete = () => {},
+    completionThreshold = 0.985,
+    globalKeyboard = false,
+  } = options;
   if (!button || !thumb) {
     throw new TypeError("button e thumb são obrigatórios para o drag");
   }
@@ -30,14 +38,14 @@ export function createDragController({
     button.setAttribute("aria-valuenow", String(Math.round(progress * 100)));
   };
 
-  const complete = () => {
+  const complete = (entry = "drag") => {
     if (completed) return;
     completed = true;
     button.classList.add("is-complete");
     render(1);
     button.setAttribute("aria-disabled", "true");
     document.dispatchEvent(new CustomEvent("potala:arrival-complete"));
-    onComplete();
+    onComplete({ entry });
   };
 
   const release = () => {
@@ -58,13 +66,11 @@ export function createDragController({
     button.classList.remove("is-returning");
     button.classList.add("is-dragging");
     button.setPointerCapture?.(pointerId);
-    event.preventDefault();
   };
 
   const onPointerMove = (event) => {
     if (event.pointerId !== pointerId || completed) return;
-    const distance = startProgress * availableDistance() + event.clientX - startX;
-    render(dragProgress(distance, availableDistance()));
+    render(dragProgress(startProgress, startX, event.clientX, availableDistance()));
     event.preventDefault();
   };
 
@@ -75,25 +81,39 @@ export function createDragController({
   };
 
   const onKeyDown = (event) => {
-    if (completed || (event.code !== "Space" && event.code !== "Enter")) return;
-    event.preventDefault();
-    button.classList.add("is-key-active");
+    if (completed) return;
+    const step = event.key === "ArrowRight" ? .1 : event.key === "ArrowLeft" ? -.1 : 0;
+    if (step) {
+      event.preventDefault();
+      render(progress + step);
+      return;
+    }
+    if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      render(event.key === "End" ? 1 : 0);
+      if (event.key === "End") complete("keyboard");
+      return;
+    }
+    if (event.code === "Space" || event.code === "Enter") {
+      event.preventDefault();
+      button.classList.add("is-key-active");
+    }
   };
 
   const onKeyUp = (event) => {
     if (completed || (event.code !== "Space" && event.code !== "Enter")) return;
     event.preventDefault();
     button.classList.remove("is-key-active");
-    complete();
+    complete("keyboard");
   };
 
   const canUseGlobalKeyboard = (event) => {
     const target = event.target;
-    const dialogOpen = document.querySelector("dialog[open]");
+    const optionalExperienceOpen = document.querySelector('[aria-expanded="true"]');
     const editable = target instanceof HTMLElement && (
       target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(target.tagName)
     );
-    return !dialogOpen && !editable;
+    return !optionalExperienceOpen && !editable;
   };
 
   const onGlobalKeyDown = (event) => {

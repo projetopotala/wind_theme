@@ -1,6 +1,6 @@
 import { createArrivalScene } from "./arrival-scene.js";
 import { createDragController } from "./drag-controller.js";
-import { writeTravessiaState } from "../core/travessia-state.js";
+import { enterHome } from "./transition-handoff.js";
 
 const arrival = document.getElementById("arrival");
 const visual = document.getElementById("arrival-visual");
@@ -18,7 +18,8 @@ if (arrival && visual && canvas && dragButton) {
   });
 
   let scrollFrame = 0;
-  let transitioning = false;
+  let lastScrollY = window.scrollY;
+  let soundEnabled = false;
 
   const updateScroll = () => {
     scrollFrame = 0;
@@ -30,6 +31,12 @@ if (arrival && visual && canvas && dragButton) {
     if (presence) {
       presence.style.opacity = String(Math.max(0, 1 - progress * 2.6));
       presence.style.transform = `translate(-50%, ${Math.round(progress * -22)}px)`;
+    }
+
+    const movingDown = window.scrollY > lastScrollY + 1;
+    lastScrollY = window.scrollY;
+    if (progress >= .995 && movingDown) {
+      enterHome({ entry: "scroll", soundEnabled });
     }
   };
 
@@ -44,21 +51,16 @@ if (arrival && visual && canvas && dragButton) {
     scene.setPointer(x, y);
   };
 
-  const enterHome = () => {
-    if (transitioning) return;
-    transitioning = true;
-    writeTravessiaState({ entry: "drag" });
-    document.body.classList.add("is-arrival-transitioning");
-    window.setTimeout(() => window.location.assign("transcendido.html"), reducedMotion ? 80 : 920);
-  };
-
   const drag = createDragController({
     button: dragButton,
-    onComplete: enterHome,
+    onComplete: ({ entry }) => enterHome({ entry, soundEnabled }),
     globalKeyboard: true,
   });
 
   const onBreathState = (event) => scene.setBreathState(event.detail?.phase || "idle");
+  const onSoundState = (event) => {
+    soundEnabled = Boolean(event.detail?.enabled);
+  };
   const onVisibilityChange = () => document.hidden ? scene.pause() : scene.resume();
 
   window.addEventListener("scroll", queueScroll, { passive: true });
@@ -66,6 +68,7 @@ if (arrival && visual && canvas && dragButton) {
   window.addEventListener("pointermove", updatePointer, { passive: true });
   document.addEventListener("visibilitychange", onVisibilityChange);
   document.addEventListener("potala:breath-state", onBreathState);
+  document.addEventListener("potala:sound-state", onSoundState);
   updateScroll();
 
   window.addEventListener("pagehide", () => {
@@ -77,5 +80,6 @@ if (arrival && visual && canvas && dragButton) {
     window.removeEventListener("pointermove", updatePointer);
     document.removeEventListener("visibilitychange", onVisibilityChange);
     document.removeEventListener("potala:breath-state", onBreathState);
+    document.removeEventListener("potala:sound-state", onSoundState);
   }, { once: true });
 }
