@@ -3,27 +3,17 @@ import { JOURNEY_DISCOVERIES, JOURNEY_REGIONS } from "./journey-data.js";
 import { createHomeRoad } from "./home-road.js";
 import { mountJourney, presenceForDistance } from "./home-scenes.js";
 import { createLateralExploration } from "./lateral-exploration.js";
+import {
+  roadOffsetForPathSection,
+  silenceCopyPlacementForRoadOffset,
+} from "./journey-layout.js";
 
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
-const lerp = (from, to, progress) => from + (to - from) * progress;
 const motionDirections = [
   [0, 1], [.7, .7], [-.7, .7], [1, 0], [1, 0], [0, 1], [-.7, .7], [0, 1],
 ];
 
-function roadOffsetForScroll(scrollCenter, regions, checkpoints) {
-  const centers = regions.map((region) => region.offsetTop + region.offsetHeight * .5);
-  if (!centers.length) return 0;
-  if (scrollCenter <= centers[0]) return checkpoints[0]?.roadOffsetX || 0;
-  for (let index = 0; index < centers.length - 1; index += 1) {
-    if (scrollCenter <= centers[index + 1]) {
-      const progress = clamp((scrollCenter - centers[index]) / Math.max(1, centers[index + 1] - centers[index]));
-      return lerp(checkpoints[index]?.roadOffsetX || 0, checkpoints[index + 1]?.roadOffsetX || 0, progress);
-    }
-  }
-  return checkpoints.at(-1)?.roadOffsetX || 0;
-}
-
-function roadProgressForScroll(scrollCenter, elements, layout) {
+function roadStateForScroll(scrollCenter, elements, layout) {
   let covered = 0;
   for (let index = 0; index < layout.segments.length; index += 1) {
     const segment = layout.segments[index];
@@ -31,14 +21,20 @@ function roadProgressForScroll(scrollCenter, elements, layout) {
     if (!element) break;
     const start = element.offsetTop;
     const end = start + element.offsetHeight;
-    if (scrollCenter < start) return clamp(covered / layout.totalLength);
+    if (scrollCenter < start) {
+      return { progress: clamp(covered / layout.totalLength), sectionIndex: index, local: 0 };
+    }
     if (scrollCenter <= end) {
       const local = clamp((scrollCenter - start) / Math.max(1, end - start));
-      return clamp((covered + segment.length * local) / layout.totalLength);
+      return {
+        progress: clamp((covered + segment.length * local) / layout.totalLength),
+        sectionIndex: index,
+        local,
+      };
     }
     covered += segment.length;
   }
-  return 1;
+  return { progress: 1, sectionIndex: layout.segments.length - 1, local: 1 };
 }
 
 function mountSoundResume(root, enabled) {
@@ -113,7 +109,12 @@ export function createHomeController({
       const checkpoint = checkpoints[index];
       if (!checkpoint) return;
       region.dataset.roadSide = checkpoint.roadPlacement;
-      region.style.setProperty("--road-offset", `${checkpoint.roadOffsetX}px`);
+      region.style.setProperty("--road-offset-x", `${checkpoint.roadOffsetX}px`);
+      region.style.setProperty("--road-offset-y", `${checkpoint.roadOffsetY}px`);
+    });
+    mounted.silences.forEach((silence, index) => {
+      const offset = roadOffsetForPathSection(index * 2 + 1, .5, checkpoints);
+      silence.dataset.copySide = silenceCopyPlacementForRoadOffset(offset);
     });
   }
 
@@ -123,13 +124,22 @@ export function createHomeController({
     dirty = false;
     const viewportHeight = innerHeight;
     const scrollTop = scrollY;
-    const journeyProgress = roadProgressForScroll(
+    const roadState = roadStateForScroll(
       scrollTop + viewportHeight * .5,
       mounted.pathSections,
       road.layout,
     );
-    road.setProgress(journeyProgress);
-    road.setOffset(roadOffsetForScroll(scrollTop + viewportHeight * .5, mounted.regions, road.layout.checkpoints));
+    road.setProgress(roadState.progress);
+    const roadOffset = roadOffsetForPathSection(
+      roadState.sectionIndex,
+      roadState.local,
+      road.layout.checkpoints,
+    );
+    road.setOffset(roadOffset.x, roadOffset.y);
+    if (roadState.sectionIndex % 2 === 1) {
+      const silence = mounted.silences[Math.floor(roadState.sectionIndex / 2)];
+      if (silence) silence.dataset.copySide = silenceCopyPlacementForRoadOffset(roadOffset);
+    }
 
     let activeRegion = null;
     let activePresence = 0;

@@ -80,7 +80,6 @@ function renderRegion(region, index, discovery, discoveriesById) {
       data-region-id="${region.id}" data-layout-variant="${region.layoutVariant}"
       data-road-side="${side}" style="--region-index:${index}">
       <div class="region-stage"${region.lateral ? ' tabindex="0" role="group" aria-expanded="false" aria-label="Explore caminhos relacionados com as setas ou arrastando para os lados"' : ""}>
-        <div class="region-landscape" aria-hidden="true"></div>
         <figure class="region-media">
           <img src="${region.media}" alt="${region.alt}" loading="lazy" decoding="async" width="1920" height="1080">
         </figure>

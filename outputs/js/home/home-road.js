@@ -26,7 +26,18 @@ function tracePath(layout) {
   );
   for (const segment of layout.segments) {
     if (segment.kind === "curve") {
-      path.quadraticCurveTo(segment.control.x, segment.control.y, segment.to.x, segment.to.y);
+      if (segment.control1 && segment.control2) {
+        path.bezierCurveTo(
+          segment.control1.x,
+          segment.control1.y,
+          segment.control2.x,
+          segment.control2.y,
+          segment.to.x,
+          segment.to.y,
+        );
+      } else {
+        path.quadraticCurveTo(segment.control.x, segment.control.y, segment.to.x, segment.to.y);
+      }
     } else {
       path.lineTo(segment.to.x, segment.to.y);
     }

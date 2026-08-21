@@ -21,12 +21,31 @@ const add = (point, vector, amount = 1) => ({
 
 const samePoint = (point) => ({ x: point.x, y: point.y });
 
-export function sampleSegment(segment, progress) {
-  const t = Math.max(0, Math.min(1, Number(progress) || 0));
+const OPPOSITE_PLACEMENT = {
+  left: "right",
+  right: "left",
+  top: "bottom",
+  bottom: "top",
+};
+
+function sampleRawSegment(segment, t) {
   if (segment.kind !== "curve") {
     return {
       x: segment.from.x + (segment.to.x - segment.from.x) * t,
       y: segment.from.y + (segment.to.y - segment.from.y) * t,
+    };
+  }
+  if (segment.control1 && segment.control2) {
+    const inverse = 1 - t;
+    return {
+      x: inverse ** 3 * segment.from.x
+        + 3 * inverse ** 2 * t * segment.control1.x
+        + 3 * inverse * t ** 2 * segment.control2.x
+        + t ** 3 * segment.to.x,
+      y: inverse ** 3 * segment.from.y
+        + 3 * inverse ** 2 * t * segment.control1.y
+        + 3 * inverse * t ** 2 * segment.control2.y
+        + t ** 3 * segment.to.y,
     };
   }
   const inverse = 1 - t;
@@ -34,6 +53,78 @@ export function sampleSegment(segment, progress) {
     x: inverse * inverse * segment.from.x + 2 * inverse * t * segment.control.x + t * t * segment.to.x,
     y: inverse * inverse * segment.from.y + 2 * inverse * t * segment.control.y + t * t * segment.to.y,
   };
+}
+
+function measureCurve(segment, steps = 96) {
+  const samples = [{ t: 0, distance: 0 }];
+  let total = 0;
+  let previous = sampleRawSegment(segment, 0);
+  for (let index = 1; index <= steps; index += 1) {
+    const t = index / steps;
+    const current = sampleRawSegment(segment, t);
+    total += Math.hypot(current.x - previous.x, current.y - previous.y);
+    samples.push({ t, distance: total });
+    previous = current;
+  }
+  return { samples, total };
+}
+
+function curveTimeForProgress(segment, progress) {
+  const arc = segment.arc;
+  if (!arc?.total) return progress;
+  const target = progress * arc.total;
+  let low = 0;
+  let high = arc.samples.length - 1;
+  while (low < high - 1) {
+    const middle = Math.floor((low + high) / 2);
+    if (arc.samples[middle].distance < target) low = middle;
+    else high = middle;
+  }
+  const before = arc.samples[low];
+  const after = arc.samples[high];
+  const local = (target - before.distance) / Math.max(.0001, after.distance - before.distance);
+  return before.t + (after.t - before.t) * local;
+}
+
+function resolveRoadPlacement(region, direction, index) {
+  const horizontal = Math.abs(direction.x) > Math.abs(direction.y);
+  const requested = region.roadPlacement;
+  if (horizontal) {
+    if (requested === "top" || requested === "bottom") return requested;
+    return index % 2 === 0 ? "top" : "bottom";
+  }
+  if (requested === "left" || requested === "right") return requested;
+  return index % 2 === 0 ? "right" : "left";
+}
+
+export function sampleSegment(segment, progress) {
+  const progressValue = Math.max(0, Math.min(1, Number(progress) || 0));
+  const t = segment.kind === "curve" ? curveTimeForProgress(segment, progressValue) : progressValue;
+  return sampleRawSegment(segment, t);
+}
+
+export function roadOffsetForPathSection(sectionIndex, localProgress, checkpoints) {
+  if (!checkpoints.length) return { x: 0, y: 0 };
+  const safeIndex = Math.max(0, Math.floor(Number(sectionIndex) || 0));
+  const checkpointIndex = Math.min(checkpoints.length - 1, Math.floor(safeIndex / 2));
+  const current = checkpoints[checkpointIndex];
+  if (safeIndex % 2 === 0 || checkpointIndex >= checkpoints.length - 1) {
+    return { x: current.roadOffsetX || 0, y: current.roadOffsetY || 0 };
+  }
+  const next = checkpoints[checkpointIndex + 1];
+  const rawProgress = Math.max(0, Math.min(1, Number(localProgress) || 0));
+  const eased = rawProgress * rawProgress * (3 - 2 * rawProgress);
+  return {
+    x: (current.roadOffsetX || 0) + ((next.roadOffsetX || 0) - (current.roadOffsetX || 0)) * eased,
+    y: (current.roadOffsetY || 0) + ((next.roadOffsetY || 0) - (current.roadOffsetY || 0)) * eased,
+  };
+}
+
+export function silenceCopyPlacementForRoadOffset(offset = {}) {
+  const x = Number(offset.x) || 0;
+  const y = Number(offset.y) || 0;
+  if (Math.abs(x) >= Math.abs(y)) return x <= 0 ? "right" : "left";
+  return y <= 0 ? "bottom" : "top";
 }
 
 export function buildJourneyLayout(regions, viewport = {}) {
@@ -63,10 +154,11 @@ export function buildJourneyLayout(regions, viewport = {}) {
     segments.push(straight);
 
     const center = sampleSegment(straight, .5);
-    const side = mobile
-      ? (index % 2 === 0 ? 1 : -1)
-      : (region.roadPlacement === "left" ? -1 : 1);
-    const roadOffsetX = side * width * (mobile ? .33 : .3);
+    const roadPlacement = resolveRoadPlacement(region, direction, index);
+    const horizontalPlacement = roadPlacement === "left" || roadPlacement === "right";
+    const placementSign = roadPlacement === "left" || roadPlacement === "top" ? -1 : 1;
+    const roadOffsetX = horizontalPlacement ? placementSign * width * (mobile ? .36 : .34) : 0;
+    const roadOffsetY = horizontalPlacement ? 0 : placementSign * height * (mobile ? .35 : .34);
     checkpoints.push({
       id: region.id,
       x: center.x,
@@ -75,25 +167,30 @@ export function buildJourneyLayout(regions, viewport = {}) {
       segmentKind: "straight",
       clearance: height * .78,
       roadOffsetX,
+      roadOffsetY,
       panelOffsetX: -roadOffsetX,
-      roadPlacement: side < 0 ? "left" : "right",
+      panelOffsetY: -roadOffsetY,
+      roadPlacement,
+      panelPlacement: OPPOSITE_PLACEMENT[roadPlacement],
     });
 
     cursor = samePoint(straight.to);
     if (index >= regions.length - 1) return;
 
     const nextDirection = normalize(DIRECTIONS[(index + 1) % DIRECTIONS.length]);
-    const curveTo = add(cursor, nextDirection, curveLength);
+    const curveTo = add(add(cursor, direction, curveLength * .54), nextDirection, curveLength * .54);
     const curve = {
       id: `curve-${region.id}-${regions[index + 1].id}`,
       kind: "curve",
       from: samePoint(cursor),
-      control: add(cursor, direction, curveLength * .72),
+      control1: add(cursor, direction, curveLength * .46),
+      control2: add(curveTo, nextDirection, -curveLength * .46),
       to: curveTo,
       direction: nextDirection,
-      length: curveLength,
       between: [region.id, regions[index + 1].id],
     };
+    curve.arc = measureCurve(curve);
+    curve.length = curve.arc.total;
     segments.push(curve);
     cursor = samePoint(curve.to);
   });
