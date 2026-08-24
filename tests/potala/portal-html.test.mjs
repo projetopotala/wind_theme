@@ -16,11 +16,19 @@ test("respiração é opt-in e o fallback visual existe", () => {
 test("a Chegada preserva o canvas sem expor um controle de drag", () => {
   assert.match(chegada, /id="arrival-scene"[^>]*aria-hidden="true"/);
   assert.doesNotMatch(chegada, /role="slider"|aria-valuemin|aria-valuemax/);
+  assert.doesNotMatch(chegada, /arrival-transition-road/);
+});
+
+test("as duas etapas compartilham o indicador vertical de progresso", () => {
+  assert.match(chegada, /class="journey-scroll-cue"/);
+  assert.match(home, /class="journey-scroll-cue"/);
 });
 
 test("home mantém fallback e não intercepta wheel", () => {
   assert.match(home, /<noscript>/);
   assert.match(home, /id="journey-road"[^>]*aria-hidden="true"/);
+  assert.match(home, /id="journey-entry-veil"[^>]*aria-hidden="true"/);
+  assert.doesNotMatch(home, /journey-entry-road/);
   assert.doesNotMatch(homeJs, /addEventListener\(["']wheel["']/);
   assert.doesNotMatch(homeJs, /handleStoryWheel|wheelTailFrame|wheelTailTimer/);
 });

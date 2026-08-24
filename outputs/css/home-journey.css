@@ -1,8 +1,6 @@
-@view-transition { navigation: auto; }
-
 body[data-story-page="true"] {
   background:
-    linear-gradient(180deg, rgba(229, 235, 231, .79), rgba(223, 231, 229, .86)),
+    linear-gradient(180deg, rgba(211, 198, 179, .78), rgba(196, 178, 154, .86)),
     url("../media/chegada-landscape.webp") center / cover fixed no-repeat;
 }
 
@@ -17,31 +15,45 @@ body[data-story-page="true"] {
   pointer-events: none;
 }
 
-.journey-entry-road {
-  --entry-road-destination: 84%;
+.journey-scroll-cue {
   position: fixed;
-  z-index: 5;
-  top: 0;
+  z-index: 24;
+  top: 50%;
+  right: max(24px, 4vw);
+  width: 1px;
+  height: clamp(126px, 24svh, 196px);
+  pointer-events: none;
+  background: rgba(79, 62, 43, .24);
+  transform: translateY(-50%);
+}
+
+.journey-scroll-cue span {
+  position: absolute;
+  top: var(--journey-scroll-position, 0%);
   left: 50%;
-  width: clamp(110px, 10.5vw, 168px);
-  height: 110svh;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(108, 78, 43, .88);
+  box-shadow: 0 0 13px rgba(162, 119, 65, .42);
+  transform: translate3d(-50%, -50%, 0);
+  will-change: transform;
+}
+
+.journey-entry-veil {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
   pointer-events: none;
   opacity: 0;
-  background:
-    linear-gradient(90deg, rgba(83, 64, 45, .18), transparent 9% 91%, rgba(83, 64, 45, .18)),
-    url("../media/medieval-road-stones.webp") center / 328px 328px repeat #b7a487;
-  border-right: 5px solid #8f765d;
-  border-left: 5px solid #8f765d;
-  box-shadow: 0 13px 30px rgba(44, 34, 25, .24), 0 0 0 1px rgba(238, 222, 193, .22);
-  transform: translate(-50%, -10%);
+  visibility: hidden;
+  background: radial-gradient(circle at 50% 46%, #382f25, #121512 58%, #0d100e 100%);
 }
 
-.journey-entry-road span {
-  display: none;
-}
-
-.entry-from-arrival .journey-entry-road { animation: entry-beam-handoff 1.45s cubic-bezier(.22, .72, .24, 1) both; }
-.entry-from-arrival .journey-road { animation: entry-canvas-handoff 1.45s cubic-bezier(.22, .72, .24, 1) both; }
+.entry-pending .journey-entry-veil { opacity: 1; visibility: visible; }
+.entry-from-arrival .journey-entry-veil { animation: entry-veil-reveal 1.8s cubic-bezier(.4, 0, .2, 1) both; }
+.entry-from-arrival .journey-road { animation: entry-canvas-handoff 1.8s cubic-bezier(.22, .72, .24, 1) both; }
+.entry-from-arrival .prologue-copy { animation: entry-prologue-handoff 1.8s cubic-bezier(.22, .72, .24, 1) both; }
 
 .journey-prologue {
   position: relative;
@@ -80,12 +92,9 @@ body[data-story-page="true"] {
   --region-x: 0px;
   --region-y: 0px;
   position: relative;
-  min-height: 252svh;
+  min-height: var(--region-height, 184svh);
   pointer-events: none;
 }
-
-.journey-region:nth-of-type(3n + 1) { min-height: 266svh; }
-.journey-region:nth-of-type(3n + 2) { min-height: 238svh; }
 .journey-region.is-present { pointer-events: auto; }
 
 .region-stage {
@@ -164,6 +173,10 @@ body[data-story-page="true"] {
   font: 400 clamp(4.2rem, 8.4vw, 9.4rem)/.84 Georgia, "Times New Roman", serif;
   letter-spacing: -.065em;
   text-wrap: balance;
+}
+
+.journey-region[data-title-scale="compact"] .region-content h2 {
+  font-size: clamp(4.1rem, 7vw, 7.25rem);
 }
 
 .region-description {
@@ -264,24 +277,27 @@ body[data-story-page="true"] {
 
 .journey-sound { position: fixed; z-index: 30; bottom: max(18px, calc(env(safe-area-inset-bottom) + 12px)); left: max(18px, calc(env(safe-area-inset-left) + 12px)); min-height: 38px; padding: 0 14px; border: 1px solid rgba(40, 79, 96, .2); border-radius: 999px; color: var(--blue); background: rgba(237, 241, 237, .74); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-size: 9px; font-weight: 700; letter-spacing: .12em; cursor: pointer; }
 
-@keyframes entry-beam-handoff {
-  0% { left: 50%; opacity: .86; transform: translate(-50%, -8%) scaleY(1); }
-  42% { opacity: .72; }
-  100% { left: var(--entry-road-destination); opacity: 0; transform: translate(-50%, -8%) scaleY(1); }
+@keyframes entry-veil-reveal {
+  0%, 20% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
 }
 
 @keyframes entry-canvas-handoff {
-  0%, 24% { opacity: 0; }
-  74%, 100% { opacity: 1; }
+  0%, 22% { opacity: 0; }
+  76%, 100% { opacity: 1; }
+}
+
+@keyframes entry-prologue-handoff {
+  0%, 38% { opacity: 0; transform: translate3d(0, 14px, 0); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 @media (max-width: 720px) {
   body[data-story-page="true"] { background-attachment: scroll; }
-  .journey-entry-road { --entry-road-destination: 86%; width: 94px; }
   .journey-prologue { min-height: 138svh; }
   .prologue-copy { padding-right: 31vw; padding-left: 6vw; }
   .prologue-copy h1 { font-size: clamp(3.7rem, 17vw, 6.4rem); }
-  .journey-region, .journey-region:nth-of-type(n) { min-height: 224svh; }
+  .journey-region, .journey-region:nth-of-type(n) { min-height: var(--region-height, 184svh); }
   .region-content { top: 46%; width: 53vw; }
   .journey-region[data-road-side="left"] .region-content { right: 5vw; }
   .journey-region[data-road-side="right"] .region-content { left: 5vw; }
@@ -291,6 +307,7 @@ body[data-story-page="true"] {
   .region-category { gap: 8px; margin-bottom: 14px; font-size: 7px; letter-spacing: .16em; }
   .region-category span::after { width: 24px; }
   .region-content h2, .region--type-ledger .region-content h2, .region--quiet-fullscreen .region-content h2 { font-size: clamp(2.65rem, 12.8vw, 4.8rem); line-height: .9; }
+  .journey-region[data-title-scale="compact"] .region-content h2 { font-size: clamp(2.2rem, 9.5vw, 4.6rem); }
   .region-description { margin-top: 18px; font-size: clamp(.82rem, 3.6vw, 1rem); line-height: 1.48; }
   .region-tags { gap: 4px; margin-top: 16px; }
   .region-tags li { padding: 5px 7px; font-size: 6px; }
@@ -311,10 +328,13 @@ body[data-story-page="true"] {
   .journey-continuation > div { width: 78vw; }
   .journey-continuation h2 { font-size: clamp(3rem, 14vw, 5.5rem); }
   .journey-footer { flex-direction: column; }
+  .journey-scroll-cue { right: 18px; height: 108px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .journey-entry-road { display: none; }
+  .entry-from-arrival .journey-entry-veil,
+  .entry-from-arrival .journey-road,
+  .entry-from-arrival .prologue-copy { animation-duration: .12s !important; }
   .journey-region { --region-x: 0px !important; --region-y: 0px !important; }
   .region-content, .journey-discovery { will-change: opacity; }
   .region-stage.is-lateral-returning .region-content,

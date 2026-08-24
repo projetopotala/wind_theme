@@ -5,10 +5,6 @@
   --arrival-gold: #cbb48b;
 }
 
-@view-transition {
-  navigation: auto;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -60,9 +56,9 @@ a {
 .arrival-fallback,
 .arrival-fallback img,
 .arrival-canvas,
+.arrival-nature-canvas,
 .arrival-atmosphere,
 .arrival-horizon,
-.arrival-transition-road,
 .arrival-transition {
   position: absolute;
   inset: 0;
@@ -104,8 +100,14 @@ a {
   opacity: .01;
 }
 
-.arrival-atmosphere {
+.arrival-nature-canvas {
   z-index: 2;
+  display: block;
+  pointer-events: none;
+}
+
+.arrival-atmosphere {
+  z-index: 3;
   pointer-events: none;
   background:
     linear-gradient(180deg, rgba(16, 20, 19, .14) 0%, transparent 34%, rgba(15, 18, 17, .17) 100%),
@@ -114,7 +116,7 @@ a {
 }
 
 .arrival-horizon {
-  z-index: 3;
+  z-index: 4;
   pointer-events: none;
   opacity: calc(.08 + var(--arrival-progress, 0) * .26);
   background: radial-gradient(circle at 50% 55%, rgba(236, 200, 137, .32), transparent 28%);
@@ -122,27 +124,29 @@ a {
   transition: opacity .25s linear;
 }
 
-.arrival-scroll-cue {
+.journey-scroll-cue {
   position: absolute;
   z-index: 10;
   right: max(24px, 4vw);
   top: 50%;
   width: 1px;
-  height: 120px;
+  height: clamp(126px, 24svh, 196px);
   background: rgba(237, 224, 199, .18);
   pointer-events: none;
+  transform: translateY(-50%);
 }
 
-.arrival-scroll-cue span {
+.journey-scroll-cue span {
   position: absolute;
-  top: calc(var(--arrival-progress, 0) * 104px);
+  top: var(--journey-scroll-position, 0%);
   left: 50%;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: rgba(244, 229, 200, .88);
   box-shadow: 0 0 16px rgba(239, 205, 144, .5);
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
+  will-change: transform;
 }
 
 .arrival-transition {
@@ -150,49 +154,17 @@ a {
   pointer-events: none;
   opacity: 0;
   background:
-    linear-gradient(180deg, rgba(229, 235, 231, .79), rgba(223, 231, 229, .86)),
-    url("../media/chegada-landscape.webp") center / cover no-repeat;
-  filter: blur(7px);
-  transform: scale(1.035);
-}
-
-.arrival-transition-road {
-  z-index: 61;
-  left: 50%;
-  width: clamp(110px, 10.5vw, 168px);
-  height: 112%;
-  pointer-events: none;
-  opacity: 0;
-  background:
-    linear-gradient(90deg, rgba(83, 64, 45, .18), transparent 9% 91%, rgba(83, 64, 45, .18)),
-    url("../media/medieval-road-stones.webp") center / 328px 328px repeat #b7a487;
-  border-right: 5px solid #8f765d;
-  border-left: 5px solid #8f765d;
-  box-shadow: 0 13px 30px rgba(44, 34, 25, .24), 0 0 0 1px rgba(238, 222, 193, .22);
-  transform: translate(-50%, 70%) scaleY(.28);
-  transform-origin: center bottom;
-}
-
-.arrival-transition-road span {
-  display: none;
+    radial-gradient(circle at 50% 46%, rgba(56, 48, 38, .96), rgba(18, 20, 18, .99) 54%, #0d100e 100%);
 }
 
 body.is-arrival-transitioning .arrival-transition {
   opacity: 1;
-  filter: blur(0);
-  transform: scale(1);
-  transition: opacity 1.05s cubic-bezier(.22, .72, .24, 1), transform 1.15s cubic-bezier(.22, .72, .24, 1), filter 1.15s ease;
-}
-
-body.is-arrival-transitioning .arrival-transition-road {
-  opacity: .86;
-  transform: translate(-50%, -6%) scaleY(1);
-  transition: transform 1.08s cubic-bezier(.22, .72, .24, 1), opacity .62s ease;
+  transition: opacity .78s cubic-bezier(.4, 0, .2, 1);
 }
 
 body.is-arrival-transitioning .breath-launcher,
 body.is-arrival-transitioning .ambient-sound,
-body.is-arrival-transitioning .arrival-scroll-cue,
+body.is-arrival-transitioning .journey-scroll-cue,
 body.is-arrival-transitioning .breathing-guide {
   opacity: 0;
   pointer-events: none;
@@ -216,14 +188,10 @@ body.is-arrival-transitioning .breathing-guide {
     min-height: 170svh;
   }
 
-  .arrival-scroll-cue {
+  .journey-scroll-cue {
     top: 44%;
     right: 18px;
-    height: 92px;
-  }
-
-  .arrival-scroll-cue span {
-    top: calc(var(--arrival-progress, 0) * 76px);
+    height: 108px;
   }
 
 }
@@ -241,13 +209,16 @@ body.is-arrival-transitioning .breathing-guide {
     display: none;
   }
 
+  .arrival-nature-canvas {
+    display: none;
+  }
+
   .arrival-visual.is-scene-ready .arrival-fallback img {
     opacity: 1;
   }
 
   .arrival-fallback img,
-  .arrival-transition,
-  .arrival-transition-road {
+  .arrival-transition {
     transition-duration: .01ms !important;
   }
 }

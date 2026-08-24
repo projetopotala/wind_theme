@@ -19,10 +19,11 @@
         <picture class="arrival-fallback">
           <source media="(max-width: 720px) and (orientation: portrait)"
             srcset="media/chegada-landscape-mobile.webp">
-          <img src="media/chegada-landscape.webp" alt="Caminho entre montanhas cobertas por névoa ao amanhecer"
+          <img src="media/chegada-landscape.webp" alt="Casal chegando a um templo de pedra entre montanhas cobertas por névoa ao amanhecer"
             width="1672" height="941" fetchpriority="high" decoding="async">
         </picture>
         <canvas class="arrival-canvas" id="arrival-scene" aria-hidden="true" hidden></canvas>
+        <canvas class="arrival-nature-canvas" id="arrival-nature" aria-hidden="true" hidden></canvas>
         <div class="arrival-atmosphere" aria-hidden="true"></div>
         <div class="arrival-horizon" aria-hidden="true"></div>
       </div>
@@ -64,11 +65,10 @@
       </button>
       <audio id="ambient-audio" src="musica-fundo.mp3" loop preload="none"></audio>
 
-      <div class="arrival-scroll-cue" aria-hidden="true">
+      <div class="journey-scroll-cue" aria-hidden="true">
         <span></span>
       </div>
 
-      <div class="arrival-transition-road" aria-hidden="true"><span></span></div>
       <div class="arrival-transition" aria-hidden="true"></div>
     </section>
   </main>

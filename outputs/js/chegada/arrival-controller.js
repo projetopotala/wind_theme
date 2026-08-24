@@ -1,18 +1,31 @@
-import { createArrivalScene } from "./arrival-scene.js";
+import { createArrivalScene, selectArrivalAssets } from "./arrival-scene.js";
+import { createLeafLayer } from "./nature-motion.js";
 import { enterHome } from "./transition-handoff.js";
+import { scrollCuePosition } from "../core/math.js";
 
 const arrival = document.getElementById("arrival");
 const visual = document.getElementById("arrival-visual");
 const canvas = document.getElementById("arrival-scene");
+const natureCanvas = document.getElementById("arrival-nature");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 if (arrival && visual && canvas) {
+  const sceneAssets = selectArrivalAssets({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
   const scene = createArrivalScene({
     canvas,
-    imageUrl: "media/chegada-landscape.webp",
-    depthUrl: "media/chegada-depth.webp",
+    ...sceneAssets,
     reducedMotion,
   });
+  const leafLayer = natureCanvas
+    ? createLeafLayer({ canvas: natureCanvas, reducedMotion })
+    : null;
+  document.documentElement.style.setProperty(
+    "--journey-scroll-position",
+    scrollCuePosition({ movable: false }),
+  );
 
   let scrollFrame = 0;
   let lastScrollY = window.scrollY;
@@ -47,10 +60,19 @@ if (arrival && visual && canvas) {
   const onSoundState = (event) => {
     soundEnabled = Boolean(event.detail?.enabled);
   };
-  const onVisibilityChange = () => document.hidden ? scene.pause() : scene.resume();
+  const onVisibilityChange = () => {
+    if (document.hidden) {
+      scene.pause();
+      leafLayer?.pause();
+    } else {
+      scene.resume();
+      leafLayer?.resume();
+    }
+  };
   const cleanup = () => {
     cancelAnimationFrame(scrollFrame);
     scene.destroy();
+    leafLayer?.destroy();
     window.removeEventListener("scroll", queueScroll);
     window.removeEventListener("resize", queueScroll);
     window.removeEventListener("pointermove", updatePointer);
@@ -61,7 +83,10 @@ if (arrival && visual && canvas) {
     document.removeEventListener("potala:sound-state", onSoundState);
   };
   const onPageHide = (event) => {
-    if (event.persisted) scene.pause();
+    if (event.persisted) {
+      scene.pause();
+      leafLayer?.pause();
+    }
     else cleanup();
   };
   const onPageShow = (event) => {
@@ -71,6 +96,7 @@ if (arrival && visual && canvas) {
     document.body.classList.remove("is-arrival-transitioning");
     lastScrollY = window.scrollY;
     scene.resume();
+    leafLayer?.resume();
     queueScroll();
   };
 

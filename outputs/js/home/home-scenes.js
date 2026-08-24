@@ -6,10 +6,32 @@ const smoothstep = (value) => {
 
 export function presenceForDistance(distance, viewportHeight) {
   const height = Math.max(1, viewportHeight);
-  const hold = height * .5;
-  const release = height * 1.28;
+  const hold = height * .73;
+  const release = height * 1.65;
   if (distance <= hold) return 1;
   return clamp(1 - smoothstep((distance - hold) / Math.max(1, release - hold)));
+}
+
+export function presenceForRegionBounds({ top, bottom, viewportHeight }) {
+  const height = Math.max(1, viewportHeight);
+  const entryEnd = height * .08;
+  const entryStart = height * .75;
+  const exitEnd = height * .22;
+  const exitStart = height * .92;
+  const entry = 1 - smoothstep((top - entryEnd) / Math.max(1, entryStart - entryEnd));
+  const exit = smoothstep((bottom - exitEnd) / Math.max(1, exitStart - exitEnd));
+  return clamp(Math.min(entry, exit));
+}
+
+const regionHeights = [210, 200, 206, 214, 200, 206, 214, 200];
+const silenceHeights = [72, 78, 68, 74, 70, 80, 72];
+
+export function journeyRhythmForIndex(index) {
+  const safeIndex = Math.max(0, Math.min(regionHeights.length - 1, Math.trunc(index)));
+  return {
+    regionHeight: regionHeights[safeIndex],
+    silenceHeight: silenceHeights[safeIndex] || 0,
+  };
 }
 
 const transitionPhrases = new Map([
@@ -67,6 +89,8 @@ function renderLateralSide(ids, discoveriesById, side) {
 
 export function renderRegion(region, index, discovery, discoveriesById) {
   const side = region.roadPlacement === "left" ? "left" : "right";
+  const titleScale = Array.from(region.title).length >= 11 ? "compact" : "display";
+  const { regionHeight } = journeyRhythmForIndex(index);
   const lateral = region.lateral ? `
     <div class="lateral-world" aria-label="Explore caminhos relacionados">
       ${renderLateralSide(region.lateral.left, discoveriesById, "left")}
@@ -79,7 +103,8 @@ export function renderRegion(region, index, discovery, discoveriesById) {
     <section class="journey-region region--${region.layoutVariant}" id="${region.id}"
       data-region-id="${region.id}" data-layout-variant="${region.layoutVariant}"
       data-road-side="${side}" data-content-placement="${region.contentPlacement || "side"}"
-      style="--region-index:${index}">
+      data-title-scale="${titleScale}"
+      style="--region-index:${index};--region-height:${regionHeight}svh">
       <div class="region-stage"${region.lateral ? ' tabindex="0" role="group" aria-expanded="false" aria-label="Explore caminhos relacionados com as setas ou arrastando para os lados"' : ""}>
         <a class="region-content" href="${region.href}" aria-label="Conhecer ${region.title}">
           <p class="region-category"><span>${String(index + 1).padStart(2, "0")}</span>${region.category}</p>
@@ -103,9 +128,9 @@ export function mountJourney(root, { regions, discoveries }) {
     const markup = renderRegion(region, index, discovery, discoveriesById);
     if (index === regions.length - 1) return markup;
     const phrase = transitionPhrases.get(index);
-    const height = [112, 130, 98, 120, 104, 136, 116][index];
+    const { silenceHeight } = journeyRhythmForIndex(index);
     return `${markup}
-      <div class="journey-silence" aria-hidden="true" style="--silence-height:${height}svh">
+      <div class="journey-silence" aria-hidden="true" style="--silence-height:${silenceHeight}svh">
         ${phrase ? `<p>${phrase}</p>` : ""}
       </div>`;
   }).join("");

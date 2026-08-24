@@ -1,8 +1,8 @@
 import { consumeHandoff } from "../core/travessia-state.js";
-import { damp } from "../core/math.js";
+import { damp, scrollCuePosition, scrollProgressForDocument } from "../core/math.js";
 import { JOURNEY_DISCOVERIES, JOURNEY_REGIONS } from "./journey-data.js";
 import { createHomeRoad } from "./home-road.js";
-import { mountJourney, presenceForDistance } from "./home-scenes.js";
+import { mountJourney, presenceForRegionBounds } from "./home-scenes.js";
 import { createLateralExploration } from "./lateral-exploration.js";
 import {
   roadOffsetForPathSection,
@@ -10,16 +10,44 @@ import {
 } from "./journey-layout.js";
 
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
-const motionDirections = [
-  [0, 1], [.7, .7], [-.7, .7], [1, 0], [1, 0], [0, 1], [-.7, .7], [0, 1],
-];
-
 export function holdEntryHandoff(root, {
-  duration = 1450,
+  duration = 1800,
   schedule = setTimeout,
 } = {}) {
   root.classList.add("entry-from-arrival");
-  return schedule(() => root.classList.remove("entry-from-arrival"), duration);
+  return schedule(() => {
+    root.classList.remove("entry-from-arrival");
+    root.classList.remove("entry-pending");
+  }, duration);
+}
+
+export function smoothJourneyScroll(current, target, elapsed, {
+  reducedMotion = false,
+} = {}) {
+  return reducedMotion ? target : damp(current, target, elapsed, 150);
+}
+
+export function smoothRegionPresence(current, target, elapsed, {
+  reducedMotion = false,
+} = {}) {
+  return reducedMotion ? target : damp(current, target, elapsed, 360);
+}
+
+export function motionOffsetForRegion({
+  roadSide,
+  signedDistance,
+  viewportWidth,
+  viewportHeight,
+  reducedMotion = false,
+}) {
+  if (reducedMotion || signedDistance === 0) return { x: 0, y: 0 };
+  const movement = clamp(Math.abs(signedDistance) / Math.max(1, viewportHeight));
+  const amplitude = movement * Math.min(viewportWidth * .035, 48);
+  if (roadSide === "left") return { x: -amplitude, y: 0 };
+  if (roadSide === "right") return { x: amplitude, y: 0 };
+  if (roadSide === "top") return { x: 0, y: -amplitude };
+  if (roadSide === "bottom") return { x: 0, y: amplitude };
+  return { x: 0, y: 0 };
 }
 
 function roadStateForScroll(scrollCenter, elements, layout) {
@@ -106,6 +134,7 @@ export function createHomeController({
   let frameId = 0;
   let entryTimer = 0;
   let visualScrollTop = scrollY;
+  const visualPresence = data.regions.map(() => 0);
   let lastFrameTime = 0;
   let destroyed = false;
 
@@ -133,11 +162,27 @@ export function createHomeController({
     if (destroyed || document.hidden) return;
     const viewportHeight = innerHeight;
     const targetScrollTop = scrollY;
+    const scrollProgress = scrollProgressForDocument({
+      scrollTop: targetScrollTop,
+      scrollHeight: document.documentElement.scrollHeight,
+      viewportHeight,
+    });
+    document.documentElement.style.setProperty(
+      "--journey-scroll-progress",
+      scrollProgress.toFixed(4),
+    );
+    document.documentElement.style.setProperty(
+      "--journey-scroll-position",
+      scrollCuePosition({ progress: scrollProgress, movable: true }),
+    );
     const elapsed = lastFrameTime ? Math.min(64, Math.max(1, timestamp - lastFrameTime)) : 16;
     lastFrameTime = timestamp;
-    visualScrollTop = reducedMotion
-      ? targetScrollTop
-      : damp(visualScrollTop, targetScrollTop, elapsed, 90);
+    visualScrollTop = smoothJourneyScroll(
+      visualScrollTop,
+      targetScrollTop,
+      elapsed,
+      { reducedMotion },
+    );
     if (Math.abs(targetScrollTop - visualScrollTop) < .35) visualScrollTop = targetScrollTop;
     const scrollTop = visualScrollTop;
     const roadState = roadStateForScroll(
@@ -159,6 +204,7 @@ export function createHomeController({
 
     let activeRegion = null;
     let activePresence = 0;
+    let presenceSettling = false;
     mounted.regions.forEach((region, index) => {
       const actualRect = region.getBoundingClientRect();
       const top = actualRect.top + scrollY - scrollTop;
@@ -170,14 +216,25 @@ export function createHomeController({
         : after
           ? -(viewportHeight * .84 - bottom)
           : 0;
-      const presence = presenceForDistance(Math.abs(signedDistance), viewportHeight);
-      const movement = clamp(Math.abs(signedDistance) / viewportHeight);
-      const direction = motionDirections[index % motionDirections.length];
-      const sign = signedDistance >= 0 ? 1 : -1;
-      const amplitude = reducedMotion ? 0 : movement * Math.min(innerWidth * .16, 210);
+      const targetPresence = presenceForRegionBounds({ top, bottom, viewportHeight });
+      const presence = smoothRegionPresence(
+        visualPresence[index],
+        targetPresence,
+        elapsed,
+        { reducedMotion },
+      );
+      visualPresence[index] = presence;
+      if (Math.abs(targetPresence - presence) >= .01) presenceSettling = true;
+      const offset = motionOffsetForRegion({
+        roadSide: region.dataset.roadSide,
+        signedDistance,
+        viewportWidth: innerWidth,
+        viewportHeight,
+        reducedMotion,
+      });
       region.style.setProperty("--region-presence", presence.toFixed(4));
-      region.style.setProperty("--region-x", `${(direction[0] * amplitude * sign).toFixed(1)}px`);
-      region.style.setProperty("--region-y", `${(direction[1] * amplitude * sign).toFixed(1)}px`);
+      region.style.setProperty("--region-x", `${offset.x.toFixed(1)}px`);
+      region.style.setProperty("--region-y", `${offset.y.toFixed(1)}px`);
       region.classList.toggle("is-present", presence > .08);
       if (presence > activePresence) {
         activePresence = presence;
@@ -191,7 +248,10 @@ export function createHomeController({
       else link?.removeAttribute("aria-current");
     });
 
-    if (!reducedMotion && Math.abs(targetScrollTop - visualScrollTop) >= .35) {
+    if (!reducedMotion && (
+      Math.abs(targetScrollTop - visualScrollTop) >= .35
+      || presenceSettling
+    )) {
       frameId = requestAnimationFrame(update);
     } else {
       lastFrameTime = 0;

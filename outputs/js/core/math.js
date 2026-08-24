@@ -17,3 +17,19 @@ export const smoothstep = (progress) => {
   const value = clamp(progress);
   return value * value * (3 - 2 * value);
 };
+
+export const scrollProgressForDocument = ({
+  scrollTop = 0,
+  scrollHeight = 0,
+  viewportHeight = 0,
+} = {}) => {
+  const available = Math.max(0, Number(scrollHeight) - Number(viewportHeight));
+  if (!Number.isFinite(available) || available <= 0) return 0;
+  return clamp((Number(scrollTop) || 0) / available);
+};
+
+export const scrollCuePosition = ({
+  progress = 0,
+  movable = true,
+  restingProgress = 0,
+} = {}) => `${(clamp(movable ? progress : restingProgress) * 100).toFixed(2)}%`;

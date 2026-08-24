@@ -1,4 +1,25 @@
 import { clamp, lerp, smoothstep } from "../core/math.js";
+import { computeRiverFlowState } from "./nature-motion.js";
+
+export {
+  computeLeafFrame,
+  computeRiverFlowState,
+  computeRiverTime,
+  createLeafGroup,
+} from "./nature-motion.js";
+
+export function selectArrivalAssets({ width = 0, height = 0 } = {}) {
+  const usePortraitAssets = height > width && width <= 720;
+  return usePortraitAssets
+    ? {
+        imageUrl: "media/chegada-landscape-mobile.webp",
+        depthUrl: "media/chegada-depth-mobile.webp",
+      }
+    : {
+        imageUrl: "media/chegada-landscape.webp",
+        depthUrl: "media/chegada-depth.webp",
+      };
+}
 
 const BREATH_OFFSETS = {
   inhale: { depth: 0.06, fog: -0.07, light: 0.07 },
@@ -33,6 +54,7 @@ const FRAGMENT_SHADER = `
   uniform float uLight;
   uniform float uPath;
   uniform float uTime;
+  uniform float uRiverMotion;
 
   float hash(vec2 point) {
     return fract(sin(dot(point, vec2(127.1, 311.7))) * 43758.5453);
@@ -45,6 +67,15 @@ const FRAGMENT_SHADER = `
     float bottom = mix(hash(cell), hash(cell + vec2(1.0, 0.0)), local.x);
     float top = mix(hash(cell + vec2(0.0, 1.0)), hash(cell + vec2(1.0, 1.0)), local.x);
     return mix(bottom, top, local.y);
+  }
+
+  float riverArea(vec2 uv) {
+    float reach = smoothstep(0.005, 0.045, uv.y) * (1.0 - smoothstep(0.34, 0.415, uv.y));
+    float distanceAlongRiver = smoothstep(0.04, 0.37, uv.y);
+    float center = mix(0.285, 0.425, distanceAlongRiver);
+    float width = mix(0.16, 0.024, distanceAlongRiver);
+    float channel = 1.0 - smoothstep(width * 0.7, width, abs(uv.x - center));
+    return reach * channel;
   }
 
   vec2 coverUv(vec2 uv) {
@@ -69,6 +100,48 @@ const FRAGMENT_SHADER = `
       uDepthAmount;
     vec2 uv = clamp(baseUv + perspective, 0.002, 0.998);
     vec3 color = texture2D(uImage, uv).rgb;
+
+    float river = riverArea(baseUv);
+    float riverDepth = smoothstep(0.035, 0.37, baseUv.y);
+    float riverCenter = mix(0.285, 0.425, riverDepth);
+    float riverWidth = mix(0.16, 0.024, riverDepth);
+    float crossRiver = (baseUv.x - riverCenter) / max(0.018, riverWidth);
+    float perspectiveSpeed = mix(1.42, 0.42, riverDepth);
+    float flowClock = uTime * perspectiveSpeed * uRiverMotion;
+
+    float bodyNoise = noise(vec2(
+      crossRiver * 2.7 + flowClock * 0.11,
+      riverDepth * 18.0 + flowClock * 1.05
+    ));
+    float detailNoise = noise(vec2(
+      crossRiver * 7.5 - flowClock * 0.18,
+      riverDepth * 42.0 + flowClock * 2.1
+    ));
+    float broadWave = sin(riverDepth * 68.0 + crossRiver * 2.8 + flowClock * 3.2);
+    float fineWave = sin(riverDepth * 148.0 - crossRiver * 5.4 + flowClock * 5.7);
+    float displacement = (
+      (bodyNoise - 0.5) * 0.72
+      + broadWave * 0.34
+      + fineWave * 0.12
+    ) * mix(0.0046, 0.00115, riverDepth) * uRiverMotion;
+    vec2 downstream = normalize(vec2(-0.14, -1.0));
+    vec2 crossStream = vec2(-downstream.y, downstream.x);
+    vec2 waterUv = clamp(
+      uv + crossStream * displacement + downstream * (detailNoise - 0.5) * displacement * 0.42,
+      0.002,
+      0.998
+    );
+    vec3 movingWater = texture2D(uImage, waterUv).rgb;
+    color = mix(color, movingWater, river * 0.82 * uRiverMotion);
+
+    float rippleBand = 1.0 - smoothstep(
+      0.05,
+      0.24,
+      abs(sin(riverDepth * 104.0 + crossRiver * 3.6 + flowClock * 4.5 + bodyNoise * 2.2))
+    );
+    float sparseGlint = smoothstep(0.72, 0.96, detailNoise) * rippleBand;
+    float bankFade = 1.0 - smoothstep(0.58, 0.96, abs(crossRiver));
+    color += river * bankFade * sparseGlint * uRiverMotion * vec3(0.105, 0.095, 0.072);
 
     float mistBand = sin((vUv.y + uTime * 0.006) * 14.0) * 0.5 + 0.5;
     float mistNoise = noise(vUv * vec2(7.0, 4.0) + vec2(uTime * 0.012, 0.0));
@@ -230,7 +303,7 @@ export function createArrivalScene({
   );
 
   const uniforms = Object.fromEntries(
-    ["uImage", "uDepth", "uPointer", "uResolution", "uImageSize", "uCamera", "uDepthAmount", "uFog", "uLight", "uPath", "uTime"].map(
+    ["uImage", "uDepth", "uPointer", "uResolution", "uImageSize", "uCamera", "uDepthAmount", "uFog", "uLight", "uPath", "uTime", "uRiverMotion"].map(
       (name) => [name, gl.getUniformLocation(program, name)],
     ),
   );
@@ -272,7 +345,12 @@ export function createArrivalScene({
     gl.uniform1f(uniforms.uFog, state.fog);
     gl.uniform1f(uniforms.uLight, state.light);
     gl.uniform1f(uniforms.uPath, state.path);
-    gl.uniform1f(uniforms.uTime, reducedMotion ? 0 : (now - startTime) / 1000);
+    const riverFlow = computeRiverFlowState({
+      elapsed: (now - startTime) / 1000,
+      reducedMotion,
+    });
+    gl.uniform1f(uniforms.uTime, riverFlow.time);
+    gl.uniform1f(uniforms.uRiverMotion, riverFlow.intensity);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     if (!paused) frameId = requestAnimationFrame(draw);

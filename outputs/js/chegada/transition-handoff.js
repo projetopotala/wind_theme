@@ -1,5 +1,9 @@
 import { writeTravessiaState } from "../core/travessia-state.js";
 
+export function handoffDelayForMotion({ reducedMotion = false } = {}) {
+  return reducedMotion ? 80 : 850;
+}
+
 export function enterHome({
   entry,
   soundEnabled = false,
@@ -12,6 +16,9 @@ export function enterHome({
   document.body.classList.add("is-arrival-transitioning");
   document.dispatchEvent(new CustomEvent("potala:prepare-handoff"));
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  window.setTimeout(() => location.assign(destination), reduced ? 80 : 1080);
+  window.setTimeout(
+    () => location.assign(destination),
+    handoffDelayForMotion({ reducedMotion: reduced }),
+  );
   return true;
 }
