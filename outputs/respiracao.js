@@ -1,4 +1,5 @@
 import { getBreathFrame } from "./js/chegada/breathing-timeline.js";
+import { planSoundToggle } from "./js/chegada/ambient-sound.js";
 
 const totalCycles = 8;
 const guide = document.getElementById("breathing-guide");
@@ -190,18 +191,19 @@ function fadeSound(target, duration = 420, onComplete) {
 }
 
 async function toggleSound() {
-  if (soundEnabled) {
+  const plan = planSoundToggle({ enabled: soundEnabled, paused: ambientAudio.paused });
+  if (plan.action === "disable") {
     soundEnabled = false;
     updateSoundButton();
     fadeSound(0, 360, () => ambientAudio.pause());
     return;
   }
-  ambientAudio.volume = 0;
+  ambientAudio.volume = plan.startVolume;
   try {
     await ambientAudio.play();
     soundEnabled = true;
     updateSoundButton();
-    fadeSound(0.28, 520);
+    fadeSound(plan.targetVolume, 520);
   } catch {
     soundEnabled = false;
     updateSoundButton();

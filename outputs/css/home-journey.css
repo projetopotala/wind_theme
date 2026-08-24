@@ -249,8 +249,6 @@ body[data-story-page="true"] {
 .lateral-reveal a { display: grid; gap: 4px; padding: 12px; color: var(--blue); text-decoration: none; }
 .lateral-reveal small { font-size: 8px; letter-spacing: .14em; text-transform: uppercase; }
 .lateral-reveal strong { font: 400 18px/1.2 Georgia, serif; }
-.lateral-hint { position: absolute; bottom: 5svh; left: 50%; margin: 0; color: rgba(40, 79, 96, .4); font-size: 8px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; transform: translateX(-50%); }
-.lateral-hint span { display: block; margin-bottom: 5px; font-size: 16px; text-align: center; }
 .region-stage.is-lateral-left .lateral-reveal--left,
 .region-stage.is-lateral-right .lateral-reveal--right { opacity: 1; pointer-events: auto; }
 .region-stage.is-lateral-left .lateral-reveal--left a,
@@ -319,7 +317,6 @@ body[data-story-page="true"] {
   .journey-region[data-road-side="bottom"] .journey-discovery { top: 69svh; left: 6vw; }
   .discovery-copy strong { font-size: 14px; }
   .discovery-copy > span { display: none; }
-  .lateral-hint { display: none; }
   .lateral-reveal { width: 42vw; }
   .journey-silence p { width: 32vw; font-size: 1.05rem; }
   .journey-silence[data-copy-side="left"] p { left: 5vw; }

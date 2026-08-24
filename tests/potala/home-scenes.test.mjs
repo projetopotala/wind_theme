@@ -92,3 +92,19 @@ test("títulos longos recebem escala que cabe na área editorial", () => {
 
   assert.match(markup, /data-title-scale="compact"/);
 });
+
+test("regiões laterais não exibem a instrução Explore os arredores", () => {
+  const markup = homeScenes.renderRegion({
+    id: "atendimentos",
+    title: "Atendimentos",
+    category: "O cuidado",
+    description: "Conheça o cuidado.",
+    href: "atendimentos.html",
+    tags: ["acolhimento"],
+    layoutVariant: "editorial-right",
+    roadPlacement: "left",
+    lateral: { left: [], right: [] },
+  }, 1, null, new Map());
+
+  assert.doesNotMatch(markup, /Explore os arredores|Explore caminhos relacionados|lateral-hint/i);
+});

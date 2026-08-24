@@ -92,11 +92,10 @@ export function renderRegion(region, index, discovery, discoveriesById) {
   const titleScale = Array.from(region.title).length >= 11 ? "compact" : "display";
   const { regionHeight } = journeyRhythmForIndex(index);
   const lateral = region.lateral ? `
-    <div class="lateral-world" aria-label="Explore caminhos relacionados">
+    <div class="lateral-world" aria-label="Caminhos relacionados">
       ${renderLateralSide(region.lateral.left, discoveriesById, "left")}
       ${renderLateralSide(region.lateral.right, discoveriesById, "right")}
     </div>
-    <p class="lateral-hint"><span aria-hidden="true">↔</span> Explore os arredores</p>
   ` : "";
 
   return `
@@ -105,7 +104,7 @@ export function renderRegion(region, index, discovery, discoveriesById) {
       data-road-side="${side}" data-content-placement="${region.contentPlacement || "side"}"
       data-title-scale="${titleScale}"
       style="--region-index:${index};--region-height:${regionHeight}svh">
-      <div class="region-stage"${region.lateral ? ' tabindex="0" role="group" aria-expanded="false" aria-label="Explore caminhos relacionados com as setas ou arrastando para os lados"' : ""}>
+      <div class="region-stage"${region.lateral ? ' tabindex="0" role="group" aria-expanded="false" aria-label="Caminhos relacionados; use as setas ou arraste para os lados"' : ""}>
         <a class="region-content" href="${region.href}" aria-label="Conhecer ${region.title}">
           <p class="region-category"><span>${String(index + 1).padStart(2, "0")}</span>${region.category}</p>
           <h2>${region.title}</h2>
