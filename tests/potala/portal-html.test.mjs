@@ -13,10 +13,9 @@ test("respiração é opt-in e o fallback visual existe", () => {
   assert.doesNotMatch(chegada, /<audio[^>]*autoplay/i);
 });
 
-test("drag e canvas têm semântica correta", () => {
-  assert.match(chegada, /aria-valuemin="0"/);
-  assert.match(chegada, /aria-valuemax="100"/);
+test("a Chegada preserva o canvas sem expor um controle de drag", () => {
   assert.match(chegada, /id="arrival-scene"[^>]*aria-hidden="true"/);
+  assert.doesNotMatch(chegada, /role="slider"|aria-valuemin|aria-valuemax/);
 });
 
 test("home mantém fallback e não intercepta wheel", () => {

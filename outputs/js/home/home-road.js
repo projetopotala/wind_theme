@@ -50,6 +50,50 @@ function tracePath(layout) {
   return path;
 }
 
+const ROAD_TEXTURE_URL = new URL("../../media/medieval-road-stones.webp", import.meta.url).href;
+
+export function buildMedievalRoadLayers(baseWidth, texturePattern = null) {
+  const width = Math.max(72, Number(baseWidth) || 72);
+  return [
+    {
+      width: width * 1.24,
+      strokeStyle: "rgba(49, 39, 29, .28)",
+      shadowColor: "rgba(37, 29, 22, .34)",
+      blur: 22,
+      shadowOffsetY: 10,
+      composite: "source-over",
+      lineDash: [],
+    },
+    {
+      width: width * 1.12,
+      strokeStyle: "#8f765d",
+      shadowColor: "rgba(77, 58, 40, .24)",
+      blur: 7,
+      shadowOffsetY: 3,
+      composite: "source-over",
+      lineDash: [],
+    },
+    {
+      width,
+      strokeStyle: texturePattern || "#b7a487",
+      shadowColor: "transparent",
+      blur: 0,
+      shadowOffsetY: 0,
+      composite: "source-over",
+      lineDash: [],
+    },
+    {
+      width: width * .96,
+      strokeStyle: "rgba(236, 221, 191, .08)",
+      shadowColor: "rgba(248, 231, 195, .12)",
+      blur: 3,
+      shadowOffsetY: -1,
+      composite: "source-over",
+      lineDash: [],
+    },
+  ];
+}
+
 export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
   if (!canvas) throw new TypeError("canvas é obrigatório para a estrada");
   const context = canvas.getContext("2d", { alpha: true });
@@ -69,6 +113,8 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
   let frameId = 0;
   let paused = document.hidden;
   let destroyed = false;
+  let roadTexture = null;
+  const textureImage = new Image();
 
   function configureCanvas() {
     ratio = Math.min(devicePixelRatio || 1, 1.5);
@@ -87,28 +133,29 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     renderedOffset = offsetSignature;
     const camera = locate(layout, progress);
     const roadWidth = width < 720
-      ? Math.max(88, Math.min(118, width * .27))
-      : Math.max(126, Math.min(188, width * .12));
+      ? Math.max(76, Math.min(106, width * .22))
+      : Math.max(116, Math.min(164, width * .09));
 
     context.clearRect(0, 0, width, height);
     context.save();
     context.translate(width * .5 + offsetX - camera.x, height * .54 + offsetY - camera.y);
     context.lineJoin = "round";
     context.lineCap = "round";
+    for (const layer of buildMedievalRoadLayers(roadWidth, roadTexture)) {
+      context.globalCompositeOperation = layer.composite;
+      context.strokeStyle = layer.strokeStyle;
+      context.lineWidth = layer.width;
+      context.setLineDash(layer.lineDash);
+      context.shadowColor = layer.shadowColor;
+      context.shadowBlur = reducedMotion ? layer.blur * .45 : layer.blur;
+      context.shadowOffsetX = 0;
+      context.shadowOffsetY = layer.shadowOffsetY || 0;
+      context.stroke(path);
+    }
 
-    context.strokeStyle = "#b7a58d";
-    context.lineWidth = roadWidth + Math.max(8, roadWidth * .08);
-    context.stroke(path);
-
-    context.strokeStyle = "#666d6b";
-    context.lineWidth = roadWidth;
-    context.stroke(path);
-
-    context.strokeStyle = "rgba(244, 246, 239, .86)";
-    context.lineWidth = Math.max(2, roadWidth * .018);
-    context.setLineDash([Math.max(24, roadWidth * .25), Math.max(28, roadWidth * .3)]);
-    context.lineDashOffset = reducedMotion ? 0 : -progress * 80;
-    context.stroke(path);
+    context.shadowBlur = 0;
+    context.shadowOffsetY = 0;
+    context.globalCompositeOperation = "source-over";
     context.restore();
   }
 
@@ -136,6 +183,17 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
   }
 
   configureCanvas();
+  textureImage.decoding = "async";
+  textureImage.onload = () => {
+    if (destroyed) return;
+    roadTexture = context.createPattern(textureImage, "repeat");
+    if (roadTexture?.setTransform && typeof DOMMatrix === "function") {
+      roadTexture.setTransform(new DOMMatrix().scale(.64));
+    }
+    renderedProgress = -1;
+    queueDraw();
+  };
+  textureImage.src = ROAD_TEXTURE_URL;
   document.addEventListener("visibilitychange", onVisibilityChange);
   queueDraw();
 
@@ -155,6 +213,7 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     resize,
     destroy() {
       destroyed = true;
+      textureImage.onload = null;
       cancelAnimationFrame(frameId);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     },

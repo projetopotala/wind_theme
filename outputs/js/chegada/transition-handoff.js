@@ -12,6 +12,6 @@ export function enterHome({
   document.body.classList.add("is-arrival-transitioning");
   document.dispatchEvent(new CustomEvent("potala:prepare-handoff"));
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  window.setTimeout(() => location.assign(destination), reduced ? 80 : 720);
+  window.setTimeout(() => location.assign(destination), reduced ? 80 : 1080);
   return true;
 }

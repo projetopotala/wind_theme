@@ -4,12 +4,15 @@
   const body = document.body;
   const siteSections = [
     { key: "inicio", label: "Início", href: "transcendido.html" },
+    { key: "quem-somos", label: "Quem somos", href: "quem-somos.html" },
     { key: "atendimentos", label: "Atendimentos", href: "atendimentos.html" },
     { key: "atividades", label: "Atividades", href: "atividades.html" },
     { key: "cursos", label: "Cursos", href: "cursos.html" },
     { key: "programacao", label: "Programação", href: "programacao.html" },
     { key: "saude-integrativa", label: "Saúde Integrativa", href: "saude-integrativa.html" },
     { key: "cultura", label: "Cultura", href: "cultura.html" },
+    { key: "profissionais", label: "Profissionais", href: "profissionais.html" },
+    { key: "inspiracao", label: "Inspiração", href: "inspiracao.html" },
   ];
 
   function mountLegacyNavigation() {

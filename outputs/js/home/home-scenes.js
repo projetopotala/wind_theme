@@ -6,8 +6,8 @@ const smoothstep = (value) => {
 
 export function presenceForDistance(distance, viewportHeight) {
   const height = Math.max(1, viewportHeight);
-  const hold = height * .34;
-  const release = height * .92;
+  const hold = height * .5;
+  const release = height * 1.28;
   if (distance <= hold) return 1;
   return clamp(1 - smoothstep((distance - hold) / Math.max(1, release - hold)));
 }
@@ -65,7 +65,7 @@ function renderLateralSide(ids, discoveriesById, side) {
   `;
 }
 
-function renderRegion(region, index, discovery, discoveriesById) {
+export function renderRegion(region, index, discovery, discoveriesById) {
   const side = region.roadPlacement === "left" ? "left" : "right";
   const lateral = region.lateral ? `
     <div class="lateral-world" aria-label="Explore caminhos relacionados">
@@ -78,18 +78,16 @@ function renderRegion(region, index, discovery, discoveriesById) {
   return `
     <section class="journey-region region--${region.layoutVariant}" id="${region.id}"
       data-region-id="${region.id}" data-layout-variant="${region.layoutVariant}"
-      data-road-side="${side}" style="--region-index:${index}">
+      data-road-side="${side}" data-content-placement="${region.contentPlacement || "side"}"
+      style="--region-index:${index}">
       <div class="region-stage"${region.lateral ? ' tabindex="0" role="group" aria-expanded="false" aria-label="Explore caminhos relacionados com as setas ou arrastando para os lados"' : ""}>
-        <figure class="region-media">
-          <img src="${region.media}" alt="${region.alt}" loading="lazy" decoding="async" width="1920" height="1080">
-        </figure>
-        <article class="region-content">
+        <a class="region-content" href="${region.href}" aria-label="Conhecer ${region.title}">
           <p class="region-category"><span>${String(index + 1).padStart(2, "0")}</span>${region.category}</p>
           <h2>${region.title}</h2>
           <p class="region-description">${region.description}</p>
           <ul class="region-tags" aria-label="Temas desta região">${renderTags(region.tags)}</ul>
-          <a class="region-link" href="${region.href}">Conhecer este caminho <span aria-hidden="true">↗</span></a>
-        </article>
+          <span class="region-link" aria-hidden="true">Conhecer este caminho <span>↗</span></span>
+        </a>
         ${renderDiscovery(discovery, index)}
         ${lateral}
       </div>
@@ -105,7 +103,7 @@ export function mountJourney(root, { regions, discoveries }) {
     const markup = renderRegion(region, index, discovery, discoveriesById);
     if (index === regions.length - 1) return markup;
     const phrase = transitionPhrases.get(index);
-    const height = [88, 104, 76, 96, 82, 108, 92][index];
+    const height = [112, 130, 98, 120, 104, 136, 116][index];
     return `${markup}
       <div class="journey-silence" aria-hidden="true" style="--silence-height:${height}svh">
         ${phrase ? `<p>${phrase}</p>` : ""}

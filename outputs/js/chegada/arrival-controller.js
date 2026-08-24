@@ -1,15 +1,12 @@
 import { createArrivalScene } from "./arrival-scene.js";
-import { createDragController } from "./drag-controller.js";
 import { enterHome } from "./transition-handoff.js";
 
 const arrival = document.getElementById("arrival");
 const visual = document.getElementById("arrival-visual");
 const canvas = document.getElementById("arrival-scene");
-const dragButton = document.getElementById("transcend-button");
-const presence = document.querySelector(".arrival-presence");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-if (arrival && visual && canvas && dragButton) {
+if (arrival && visual && canvas) {
   const scene = createArrivalScene({
     canvas,
     imageUrl: "media/chegada-landscape.webp",
@@ -27,11 +24,6 @@ if (arrival && visual && canvas && dragButton) {
     const progress = Math.min(1, Math.max(0, -arrival.getBoundingClientRect().top / available));
     visual.style.setProperty("--arrival-progress", progress.toFixed(4));
     scene.setScrollProgress(progress);
-
-    if (presence) {
-      presence.style.opacity = String(Math.max(0, 1 - progress * 2.6));
-      presence.style.transform = `translate(-50%, ${Math.round(progress * -22)}px)`;
-    }
 
     const movingDown = window.scrollY > lastScrollY + 1;
     lastScrollY = window.scrollY;
@@ -51,12 +43,6 @@ if (arrival && visual && canvas && dragButton) {
     scene.setPointer(x, y);
   };
 
-  const drag = createDragController({
-    button: dragButton,
-    onComplete: ({ entry }) => enterHome({ entry, soundEnabled }),
-    globalKeyboard: true,
-  });
-
   const onBreathState = (event) => scene.setBreathState(event.detail?.phase || "idle");
   const onSoundState = (event) => {
     soundEnabled = Boolean(event.detail?.enabled);
@@ -64,7 +50,6 @@ if (arrival && visual && canvas && dragButton) {
   const onVisibilityChange = () => document.hidden ? scene.pause() : scene.resume();
   const cleanup = () => {
     cancelAnimationFrame(scrollFrame);
-    drag.destroy();
     scene.destroy();
     window.removeEventListener("scroll", queueScroll);
     window.removeEventListener("resize", queueScroll);
@@ -84,7 +69,6 @@ if (arrival && visual && canvas && dragButton) {
     delete document.documentElement.dataset.transitioning;
     document.documentElement.classList.remove("is-crossing");
     document.body.classList.remove("is-arrival-transitioning");
-    drag.reset();
     lastScrollY = window.scrollY;
     scene.resume();
     queueScroll();
