@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -27,6 +27,22 @@ test("os assets V2 da Chegada compartilham a mesma dimensão da master", async (
     const meta = await inspectArrivalSource(path.join(SOURCE, file));
     assert.equal(meta.width, master.width, file);
     assert.equal(meta.height, master.height, file);
+  }
+});
+
+test("o pipeline entrega as camadas desktop em resolução 2K alinhada", async () => {
+  const outputDir = await mkdir(path.join(os.tmpdir(), `arrival-v2-2k-${Date.now()}`), { recursive: true });
+  try {
+    const result = await prepareArrivalV2Assets({ outputDir });
+    assert.deepEqual(result.plate, { width: 2048, height: 1152 });
+
+    for (const file of result.files) {
+      const meta = await sharp(await readFile(path.join(outputDir, file))).metadata();
+      assert.equal(meta.width, 2048, file);
+      assert.equal(meta.height, 1152, file);
+    }
+  } finally {
+    await rm(outputDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 80 });
   }
 });
 
