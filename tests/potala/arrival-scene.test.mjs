@@ -37,8 +37,8 @@ test("as folhas caem em pequenos grupos a partir da copa", () => {
 
   assert.equal(leaves?.length, 4);
   for (const leaf of leaves) {
-    assert.ok(leaf.x >= 0.04 && leaf.x <= 0.46);
-    assert.ok(leaf.y >= -0.08 && leaf.y <= 0.2);
+    assert.ok(leaf.x >= 0.04 && leaf.x <= 0.28);
+    assert.ok(leaf.y >= 0.02 && leaf.y <= 0.22);
     assert.ok(leaf.delay >= 0 && leaf.delay <= 0.72);
   }
 });
@@ -74,12 +74,12 @@ test("a correnteza avança somente quando movimento está permitido", () => {
   assert.equal(arrivalScene.computeRiverTime?.({ elapsed: -1 }), 0);
 });
 
-test("a correnteza só corre com energia da interação", () => {
+test("a correnteza já corre ao abrir e só para com reduced motion", () => {
   assert.equal(typeof arrivalScene.computeRiverFlowState, "function");
 
   assert.deepEqual(arrivalScene.computeRiverFlowState({ elapsed: 2.5 }), {
-    time: 0,
-    intensity: 0,
+    time: 2.5,
+    intensity: 1,
   });
 
   const moving = arrivalScene.computeRiverFlowState({ elapsed: 2.5, energy: 1 });
@@ -94,18 +94,32 @@ test("a correnteza só corre com energia da interação", () => {
   assert.deepEqual(reduced, { time: 0, intensity: 0 });
 });
 
-test("a cena vertical carrega a paisagem e a profundidade mobile", () => {
-  assert.deepEqual(arrivalScene.selectArrivalAssets?.({ width: 390, height: 844 }), {
-    imageUrl: "media/chegada-landscape-mobile.webp",
-    depthUrl: "media/chegada-depth-mobile.webp",
-    waterUrl: "",
-    canopyUrl: "",
-  });
+test("a água do poço ganha ondulação sem deslocar a foto", () => {
+  const start = arrivalScene.computeRippleFrame?.({ x: 0.16, y: 0.88, born: 0, start: 0.004, spread: 0.02, life: 2 }, 0);
+  const later = arrivalScene.computeRippleFrame?.({ x: 0.16, y: 0.88, born: 0, start: 0.004, spread: 0.02, life: 2 }, 1);
+  assert.ok(later.radius > start.radius);
+  assert.ok(later.opacity < start.opacity);
+});
 
-  assert.deepEqual(arrivalScene.selectArrivalAssets?.({ width: 1280, height: 720 }), {
-    imageUrl: "media/chegada-landscape.webp",
-    depthUrl: "media/chegada-depth.webp",
-    waterUrl: "media/chegada-water.webp",
-    canopyUrl: "media/chegada-canopy.webp",
-  });
+test("pessoas só se deslocam no lugar, em milímetros", () => {
+  const play = arrivalScene.computePersonIdle?.({ x: 0.16, y: 0.88, kind: "play" }, 1.4);
+  const rest = arrivalScene.computePersonIdle?.({ x: 0.5, y: 0.74, kind: "walk" }, 1.4);
+  assert.ok(Math.hypot(play.x - 0.16, play.y - 0.88) < 0.01);
+  assert.ok(Math.hypot(rest.x - 0.5, rest.y - 0.74) < 0.006);
+  assert.ok(Math.hypot(play.x - 0.16, play.y - 0.88) > 0);
+});
+
+test("a cena vertical carrega a paisagem e a profundidade mobile", () => {
+  const mobile = arrivalScene.selectArrivalAssets?.({ width: 390, height: 844 });
+  const desktop = arrivalScene.selectArrivalAssets?.({ width: 1280, height: 720 });
+
+  assert.equal(mobile.imageUrl, "media/chegada-landscape-mobile.webp");
+  assert.equal(mobile.depthUrl, "media/chegada-depth-mobile.webp");
+  assert.equal(mobile.waterUrl, "");
+  assert.equal(mobile.canopyUrl, "");
+
+  assert.equal(desktop.imageUrl, "media/chegada-v2-master.webp");
+  assert.equal(desktop.depthUrl, "media/chegada-v2-depth.webp");
+  assert.equal(desktop.waterUrl, "media/chegada-v2-water-mask.webp");
+  assert.equal(desktop.canopyUrl, "media/chegada-v2-canopy-mask.webp");
 });

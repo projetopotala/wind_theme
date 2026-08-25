@@ -1,87 +1,7 @@
 import { clamp, damp } from "../core/math.js";
+import { DESKTOP_V2_ACTORS } from "./arrival-scene-profile.js";
 
-export const WORLD_ACTORS = [
-  {
-    id: "sky",
-    action: "sun",
-    role: "Tempo",
-    label: "O céu",
-    cue: "A luz muda porque você chegou.",
-    x: 0.4,
-    y: 0.14,
-    radius: 0.16,
-  },
-  {
-    id: "tree",
-    action: "wind",
-    role: "Presença",
-    label: "A árvore antiga",
-    cue: "O vento só existe enquanto você está aqui.",
-    x: 0.16,
-    y: 0.36,
-    radius: 0.14,
-  },
-  {
-    id: "stream",
-    action: "water",
-    role: "Fluxo",
-    label: "A água da margem",
-    cue: "A correnteza acorda com a sua atenção.",
-    x: 0.2,
-    y: 0.78,
-    radius: 0.09,
-  },
-  {
-    id: "children",
-    action: "breathe",
-    role: "Pausa",
-    label: "Quem brinca na água",
-    cue: "Eles convidam a respirar.",
-    x: 0.15,
-    y: 0.86,
-    radius: 0.07,
-  },
-  {
-    id: "overlook",
-    action: "mist",
-    role: "Horizonte",
-    label: "Quem aponta o vale",
-    cue: "A névoa abre para quem olha ao longe.",
-    x: 0.36,
-    y: 0.58,
-    radius: 0.07,
-  },
-  {
-    id: "elders",
-    action: "path",
-    role: "Caminho",
-    label: "Quem segue a pedra",
-    cue: "Um passo com eles. O resto é o seu.",
-    x: 0.5,
-    y: 0.74,
-    radius: 0.07,
-  },
-  {
-    id: "sitters",
-    action: "listen",
-    role: "Escuta",
-    label: "Quem descansa junto ao templo",
-    cue: "Você não precisa conhecer tudo hoje.",
-    x: 0.74,
-    y: 0.8,
-    radius: 0.08,
-  },
-  {
-    id: "steps",
-    action: "enter",
-    role: "Entrada",
-    label: "A porta do templo",
-    cue: "Quando quiser, o Potala continua lá dentro.",
-    x: 0.8,
-    y: 0.56,
-    radius: 0.08,
-  },
-];
+export const WORLD_ACTORS = DESKTOP_V2_ACTORS;
 
 const ACTION_ENERGY = {
   sun: { sun: 1 },
@@ -91,34 +11,38 @@ const ACTION_ENERGY = {
   mist: { mist: 1 },
   path: { path: 1 },
   listen: { attention: 0.8 },
-  enter: { path: 0.7, sun: 0.4 },
+  enter: { path: 0.7, sun: 0.4, mist: 0.55 },
+};
+
+export const AMBIENT_ENERGY = {
+  wind: 0.28,
+  water: 0.65,
+  sun: 0.24,
+  mist: 0.14,
+  path: 0.08,
+  attention: 0,
 };
 
 export function createWorldState() {
   return {
-    energies: {
-      wind: 0,
-      water: 0,
-      sun: 0,
-      mist: 0,
-      path: 0,
-      attention: 0,
-    },
-    windDir: [0, 0],
+    energies: { ...AMBIENT_ENERGY },
+    windDir: [0.32, 0.08],
     attentionId: null,
     attentionUv: [0.5, 0.5],
     awakened: [],
     lastAction: null,
     prompt: "",
+    mistReveal: 0.14,
   };
 }
 
-export function hitActor(uvX, uvY, actors = WORLD_ACTORS) {
+export function hitActor(uvX, uvY, actors = WORLD_ACTORS, { previousId = null } = {}) {
   let best = null;
   let bestDistance = Infinity;
   for (const actor of actors) {
+    const radius = actor.id === previousId ? actor.radius * 1.1 : actor.radius;
     const distance = Math.hypot(uvX - actor.x, uvY - actor.y);
-    if (distance <= actor.radius && distance < bestDistance) {
+    if (distance <= radius && distance < bestDistance) {
       best = actor;
       bestDistance = distance;
     }
@@ -139,6 +63,7 @@ export function applyWorldAction(state, actor, now = 0) {
   return {
     ...state,
     energies,
+    mistReveal: energies.mist,
     attentionId: actor.id,
     attentionUv: [actor.x, actor.y],
     awakened,
@@ -171,6 +96,7 @@ export function feedProximity(state, actor, { pointerDelta = 0, pointer = [0, 0]
   energies.attention = Math.max(energies.attention, 0.32);
   next.attentionId = actor.id;
   next.attentionUv = [actor.x, actor.y];
+  next.mistReveal = energies.mist;
   next.prompt = actor.label;
   return next;
 }
@@ -180,16 +106,25 @@ export function stepWorld(state, { elapsedMs = 16, reducedMotion = false } = {})
   if (reducedMotion) {
     return {
       ...current,
-      energies: createWorldState().energies,
+      energies: {
+        wind: 0, water: 0, sun: 0, mist: 0, path: 0, attention: 0,
+      },
+      mistReveal: 0,
       windDir: [0, 0],
     };
   }
   const energies = {};
   for (const [key, value] of Object.entries(current.energies)) {
-    const rest = damp(value, 0, elapsedMs, key === "mist" ? 1600 : 680);
-    energies[key] = rest < 0.012 ? 0 : rest;
+    const rest = AMBIENT_ENERGY[key] ?? 0;
+    const response = key === "mist" ? 1600 : key === "attention" ? 420 : 680;
+    const next = damp(value, rest, elapsedMs, response);
+    energies[key] = Math.abs(next - rest) < 0.012 ? rest : next;
   }
-  return { ...current, energies };
+  const windDir = [
+    damp(current.windDir?.[0] || 0, 0.32, elapsedMs, 220),
+    damp(current.windDir?.[1] || 0, 0.08, elapsedMs, 220),
+  ];
+  return { ...current, energies, mistReveal: energies.mist, windDir };
 }
 
 export function imageUvFromPointer({ clientX = 0, clientY = 0, viewport, image }) {
@@ -226,34 +161,56 @@ export function mountArrivalWorld(root, { actors = WORLD_ACTORS, onActivate } = 
     </button>
   `).join("");
   const prompt = document.getElementById("world-prompt");
-
-  const activate = (actor, source = "pointer") => {
-    onActivate?.(actor, source);
-  };
+  let lastNear = null;
+  let lastPrompt = "";
+  let lastAwakened = "";
 
   const onClick = (event) => {
     const button = event.target.closest("[data-actor-id]");
     if (!button) return;
     const actor = actors.find((item) => item.id === button.dataset.actorId);
-    if (actor) activate(actor, "click");
+    if (actor) onActivate?.(actor, "click");
   };
 
   root.addEventListener("click", onClick);
   root.hidden = false;
 
-  return {
-    prompt,
-    sync(state, viewport, image) {
+  const layout = (viewport, image) => {
+    for (const button of root.querySelectorAll("[data-actor-id]")) {
+      const actor = actors.find((item) => item.id === button.dataset.actorId);
+      if (!actor) continue;
+      const point = actorScreenPosition(actor, viewport, image);
+      button.style.left = `${point.left}px`;
+      button.style.top = `${point.top}px`;
+    }
+  };
+
+  const syncState = (state) => {
+    const near = state.attentionId || "";
+    const awakened = (state.awakened || []).join(",");
+    if (near !== lastNear || awakened !== lastAwakened) {
       for (const button of root.querySelectorAll("[data-actor-id]")) {
         const actor = actors.find((item) => item.id === button.dataset.actorId);
         if (!actor) continue;
-        const point = actorScreenPosition(actor, viewport, image);
-        button.style.left = `${point.left}px`;
-        button.style.top = `${point.top}px`;
         button.classList.toggle("is-near", state.attentionId === actor.id);
         button.classList.toggle("is-awakened", state.awakened.includes(actor.id));
       }
-      if (prompt) prompt.textContent = state.prompt || "";
+      lastNear = near;
+      lastAwakened = awakened;
+    }
+    if (prompt && state.prompt !== lastPrompt) {
+      prompt.textContent = state.prompt || "";
+      lastPrompt = state.prompt || "";
+    }
+  };
+
+  return {
+    prompt,
+    layout,
+    syncState,
+    sync(state, viewport, image) {
+      layout(viewport, image);
+      syncState(state);
     },
     destroy() {
       root.removeEventListener("click", onClick);

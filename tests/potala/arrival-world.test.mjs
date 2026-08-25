@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   WORLD_ACTORS,
+  AMBIENT_ENERGY,
   applyWorldAction,
   createWorldState,
   feedProximity,
@@ -33,14 +34,15 @@ test("uma ação acorda o lugar uma vez e injeta energia, sem repetir o id", () 
   assert.equal(first.prompt, children.cue);
 });
 
-test("a energia volta ao repouso e não oscila sozinha", () => {
+test("a energia volta ao ambiente vivo, não ao silêncio", () => {
   const tree = WORLD_ACTORS.find((actor) => actor.id === "tree");
   let state = applyWorldAction(createWorldState(), tree, 0);
   const peak = state.energies.wind;
   state = stepWorld(state, { elapsedMs: 400 });
   assert.ok(state.energies.wind < peak);
   state = stepWorld(state, { elapsedMs: 8000 });
-  assert.equal(state.energies.wind, 0);
+  assert.equal(state.energies.wind, AMBIENT_ENERGY.wind);
+  assert.equal(state.energies.water, AMBIENT_ENERGY.water);
 });
 
 test("proximidade alimenta o vento só enquanto o ponteiro está na árvore", () => {
