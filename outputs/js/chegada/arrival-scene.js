@@ -14,10 +14,14 @@ export function selectArrivalAssets({ width = 0, height = 0 } = {}) {
     ? {
         imageUrl: "media/chegada-landscape-mobile.webp",
         depthUrl: "media/chegada-depth-mobile.webp",
+        waterUrl: "",
+        canopyUrl: "",
       }
     : {
         imageUrl: "media/chegada-landscape.webp",
         depthUrl: "media/chegada-depth.webp",
+        waterUrl: "media/chegada-water.webp",
+        canopyUrl: "media/chegada-canopy.webp",
       };
 }
 
@@ -55,6 +59,15 @@ const FRAGMENT_SHADER = `
   uniform float uPath;
   uniform float uTime;
   uniform float uRiverMotion;
+  uniform float uWind;
+  uniform vec2 uWindDir;
+  uniform float uSun;
+  uniform float uFogBreak;
+  uniform float uAttention;
+  uniform vec2 uAttentionUv;
+  uniform float uHasMaps;
+  uniform sampler2D uWater;
+  uniform sampler2D uCanopy;
 
   float hash(vec2 point) {
     return fract(sin(dot(point, vec2(127.1, 311.7))) * 43758.5453);
@@ -70,12 +83,15 @@ const FRAGMENT_SHADER = `
   }
 
   float riverArea(vec2 uv) {
-    float reach = smoothstep(0.005, 0.045, uv.y) * (1.0 - smoothstep(0.34, 0.415, uv.y));
-    float distanceAlongRiver = smoothstep(0.04, 0.37, uv.y);
-    float center = mix(0.285, 0.425, distanceAlongRiver);
-    float width = mix(0.16, 0.024, distanceAlongRiver);
-    float channel = 1.0 - smoothstep(width * 0.7, width, abs(uv.x - center));
+    float reach = smoothstep(0.62, 0.76, uv.y) * (1.0 - smoothstep(0.93, 0.995, uv.y));
+    float channel = 1.0 - smoothstep(0.1, 0.22, abs(uv.x - 0.19));
     return reach * channel;
+  }
+
+  float canopyArea(vec2 uv) {
+    return (1.0 - smoothstep(0.02, 0.4, uv.x)) *
+      (1.0 - smoothstep(0.58, 0.88, uv.y)) *
+      smoothstep(0.04, 0.28, 1.0 - uv.y);
   }
 
   vec2 coverUv(vec2 uv) {
@@ -95,13 +111,20 @@ const FRAGMENT_SHADER = `
   void main() {
     vec2 baseUv = coverUv(vUv);
     float depth = texture2D(uDepth, baseUv).r;
+    float waterMask = mix(riverArea(baseUv), texture2D(uWater, baseUv).r, uHasMaps);
+    float canopy = mix(canopyArea(baseUv), texture2D(uCanopy, baseUv).r, uHasMaps);
+
+    vec2 toFocus = baseUv - uAttentionUv;
+    float nearPerson = (1.0 - smoothstep(0.016, 0.09, length(toFocus))) * uAttention;
     vec2 perspective = (depth - 0.5) *
       (uPointer * 0.026 + vec2(0.0, -uCamera * 0.018)) *
       uDepthAmount;
-    vec2 uv = clamp(baseUv + perspective, 0.002, 0.998);
+    vec2 canopyWarp = uWindDir * canopy * uWind * 0.018;
+    vec2 peopleStir = toFocus * nearPerson * 0.011;
+    vec2 uv = clamp(baseUv + perspective + canopyWarp + peopleStir, 0.002, 0.998);
     vec3 color = texture2D(uImage, uv).rgb;
 
-    float river = riverArea(baseUv);
+    float river = waterMask;
     float riverDepth = smoothstep(0.035, 0.37, baseUv.y);
     float riverCenter = mix(0.285, 0.425, riverDepth);
     float riverWidth = mix(0.16, 0.024, riverDepth);
@@ -143,11 +166,17 @@ const FRAGMENT_SHADER = `
     float bankFade = 1.0 - smoothstep(0.58, 0.96, abs(crossRiver));
     color += river * bankFade * sparseGlint * uRiverMotion * vec3(0.105, 0.095, 0.072);
 
-    float mistBand = sin((vUv.y + uTime * 0.006) * 14.0) * 0.5 + 0.5;
-    float mistNoise = noise(vUv * vec2(7.0, 4.0) + vec2(uTime * 0.012, 0.0));
+    float mistBand = sin((vUv.y + uFogBreak * 0.12 + uCamera * 0.04) * 14.0) * 0.5 + 0.5;
+    float mistNoise = noise(vUv * vec2(7.0, 4.0) + vec2(uFogBreak * 0.35, uCamera * 0.2));
     float mist = smoothstep(0.34, 0.86, mistBand * 0.48 + mistNoise * 0.52) * uFog;
+    mist *= 1.0 - uFogBreak * 0.72;
     vec3 fogColor = vec3(0.82, 0.86, 0.87);
     color = mix(color, fogColor, mist * (1.0 - depth) * 0.42);
+
+    float sky = smoothstep(0.46, 0.16, baseUv.y);
+    color *= 1.0 + sky * uSun * 0.18;
+    color += sky * uSun * vec3(0.1, 0.07, 0.025) * (1.0 - abs(baseUv.x - 0.38) * 1.4);
+    color += nearPerson * vec3(0.07, 0.055, 0.03);
 
     float pathWidth = mix(0.075, 0.22, vUv.y);
     float pathMask = 1.0 - smoothstep(pathWidth * 0.55, pathWidth, abs(vUv.x - 0.5));
@@ -228,6 +257,23 @@ function createTexture(gl, image, unit) {
   return texture;
 }
 
+function createEmptyTexture(gl, unit) {
+  const texture = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0 + unit);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0]));
+  return texture;
+}
+
+function loadOptionalImage(source) {
+  if (!source) return Promise.resolve(null);
+  return loadImage(source).catch(() => null);
+}
+
 function emit(name, detail = {}) {
   if (typeof document !== "undefined") {
     document.dispatchEvent(new CustomEvent(name, { detail }));
@@ -238,6 +284,8 @@ export function createArrivalScene({
   canvas,
   imageUrl,
   depthUrl,
+  waterUrl = "",
+  canopyUrl = "",
   reducedMotion = false,
 } = {}) {
   if (!canvas || !imageUrl || !depthUrl) {
@@ -259,6 +307,19 @@ export function createArrivalScene({
   let targetState = computeArrivalState();
   let state = { ...targetState };
   let imageSize = [1, 1];
+  let hasMaps = 0;
+  let waterClock = 0;
+  let lastDraw = 0;
+  let world = {
+    wind: 0,
+    water: 0,
+    sun: 0,
+    mist: 0,
+    path: 0,
+    attention: 0,
+    windDir: [0, 0],
+    attentionUv: [0.5, 0.5],
+  };
   const textures = [];
 
   const fallback = (reason) => {
@@ -287,6 +348,7 @@ export function createArrivalScene({
       setPointer() {},
       setScrollProgress() {},
       setBreathState() {},
+      setWorld() {},
       pause() {},
       resume() {},
       destroy() {},
@@ -303,9 +365,11 @@ export function createArrivalScene({
   );
 
   const uniforms = Object.fromEntries(
-    ["uImage", "uDepth", "uPointer", "uResolution", "uImageSize", "uCamera", "uDepthAmount", "uFog", "uLight", "uPath", "uTime", "uRiverMotion"].map(
-      (name) => [name, gl.getUniformLocation(program, name)],
-    ),
+    [
+      "uImage", "uDepth", "uWater", "uCanopy", "uPointer", "uResolution", "uImageSize",
+      "uCamera", "uDepthAmount", "uFog", "uLight", "uPath", "uTime", "uRiverMotion",
+      "uWind", "uWindDir", "uSun", "uFogBreak", "uAttention", "uAttentionUv", "uHasMaps",
+    ].map((name) => [name, gl.getUniformLocation(program, name)]),
   );
 
   const resize = () => {
@@ -323,6 +387,8 @@ export function createArrivalScene({
     if (destroyed || !ready) return;
     resize();
 
+    if (lastDraw) waterClock += Math.min(0.05, (now - lastDraw) / 1000) * world.water;
+    lastDraw = now;
     pointer[0] = lerp(pointer[0], targetPointer[0], 0.065);
     pointer[1] = lerp(pointer[1], targetPointer[1], 0.065);
     state.camera = lerp(state.camera, targetState.camera, 0.055);
@@ -337,6 +403,8 @@ export function createArrivalScene({
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
     gl.uniform1i(uniforms.uImage, 0);
     gl.uniform1i(uniforms.uDepth, 1);
+    gl.uniform1i(uniforms.uWater, 2);
+    gl.uniform1i(uniforms.uCanopy, 3);
     gl.uniform2f(uniforms.uPointer, pointer[0], pointer[1]);
     gl.uniform2f(uniforms.uResolution, canvas.width, canvas.height);
     gl.uniform2f(uniforms.uImageSize, imageSize[0], imageSize[1]);
@@ -344,13 +412,21 @@ export function createArrivalScene({
     gl.uniform1f(uniforms.uDepthAmount, state.depth);
     gl.uniform1f(uniforms.uFog, state.fog);
     gl.uniform1f(uniforms.uLight, state.light);
-    gl.uniform1f(uniforms.uPath, state.path);
+    gl.uniform1f(uniforms.uPath, clamp(state.path + world.path * 0.55));
     const riverFlow = computeRiverFlowState({
-      elapsed: (now - startTime) / 1000,
+      elapsed: waterClock,
       reducedMotion,
+      energy: world.water,
     });
     gl.uniform1f(uniforms.uTime, riverFlow.time);
     gl.uniform1f(uniforms.uRiverMotion, riverFlow.intensity);
+    gl.uniform1f(uniforms.uWind, world.wind);
+    gl.uniform2f(uniforms.uWindDir, world.windDir[0], world.windDir[1]);
+    gl.uniform1f(uniforms.uSun, world.sun);
+    gl.uniform1f(uniforms.uFogBreak, world.mist);
+    gl.uniform1f(uniforms.uAttention, world.attention);
+    gl.uniform2f(uniforms.uAttentionUv, world.attentionUv[0], world.attentionUv[1]);
+    gl.uniform1f(uniforms.uHasMaps, hasMaps);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     if (!paused) frameId = requestAnimationFrame(draw);
@@ -362,11 +438,21 @@ export function createArrivalScene({
     frameId = requestAnimationFrame(draw);
   };
 
-  const readyPromise = Promise.all([loadImage(imageUrl), loadImage(depthUrl)])
-    .then(([image, depth]) => {
+  const readyPromise = Promise.all([
+    loadImage(imageUrl),
+    loadImage(depthUrl),
+    loadOptionalImage(waterUrl),
+    loadOptionalImage(canopyUrl),
+  ])
+    .then(([image, depth, water, canopy]) => {
       if (destroyed) return false;
       imageSize = [image.naturalWidth || image.width, image.naturalHeight || image.height];
       textures.push(createTexture(gl, image, 0), createTexture(gl, depth, 1));
+      textures.push(
+        water ? createTexture(gl, water, 2) : createEmptyTexture(gl, 2),
+        canopy ? createTexture(gl, canopy, 3) : createEmptyTexture(gl, 3),
+      );
+      hasMaps = water && canopy ? 1 : 0;
       ready = true;
       startTime = performance.now();
       canvas.hidden = false;
@@ -403,6 +489,25 @@ export function createArrivalScene({
     setBreathState(phase = "idle") {
       breathPhase = BREATH_OFFSETS[phase] ? phase : "idle";
       targetState = computeArrivalState({ scrollProgress, phase: breathPhase });
+      if (paused) requestDraw();
+    },
+    setWorld(next = {}) {
+      world = {
+        wind: clamp(next.wind),
+        water: clamp(next.water),
+        sun: clamp(next.sun),
+        mist: clamp(next.mist),
+        path: clamp(next.path),
+        attention: clamp(next.attention),
+        windDir: [
+          clamp(next.windDir?.[0] ?? 0, -1, 1),
+          clamp(next.windDir?.[1] ?? 0, -1, 1),
+        ],
+        attentionUv: [
+          clamp(next.attentionUv?.[0] ?? 0.5),
+          clamp(next.attentionUv?.[1] ?? 0.5),
+        ],
+      };
       if (paused) requestDraw();
     },
     pause() {

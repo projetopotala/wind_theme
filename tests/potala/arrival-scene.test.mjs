@@ -74,12 +74,18 @@ test("a correnteza avança somente quando movimento está permitido", () => {
   assert.equal(arrivalScene.computeRiverTime?.({ elapsed: -1 }), 0);
 });
 
-test("a correnteza fornece movimento contínuo e zera com movimento reduzido", () => {
+test("a correnteza só corre com energia da interação", () => {
   assert.equal(typeof arrivalScene.computeRiverFlowState, "function");
 
-  const moving = arrivalScene.computeRiverFlowState({ elapsed: 2.5 });
+  assert.deepEqual(arrivalScene.computeRiverFlowState({ elapsed: 2.5 }), {
+    time: 0,
+    intensity: 0,
+  });
+
+  const moving = arrivalScene.computeRiverFlowState({ elapsed: 2.5, energy: 1 });
   const reduced = arrivalScene.computeRiverFlowState({
     elapsed: 2.5,
+    energy: 1,
     reducedMotion: true,
   });
 
@@ -92,10 +98,14 @@ test("a cena vertical carrega a paisagem e a profundidade mobile", () => {
   assert.deepEqual(arrivalScene.selectArrivalAssets?.({ width: 390, height: 844 }), {
     imageUrl: "media/chegada-landscape-mobile.webp",
     depthUrl: "media/chegada-depth-mobile.webp",
+    waterUrl: "",
+    canopyUrl: "",
   });
 
   assert.deepEqual(arrivalScene.selectArrivalAssets?.({ width: 1280, height: 720 }), {
     imageUrl: "media/chegada-landscape.webp",
     depthUrl: "media/chegada-depth.webp",
+    waterUrl: "media/chegada-water.webp",
+    canopyUrl: "media/chegada-canopy.webp",
   });
 });

@@ -19,13 +19,15 @@
         <picture class="arrival-fallback">
           <source media="(max-width: 720px) and (orientation: portrait)"
             srcset="media/chegada-landscape-mobile.webp">
-          <img src="media/chegada-landscape.webp" alt="Casal chegando a um templo de pedra entre montanhas cobertas por névoa ao amanhecer"
-            width="1672" height="941" fetchpriority="high" decoding="async">
+          <img src="media/chegada-landscape.webp" alt="Vale ao amanhecer com uma árvore antiga, um templo de pedra, o rio e pessoas no caminho"
+            width="1024" height="576" fetchpriority="high" decoding="async">
         </picture>
         <canvas class="arrival-canvas" id="arrival-scene" aria-hidden="true" hidden></canvas>
         <canvas class="arrival-nature-canvas" id="arrival-nature" aria-hidden="true" hidden></canvas>
         <div class="arrival-atmosphere" aria-hidden="true"></div>
         <div class="arrival-horizon" aria-hidden="true"></div>
+        <div class="arrival-world" id="arrival-world" hidden></div>
+        <p class="world-prompt" id="world-prompt" aria-live="polite"></p>
       </div>
 
       <button class="breath-launcher" id="breath-launcher" type="button"

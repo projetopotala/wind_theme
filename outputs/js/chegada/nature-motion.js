@@ -47,11 +47,17 @@ export function computeRiverTime({ elapsed = 0, reducedMotion = false } = {}) {
   return reducedMotion ? 0 : Math.max(0, elapsed);
 }
 
-export function computeRiverFlowState({ elapsed = 0, reducedMotion = false } = {}) {
+export function computeRiverFlowState({
+  elapsed = 0,
+  reducedMotion = false,
+  energy = 0,
+} = {}) {
   if (reducedMotion) return { time: 0, intensity: 0 };
+  const intensity = clamp(energy);
+  if (intensity <= 0) return { time: 0, intensity: 0 };
   return {
     time: computeRiverTime({ elapsed }),
-    intensity: 1,
+    intensity,
   };
 }
 
@@ -85,20 +91,19 @@ export function createLeafLayer({ canvas, reducedMotion = false } = {}) {
 
   if (reducedMotion) {
     canvas.hidden = true;
-    return { pause() {}, resume() {}, destroy() {} };
+    return { pause() {}, resume() {}, destroy() {}, gust() {} };
   }
 
   const context = canvas.getContext("2d", { alpha: true });
   if (!context) {
     canvas.hidden = true;
-    return { pause() {}, resume() {}, destroy() {} };
+    return { pause() {}, resume() {}, destroy() {}, gust() {} };
   }
 
   let frameId = 0;
   let resizeObserver;
   let paused = false;
   let destroyed = false;
-  let nextGroupAt = 520;
   let seed = 0.37;
   let leaves = [];
   let width = 1;
@@ -119,20 +124,10 @@ export function createLeafLayer({ canvas, reducedMotion = false } = {}) {
     }
   };
 
-  const spawnGroup = (elapsed) => {
-    seed = (seed + 0.271828) % 1;
-    const count = width < 720 ? 3 + Math.floor(randomAt(seed, 2) * 2) : undefined;
-    const group = createLeafGroup({ seed, count });
-    leaves.push(...group.map((leaf) => ({ ...leaf, bornAt: elapsed + leaf.delay * 1000 })));
-    nextGroupAt = elapsed + 2700 + randomAt(seed, 17) * 2100;
-  };
-
   const draw = (now) => {
     if (destroyed || paused) return;
     resize();
     const elapsed = now - startTime;
-    if (elapsed >= nextGroupAt) spawnGroup(elapsed);
-
     context.clearRect(0, 0, width, height);
     leaves = leaves.filter((leaf) => {
       const age = (elapsed - leaf.bornAt) / (leaf.life * 1000);
@@ -142,26 +137,40 @@ export function createLeafLayer({ canvas, reducedMotion = false } = {}) {
       return true;
     });
 
-    frameId = requestAnimationFrame(draw);
+    if (leaves.length) frameId = requestAnimationFrame(draw);
+    else {
+      frameId = 0;
+      canvas.hidden = true;
+    }
   };
 
-  canvas.hidden = false;
   resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(resize) : null;
   resizeObserver?.observe(canvas);
-  frameId = requestAnimationFrame(draw);
 
   return {
+    gust({ count } = {}) {
+      if (destroyed || paused) return;
+      resize();
+      seed = (seed + 0.271828) % 1;
+      const elapsed = performance.now() - startTime;
+      const total = count ?? (width < 720 ? 3 + Math.floor(randomAt(seed, 2) * 2) : undefined);
+      const group = createLeafGroup({ seed, count: total });
+      leaves.push(...group.map((leaf) => ({ ...leaf, bornAt: elapsed + leaf.delay * 1000 })));
+      canvas.hidden = false;
+      if (!frameId) frameId = requestAnimationFrame(draw);
+    },
     pause() {
       if (paused || destroyed) return;
       paused = true;
       pauseStartedAt = performance.now();
       cancelAnimationFrame(frameId);
+      frameId = 0;
     },
     resume() {
       if (!paused || destroyed) return;
       startTime += performance.now() - pauseStartedAt;
       paused = false;
-      frameId = requestAnimationFrame(draw);
+      if (leaves.length) frameId = requestAnimationFrame(draw);
     },
     destroy() {
       destroyed = true;

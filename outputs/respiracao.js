@@ -217,6 +217,15 @@ stopButton?.addEventListener("click", togglePause);
 restartButton?.addEventListener("click", restartSession);
 soundButton?.addEventListener("click", toggleSound);
 
+document.addEventListener("potala:world-action", (event) => {
+  if (event.detail?.action === "breathe") openGuide();
+});
+closeButton?.addEventListener("click", () => closeGuide());
+startButton?.addEventListener("click", startSession);
+stopButton?.addEventListener("click", togglePause);
+restartButton?.addEventListener("click", restartSession);
+soundButton?.addEventListener("click", toggleSound);
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !guide.hidden) closeGuide();
 });
