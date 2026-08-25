@@ -37,8 +37,8 @@ test("as folhas caem em pequenos grupos a partir da copa", () => {
 
   assert.equal(leaves?.length, 4);
   for (const leaf of leaves) {
-    assert.ok(leaf.x >= 0.04 && leaf.x <= 0.46);
-    assert.ok(leaf.y >= -0.08 && leaf.y <= 0.2);
+    assert.ok(leaf.x >= 0.04 && leaf.x <= 0.28);
+    assert.ok(leaf.y >= 0.02 && leaf.y <= 0.22);
     assert.ok(leaf.delay >= 0 && leaf.delay <= 0.72);
   }
 });
@@ -74,12 +74,18 @@ test("a correnteza avança somente quando movimento está permitido", () => {
   assert.equal(arrivalScene.computeRiverTime?.({ elapsed: -1 }), 0);
 });
 
-test("a correnteza fornece movimento contínuo e zera com movimento reduzido", () => {
+test("a correnteza já corre ao abrir e só para com reduced motion", () => {
   assert.equal(typeof arrivalScene.computeRiverFlowState, "function");
 
-  const moving = arrivalScene.computeRiverFlowState({ elapsed: 2.5 });
+  assert.deepEqual(arrivalScene.computeRiverFlowState({ elapsed: 2.5 }), {
+    time: 2.5,
+    intensity: 1,
+  });
+
+  const moving = arrivalScene.computeRiverFlowState({ elapsed: 2.5, energy: 1 });
   const reduced = arrivalScene.computeRiverFlowState({
     elapsed: 2.5,
+    energy: 1,
     reducedMotion: true,
   });
 
@@ -88,195 +94,32 @@ test("a correnteza fornece movimento contínuo e zera com movimento reduzido", (
   assert.deepEqual(reduced, { time: 0, intensity: 0 });
 });
 
+test("a água do poço ganha ondulação sem deslocar a foto", () => {
+  const start = arrivalScene.computeRippleFrame?.({ x: 0.16, y: 0.88, born: 0, start: 0.004, spread: 0.02, life: 2 }, 0);
+  const later = arrivalScene.computeRippleFrame?.({ x: 0.16, y: 0.88, born: 0, start: 0.004, spread: 0.02, life: 2 }, 1);
+  assert.ok(later.radius > start.radius);
+  assert.ok(later.opacity < start.opacity);
+});
+
+test("pessoas só se deslocam no lugar, em milímetros", () => {
+  const play = arrivalScene.computePersonIdle?.({ x: 0.16, y: 0.88, kind: "play" }, 1.4);
+  const rest = arrivalScene.computePersonIdle?.({ x: 0.5, y: 0.74, kind: "walk" }, 1.4);
+  assert.ok(Math.hypot(play.x - 0.16, play.y - 0.88) < 0.01);
+  assert.ok(Math.hypot(rest.x - 0.5, rest.y - 0.74) < 0.006);
+  assert.ok(Math.hypot(play.x - 0.16, play.y - 0.88) > 0);
+});
+
 test("a cena vertical carrega a paisagem e a profundidade mobile", () => {
   const mobile = arrivalScene.selectArrivalAssets?.({ width: 390, height: 844 });
   const desktop = arrivalScene.selectArrivalAssets?.({ width: 1280, height: 720 });
 
-  assert.deepEqual(mobile, {
-    imageUrl: "media/chegada-landscape-people-mobile.webp",
-    depthUrl: "media/chegada-depth-mobile.webp",
-    effectMaskUrl: "media/chegada-effects-mobile.png",
-    cloudTextureUrl: "media/chegada-clouds.png",
-  });
+  assert.equal(mobile.imageUrl, "media/chegada-landscape-mobile.webp");
+  assert.equal(mobile.depthUrl, "media/chegada-depth-mobile.webp");
+  assert.equal(mobile.waterUrl, "");
+  assert.equal(mobile.canopyUrl, "");
 
-  assert.deepEqual(desktop, {
-    imageUrl: "media/chegada-landscape-people.webp",
-    depthUrl: "media/chegada-depth.webp",
-    effectMaskUrl: "media/chegada-effects.png",
-    cloudTextureUrl: "media/chegada-clouds.png",
-  });
-});
-
-test("a cena exige a textura fotográfica de nuvens", () => {
-  assert.throws(
-    () => arrivalScene.createArrivalScene({
-      canvas: {},
-      imageUrl: "paisagem.webp",
-      depthUrl: "profundidade.webp",
-      effectMaskUrl: "efeitos.png",
-    }),
-    /cloudTextureUrl/,
-  );
-});
-
-test("a máscara da correnteza inclui água e exclui pedras, grama e caminho", () => {
-  assert.equal(typeof arrivalScene.isArrivalRiverPoint, "function");
-
-  const desktopWater = [
-    [0.38, 0.82],
-    [0.45, 0.75],
-  ];
-  const desktopDry = [
-    [0.3, 0.9],
-    [0.56, 0.8],
-    [0.6, 0.9],
-  ];
-  const mobileWater = [
-    [0.3, 0.66],
-    [0.43, 0.61],
-  ];
-  const mobileDry = [
-    [0.18, 0.73],
-    [0.48, 0.73],
-    [0.55, 0.78],
-  ];
-
-  for (const [x, y] of desktopWater) {
-    assert.equal(arrivalScene.isArrivalRiverPoint({ x, y }), true, `desktop água ${x},${y}`);
-  }
-  for (const [x, y] of desktopDry) {
-    assert.equal(arrivalScene.isArrivalRiverPoint({ x, y }), false, `desktop margem ${x},${y}`);
-  }
-  for (const [x, y] of mobileWater) {
-    assert.equal(arrivalScene.isArrivalRiverPoint({ x, y, portrait: true }), true, `mobile água ${x},${y}`);
-  }
-  for (const [x, y] of mobileDry) {
-    assert.equal(arrivalScene.isArrivalRiverPoint({ x, y, portrait: true }), false, `mobile margem ${x},${y}`);
-  }
-});
-
-test("a proteção do parallax cobre somente os três viajantes do caminho", () => {
-  assert.equal(typeof arrivalScene.isArrivalTravelerPoint, "function");
-
-  const desktopTravelers = [
-    [0.554, 0.73],
-    [0.554, 0.67],
-    [0.554, 0.82],
-    [0.592, 0.715],
-    [0.597, 0.68],
-    [0.597, 0.81],
-    [0.613, 0.72],
-    [0.618, 0.69],
-    [0.618, 0.76],
-  ];
-  const desktopUnprotected = [
-    [0.855, 0.46],
-    [0.5, 0.72],
-    [0.7, 0.72],
-  ];
-  const mobileTravelers = [
-    [0.627, 0.625],
-    [0.512, 0.58],
-    [0.557, 0.585],
-    [0.543, 0.58],
-    [0.543, 0.545],
-    [0.543, 0.61],
-    [0.58, 0.58],
-    [0.58, 0.545],
-    [0.58, 0.61],
-    [0.638, 0.555],
-    [0.638, 0.68],
-  ];
-  const mobileUnprotected = [
-    [0.87, 0.53],
-    [0.42, 0.6],
-    [0.72, 0.63],
-  ];
-
-  for (const [x, y] of desktopTravelers) {
-    assert.equal(arrivalScene.isArrivalTravelerPoint({ x, y }), true, `desktop viajante ${x},${y}`);
-  }
-  for (const [x, y] of desktopUnprotected) {
-    assert.equal(arrivalScene.isArrivalTravelerPoint({ x, y }), false, `desktop fora ${x},${y}`);
-  }
-  for (const [x, y] of mobileTravelers) {
-    assert.equal(arrivalScene.isArrivalTravelerPoint({ x, y, portrait: true }), true, `mobile viajante ${x},${y}`);
-  }
-  for (const [x, y] of mobileUnprotected) {
-    assert.equal(arrivalScene.isArrivalTravelerPoint({ x, y, portrait: true }), false, `mobile fora ${x},${y}`);
-  }
-});
-
-test("as nuvens se movem somente no céu e param com movimento reduzido", () => {
-  assert.equal(typeof arrivalScene.isArrivalCloudPoint, "function");
-  assert.equal(typeof arrivalScene.computeCloudMotionState, "function");
-
-  assert.equal(arrivalScene.isArrivalCloudPoint({ x: 0.66, y: 0.32 }), true);
-  assert.equal(arrivalScene.isArrivalCloudPoint({ x: 0.15, y: 0.12 }), false);
-  assert.equal(arrivalScene.isArrivalCloudPoint({ x: 0.86, y: 0.25 }), false);
-  assert.equal(arrivalScene.isArrivalCloudPoint({ x: 0.65, y: 0.3, portrait: true }), true);
-  assert.equal(arrivalScene.isArrivalCloudPoint({ x: 0.2, y: 0.2, portrait: true }), false);
-
-  const moving = arrivalScene.computeCloudMotionState({ elapsed: 12 });
-  const reduced = arrivalScene.computeCloudMotionState({ elapsed: 12, reducedMotion: true });
-  assert.ok(Math.abs(moving.nearOffset) > 0);
-  assert.ok(Math.abs(moving.farOffset) > 0);
-  assert.notEqual(moving.nearOffset, moving.farOffset);
-  assert.ok(moving.nearOffset >= 0 && moving.nearOffset < 1);
-  assert.ok(moving.farOffset >= 0 && moving.farOffset < 1);
-  assert.deepEqual(reduced, { nearOffset: 0, farOffset: 0, intensity: 0 });
-});
-
-test("as nuvens percorrem uma distância perceptível sem acelerar demais", () => {
-  const start = arrivalScene.computeCloudMotionState({ elapsed: 1 });
-  const later = arrivalScene.computeCloudMotionState({ elapsed: 9 });
-  const nearTravel = Math.abs(later.nearOffset - start.nearOffset);
-  const farTravel = Math.abs(later.farOffset - start.farOffset);
-
-  assert.ok(nearTravel >= 0.045, `camada próxima moveu apenas ${nearTravel}`);
-  assert.ok(farTravel >= 0.014, `camada distante moveu apenas ${farTravel}`);
-  assert.ok(nearTravel <= 0.085, `camada próxima moveu rápido demais: ${nearTravel}`);
-});
-
-test("a camada de nuvens cobre céu e sol, mas exclui montanha, templo e árvore", () => {
-  const desktopSky = [
-    [0.31, 0.48],
-    [0.56, 0.24],
-  ];
-  const desktopForeground = [
-    [0.18, 0.24],
-    [0.67, 0.4],
-    [0.82, 0.22],
-  ];
-  const mobileSky = [
-    [0.23, 0.43],
-    [0.68, 0.2],
-  ];
-  const mobileForeground = [
-    [0.16, 0.22],
-    [0.68, 0.43],
-    [0.9, 0.3],
-  ];
-
-  for (const [x, y] of desktopSky) {
-    assert.equal(arrivalScene.isArrivalCloudPoint({ x, y }), true, `desktop céu ${x},${y}`);
-  }
-  for (const [x, y] of desktopForeground) {
-    assert.equal(arrivalScene.isArrivalCloudPoint({ x, y }), false, `desktop primeiro plano ${x},${y}`);
-  }
-  for (const [x, y] of mobileSky) {
-    assert.equal(arrivalScene.isArrivalCloudPoint({ x, y, portrait: true }), true, `mobile céu ${x},${y}`);
-  }
-  for (const [x, y] of mobileForeground) {
-    assert.equal(arrivalScene.isArrivalCloudPoint({ x, y, portrait: true }), false, `mobile primeiro plano ${x},${y}`);
-  }
-});
-
-test("o deslocamento das nuvens completa um loop contínuo de dois minutos", () => {
-  const start = arrivalScene.computeCloudMotionState({ elapsed: 0 });
-  const middle = arrivalScene.computeCloudMotionState({ elapsed: 60 });
-  const end = arrivalScene.computeCloudMotionState({ elapsed: 120 });
-
-  assert.deepEqual(end, start);
-  assert.notDeepEqual(middle, start);
+  assert.equal(desktop.imageUrl, "media/chegada-v2-master.webp");
+  assert.equal(desktop.depthUrl, "media/chegada-v2-depth.webp");
+  assert.equal(desktop.waterUrl, "media/chegada-v2-water-mask.webp");
+  assert.equal(desktop.canopyUrl, "media/chegada-v2-canopy-mask.webp");
 });
