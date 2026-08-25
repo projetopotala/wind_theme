@@ -12,7 +12,7 @@ test("a Chegada usa cena progressiva e entrada somente por rolagem", async () =>
   ]);
 
   assert.match(html, /id="arrival-scene"/);
-  assert.match(html, /chegada-landscape\.webp/);
+  assert.match(html, /chegada-landscape-people\.webp/);
   assert.match(html, /class="journey-scroll-cue"/);
   assert.match(html, /js\/chegada\/arrival-controller\.js/);
   assert.doesNotMatch(html, /id="transcend-button"|class="arrival-drag"/);

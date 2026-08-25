@@ -94,6 +94,13 @@ export function buildMedievalRoadLayers(baseWidth, texturePattern = null) {
   ];
 }
 
+export function computeRoadWidth({ width = 1440 } = {}) {
+  const viewportWidth = Math.max(320, Number(width) || 1440);
+  return viewportWidth < 720
+    ? Math.max(96, Math.min(132, viewportWidth * 0.275))
+    : Math.max(170, Math.min(218, viewportWidth * 0.125));
+}
+
 export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
   if (!canvas) throw new TypeError("canvas é obrigatório para a estrada");
   const context = canvas.getContext("2d", { alpha: true });
@@ -132,9 +139,7 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     renderedProgress = progress;
     renderedOffset = offsetSignature;
     const camera = locate(layout, progress);
-    const roadWidth = width < 720
-      ? Math.max(76, Math.min(106, width * .22))
-      : Math.max(116, Math.min(164, width * .09));
+    const roadWidth = computeRoadWidth({ width });
 
     context.clearRect(0, 0, width, height);
     context.save();

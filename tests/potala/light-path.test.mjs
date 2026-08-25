@@ -22,3 +22,15 @@ test("o pavimento mantém uma cor de pedra quando a textura ainda não carregou"
   const layers = homeRoad.buildMedievalRoadLayers(96, null);
   assert.match(layers[2].strokeStyle, /^#[0-9a-f]{6}$/i);
 });
+
+test("a estrada ocupa uma faixa mais larga sem dominar a tela", () => {
+  assert.equal(typeof homeRoad.computeRoadWidth, "function");
+
+  const desktop = homeRoad.computeRoadWidth({ width: 1440 });
+  const mobile = homeRoad.computeRoadWidth({ width: 390 });
+
+  assert.ok(desktop >= 170 && desktop <= 220, `desktop ${desktop}px`);
+  assert.ok(mobile >= 96 && mobile <= 132, `mobile ${mobile}px`);
+  assert.ok(desktop / 1440 < 0.16);
+  assert.ok(mobile / 390 < 0.35);
+});

@@ -1,5 +1,17 @@
 import { clamp, lerp, smoothstep } from "../core/math.js";
 import { computeRiverFlowState } from "./nature-motion.js";
+import {
+  computeCloudMotionState,
+  isArrivalCloudPoint,
+  isArrivalRiverPoint,
+} from "./effect-mask.js";
+
+export {
+  computeCloudMotionState,
+  isArrivalCloudPoint,
+  isArrivalRiverPoint,
+  isArrivalTravelerPoint,
+} from "./effect-mask.js";
 
 export {
   computeLeafFrame,
@@ -11,13 +23,17 @@ export {
 export function selectArrivalAssets({ width = 0, height = 0 } = {}) {
   const usePortraitAssets = height > width && width <= 720;
   return usePortraitAssets
-    ? {
-        imageUrl: "media/chegada-landscape-mobile.webp",
+      ? {
+        imageUrl: "media/chegada-landscape-people-mobile.webp",
         depthUrl: "media/chegada-depth-mobile.webp",
+        effectMaskUrl: "media/chegada-effects-mobile.png",
+        cloudTextureUrl: "media/chegada-clouds.png",
       }
-    : {
-        imageUrl: "media/chegada-landscape.webp",
+      : {
+        imageUrl: "media/chegada-landscape-people.webp",
         depthUrl: "media/chegada-depth.webp",
+        effectMaskUrl: "media/chegada-effects.png",
+        cloudTextureUrl: "media/chegada-clouds.png",
       };
 }
 
@@ -45,6 +61,8 @@ const FRAGMENT_SHADER = `
   varying vec2 vUv;
   uniform sampler2D uImage;
   uniform sampler2D uDepth;
+  uniform sampler2D uEffects;
+  uniform sampler2D uCloudTexture;
   uniform vec2 uPointer;
   uniform vec2 uResolution;
   uniform vec2 uImageSize;
@@ -55,6 +73,9 @@ const FRAGMENT_SHADER = `
   uniform float uPath;
   uniform float uTime;
   uniform float uRiverMotion;
+  uniform float uCloudNear;
+  uniform float uCloudFar;
+  uniform float uCloudMotion;
 
   float hash(vec2 point) {
     return fract(sin(dot(point, vec2(127.1, 311.7))) * 43758.5453);
@@ -67,15 +88,6 @@ const FRAGMENT_SHADER = `
     float bottom = mix(hash(cell), hash(cell + vec2(1.0, 0.0)), local.x);
     float top = mix(hash(cell + vec2(0.0, 1.0)), hash(cell + vec2(1.0, 1.0)), local.x);
     return mix(bottom, top, local.y);
-  }
-
-  float riverArea(vec2 uv) {
-    float reach = smoothstep(0.005, 0.045, uv.y) * (1.0 - smoothstep(0.34, 0.415, uv.y));
-    float distanceAlongRiver = smoothstep(0.04, 0.37, uv.y);
-    float center = mix(0.285, 0.425, distanceAlongRiver);
-    float width = mix(0.16, 0.024, distanceAlongRiver);
-    float channel = 1.0 - smoothstep(width * 0.7, width, abs(uv.x - center));
-    return reach * channel;
   }
 
   vec2 coverUv(vec2 uv) {
@@ -95,16 +107,18 @@ const FRAGMENT_SHADER = `
   void main() {
     vec2 baseUv = coverUv(vUv);
     float depth = texture2D(uDepth, baseUv).r;
+    vec3 effects = texture2D(uEffects, baseUv).rgb;
+    float travelerProtection = smoothstep(0.08, 0.92, effects.b);
     vec2 perspective = (depth - 0.5) *
       (uPointer * 0.026 + vec2(0.0, -uCamera * 0.018)) *
-      uDepthAmount;
+      uDepthAmount * (1.0 - travelerProtection);
     vec2 uv = clamp(baseUv + perspective, 0.002, 0.998);
     vec3 color = texture2D(uImage, uv).rgb;
 
-    float river = riverArea(baseUv);
-    float riverDepth = smoothstep(0.035, 0.37, baseUv.y);
-    float riverCenter = mix(0.285, 0.425, riverDepth);
-    float riverWidth = mix(0.16, 0.024, riverDepth);
+    float river = effects.r;
+    float riverDepth = smoothstep(0.57, 0.88, 1.0 - baseUv.y);
+    float riverCenter = mix(0.46, 0.36, riverDepth);
+    float riverWidth = mix(0.04, 0.13, riverDepth);
     float crossRiver = (baseUv.x - riverCenter) / max(0.018, riverWidth);
     float perspectiveSpeed = mix(1.42, 0.42, riverDepth);
     float flowClock = uTime * perspectiveSpeed * uRiverMotion;
@@ -142,6 +156,25 @@ const FRAGMENT_SHADER = `
     float sparseGlint = smoothstep(0.72, 0.96, detailNoise) * rippleBand;
     float bankFade = 1.0 - smoothstep(0.58, 0.96, abs(crossRiver));
     color += river * bankFade * sparseGlint * uRiverMotion * vec3(0.105, 0.095, 0.072);
+
+    float cloudMask = effects.g;
+    vec2 farCloudUv = fract(vec2(
+      baseUv.x * 1.08 + uCloudFar,
+      baseUv.y * 0.94 + 0.08
+    ));
+    vec2 nearCloudUv = fract(vec2(
+      baseUv.x * 0.72 + uCloudNear + 0.34,
+      baseUv.y * 0.74 + 0.18
+    ));
+    vec4 farCloud = texture2D(uCloudTexture, farCloudUv);
+    vec4 nearCloud = texture2D(uCloudTexture, nearCloudUv);
+    float farCloudAlpha = smoothstep(0.04, 0.82, farCloud.a) * 0.34;
+    float nearCloudAlpha = smoothstep(0.03, 0.78, nearCloud.a) * 0.5;
+    float cloudVisibility = 0.86 + uCloudMotion * 0.14;
+    vec3 farCloudColor = mix(farCloud.rgb, vec3(0.84, 0.81, 0.76), 0.2);
+    vec3 nearCloudColor = mix(nearCloud.rgb, vec3(0.92, 0.87, 0.78), 0.12);
+    color = mix(color, farCloudColor, cloudMask * farCloudAlpha * cloudVisibility);
+    color = mix(color, nearCloudColor, cloudMask * nearCloudAlpha * cloudVisibility);
 
     float mistBand = sin((vUv.y + uTime * 0.006) * 14.0) * 0.5 + 0.5;
     float mistNoise = noise(vUv * vec2(7.0, 4.0) + vec2(uTime * 0.012, 0.0));
@@ -224,7 +257,7 @@ function createTexture(gl, image, unit) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
   return texture;
 }
 
@@ -238,10 +271,12 @@ export function createArrivalScene({
   canvas,
   imageUrl,
   depthUrl,
+  effectMaskUrl,
+  cloudTextureUrl,
   reducedMotion = false,
 } = {}) {
-  if (!canvas || !imageUrl || !depthUrl) {
-    throw new TypeError("canvas, imageUrl e depthUrl são obrigatórios");
+  if (!canvas || !imageUrl || !depthUrl || !effectMaskUrl || !cloudTextureUrl) {
+    throw new TypeError("canvas, imageUrl, depthUrl, effectMaskUrl e cloudTextureUrl são obrigatórios");
   }
 
   let gl;
@@ -303,7 +338,7 @@ export function createArrivalScene({
   );
 
   const uniforms = Object.fromEntries(
-    ["uImage", "uDepth", "uPointer", "uResolution", "uImageSize", "uCamera", "uDepthAmount", "uFog", "uLight", "uPath", "uTime", "uRiverMotion"].map(
+    ["uImage", "uDepth", "uEffects", "uCloudTexture", "uPointer", "uResolution", "uImageSize", "uCamera", "uDepthAmount", "uFog", "uLight", "uPath", "uTime", "uRiverMotion", "uCloudNear", "uCloudFar", "uCloudMotion"].map(
       (name) => [name, gl.getUniformLocation(program, name)],
     ),
   );
@@ -337,6 +372,8 @@ export function createArrivalScene({
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
     gl.uniform1i(uniforms.uImage, 0);
     gl.uniform1i(uniforms.uDepth, 1);
+    gl.uniform1i(uniforms.uEffects, 2);
+    gl.uniform1i(uniforms.uCloudTexture, 3);
     gl.uniform2f(uniforms.uPointer, pointer[0], pointer[1]);
     gl.uniform2f(uniforms.uResolution, canvas.width, canvas.height);
     gl.uniform2f(uniforms.uImageSize, imageSize[0], imageSize[1]);
@@ -351,6 +388,13 @@ export function createArrivalScene({
     });
     gl.uniform1f(uniforms.uTime, riverFlow.time);
     gl.uniform1f(uniforms.uRiverMotion, riverFlow.intensity);
+    const cloudMotion = computeCloudMotionState({
+      elapsed: (now - startTime) / 1000,
+      reducedMotion,
+    });
+    gl.uniform1f(uniforms.uCloudNear, cloudMotion.nearOffset);
+    gl.uniform1f(uniforms.uCloudFar, cloudMotion.farOffset);
+    gl.uniform1f(uniforms.uCloudMotion, cloudMotion.intensity);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     if (!paused) frameId = requestAnimationFrame(draw);
@@ -362,11 +406,21 @@ export function createArrivalScene({
     frameId = requestAnimationFrame(draw);
   };
 
-  const readyPromise = Promise.all([loadImage(imageUrl), loadImage(depthUrl)])
-    .then(([image, depth]) => {
+  const readyPromise = Promise.all([
+    loadImage(imageUrl),
+    loadImage(depthUrl),
+    loadImage(effectMaskUrl),
+    loadImage(cloudTextureUrl),
+  ])
+    .then(([image, depth, effects, clouds]) => {
       if (destroyed) return false;
       imageSize = [image.naturalWidth || image.width, image.naturalHeight || image.height];
-      textures.push(createTexture(gl, image, 0), createTexture(gl, depth, 1));
+      textures.push(
+        createTexture(gl, image, 0),
+        createTexture(gl, depth, 1),
+        createTexture(gl, effects, 2),
+        createTexture(gl, clouds, 3),
+      );
       ready = true;
       startTime = performance.now();
       canvas.hidden = false;

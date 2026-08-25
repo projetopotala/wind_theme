@@ -9,7 +9,7 @@ const homeJs = await readFile("outputs/secoes.js", "utf8");
 test("respiração é opt-in e o fallback visual existe", () => {
   assert.match(chegada, /id="breath-launcher"/);
   assert.match(chegada, /id="breathing-guide"[^>]*hidden/);
-  assert.match(chegada, /chegada-landscape\.webp/);
+  assert.match(chegada, /chegada-landscape-people\.webp/);
   assert.doesNotMatch(chegada, /<audio[^>]*autoplay/i);
 });
 
