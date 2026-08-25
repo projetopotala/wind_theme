@@ -5,6 +5,7 @@ import sharp from "sharp";
 const ROOT = path.resolve(import.meta.dirname, "..");
 const SOURCE = path.join(ROOT, "assets-source", "arrival-v2");
 const OUTPUT = path.join(ROOT, "outputs", "media");
+const DESKTOP_OUTPUT_SIZE = { width: 2048, height: 1152 };
 
 const FILES = [
   { source: "arrival-master.png", output: "chegada-v2-master.webp", kind: "master" },
@@ -49,16 +50,23 @@ export async function prepareArrivalV2Assets({ sourceDir = SOURCE, outputDir = O
 
   for (const file of prepared) {
     const output = path.join(outputDir, file.output);
-    const pipeline = sharp(file.input);
+    const pipeline = sharp(file.input).resize({
+      ...DESKTOP_OUTPUT_SIZE,
+      fit: "fill",
+      kernel: sharp.kernel.lanczos3,
+    });
     if (file.kind === "master" || file.kind === "overlay") {
-      await pipeline.webp({ quality: 86, smartSubsample: true }).toFile(output);
+      await pipeline
+        .sharpen({ sigma: 0.65 })
+        .webp({ quality: 90, smartSubsample: true, effort: 5 })
+        .toFile(output);
     } else {
       await pipeline.webp({ lossless: true, effort: 4 }).toFile(output);
     }
   }
 
   return {
-    plate: masterSize,
+    plate: { ...DESKTOP_OUTPUT_SIZE },
     files: prepared.map((file) => file.output),
   };
 }
