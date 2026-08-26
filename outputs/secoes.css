@@ -1,11 +1,12 @@
+@import url("css/secao-conteudo.css");
 @import url("css/home-journey.css");
 
 :root {
   color-scheme: light;
   --ice: #edf1ed;
   --ice-deep: #dce6e5;
-  --blue: #284f60;
-  --blue-soft: #6f8f98;
+  --ink: #4a3728;
+  --ink-soft: #8a7462;
   --brown: #6d5948;
   --moss: #637068;
   --gold: #b7a58d;
@@ -25,7 +26,7 @@ body {
   margin: 0;
   overflow-x: clip;
   background: var(--ice);
-  color: var(--blue);
+  color: var(--ink);
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -52,14 +53,14 @@ button, a { -webkit-tap-highlight-color: transparent; }
   padding: clamp(90px, 12vw, 150px) clamp(24px, 8vw, 120px);
   place-items: center;
   background:
-    radial-gradient(circle at 20% 25%, rgba(125, 163, 177, .16), transparent 32%),
+    radial-gradient(circle at 20% 25%, rgba(183, 165, 141, .20), transparent 32%),
     radial-gradient(circle at 82% 74%, rgba(109, 89, 72, .09), transparent 28%),
     var(--ice);
 }
 
 .page-title {
   margin: 0;
-  color: var(--blue);
+  color: var(--ink);
   font: 400 clamp(4rem, 12vw, 11rem)/.9 Georgia, "Times New Roman", serif;
   letter-spacing: -.055em;
 }
@@ -71,10 +72,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
   left: 50%;
   width: min(820px, calc(100% - 28px));
   padding: 6px;
-  border: 1px solid rgba(40, 79, 96, .13);
+  border: 1px solid rgba(74, 55, 40, .13);
   border-radius: 18px;
   background: rgba(237, 241, 237, .88);
-  box-shadow: 0 10px 30px rgba(38, 65, 72, .08);
+  box-shadow: 0 10px 30px rgba(74, 55, 40, .10);
   transform: translateX(-50%);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
@@ -96,7 +97,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   padding: 0 13px;
   place-items: center;
   border-radius: 12px;
-  color: rgba(40, 79, 96, .7);
+  color: rgba(74, 55, 40, .7);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: .08em;
@@ -105,8 +106,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 
 .site-nav-link:hover,
-.site-nav-link.is-active { color: var(--blue); background: rgba(255, 255, 255, .72); }
-.site-nav-link:focus-visible { outline: 2px solid var(--blue-soft); outline-offset: 2px; }
+.site-nav-link.is-active { color: var(--ink); background: rgba(255, 255, 255, .72); }
+.site-nav-link:focus-visible { outline: 2px solid var(--ink-soft); outline-offset: 2px; }
 
 .journey-noscript { max-width: 720px; margin: 10vh auto; padding: 32px; }
 .journey-noscript a { display: inline-block; padding: 6px 0; }

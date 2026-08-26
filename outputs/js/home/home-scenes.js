@@ -23,8 +23,12 @@ export function presenceForRegionBounds({ top, bottom, viewportHeight }) {
   return clamp(Math.min(entry, exit));
 }
 
-const regionHeights = [210, 200, 206, 214, 200, 206, 214, 200];
-const silenceHeights = [72, 78, 68, 74, 70, 80, 72];
+// Alturas em svh. O ritmo original somava ~2160svh, quase 22 telas de rolagem,
+// e deixava cerca de 2,8 telas de estrada entre uma informação e a seguinte.
+// Encurtar o trecho mantém os silêncios da narrativa e faz a travessia caber no
+// tempo previsto, além de aproximar as entradas e saídas de cada informação.
+const regionHeights = [140, 134, 138, 144, 134, 138, 144, 134];
+const silenceHeights = [46, 50, 44, 48, 45, 52, 46];
 
 export function journeyRhythmForIndex(index) {
   const safeIndex = Math.max(0, Math.min(regionHeights.length - 1, Math.trunc(index)));

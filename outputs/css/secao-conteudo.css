@@ -1,0 +1,168 @@
+/* Páginas de seção: leitura longa, mesma paleta e mesmo silêncio da Travessia.
+   O .page-view original centraliza um título só; aqui ele passa a acomodar um
+   texto inteiro sem virar uma parede de cards. */
+
+.page-view--article {
+  display: block;
+  place-items: unset;
+  min-height: 100svh;
+  padding: clamp(96px, 11vw, 150px) clamp(22px, 7vw, 80px) clamp(64px, 9vw, 120px);
+}
+
+.article-shell {
+  width: min(74ch, 100%);
+  margin: 0 auto;
+}
+
+.article-head {
+  margin-bottom: clamp(40px, 6vw, 72px);
+}
+
+.page-kicker {
+  margin: 0 0 18px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .34em;
+  text-transform: uppercase;
+}
+
+.page-view--article .page-title {
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  line-height: .92;
+}
+
+.page-lead {
+  max-width: 58ch;
+  margin: clamp(22px, 3vw, 34px) 0 0;
+  color: rgba(74, 55, 40, .82);
+  font: italic clamp(1.15rem, 2.3vw, 1.6rem)/1.5 Georgia, "Times New Roman", serif;
+}
+
+.article-block {
+  margin: 0 0 clamp(34px, 5vw, 58px);
+}
+
+.article-block h2 {
+  margin: 0 0 16px;
+  color: var(--ink);
+  font: 400 clamp(1.5rem, 3.4vw, 2.3rem)/1.15 Georgia, "Times New Roman", serif;
+  letter-spacing: -.02em;
+}
+
+.article-block h3 {
+  margin: 26px 0 10px;
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.article-block p {
+  margin: 0 0 16px;
+  max-width: 62ch;
+  color: rgba(74, 55, 40, .88);
+  font-size: clamp(1rem, 1.6vw, 1.075rem);
+  line-height: 1.72;
+}
+
+.article-block p:last-child { margin-bottom: 0; }
+
+.article-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.article-list li {
+  position: relative;
+  padding-left: 22px;
+  color: rgba(74, 55, 40, .88);
+  font-size: clamp(.97rem, 1.5vw, 1.03rem);
+  line-height: 1.6;
+}
+
+.article-list li::before {
+  content: "";
+  position: absolute;
+  top: .62em;
+  left: 0;
+  width: 9px;
+  height: 1px;
+  background: var(--gold);
+}
+
+.article-list strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Grupos de prática: muitas modalidades sem virar poluição de cards. */
+.article-groups {
+  display: grid;
+  gap: clamp(20px, 3vw, 30px);
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  margin-top: 22px;
+}
+
+.article-group {
+  padding: 20px 20px 22px;
+  border: 1px solid rgba(74, 55, 40, .16);
+  border-radius: 16px;
+  background: rgba(255, 253, 250, .5);
+}
+
+.article-group h3 { margin-top: 0; }
+.article-group p { font-size: .97rem; margin-bottom: 0; }
+
+.article-note {
+  margin: clamp(30px, 4vw, 44px) 0 0;
+  padding: 20px 22px;
+  border-left: 2px solid var(--gold);
+  color: rgba(74, 55, 40, .74);
+  font: italic 1.02rem/1.6 Georgia, "Times New Roman", serif;
+}
+
+.article-foot {
+  display: grid;
+  gap: 12px;
+  margin-top: clamp(48px, 7vw, 84px);
+  padding-top: 28px;
+  border-top: 1px solid rgba(74, 55, 40, .16);
+  color: rgba(74, 55, 40, .7);
+  font-size: .93rem;
+  line-height: 1.6;
+}
+
+.article-foot a {
+  color: var(--ink);
+  text-decoration-color: rgba(74, 55, 40, .35);
+  text-underline-offset: 4px;
+}
+
+.article-foot a:hover { text-decoration-color: var(--ink); }
+.article-foot a:focus-visible { outline: 2px solid var(--ink-soft); outline-offset: 3px; }
+
+.article-back {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.article-back::before { content: ""; width: 22px; height: 1px; background: var(--gold); }
+.article-back:focus-visible { outline: 2px solid var(--ink-soft); outline-offset: 4px; }
+
+@media (max-width: 720px) {
+  .article-group { padding: 17px 17px 19px; }
+  .article-note { padding: 16px 18px; }
+}

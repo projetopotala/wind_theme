@@ -41,3 +41,8 @@ yarn-error.log*
 
 /work/
 /.worktrees/
+
+# ferramentas locais (a de brainstorm guarda token de sessão e PIDs)
+/.claude/
+/.superpowers/
+/.openai/

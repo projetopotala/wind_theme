@@ -30,12 +30,13 @@ const BREATH_OFFSETS = {
   paused: { depth: 0, fog: 0, light: 0 },
 };
 
-const UNIFORM_NAMES = [
-  "uImage", "uDepth", "uWaterMask", "uWaterfallMask", "uCanopyMask", "uMistMask",
+export const UNIFORM_NAMES = [
+  "uImage", "uDepth", "uWaterMask", "uWaterfallMask", "uCanopyMask", "uMistMask", "uSkyMask",
   "uPointer", "uResolution", "uImageSize",
   "uCamera", "uDepthAmount", "uFog", "uLight", "uPath", "uTime", "uRiverMotion",
   "uWind", "uWindDir", "uSun", "uMistReveal", "uAttention", "uAttentionUv",
-  "uHasWaterMask", "uHasWaterfallMask", "uHasCanopyMask", "uHasMistMask",
+  "uHasWaterMask", "uHasWaterfallMask", "uHasCanopyMask", "uHasMistMask", "uHasSkyMask",
+  "uClouds", "uRiverPhase", "uFallPhase", "uCloudDrift",
   "uRippleUv", "uRippleTime", "uRippleStrength",
   "uOverscan", "uCameraZoom", "uFarParallax", "uNearParallax",
   "uCanopyMaxUv", "uWaterMaxUv", "uWaterfallMaxUv",
@@ -57,6 +58,54 @@ export function computeArrivalState({ scrollProgress = 0, phase = "idle" } = {})
 
 export function computeCameraMotion({ scrollProgress = 0, reducedMotion = false } = {}) {
   return reducedMotion ? 0 : computeArrivalState({ scrollProgress }).camera;
+}
+
+// Velocidades em células de ruído por segundo. Só existem aqui: o shader recebe
+// a fase já somada e nunca a velocidade, para não poder remultiplicar por tempo.
+//
+// A queda usa três camadas com frequências diferentes, então a velocidade que se
+// vê na tela não é este número: o véu corre a fall/16, o fio a fall*1,62/10 e o
+// respingo a fall*2,45/30 da altura por segundo. É a razão entre elas que dá a
+// profundidade; mexer só aqui desacelera a queda inteira sem achatá-la.
+const PHASE_RATES = { river: 0.22, fall: 1.6 };
+
+export function createScenePhases() {
+  return { river: 0, fall: 0, drift: [0, 0] };
+}
+
+/**
+ * Integra as fases de correnteza, queda e nuvem quadro a quadro.
+ *
+ * O ponto inteiro desta função é que a fase é uma soma, não um produto. Quando o
+ * visitante encosta num lugar a energia da água sobe e a velocidade muda — se o
+ * shader calculasse `tempo × velocidade`, o produto saltaria de uma vez e a
+ * cachoeira e as nuvens pulariam. Somando, a mudança de velocidade só altera a
+ * inclinação: o valor continua contínuo e a imagem não pisca.
+ */
+export function advanceScenePhases(phases, {
+  dt = 0,
+  riverMotion = 0.65,
+  cloudSpeed = ARRIVAL_MOTION.cloudSpeed,
+  windDir = [0.32, 0.08],
+  reducedMotion = false,
+} = {}) {
+  const current = phases || createScenePhases();
+  const carried = { river: current.river, fall: current.fall, drift: [...current.drift] };
+  if (reducedMotion || !(dt > 0)) return carried;
+
+  const seconds = dt / 1000;
+  const dirX = (windDir?.[0] ?? 0) + 0.85;
+  const dirY = (windDir?.[1] ?? 0) + 0.06;
+  const length = Math.max(1e-4, Math.hypot(dirX, dirY));
+
+  return {
+    river: carried.river + seconds * PHASE_RATES.river * Math.max(riverMotion, 0.4),
+    fall: carried.fall + seconds * PHASE_RATES.fall * Math.max(riverMotion, 0.5),
+    drift: [
+      carried.drift[0] + (dirX / length) * seconds * cloudSpeed,
+      carried.drift[1] + (dirY / length) * seconds * cloudSpeed,
+    ],
+  };
 }
 
 function compileShader(gl, type, source) {
@@ -108,6 +157,7 @@ export function createArrivalScene({
   waterfallMaskUrl = "",
   canopyMaskUrl = "",
   mistMaskUrl = "",
+  skyMaskUrl = "",
   profile,
   reducedMotion = false,
   debug = false,
@@ -140,7 +190,8 @@ export function createArrivalScene({
   let flags = {};
   let textureCount = 0;
   let waterClock = 0;
-  let world = {
+  let phases = createScenePhases();
+  const restingWorld = () => ({
     wind: 0.28,
     water: 0.65,
     sun: 0.24,
@@ -149,7 +200,12 @@ export function createArrivalScene({
     attention: 0,
     windDir: [0.32, 0.08],
     attentionUv: [0.5, 0.5],
-  };
+  });
+  // `worldTarget` recebe o salto do hover; `world` persegue esse alvo. O motor já
+  // amortece a queda das energias, mas a subida era instantânea — era o estalo de
+  // brilho que se via ao encostar num lugar.
+  let worldTarget = restingWorld();
+  let world = restingWorld();
   let debugView = 0;
   let debugMaskMix = 0;
   let ripple = { uv: [0.22, 0.78], time: 0, strength: 0 };
@@ -235,6 +291,27 @@ export function createArrivalScene({
     state.path = damp(state.path, targetState.path, dt, ARRIVAL_SMOOTHING.cameraMs);
     ripple.time += dt / 1000;
 
+    for (const key of ["wind", "water", "sun", "mist", "path", "attention"]) {
+      world[key] = damp(world[key], worldTarget[key], dt, ARRIVAL_SMOOTHING.lightMs);
+    }
+    world.windDir = [
+      damp(world.windDir[0], worldTarget.windDir[0], dt, ARRIVAL_SMOOTHING.windDirMs),
+      damp(world.windDir[1], worldTarget.windDir[1], dt, ARRIVAL_SMOOTHING.windDirMs),
+    ];
+
+    const riverFlow = computeRiverFlowState({
+      elapsed: waterClock,
+      reducedMotion,
+      energy: Math.max(world.water, 0.55),
+    });
+    phases = advanceScenePhases(phases, {
+      dt,
+      riverMotion: riverFlow.intensity,
+      cloudSpeed: motion.cloudSpeed,
+      windDir: world.windDir,
+      reducedMotion,
+    });
+
     gl.useProgram(program);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.enableVertexAttribArray(position);
@@ -245,6 +322,7 @@ export function createArrivalScene({
     gl.uniform1i(uniforms.uWaterfallMask, 5);
     gl.uniform1i(uniforms.uCanopyMask, 3);
     gl.uniform1i(uniforms.uMistMask, 4);
+    gl.uniform1i(uniforms.uSkyMask, 6);
     gl.uniform2f(uniforms.uPointer, pointer[0], pointer[1]);
     gl.uniform2f(uniforms.uResolution, canvas.width, canvas.height);
     gl.uniform2f(uniforms.uImageSize, imageSize[0], imageSize[1]);
@@ -253,11 +331,6 @@ export function createArrivalScene({
     gl.uniform1f(uniforms.uFog, state.fog);
     gl.uniform1f(uniforms.uLight, state.light);
     gl.uniform1f(uniforms.uPath, clamp(state.path + world.path * 0.55));
-    const riverFlow = computeRiverFlowState({
-      elapsed: waterClock,
-      reducedMotion,
-      energy: Math.max(world.water, 0.55),
-    });
     gl.uniform1f(uniforms.uTime, reducedMotion ? 0 : waterClock);
     gl.uniform1f(uniforms.uRiverMotion, riverFlow.intensity);
     gl.uniform1f(uniforms.uWind, reducedMotion ? 0 : world.wind);
@@ -270,6 +343,13 @@ export function createArrivalScene({
     gl.uniform1f(uniforms.uHasWaterfallMask, flags.waterfallMask || 0);
     gl.uniform1f(uniforms.uHasCanopyMask, flags.canopyMask || 0);
     gl.uniform1f(uniforms.uHasMistMask, flags.mistMask || 0);
+    gl.uniform1f(uniforms.uHasSkyMask, flags.skyMask || 0);
+    // Sem movimento reduzido a nuvem continua desenhada, apenas parada: ela é
+    // parte da composição, não um efeito que se possa simplesmente apagar.
+    gl.uniform1f(uniforms.uClouds, motion.cloudAmount);
+    gl.uniform1f(uniforms.uRiverPhase, phases.river);
+    gl.uniform1f(uniforms.uFallPhase, phases.fall);
+    gl.uniform2f(uniforms.uCloudDrift, phases.drift[0], phases.drift[1]);
     gl.uniform2f(uniforms.uRippleUv, ripple.uv[0], ripple.uv[1]);
     gl.uniform1f(uniforms.uRippleTime, ripple.time);
     gl.uniform1f(uniforms.uRippleStrength, ripple.strength);
@@ -294,6 +374,7 @@ export function createArrivalScene({
       waterfallMaskUrl,
       canopyMaskUrl: canopyMaskUrl || canopyUrl,
       mistMaskUrl,
+      skyMaskUrl,
     },
     debug,
   })
@@ -341,7 +422,7 @@ export function createArrivalScene({
       targetState = computeArrivalState({ scrollProgress, phase: breathPhase });
     },
     setWorld(next = {}) {
-      world = {
+      worldTarget = {
         wind: clamp(next.wind),
         water: clamp(next.water),
         sun: clamp(next.sun),
@@ -357,6 +438,10 @@ export function createArrivalScene({
           clamp(next.attentionUv?.[1] ?? 0.5),
         ],
       };
+      // A atenção salta de lugar quando o ponteiro pula de um ator para outro; ela
+      // é posição, não intensidade, e interpolar entre dois pontos distantes
+      // arrastaria o halo pela paisagem.
+      world.attentionUv = [...worldTarget.attentionUv];
     },
     setDebug({ view = 0, maskMix = 0 } = {}) {
       debugView = Number(view) || 0;

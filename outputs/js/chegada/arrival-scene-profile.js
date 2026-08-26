@@ -12,9 +12,17 @@ export const ARRIVAL_MOTION = {
   nearParallax: 0.007,
   canopyMaxUv: 0.002,
   waterMaxUv: 0.0018,
-  waterfallMaxUv: 0.0024,
+  // A queda deforma um pouco mais que o rio: é ela que precisa parecer rápida, e
+  // a máscara a mantém presa ao paredão, então a amplitude extra não vaza.
+  waterfallMaxUv: 0.0032,
   mistDrift: 0.028,
   attentionFalloff: 42,
+  cloudAmount: 0.95,
+  // A deriva é somada no espaço do ruído, não no da tela: como 7,5 células de
+  // ruído cobrem a largura visível, a velocidade precisa ser dividida por elas
+  // para virar movimento perceptível. Aqui a massa alta cruza a tela em ~115s e
+  // o detalhe baixo em ~65s, o que dá paralaxe sem virar céu de tempestade.
+  cloudSpeed: 0.12,
 };
 
 export const ARRIVAL_SMOOTHING = {
@@ -24,6 +32,9 @@ export const ARRIVAL_SMOOTHING = {
   windDirMs: 220,
 };
 
+// Cada lugar guarda um poema curto de três versos. Ele é dito quando o visitante
+// toca o lugar — a tela escurece, o verso aparece, e a paisagem volta. Três
+// versos é o limite para caber na tela sem rolagem em celular deitado.
 export const DESKTOP_V2_ACTORS = [
   {
     id: "sky",
@@ -31,6 +42,11 @@ export const DESKTOP_V2_ACTORS = [
     role: "Tempo",
     label: "O céu",
     cue: "A luz muda porque você chegou.",
+    poem: [
+      "O céu não começa agora —",
+      "só encontrou alguém",
+      "disposto a olhar.",
+    ],
     x: 0.28,
     y: 0.16,
     radius: 0.14,
@@ -41,6 +57,11 @@ export const DESKTOP_V2_ACTORS = [
     role: "Presença",
     label: "A árvore antiga",
     cue: "O vento só existe enquanto você está aqui.",
+    poem: [
+      "Ela não espera nada.",
+      "Fica.",
+      "E é isso que faz sombra.",
+    ],
     x: 0.13,
     y: 0.22,
     radius: 0.12,
@@ -51,6 +72,11 @@ export const DESKTOP_V2_ACTORS = [
     role: "Fluxo",
     label: "A água da margem",
     cue: "A correnteza acorda com a sua atenção.",
+    poem: [
+      "A água não escolhe caminho:",
+      "aceita a descida",
+      "e chega.",
+    ],
     x: 0.22,
     y: 0.78,
     radius: 0.08,
@@ -61,6 +87,11 @@ export const DESKTOP_V2_ACTORS = [
     role: "Pausa",
     label: "Quem brinca na água",
     cue: "Eles convidam a respirar.",
+    poem: [
+      "Ninguém lhes ensinou",
+      "a respirar assim —",
+      "só ninguém desensinou.",
+    ],
     x: 0.14,
     y: 0.86,
     radius: 0.06,
@@ -71,6 +102,11 @@ export const DESKTOP_V2_ACTORS = [
     role: "Horizonte",
     label: "Quem aponta o vale",
     cue: "A névoa abre para quem olha ao longe.",
+    poem: [
+      "O vale estava lá",
+      "o tempo todo.",
+      "Faltava a distância certa.",
+    ],
     x: 0.38,
     y: 0.58,
     radius: 0.07,
@@ -81,6 +117,11 @@ export const DESKTOP_V2_ACTORS = [
     role: "Caminho",
     label: "Quem segue a pedra",
     cue: "Um passo com eles. O resto é o seu.",
+    poem: [
+      "A pedra é antiga",
+      "porque muita gente",
+      "duvidou antes de você.",
+    ],
     x: 0.48,
     y: 0.7,
     radius: 0.06,
@@ -91,6 +132,11 @@ export const DESKTOP_V2_ACTORS = [
     role: "Escuta",
     label: "Quem descansa junto ao templo",
     cue: "Você não precisa conhecer tudo hoje.",
+    poem: [
+      "Sentar também é chegar.",
+      "O corpo sabe disso",
+      "antes da gente.",
+    ],
     x: 0.76,
     y: 0.78,
     radius: 0.07,
@@ -101,6 +147,11 @@ export const DESKTOP_V2_ACTORS = [
     role: "Entrada",
     label: "A porta do templo",
     cue: "Quando quiser, o Potala continua lá dentro.",
+    poem: [
+      "A porta não se abre.",
+      "Ela deixa de ser parede",
+      "quando alguém chega.",
+    ],
     x: 0.84,
     y: 0.5,
     radius: 0.07,
@@ -119,6 +170,7 @@ export const ARRIVAL_SCENE_PROFILES = {
       waterfallMaskUrl: "media/chegada-v2-waterfall-mask.webp",
       canopyMaskUrl: "media/chegada-v2-canopy-mask.webp",
       mistMaskUrl: "media/chegada-v2-mist-mask.webp",
+      skyMaskUrl: "media/chegada-v2-sky-mask.webp",
       canopyOverlayUrl: "media/chegada-v2-canopy-overlay.webp",
     },
     motion: { ...ARRIVAL_MOTION },
@@ -143,6 +195,7 @@ export const ARRIVAL_SCENE_PROFILES = {
       waterfallMaskUrl: "",
       canopyMaskUrl: "",
       mistMaskUrl: "",
+      skyMaskUrl: "",
       canopyOverlayUrl: "",
     },
     motion: {

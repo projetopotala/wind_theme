@@ -13,6 +13,7 @@ const budgets = [
   { file: "outputs/media/chegada-v2-waterfall-mask.webp", maximum: 700_000, width: 2048, height: 1152 },
   { file: "outputs/media/chegada-v2-canopy-mask.webp", maximum: 900_000, width: 2048, height: 1152 },
   { file: "outputs/media/chegada-v2-mist-mask.webp", maximum: 900_000, width: 2048, height: 1152 },
+  { file: "outputs/media/chegada-v2-sky-mask.webp", maximum: 700_000, width: 2048, height: 1152 },
   { file: "outputs/media/chegada-v2-canopy-overlay.webp", maximum: 1_500_000, width: 2048, height: 1152 },
   { file: "outputs/media/journey-quem-somos.webp", maximum: 900_000 },
   { file: "outputs/media/journey-cuidado.webp", maximum: 900_000 },

@@ -8,6 +8,8 @@ const VIEWS = [
   { id: 3, label: "WATERFALL MASK" },
   { id: 4, label: "CANOPY MASK" },
   { id: 5, label: "MIST MASK" },
+  { id: 7, label: "SKY MASK" },
+  { id: 8, label: "QUEDA · PÉ/CORPO/LÁBIO" },
 ];
 
 export function mountArrivalDebug({

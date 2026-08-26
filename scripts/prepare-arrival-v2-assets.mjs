@@ -14,6 +14,7 @@ const FILES = [
   { source: "arrival-waterfall-mask.png", output: "chegada-v2-waterfall-mask.webp", kind: "map" },
   { source: "arrival-canopy-mask.png", output: "chegada-v2-canopy-mask.webp", kind: "map" },
   { source: "arrival-mist-mask.png", output: "chegada-v2-mist-mask.webp", kind: "map" },
+  { source: "arrival-sky-mask.png", output: "chegada-v2-sky-mask.webp", kind: "map" },
   { source: "arrival-canopy-overlay.png", output: "chegada-v2-canopy-overlay.webp", kind: "overlay" },
 ];
 

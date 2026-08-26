@@ -39,8 +39,8 @@ test("o percurso entre informações desacelera a narrativa sem voltar a ficar l
     const current = journeyRhythmForIndex(index);
     const next = journeyRhythmForIndex(index + 1);
     const centerDistance = current.regionHeight / 2 + current.silenceHeight + next.regionHeight / 2;
-    assert.ok(centerDistance >= 270, `trecho ${index} ficou rápido demais`);
-    assert.ok(centerDistance <= 300, `trecho ${index} ficou longo demais`);
+    assert.ok(centerDistance >= 175, `trecho ${index} ficou rápido demais`);
+    assert.ok(centerDistance <= 200, `trecho ${index} ficou longo demais`);
   }
 });
 

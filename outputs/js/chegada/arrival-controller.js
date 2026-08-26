@@ -12,12 +12,14 @@ import {
   imageUvFromPointer,
   mountArrivalWorld,
 } from "./arrival-world.js";
+import { mountWorldPoem } from "./world-poem.js";
 
 const arrival = document.getElementById("arrival");
 const visual = document.getElementById("arrival-visual");
 const canvas = document.getElementById("arrival-scene");
 const natureCanvas = document.getElementById("arrival-nature");
 const worldRoot = document.getElementById("arrival-world");
+const poemRoot = document.getElementById("world-poem");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const search = window.location.search;
 
@@ -71,18 +73,30 @@ if (arrival && visual && canvas) {
   let soundEnabled = false;
   let engine;
 
+  const poem = poemRoot ? mountWorldPoem(poemRoot, { reducedMotion }) : null;
+
   const onActorAction = (actor, extra = {}) => {
     if (!actor) return;
-    if (actor.action === "path") {
-      const remaining = Math.max(0, arrival.offsetHeight - window.innerHeight - window.scrollY);
-      window.scrollBy({ top: remaining * 0.18, behavior: reducedMotion ? "auto" : "smooth" });
-    }
-    if (actor.action === "enter") {
-      enterHome({
-        entry: extra.fromScroll ? "scroll" : "keyboard",
-        soundEnabled,
-      });
-    }
+
+    // A energia do lugar já subiu no motor e continua correndo atrás do véu — é o
+    // mundo respondendo ao toque. O que espera o fim do poema é só o que tira o
+    // visitante do lugar: rolar a página ou entrar. Ler três versos e ser jogado
+    // para dentro do site no meio deles não é uma pausa, é uma interrupção.
+    const respond = () => {
+      if (actor.action === "path") {
+        const remaining = Math.max(0, arrival.offsetHeight - window.innerHeight - window.scrollY);
+        window.scrollBy({ top: remaining * 0.18, behavior: reducedMotion ? "auto" : "smooth" });
+      }
+      if (actor.action === "enter") {
+        enterHome({
+          entry: extra.fromScroll ? "scroll" : "keyboard",
+          soundEnabled,
+        });
+      }
+    };
+
+    if (poem?.show(actor, { onClose: respond })) return;
+    respond();
   };
 
   const worldLayer = worldRoot
@@ -114,6 +128,7 @@ if (arrival && visual && canvas) {
   });
 
   const updatePointer = (event) => {
+    if (poem?.isOpen) return;
     const pointer = engine.pointer(event);
     if (!pointer) return;
     const uv = uvFromEvent(event);
@@ -157,6 +172,7 @@ if (arrival && visual && canvas) {
     scene.destroy();
     nature?.destroy();
     worldLayer?.destroy();
+    poem?.destroy();
     debug.destroy();
     window.removeEventListener("scroll", onScroll);
     window.removeEventListener("resize", onResize);

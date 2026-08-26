@@ -22,6 +22,7 @@ test("os assets V2 da Chegada compartilham a mesma dimensão da master", async (
     "arrival-waterfall-mask.png",
     "arrival-canopy-mask.png",
     "arrival-mist-mask.png",
+    "arrival-sky-mask.png",
     "arrival-canopy-overlay.png",
   ]) {
     const meta = await inspectArrivalSource(path.join(SOURCE, file));
@@ -56,6 +57,7 @@ test("o pipeline recusa máscara com dimensão diferente da master", async () =>
       "arrival-waterfall-mask.png",
       "arrival-canopy-mask.png",
       "arrival-mist-mask.png",
+      "arrival-sky-mask.png",
       "arrival-canopy-overlay.png",
     ];
     for (const name of names) {

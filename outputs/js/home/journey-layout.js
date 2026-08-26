@@ -9,6 +9,17 @@ const DIRECTIONS = [
   { x: 0, y: 1 },
 ];
 
+/**
+ * Quanto de estrada a câmera percorre em cada seção da página.
+ *
+ * A altura das seções não muda com ele, então este fator é a única coisa que
+ * separa a velocidade da estrada da velocidade da rolagem. Em 1 a estrada corria
+ * a cerca de 1,8× o scroll — passava rápido demais para uma travessia. Os três
+ * comprimentos são escalados juntos, de propósito: mexer só nas retas mudaria a
+ * frequência das curvas e a estrada ficaria mais agitada, não mais calma.
+ */
+const ROAD_TRAVEL = .7;
+
 const normalize = ({ x, y }) => {
   const length = Math.hypot(x, y) || 1;
   return { x: x / length, y: y / length };
@@ -131,9 +142,9 @@ export function buildJourneyLayout(regions, viewport = {}) {
   const width = Math.max(320, Number(viewport.width) || 1440);
   const height = Math.max(480, Number(viewport.height) || 900);
   const maxDimension = Math.max(width, height);
-  const regularStraight = maxDimension * 1.82;
-  const capStraight = Math.max(regularStraight, height * 4.6);
-  const curveLength = maxDimension * .72;
+  const regularStraight = maxDimension * 1.82 * ROAD_TRAVEL;
+  const capStraight = Math.max(regularStraight, height * 4.6 * ROAD_TRAVEL);
+  const curveLength = maxDimension * .72 * ROAD_TRAVEL;
   const mobile = width < 720;
   const segments = [];
   const checkpoints = [];

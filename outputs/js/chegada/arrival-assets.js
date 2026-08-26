@@ -62,6 +62,7 @@ const TEXTURE_SLOTS = [
   { key: "canopyMask", name: "canopy", unit: 3, required: false, urlKey: "canopyMaskUrl" },
   { key: "mistMask", name: "mist", unit: 4, required: false, urlKey: "mistMaskUrl" },
   { key: "waterfallMask", name: "waterfall", unit: 5, required: false, urlKey: "waterfallMaskUrl" },
+  { key: "skyMask", name: "sky", unit: 6, required: false, urlKey: "skyMaskUrl" },
 ];
 
 export function arrivalTexturePriority() {

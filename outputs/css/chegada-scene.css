@@ -47,7 +47,9 @@ a {
   width: 100%;
   height: 100vh;
   height: 100svh;
-  min-height: 480px;
+  /* Em paisagem no celular a viewport tem menos de 480px de altura. Um mínimo
+     fixo deixaria o sticky mais alto que a tela e ele deixaria de grudar. */
+  min-height: min(480px, 100svh);
   overflow: hidden;
   background: #3e443f;
 }
@@ -106,6 +108,15 @@ a {
   pointer-events: none;
 }
 
+/* Os dois canvas nascem com o atributo hidden e o perdem quando a cena carrega;
+   na queda para a fotografia ele volta. O display acima venceria esse hidden e
+   deixaria a tela pendurada por cima da foto, então o guard é o que faz o
+   atributo valer alguma coisa. */
+.arrival-canvas[hidden],
+.arrival-nature-canvas[hidden] {
+  display: none;
+}
+
 .arrival-atmosphere {
   z-index: 3;
   pointer-events: none;
@@ -138,15 +149,17 @@ a {
 }
 
 .world-prompt {
-  inset: auto 8% 8%;
+  inset: auto clamp(18px, 8%, 110px) max(7%, calc(env(safe-area-inset-bottom) + 18px));
   z-index: 7;
   height: auto;
   margin: 0;
   color: var(--arrival-ivory);
   font-size: clamp(13px, 1.5vw, 18px);
+  line-height: 1.45;
   letter-spacing: .04em;
   text-align: center;
   text-shadow: 0 1px 12px rgba(12, 14, 13, .7);
+  text-wrap: balance;
   opacity: .92;
 }
 
@@ -209,10 +222,129 @@ body.is-arrival-transitioning .world-prompt {
   transition: opacity .38s ease;
 }
 
+/* O poema do lugar. Fixo, e não absoluto dentro do visual, porque a tela inteira
+   escurece — inclusive os botões de respiração e som, que ficariam boiando
+   acesos sobre o escuro se o véu parasse na moldura da paisagem. */
+.world-poem {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2.6vh, 26px);
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 6vw, 80px);
+  background: radial-gradient(circle at 50% 46%, rgba(14, 17, 15, .88), rgba(9, 11, 10, .96) 62%);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--poem-fade-out, 900ms) cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Obrigatória, e não uma formalidade: `display: flex` acima vence o `display:
+   none` que o atributo hidden traz por padrão. Sem esta regra o poema fechado
+   continua ocupando a tela inteira — invisível, mas engolindo todo clique antes
+   que ele chegue nos lugares do mundo. */
+.world-poem[hidden] {
+  display: none;
+}
+
+.world-poem[data-state="open"] {
+  opacity: 1;
+  transition-duration: var(--poem-fade-in, 900ms);
+}
+
+.world-poem:focus {
+  outline: none;
+}
+
+.world-poem-kicker {
+  margin: 0;
+  color: var(--arrival-gold);
+  font-size: clamp(10px, 1.1vw, 12px);
+  font-weight: 700;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity var(--poem-fade-in, 900ms) ease;
+}
+
+.world-poem-verse {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1.2vh, 14px);
+  max-width: 22em;
+  margin: 0;
+  color: var(--arrival-ivory);
+  font-size: clamp(20px, 3.4vw, 40px);
+  font-style: italic;
+  line-height: 1.34;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.world-poem-verse span {
+  display: block;
+  opacity: 0;
+  /* Cada verso entra um passo depois do anterior, no ritmo de quem lê em voz
+     alta. O atraso vem do índice, então poemas de outro tamanho continuam
+     cadenciados sem tocar no CSS. */
+  transform: translateY(10px);
+  transition:
+    opacity var(--poem-fade-in, 900ms) ease,
+    transform var(--poem-fade-in, 900ms) cubic-bezier(.22, .72, .24, 1);
+  transition-delay: calc(var(--poem-line, 0) * var(--poem-stagger, 420ms));
+}
+
+.world-poem-source {
+  margin: 0;
+  color: var(--arrival-ivory);
+  font-size: clamp(12px, 1.4vw, 15px);
+  letter-spacing: .1em;
+  opacity: 0;
+  transition: opacity var(--poem-fade-in, 900ms) ease;
+  transition-delay: calc(var(--poem-line-count, 3) * var(--poem-stagger, 420ms));
+}
+
+.world-poem[data-state="open"] .world-poem-kicker {
+  opacity: .8;
+}
+
+.world-poem[data-state="open"] .world-poem-verse span {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.world-poem[data-state="open"] .world-poem-source {
+  opacity: .55;
+}
+
+/* Na saída tudo apaga junto: escalonar a despedida faria o poema se desmanchar
+   verso a verso, o que lê como falha e não como fim. */
+.world-poem[data-state="leaving"] .world-poem-kicker,
+.world-poem[data-state="leaving"] .world-poem-verse span,
+.world-poem[data-state="leaving"] .world-poem-source {
+  transition-delay: 0ms;
+}
+
+/* Enquanto o poema se apaga ele ainda ocupa a tela por causa da transição, mas
+   já não deve engolir o próximo clique do visitante. */
+.world-poem[data-state="leaving"] {
+  pointer-events: none;
+}
+
+body.is-poem-open .journey-scroll-cue,
+body.is-poem-open .breath-launcher,
+body.is-poem-open .ambient-sound {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .5s ease;
+}
+
 .journey-scroll-cue {
   position: absolute;
   z-index: 10;
-  right: max(24px, 4vw);
+  right: max(24px, 4vw, calc(env(safe-area-inset-right) + 14px));
   top: 50%;
   width: 1px;
   height: clamp(126px, 24svh, 196px);
@@ -275,10 +407,29 @@ body.is-arrival-transitioning .breathing-guide {
 
   .journey-scroll-cue {
     top: 44%;
-    right: 18px;
+    right: max(18px, calc(env(safe-area-inset-right) + 10px));
     height: 108px;
   }
 
+}
+
+/* Celular deitado: a faixa de 720px não alcança esta tela, porque a largura é
+   grande e a altura é mínima. Sem esta regra a travessia fica longa demais e a
+   marca de progresso ocupa quase toda a altura útil. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .arrival {
+    min-height: 150svh;
+  }
+
+  .journey-scroll-cue {
+    top: 50%;
+    height: clamp(64px, 34svh, 118px);
+  }
+
+  .world-prompt {
+    inset: auto clamp(16px, 6%, 80px) max(12px, calc(env(safe-area-inset-bottom) + 8px));
+    font-size: clamp(12px, 3.4svh, 16px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -305,6 +456,20 @@ body.is-arrival-transitioning .breathing-guide {
   .arrival-fallback img,
   .arrival-transition {
     transition-duration: .01ms !important;
+  }
+
+  /* O poema continua: é texto, não movimento. Só o deslize e o escalonamento
+     saem, e o tempo em tela já vem alongado do JS para compensar. */
+  .world-poem,
+  .world-poem-kicker,
+  .world-poem-verse span,
+  .world-poem-source {
+    transition-duration: .01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .world-poem-verse span {
+    transform: none;
   }
 }
 
