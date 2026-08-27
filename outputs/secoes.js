@@ -11,6 +11,7 @@
     { key: "programacao", label: "Programação", href: "programacao.html" },
     { key: "saude-integrativa", label: "Saúde Integrativa", href: "saude-integrativa.html" },
     { key: "cultura", label: "Cultura", href: "cultura.html" },
+    { key: "marketplace", label: "Marketplace", href: "marketplace.html" },
     { key: "profissionais", label: "Profissionais", href: "profissionais.html" },
     { key: "inspiracao", label: "Inspiração", href: "inspiracao.html" },
   ];

@@ -15,10 +15,11 @@ const expected = [
   "profissionais",
   "programacao",
   "arte-cultura",
+  "marketplace",
   "inspiracao",
 ];
 
-test("define exatamente as oito regiões na ordem narrativa", () => {
+test("define exatamente as nove regiões na ordem narrativa", () => {
   assert.deepEqual(JOURNEY_REGIONS.map((region) => region.id), expected);
   assert.ok(JOURNEY_REGIONS.every((region) => region.href && region.href !== "#"));
 });
@@ -55,6 +56,7 @@ test("cada região leva a uma página local própria", async () => {
     "profissionais.html",
     "programacao.html",
     "cultura.html",
+    "marketplace.html",
     "inspiracao.html",
   ];
   assert.deepEqual(JOURNEY_REGIONS.map((region) => region.href), expectedDestinations);

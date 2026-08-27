@@ -35,7 +35,7 @@ test("o fade começa somente quando a informação entra na área visível", () 
 
 test("o percurso entre informações desacelera a narrativa sem voltar a ficar longo", () => {
   assert.equal(typeof journeyRhythmForIndex, "function");
-  for (let index = 0; index < 7; index += 1) {
+  for (let index = 0; index < 8; index += 1) {
     const current = journeyRhythmForIndex(index);
     const next = journeyRhythmForIndex(index + 1);
     const centerDistance = current.regionHeight / 2 + current.silenceHeight + next.regionHeight / 2;
