@@ -65,20 +65,29 @@ export function easeCurveTravel(progress) {
 }
 
 /**
- * Se a rolagem chegou ao fim da subida.
+ * Se a rolagem chegou ao fim da subida, avançando.
  *
- * A margem existe porque a última rolagem raramente para no pixel exato: em
- * rolagem suave e em trackpad o documento encosta no fim com sobra de alguns
- * pixels, e exigir igualdade deixaria a passagem sem disparar.
+ * A margem de 8px existe porque a última rolagem raramente para no pixel
+ * exato: em rolagem suave e em trackpad o documento encosta no fim com sobra
+ * de alguns pixels, e exigir igualdade deixaria a passagem sem disparar.
+ *
+ * `movingDown` é obrigatório — sem ele a Home fica presa num laço com o
+ * palácio. O bfcache restaura a página já rolada no fim quando o visitante
+ * aperta "voltar" vindo do palácio; se a passagem disparasse em repouso, ela
+ * dispararia de novo assim que a página reaparecesse, mandando o visitante
+ * de volta ao palácio sem chance de rever a Home. Exigir movimento para o
+ * fim (como a Chegada já faz em `shouldEnterFromScroll`) garante que só uma
+ * rolagem ativa cruza a passagem, nunca um estado de repouso restaurado.
  */
 export function shouldCrossToPalace({
   scrollTop = 0,
   scrollHeight = 0,
   viewportHeight = 0,
+  movingDown = false,
 } = {}) {
   const maximo = scrollHeight - viewportHeight;
   if (maximo <= 0) return false;
-  return scrollTop >= maximo - 8;
+  return movingDown && scrollTop >= maximo - 8;
 }
 
 function roadStateForScroll(scrollCenter, elements, layout) {
@@ -166,6 +175,7 @@ export function createHomeController({
   let frameId = 0;
   let entryTimer = 0;
   let visualScrollTop = scrollY;
+  let lastScrollTop = scrollY;
   const visualPresence = data.regions.map(() => 0);
   let lastFrameTime = 0;
   let destroyed = false;
@@ -190,6 +200,10 @@ export function createHomeController({
     if (destroyed || document.hidden) return;
     const viewportHeight = innerHeight;
     const targetScrollTop = scrollY;
+    // Mesmo critério da Chegada (`arrival-engine.js`): só considera "descendo"
+    // um avanço real, não o ruído de um pixel que a rolagem por vezes reporta parada.
+    const movingDown = targetScrollTop > lastScrollTop + 1;
+    lastScrollTop = targetScrollTop;
     const scrollProgress = scrollProgressForDocument({
       scrollTop: targetScrollTop,
       scrollHeight: document.documentElement.scrollHeight,
@@ -229,6 +243,7 @@ export function createHomeController({
       scrollTop: document.scrollingElement.scrollTop,
       scrollHeight: document.scrollingElement.scrollHeight,
       viewportHeight,
+      movingDown,
     })) {
       crossTo({ destination: "palacio.html" });
     }
@@ -341,7 +356,15 @@ export function mountHomeJourney() {
     if (!event.persisted) activeController?.destroy();
   };
   const onPageShow = (event) => {
-    if (event.persisted) window.dispatchEvent(new Event("resize"));
+    if (!event.persisted) return;
+    // Espelha a limpeza da Chegada (`arrival-controller.js`): se o bfcache
+    // devolve a página com o véu já fechado (`crossTo` chamado antes de sair
+    // para o palácio), esses marcadores ficam presos para sempre e `crossTo`
+    // passa a recusar qualquer nova travessia nesta sessão sem recarregar.
+    delete document.documentElement.dataset.transitioning;
+    document.documentElement.classList.remove("is-crossing");
+    document.body.classList.remove("is-arrival-transitioning");
+    window.dispatchEvent(new Event("resize"));
   };
   const destroy = activeController.destroy.bind(activeController);
   activeController.destroy = () => {
