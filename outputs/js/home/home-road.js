@@ -219,19 +219,38 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
       const point = pointAtDistance(tuft.distance);
       if (!point) continue;
       const sway = reducedMotion ? 0 : grassSwayOffset(tuft, phase);
-      const baseX = point.x + point.normalX * half * tuft.side;
-      const baseY = point.y + point.normalY * half * tuft.side;
-      const tipX = baseX + point.normalX * tuft.height * tuft.side * 0.35
-        + tuft.lean * tuft.height + sway;
-      const tipY = baseY - tuft.height;
+
+      // O tufo cresce pela normal da curva, para fora da pista — nunca "para
+      // cima na tela". Nesta travessia a estrada corre quase vertical em
+      // trechos longos, e ali "para cima na tela" corre junto do caminho, não
+      // para fora dele: a lâmina ficava deitada sobre o calçamento e
+      // `drawPavement`, que roda depois com traço mais largo que a pista, cobria
+      // tudo. Inclinação e oscilação são perpendiculares ao crescimento — é
+      // por aí que a folha entorta e balança, mantendo a base presa à borda.
+      const outX = point.normalX * tuft.side;
+      const outY = point.normalY * tuft.side;
+      const perpX = -outY;
+      const perpY = outX;
+      const bend = tuft.lean * tuft.height + sway;
+
+      // Folga extra na base: a mascara borrada de `drawPavement` se estende
+      // além do raio nominal da pista (o blur nao corta em zero na borda), entao
+      // a base plantada exatamente em `half` ainda nascia dentro da pedra.
+      const baseRadius = half * 1.08;
+      const baseX = point.x + outX * baseRadius;
+      const baseY = point.y + outY * baseRadius;
+      const tipX = baseX + outX * tuft.height + perpX * bend;
+      const tipY = baseY + outY * tuft.height + perpY * bend;
+      const ctrlX = baseX + outX * tuft.height * 0.55 + perpX * bend * 0.4;
+      const ctrlY = baseY + outY * tuft.height * 0.55 + perpY * bend * 0.4;
 
       context.strokeStyle = tuft.height > 12
-        ? "rgba(104, 108, 66, .5)"
-        : "rgba(126, 128, 82, .42)";
+        ? "rgba(104, 108, 66, .88)"
+        : "rgba(126, 128, 82, .78)";
       context.lineWidth = 1.4;
       context.beginPath();
       context.moveTo(baseX, baseY);
-      context.quadraticCurveTo(baseX + tuft.lean * tuft.height * 0.5, baseY - tuft.height * 0.6, tipX, tipY);
+      context.quadraticCurveTo(ctrlX, ctrlY, tipX, tipY);
       context.stroke();
     }
   }
