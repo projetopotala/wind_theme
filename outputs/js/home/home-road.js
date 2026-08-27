@@ -233,10 +233,9 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
       const perpY = outX;
       const bend = tuft.lean * tuft.height + sway;
 
-      // Folga extra na base: a mascara borrada de `drawPavement` se estende
-      // além do raio nominal da pista (o blur nao corta em zero na borda), entao
-      // a base plantada exatamente em `half` ainda nascia dentro da pedra.
-      const baseRadius = half * 1.08;
+      // Base para dentro da pedra: a lâmina nasce enraizada na borda do
+      // calçamento e cavalga a pedra, em vez de flutuar na terra ao lado.
+      const baseRadius = half * 0.94;
       const baseX = point.x + outX * baseRadius;
       const baseY = point.y + outY * baseRadius;
       const tipX = baseX + outX * tuft.height + perpX * bend;
@@ -245,8 +244,8 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
       const ctrlY = baseY + outY * tuft.height * 0.55 + perpY * bend * 0.4;
 
       context.strokeStyle = tuft.height > 12
-        ? "rgba(104, 108, 66, .88)"
-        : "rgba(126, 128, 82, .78)";
+        ? "rgba(96, 118, 62, .62)"
+        : "rgba(118, 132, 76, .5)";
       context.lineWidth = 1.4;
       context.beginPath();
       context.moveTo(baseX, baseY);
@@ -341,12 +340,16 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
       width,
       height,
     });
+    drawPavement(layers[2].strokeStyle, roadWidth, translateX, translateY);
+
+    // A grama tem que ser desenhada DEPOIS do calçamento: `drawPavement` monta
+    // sua máscara borrada numa tela auxiliar e a copia por cima de tudo que já
+    // estava no canvas. Se a grama for pintada antes, essa cópia a apaga —
+    // mesmo com a base cavalgando a borda da pista, como aqui.
     context.save();
     context.translate(translateX, translateY);
     drawGrass(roadWidth, arc.from, arc.to, grassPhase);
     context.restore();
-
-    drawPavement(layers[2].strokeStyle, roadWidth, translateX, translateY);
   }
 
   function queueDraw() {
