@@ -75,7 +75,7 @@ export function createArrivalEngine({
         worldLayer?.layout(viewport(), plate);
         layoutDirty = false;
       }
-      scene?.render(now, elapsedMs);
+      scene?.render(elapsedMs);
       nature?.update(now, { world: worldState, elapsedMs });
       nature?.render(now);
       debug?.update(now);
@@ -92,7 +92,7 @@ export function createArrivalEngine({
     start() {
       if (reducedMotion) {
         readScroll();
-        scene?.render(performance.now(), 16);
+        scene?.render(16);
         worldLayer?.layout(viewport(), plate);
         worldLayer?.syncState(worldState);
         return;

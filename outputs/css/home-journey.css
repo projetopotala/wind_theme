@@ -120,11 +120,24 @@ body[data-story-page="true"] {
   --presence-blur: calc(var(--presence-fade) * 9px);
 }
 
+/* A informação fica sobre a paisagem, e sem delimitação o texto disputava com a
+   fotografia. A linha marca o território do encontro e devolve leitura ao corpo
+   do texto; o mesmo traço e o mesmo raio das páginas internas, para ser o mesmo
+   sistema e não um enfeite novo. */
 .region-content {
   position: absolute;
   z-index: 3;
   top: 50%;
   width: min(43vw, 650px);
+  padding: clamp(24px, 2.6vw, 40px) clamp(26px, 2.8vw, 44px) clamp(28px, 3vw, 46px);
+  border: 1px solid rgba(74, 55, 40, .2);
+  border-radius: 20px;
+  background: linear-gradient(
+    155deg,
+    rgba(252, 250, 246, .58),
+    rgba(246, 242, 234, .34) 62%,
+    rgba(240, 236, 227, .2)
+  );
   color: inherit;
   text-decoration: none;
   opacity: var(--region-presence);
@@ -242,7 +255,24 @@ body[data-story-page="true"] {
 .journey-region[data-road-side="left"] .journey-discovery { right: clamp(5vw, 9vw, 150px); }
 .journey-region[data-road-side="right"] .journey-discovery { left: clamp(5vw, 9vw, 150px); }
 .journey-region[data-road-side="top"] .journey-discovery { right: clamp(5vw, 9vw, 150px); }
-.journey-region[data-road-side="bottom"] .journey-discovery { top: 70svh; bottom: auto; left: clamp(5vw, 9vw, 150px); }
+/* Aqui a estrada corre na horizontal logo abaixo e a descoberta precisa caber
+   entre ela e a caixa de texto. A caixa tem altura em pixels, não em svh: numa
+   tela baixa ela ocupa metade do quadro e uma posição fixa em svh caía dentro
+   dela. Ancorar em `calc(topo da caixa + meia altura dela + folga)` faz a
+   descoberta seguir a caixa em qualquer altura de tela. */
+.journey-region[data-road-side="bottom"] .journey-discovery {
+  top: calc(34% + 230px);
+  bottom: auto;
+  left: clamp(5vw, 9vw, 150px);
+}
+
+/* Mesma amarração do outro lado: aqui a estrada corre acima, então a descoberta
+   desce, mas continua presa à caixa em vez de ao rodapé da janela — colada em
+   `bottom` ela subia por cima do texto quando a tela encurtava. */
+.journey-region[data-road-side="top"] .journey-discovery {
+  top: calc(62% + 230px);
+  bottom: auto;
+}
 .discovery-light { width: 15px; height: 15px; flex: 0 0 auto; border: 1px solid rgba(183, 165, 141, .62); border-radius: 50%; background: #f2dfb8; box-shadow: 0 0 20px rgba(196, 164, 105, .52), 0 0 44px rgba(183, 152, 105, .3); transition: transform .4s ease, box-shadow .4s ease; }
 .discovery-copy { display: grid; gap: 3px; }
 .discovery-copy small { color: rgba(74, 55, 40, .55); font-size: 8px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
@@ -266,11 +296,6 @@ body[data-story-page="true"] {
   pointer-events: none;
 }
 
-.journey-silence p { position: absolute; z-index: 3; top: 50%; width: min(280px, 28vw); margin: 0; color: rgba(74, 55, 40, .46); font: italic clamp(1.2rem, 1.9vw, 1.9rem)/1.45 Georgia, serif; transform: translateY(-50%); }
-.journey-silence[data-copy-side="left"] p { right: auto; left: 6vw; text-align: left; }
-.journey-silence[data-copy-side="right"] p { right: 6vw; left: auto; text-align: right; }
-.journey-silence[data-copy-side="top"] p { top: 13%; right: auto; left: 50%; text-align: center; transform: translateX(-50%); }
-.journey-silence[data-copy-side="bottom"] p { top: auto; right: auto; bottom: 13%; left: 50%; text-align: center; transform: translateX(-50%); }
 
 .lateral-world { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
 .lateral-reveal { position: absolute; top: 50%; display: grid; gap: 8px; width: min(280px, 24vw); opacity: 0; transform: translateY(-50%); transition: opacity .25s ease; }
@@ -320,13 +345,49 @@ body[data-story-page="true"] {
   100% { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
+/* Tela baixa e larga: caixa, descoberta e estrada disputam a mesma faixa
+   vertical. Subir a caixa é o que abre espaço — a estrada não pode se mexer,
+   porque ela é a espinha da travessia. */
+/* Tela baixa: a caixa tem altura em pixels e a estrada não pode sair do lugar,
+   então quem cede é o bloco. Compactar o encontro central é o que abre faixa
+   para a descoberta caber entre ele e o caminho sem encostar em nenhum dos dois. */
+@media (max-height: 780px) {
+  .journey-region[data-content-placement="center"] .region-content {
+    padding: 20px 26px 22px;
+  }
+  .journey-region[data-content-placement="center"] .region-content h2 {
+    font-size: clamp(2.6rem, 5.2vw, 4.1rem);
+  }
+  .journey-region[data-content-placement="center"] .region-category { margin-bottom: 14px; }
+  .journey-region[data-content-placement="center"] .region-description {
+    margin-top: 15px;
+    font-size: clamp(.94rem, 1.2vw, 1.05rem);
+  }
+  .journey-region[data-content-placement="center"] .region-tags { margin-top: 14px; }
+  .journey-region[data-content-placement="center"] .region-link { margin-top: 16px; }
+
+  /* Deste lado a descoberta fica entre a caixa e a estrada, e a faixa é curta:
+     o recuo menor reparte a sobra pelos dois lados em vez de colar no caminho. */
+  .journey-region[data-road-side="bottom"] .region-content { top: 30%; }
+  .journey-region[data-road-side="bottom"] .journey-discovery { top: calc(30% + 148px); }
+  .journey-region[data-road-side="top"] .region-content { top: 58%; }
+  .journey-region[data-road-side="top"] .journey-discovery { top: calc(58% + 170px); }
+}
+
 @media (max-width: 720px) {
   body[data-story-page="true"] { background-attachment: scroll; }
   .journey-prologue { min-height: 138svh; }
   .prologue-copy { padding-right: 31vw; padding-left: 6vw; }
   .prologue-copy h1 { font-size: clamp(3.7rem, 17vw, 6.4rem); }
   .journey-region, .journey-region:nth-of-type(n) { min-height: var(--region-height, 184svh); }
-  .region-content { top: 46%; width: 53vw; }
+  /* A moldura consome largura útil, então no celular a caixa cresce e o
+     acolchoamento encolhe — senão a descrição quebra em quatro linhas. */
+  .region-content {
+    top: 46%;
+    width: 58vw;
+    padding: 17px 17px 19px;
+    border-radius: 15px;
+  }
   .journey-region[data-road-side="left"] .region-content { right: 5vw; }
   .journey-region[data-road-side="right"] .region-content { left: 5vw; }
   .journey-region[data-road-side="top"] .region-content { top: 60%; right: 6vw; left: auto; width: 82vw; }
@@ -348,9 +409,6 @@ body[data-story-page="true"] {
   .discovery-copy strong { font-size: 14px; }
   .discovery-copy > span { display: none; }
   .lateral-reveal { width: 42vw; }
-  .journey-silence p { width: 32vw; font-size: 1.05rem; }
-  .journey-silence[data-copy-side="left"] p { left: 5vw; }
-  .journey-silence[data-copy-side="right"] p { right: 5vw; }
   .journey-continuation { min-height: 145svh; padding-right: 6vw; padding-left: 6vw; }
   .journey-continuation > div { width: 78vw; }
   .journey-continuation h2 { font-size: clamp(3rem, 14vw, 5.5rem); }

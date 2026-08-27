@@ -62,6 +62,9 @@ export const JOURNEY_REGIONS = [
     relatedContent: ["programacao", "arte-cultura", "saude-integrativa"],
     layoutVariant: "open-field",
     roadPlacement: "right",
+    // A estrada cruza esta região na horizontal, então a informação larga fica
+    // acima dela: encostada à esquerda sobrava um vazio de meia tela à direita.
+    contentPlacement: "center",
   },
   {
     id: "profissionais",

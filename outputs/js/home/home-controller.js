@@ -4,10 +4,7 @@ import { JOURNEY_DISCOVERIES, JOURNEY_REGIONS } from "./journey-data.js";
 import { createHomeRoad } from "./home-road.js";
 import { mountJourney, presenceForRegionBounds } from "./home-scenes.js";
 import { createLateralExploration } from "./lateral-exploration.js";
-import {
-  roadOffsetForPathSection,
-  silenceCopyPlacementForRoadOffset,
-} from "./journey-layout.js";
+import { roadOffsetForPathSection } from "./journey-layout.js";
 
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
 export function holdEntryHandoff(root, {
@@ -50,6 +47,22 @@ export function motionOffsetForRegion({
   return { x: 0, y: 0 };
 }
 
+/**
+ * Amacia a entrada e a saída da curva.
+ *
+ * Mesmo com o silêncio proporcional, a curva ainda corre um pouco mais rápido
+ * que a reta, e a troca de ritmo aparecia como solavanco na virada. Um
+ * `smoothstep` puro resolveria a emenda, mas zera a velocidade nas pontas: a
+ * estrada pararia e voltaria a andar, trocando um defeito por outro. A mistura
+ * com a rampa linear mantém velocidade nas bordas parecida com a da reta e
+ * concentra a aceleração no meio da curva, que é onde ela é natural.
+ */
+export function easeCurveTravel(progress) {
+  const t = clamp(progress);
+  const smooth = t * t * (3 - 2 * t);
+  return t * .65 + smooth * .35;
+}
+
 function roadStateForScroll(scrollCenter, elements, layout) {
   let covered = 0;
   for (let index = 0; index < layout.segments.length; index += 1) {
@@ -62,7 +75,8 @@ function roadStateForScroll(scrollCenter, elements, layout) {
       return { progress: clamp(covered / layout.totalLength), sectionIndex: index, local: 0 };
     }
     if (scrollCenter <= end) {
-      const local = clamp((scrollCenter - start) / Math.max(1, end - start));
+      const raw = clamp((scrollCenter - start) / Math.max(1, end - start));
+      const local = segment.kind === "curve" ? easeCurveTravel(raw) : raw;
       return {
         progress: clamp((covered + segment.length * local) / layout.totalLength),
         sectionIndex: index,
@@ -151,10 +165,6 @@ export function createHomeController({
       region.style.setProperty("--road-offset-x", `${checkpoint.roadOffsetX}px`);
       region.style.setProperty("--road-offset-y", `${checkpoint.roadOffsetY}px`);
     });
-    mounted.silences.forEach((silence, index) => {
-      const offset = roadOffsetForPathSection(index * 2 + 1, .5, checkpoints);
-      silence.dataset.copySide = silenceCopyPlacementForRoadOffset(offset);
-    });
   }
 
   function update(timestamp = performance.now()) {
@@ -197,11 +207,6 @@ export function createHomeController({
       road.layout.checkpoints,
     );
     road.setOffset(roadOffset.x, roadOffset.y);
-    if (roadState.sectionIndex % 2 === 1) {
-      const silence = mounted.silences[Math.floor(roadState.sectionIndex / 2)];
-      if (silence) silence.dataset.copySide = silenceCopyPlacementForRoadOffset(roadOffset);
-    }
-
     let activeRegion = null;
     let activePresence = 0;
     let presenceSettling = false;

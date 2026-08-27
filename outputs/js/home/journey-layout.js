@@ -131,20 +131,16 @@ export function roadOffsetForPathSection(sectionIndex, localProgress, checkpoint
   };
 }
 
-export function silenceCopyPlacementForRoadOffset(offset = {}) {
-  const x = Number(offset.x) || 0;
-  const y = Number(offset.y) || 0;
-  if (Math.abs(x) >= Math.abs(y)) return x <= 0 ? "right" : "left";
-  return y <= 0 ? "bottom" : "top";
-}
-
 export function buildJourneyLayout(regions, viewport = {}) {
   const width = Math.max(320, Number(viewport.width) || 1440);
   const height = Math.max(480, Number(viewport.height) || 900);
   const maxDimension = Math.max(width, height);
   const regularStraight = maxDimension * 1.82 * ROAD_TRAVEL;
   const capStraight = Math.max(regularStraight, height * 4.6 * ROAD_TRAVEL);
-  const curveLength = maxDimension * .72 * ROAD_TRAVEL;
+  // A curva vira 90° custe o que custar, então seu arco é o que decide quanta
+  // estrada precisa passar na virada. Encurtá-lo é o que permite dar à curva uma
+  // velocidade parecida com a da reta sem alongar a travessia inteira.
+  const curveLength = maxDimension * .52 * ROAD_TRAVEL;
   const mobile = width < 720;
   const segments = [];
   const checkpoints = [];

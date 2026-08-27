@@ -275,7 +275,8 @@ export function createArrivalScene({
     }
   };
 
-  const render = (now = performance.now(), elapsedMs = 16) => {
+  // A cena integra tudo por dt; o carimbo absoluto do quadro nunca foi lido.
+  const render = (elapsedMs = 16) => {
     if (destroyed || !ready) return;
     resize();
 

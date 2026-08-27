@@ -52,44 +52,58 @@ function tracePath(layout) {
 
 const ROAD_TEXTURE_URL = new URL("../../media/medieval-road-stones.webp", import.meta.url).href;
 
+/**
+ * As quatro camadas do calçamento, da mais larga para a mais estreita.
+ *
+ * A borda dura vinha de uma faixa marrom opaca 12% mais larga que a textura:
+ * sobrava um friso nítido de cada lado e a estrada lia como fita recortada e
+ * colada sobre a paisagem. Aqui esse friso vira acostamento borrado, e a textura
+ * entra em duas passadas — a de fora translúcida, a de dentro cheia — para a
+ * pedra se desfazer na terra em vez de terminar num corte.
+ */
 export function buildMedievalRoadLayers(baseWidth, texturePattern = null) {
   const width = Math.max(72, Number(baseWidth) || 72);
+  const stone = texturePattern || "#b7a487";
   return [
     {
-      width: width * 1.24,
-      strokeStyle: "rgba(49, 39, 29, .28)",
-      shadowColor: "rgba(37, 29, 22, .34)",
-      blur: 22,
-      shadowOffsetY: 10,
+      width: width * 1.34,
+      strokeStyle: "rgba(49, 39, 29, .16)",
+      shadowColor: "rgba(37, 29, 22, .26)",
+      blur: 26,
+      shadowOffsetY: 12,
       composite: "source-over",
       lineDash: [],
+      alpha: 1,
     },
     {
-      width: width * 1.12,
-      strokeStyle: "#8f765d",
-      shadowColor: "rgba(77, 58, 40, .24)",
-      blur: 7,
-      shadowOffsetY: 3,
+      width: width * 1.08,
+      strokeStyle: "rgba(124, 101, 76, .34)",
+      shadowColor: "rgba(96, 76, 55, .28)",
+      blur: 15,
+      shadowOffsetY: 4,
       composite: "source-over",
       lineDash: [],
+      alpha: 1,
     },
     {
       width,
-      strokeStyle: texturePattern || "#b7a487",
+      strokeStyle: stone,
       shadowColor: "transparent",
       blur: 0,
       shadowOffsetY: 0,
       composite: "source-over",
       lineDash: [],
+      alpha: .5,
     },
     {
-      width: width * .96,
-      strokeStyle: "rgba(236, 221, 191, .08)",
-      shadowColor: "rgba(248, 231, 195, .12)",
-      blur: 3,
-      shadowOffsetY: -1,
+      width: width * .86,
+      strokeStyle: stone,
+      shadowColor: "transparent",
+      blur: 0,
+      shadowOffsetY: 0,
       composite: "source-over",
       lineDash: [],
+      alpha: 1,
     },
   ];
 }
@@ -122,6 +136,8 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
   let destroyed = false;
   let roadTexture = null;
   const textureImage = new Image();
+  const pavement = typeof document !== "undefined" ? document.createElement("canvas") : null;
+  const pavementContext = pavement ? pavement.getContext("2d", { alpha: true }) : null;
 
   function configureCanvas() {
     ratio = Math.min(devicePixelRatio || 1, 1.5);
@@ -130,6 +146,49 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    if (pavement) {
+      pavement.width = canvas.width;
+      pavement.height = canvas.height;
+    }
+  }
+
+  /**
+   * Desenha o calçamento com borda desfeita de verdade.
+   *
+   * Empilhar traços de larguras diferentes só produz degraus de opacidade — a
+   * medição na borda dava 56, 178, 255, que o olho lê como faixas. Aqui a forma
+   * da estrada é primeiro pintada borrada numa tela auxiliar, virando máscara de
+   * transparência contínua, e a textura entra por `source-in` dentro dela. A
+   * pedra herda a queda suave da máscara e a estrada termina esfumada na terra.
+   */
+  function drawPavement(stone, roadWidth, translateX, translateY) {
+    if (!pavement) return;
+    const feather = Math.max(6, roadWidth * (reducedMotion ? .06 : .1));
+    pavementContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+    pavementContext.clearRect(0, 0, width, height);
+    pavementContext.save();
+    pavementContext.translate(translateX, translateY);
+    pavementContext.lineJoin = "round";
+    pavementContext.lineCap = "round";
+
+    pavementContext.filter = `blur(${feather.toFixed(1)}px)`;
+    pavementContext.strokeStyle = "#fff";
+    pavementContext.lineWidth = roadWidth * .92;
+    pavementContext.stroke(path);
+
+    pavementContext.filter = "none";
+    pavementContext.globalCompositeOperation = "source-in";
+    pavementContext.strokeStyle = stone;
+    pavementContext.lineWidth = roadWidth * 1.4;
+    pavementContext.stroke(path);
+
+    pavementContext.globalCompositeOperation = "source-over";
+    pavementContext.restore();
+
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.drawImage(pavement, 0, 0);
+    context.restore();
   }
 
   function draw() {
@@ -141,13 +200,21 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     const camera = locate(layout, progress);
     const roadWidth = computeRoadWidth({ width });
 
+    const layers = buildMedievalRoadLayers(roadWidth, roadTexture);
+    const translateX = width * .5 + offsetX - camera.x;
+    const translateY = height * .54 + offsetY - camera.y;
+
     context.clearRect(0, 0, width, height);
     context.save();
-    context.translate(width * .5 + offsetX - camera.x, height * .54 + offsetY - camera.y);
+    context.translate(translateX, translateY);
     context.lineJoin = "round";
     context.lineCap = "round";
-    for (const layer of buildMedievalRoadLayers(roadWidth, roadTexture)) {
+
+    // Sombra no chão e acostamento: são manchas, e o borrão da própria sombra já
+    // resolve a borda delas.
+    for (const layer of layers.slice(0, 2)) {
       context.globalCompositeOperation = layer.composite;
+      context.globalAlpha = layer.alpha ?? 1;
       context.strokeStyle = layer.strokeStyle;
       context.lineWidth = layer.width;
       context.setLineDash(layer.lineDash);
@@ -160,8 +227,11 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
 
     context.shadowBlur = 0;
     context.shadowOffsetY = 0;
+    context.globalAlpha = 1;
     context.globalCompositeOperation = "source-over";
     context.restore();
+
+    drawPavement(layers[2].strokeStyle, roadWidth, translateX, translateY);
   }
 
   function queueDraw() {
@@ -193,7 +263,9 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     if (destroyed) return;
     roadTexture = context.createPattern(textureImage, "repeat");
     if (roadTexture?.setTransform && typeof DOMMatrix === "function") {
-      roadTexture.setTransform(new DOMMatrix().scale(.64));
+      // Pedra menor: a 0,64 o paralelepípedo ficava do tamanho de um degrau e a
+      // faixa lia como parede de pedra, não como caminho visto de longe.
+      roadTexture.setTransform(new DOMMatrix().scale(.46));
     }
     renderedProgress = -1;
     queueDraw();

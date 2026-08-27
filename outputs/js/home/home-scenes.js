@@ -27,8 +27,19 @@ export function presenceForRegionBounds({ top, bottom, viewportHeight }) {
 // e deixava cerca de 2,8 telas de estrada entre uma informação e a seguinte.
 // Encurtar o trecho mantém os silêncios da narrativa e faz a travessia caber no
 // tempo previsto, além de aproximar as entradas e saídas de cada informação.
-const regionHeights = [140, 134, 138, 144, 134, 138, 144, 134];
-const silenceHeights = [46, 50, 44, 48, 45, 52, 46];
+// Alturas em svh. O palco de cada região é `sticky` com 100svh, então a
+// informação fica parada no centro por exatamente `regionHeight - 100`, e a
+// troca entre duas regiões custa sempre 100svh — o tempo de soltar uma e grudar
+// a seguinte, que é o tamanho da janela e não se pode encurtar.
+//
+// Isso amarra as duas coisas numa só: distância entre encontros = parada + 100.
+// Não existe travessia curta com parada longa; o silêncio é o único folgado, e
+// aqui ele foi reduzido ao mínimo para que quase todo o percurso seja parada.
+// O silêncio não é só pausa: é o trecho de rolagem em que a curva inteira passa.
+// Com 10svh a estrada virava 90° sete vezes mais rápido do que corria na reta, e
+// a virada dava solavanco. O silêncio volta a ser proporcional ao arco.
+const regionHeights = [198, 192, 195, 202, 192, 195, 202, 192];
+const silenceHeights = [44, 48, 42, 46, 43, 50, 44];
 
 export function journeyRhythmForIndex(index) {
   const safeIndex = Math.max(0, Math.min(regionHeights.length - 1, Math.trunc(index)));
@@ -37,13 +48,6 @@ export function journeyRhythmForIndex(index) {
     silenceHeight: silenceHeights[safeIndex] || 0,
   };
 }
-
-const transitionPhrases = new Map([
-  [0, "Conhecer também é uma forma de chegar."],
-  [1, "Cuidar também é aprender."],
-  [2, "Conhecimento também precisa ser vivido."],
-  [6, "Você não precisa conhecer tudo hoje."],
-]);
 
 const featuredDiscoveries = [
   "acao-social",
@@ -130,12 +134,11 @@ export function mountJourney(root, { regions, discoveries }) {
     const discovery = discoveriesById.get(featuredDiscoveries[index]);
     const markup = renderRegion(region, index, discovery, discoveriesById);
     if (index === regions.length - 1) return markup;
-    const phrase = transitionPhrases.get(index);
+    // Os silêncios continuam existindo como pausa e como trecho de estrada; só
+    // não carregam mais texto.
     const { silenceHeight } = journeyRhythmForIndex(index);
     return `${markup}
-      <div class="journey-silence" aria-hidden="true" style="--silence-height:${silenceHeight}svh">
-        ${phrase ? `<p>${phrase}</p>` : ""}
-      </div>`;
+      <div class="journey-silence" aria-hidden="true" style="--silence-height:${silenceHeight}svh"></div>`;
   }).join("");
 
   root.innerHTML = `

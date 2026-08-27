@@ -48,6 +48,12 @@ test("retas e curvas encolhem juntas, para a estrada não ficar mais agitada", (
 
   // A proporção entre reta e curva é o que dá o ritmo do caminho. Escalar só as
   // retas deixaria as curvas mais frequentes — mais agitação, não menos.
+  //
+  // O teto subiu de 3,2 para 3,6 por medição: com a curva no comprimento antigo,
+  // a estrada virava 90° a até 7,6× a velocidade da reta, porque o arco inteiro
+  // passava no silêncio curto. Encurtar o arco é o que permite igualar as duas
+  // velocidades sem alongar a travessia. Abaixo de 1,4 as curvas voltam a ser
+  // longas demais e a travessia vira um zigue-zague.
   const ritmo = straight.length / curve.length;
-  assert.ok(ritmo > 1.4 && ritmo < 3.2, `ritmo reta/curva fora de esquadro: ${ritmo.toFixed(2)}`);
+  assert.ok(ritmo > 1.4 && ritmo < 3.6, `ritmo reta/curva fora de esquadro: ${ritmo.toFixed(2)}`);
 });

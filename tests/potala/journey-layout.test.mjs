@@ -95,11 +95,3 @@ test("deslocamento da estrada fica estável na seção e muda somente no silênc
   assert.deepEqual(journeyLayout.roadOffsetForPathSection(2, .2, checkpoints), { x: 0, y: -210 });
   assert.deepEqual(journeyLayout.roadOffsetForPathSection(1, .5, checkpoints), { x: 120, y: -105 });
 });
-
-test("frase de transição ocupa o lado oposto ao centro da estrada", () => {
-  assert.equal(typeof journeyLayout.silenceCopyPlacementForRoadOffset, "function");
-  assert.equal(journeyLayout.silenceCopyPlacementForRoadOffset({ x: -240, y: 0 }), "right");
-  assert.equal(journeyLayout.silenceCopyPlacementForRoadOffset({ x: 240, y: 0 }), "left");
-  assert.equal(journeyLayout.silenceCopyPlacementForRoadOffset({ x: 0, y: -210 }), "bottom");
-  assert.equal(journeyLayout.silenceCopyPlacementForRoadOffset({ x: 0, y: 210 }), "top");
-});
