@@ -41,6 +41,9 @@ export function presenceForRegionBounds({ top, bottom, viewportHeight }) {
 const regionHeights = [198, 192, 195, 202, 192, 195, 202, 196, 192];
 const silenceHeights = [44, 48, 42, 46, 43, 50, 44, 46];
 
+/** Rolagem da subida final, em svh. Sem informação: só caminho. */
+export const ASCENT_HEIGHT = 120;
+
 export function journeyRhythmForIndex(index) {
   const safeIndex = Math.max(0, Math.min(regionHeights.length - 1, Math.trunc(index)));
   return {
@@ -151,6 +154,7 @@ export function mountJourney(root, { regions, discoveries }) {
       </div>
     </section>
     <div class="journey-regions">${regionMarkup}</div>
+    <div class="journey-ascent" aria-hidden="true" style="--ascent-height:${ASCENT_HEIGHT}svh"></div>
     <section class="journey-continuation" aria-labelledby="continuation-title">
       <div>
         <p>Uma jornada não precisa terminar aqui.</p>
@@ -167,7 +171,7 @@ export function mountJourney(root, { regions, discoveries }) {
   return {
     regions: [...root.querySelectorAll(".journey-region")],
     silences: [...root.querySelectorAll(".journey-silence")],
-    pathSections: [...root.querySelectorAll(".journey-region, .journey-silence")],
+    pathSections: [...root.querySelectorAll(".journey-region, .journey-silence, .journey-ascent")],
     discoveries: [...root.querySelectorAll(".journey-discovery")],
   };
 }

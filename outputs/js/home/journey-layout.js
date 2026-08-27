@@ -203,6 +203,23 @@ export function buildJourneyLayout(regions, viewport = {}) {
     cursor = samePoint(curve.to);
   });
 
+  // A subida não tem informação nenhuma: é só caminho, e é o que dá ao visitante
+  // a sensação de chegar em vez de ser teletransportado. Precisa de segmento
+  // próprio porque o mapeamento casa blocos do DOM com segmentos um a um — um
+  // bloco sem par desloca a estrada inteira em silêncio.
+  const lastDirection = segments.at(-1)?.direction || normalize(DIRECTIONS[0]);
+  const ascent = {
+    id: "straight-ascent",
+    kind: "straight",
+    from: samePoint(cursor),
+    to: add(cursor, lastDirection, capStraight),
+    direction: lastDirection,
+    length: capStraight,
+    regionId: null,
+  };
+  segments.push(ascent);
+  cursor = samePoint(ascent.to);
+
   return {
     width,
     height,

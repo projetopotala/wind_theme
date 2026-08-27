@@ -296,6 +296,15 @@ body[data-story-page="true"] {
   pointer-events: none;
 }
 
+/* A subida é irmã do silêncio: bloco sem conteúdo, existindo só como rolagem
+   para a estrada percorrer. */
+.journey-ascent {
+  position: relative;
+  z-index: 1;
+  min-height: var(--ascent-height, 120svh);
+  pointer-events: none;
+}
+
 
 .lateral-world { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
 .lateral-reveal { position: absolute; top: 50%; display: grid; gap: 8px; width: min(280px, 24vw); opacity: 0; transform: translateY(-50%); transition: opacity .25s ease; }
