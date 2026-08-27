@@ -65,29 +65,37 @@ export function easeCurveTravel(progress) {
 }
 
 /**
- * Se a rolagem chegou ao fim da subida, avançando.
+ * Se a rolagem chegou ao fim da subida, com a passagem armada.
  *
  * A margem de 8px existe porque a última rolagem raramente para no pixel
  * exato: em rolagem suave e em trackpad o documento encosta no fim com sobra
  * de alguns pixels, e exigir igualdade deixaria a passagem sem disparar.
  *
- * `movingDown` é obrigatório — sem ele a Home fica presa num laço com o
- * palácio. O bfcache restaura a página já rolada no fim quando o visitante
- * aperta "voltar" vindo do palácio; se a passagem disparasse em repouso, ela
- * dispararia de novo assim que a página reaparecesse, mandando o visitante
- * de volta ao palácio sem chance de rever a Home. Exigir movimento para o
- * fim (como a Chegada já faz em `shouldEnterFromScroll`) garante que só uma
- * rolagem ativa cruza a passagem, nunca um estado de repouso restaurado.
+ * `armed` é obrigatório — sem ele a Home fica presa num laço com o palácio.
+ * O bfcache restaura a página já rolada no fim quando o visitante aperta
+ * "voltar" vindo do palácio; se a passagem disparasse em repouso, ela
+ * dispararia de novo assim que a página reaparecesse.
+ *
+ * A trava é armada por QUALQUER rolagem para baixo durante a visita, não
+ * pela velocidade do quadro que cruza o limiar — de propósito. Uma versão
+ * anterior exigia "descendo agora" (o quadro atual mais rápido que o
+ * anterior); trackpad desacelera por inércia até parar, e o quadro que
+ * cruza o fim é com frequência o próprio quadro de repouso, com delta zero.
+ * Exigir velocidade instantânea ali deixava a passagem morta bem na rolagem
+ * mais comum de terminar uma página longa. A trava resolve isso: uma vez
+ * armada em qualquer ponto da descida, ela dispara mesmo que a inércia
+ * morra exatamente no limiar. Só o `pageshow` restaurado pelo bfcache
+ * desarma — é o que impede o laço voltando do palácio.
  */
 export function shouldCrossToPalace({
   scrollTop = 0,
   scrollHeight = 0,
   viewportHeight = 0,
-  movingDown = false,
+  armed = false,
 } = {}) {
   const maximo = scrollHeight - viewportHeight;
   if (maximo <= 0) return false;
-  return movingDown && scrollTop >= maximo - 8;
+  return armed && scrollTop >= maximo - 8;
 }
 
 function roadStateForScroll(scrollCenter, elements, layout) {
@@ -176,6 +184,9 @@ export function createHomeController({
   let entryTimer = 0;
   let visualScrollTop = scrollY;
   let lastScrollTop = scrollY;
+  // Trava da passagem ao palácio: arma com qualquer rolagem para baixo,
+  // desarma só quando a página volta do bfcache (ver shouldCrossToPalace).
+  let crossingArmed = false;
   const visualPresence = data.regions.map(() => 0);
   let lastFrameTime = 0;
   let destroyed = false;
@@ -200,9 +211,10 @@ export function createHomeController({
     if (destroyed || document.hidden) return;
     const viewportHeight = innerHeight;
     const targetScrollTop = scrollY;
-    // Mesmo critério da Chegada (`arrival-engine.js`): só considera "descendo"
-    // um avanço real, não o ruído de um pixel que a rolagem por vezes reporta parada.
-    const movingDown = targetScrollTop > lastScrollTop + 1;
+    // Arma a passagem ao palácio com qualquer avanço real (> 1px, para
+    // ignorar o ruído de rolagem que alguns dispositivos reportam em
+    // repouso). Não desarma sozinha — só o retorno do bfcache desarma.
+    if (targetScrollTop > lastScrollTop + 1) crossingArmed = true;
     lastScrollTop = targetScrollTop;
     const scrollProgress = scrollProgressForDocument({
       scrollTop: targetScrollTop,
@@ -243,7 +255,7 @@ export function createHomeController({
       scrollTop: document.scrollingElement.scrollTop,
       scrollHeight: document.scrollingElement.scrollHeight,
       viewportHeight,
-      movingDown,
+      armed: crossingArmed,
     })) {
       crossTo({ destination: "palacio.html" });
     }
@@ -331,6 +343,12 @@ export function createHomeController({
   return {
     mounted,
     road,
+    // Desarma a passagem ao palácio. Chamado pelo `pageshow` do bfcache —
+    // sem isso, restaurar a Home já rolada no fim dispara a passagem de
+    // novo sozinha (a trava continuaria armada da visita anterior).
+    disarmCrossing() {
+      crossingArmed = false;
+    },
     destroy() {
       destroyed = true;
       cancelAnimationFrame(frameId);
@@ -364,6 +382,7 @@ export function mountHomeJourney() {
     delete document.documentElement.dataset.transitioning;
     document.documentElement.classList.remove("is-crossing");
     document.body.classList.remove("is-arrival-transitioning");
+    activeController?.disarmCrossing();
     window.dispatchEvent(new Event("resize"));
   };
   const destroy = activeController.destroy.bind(activeController);
