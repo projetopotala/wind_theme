@@ -29,3 +29,15 @@ test("Marketplace aparece na navegação e no fallback sem script", async () => 
   const home = await readFile("outputs/transcendido.html", "utf8");
   assert.match(home, /marketplace\.html/);
 });
+
+test("a página do Marketplace segue o padrão editorial das seções", async () => {
+  const page = await readFile("outputs/marketplace.html", "utf8");
+  assert.match(page, /<body data-section="marketplace"/);
+  assert.match(page, /page-view--article/);
+  assert.match(page, /secoes\.css/);
+  assert.match(page, /secoes\.js/);
+  assert.match(page, /article-back/);
+  // Endereço e telefone reais do instituto, como nas outras páginas.
+  assert.match(page, /Rua 24 de Maio, 748/);
+  assert.match(page, /\(19\) 3834-6147/);
+});
