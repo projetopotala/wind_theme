@@ -5,6 +5,7 @@ import { createHomeRoad } from "./home-road.js";
 import { mountJourney, presenceForRegionBounds } from "./home-scenes.js";
 import { createLateralExploration } from "./lateral-exploration.js";
 import { roadOffsetForPathSection } from "./journey-layout.js";
+import { crossTo } from "../chegada/transition-handoff.js";
 
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
 export function holdEntryHandoff(root, {
@@ -61,6 +62,23 @@ export function easeCurveTravel(progress) {
   const t = clamp(progress);
   const smooth = t * t * (3 - 2 * t);
   return t * .65 + smooth * .35;
+}
+
+/**
+ * Se a rolagem chegou ao fim da subida.
+ *
+ * A margem existe porque a última rolagem raramente para no pixel exato: em
+ * rolagem suave e em trackpad o documento encosta no fim com sobra de alguns
+ * pixels, e exigir igualdade deixaria a passagem sem disparar.
+ */
+export function shouldCrossToPalace({
+  scrollTop = 0,
+  scrollHeight = 0,
+  viewportHeight = 0,
+} = {}) {
+  const maximo = scrollHeight - viewportHeight;
+  if (maximo <= 0) return false;
+  return scrollTop >= maximo - 8;
 }
 
 function roadStateForScroll(scrollCenter, elements, layout) {
@@ -207,6 +225,13 @@ export function createHomeController({
       road.layout.checkpoints,
     );
     road.setOffset(roadOffset.x, roadOffset.y);
+    if (shouldCrossToPalace({
+      scrollTop: document.scrollingElement.scrollTop,
+      scrollHeight: document.scrollingElement.scrollHeight,
+      viewportHeight,
+    })) {
+      crossTo({ destination: "palacio.html" });
+    }
     let activeRegion = null;
     let activePresence = 0;
     let presenceSettling = false;
