@@ -19,6 +19,8 @@ const budgets = [
   { file: "outputs/media/journey-cuidado.webp", maximum: 900_000 },
   { file: "outputs/media/journey-cultura.webp", maximum: 900_000 },
   { file: "outputs/media/journey-inspiracao.webp", maximum: 900_000 },
+  { file: "outputs/media/palacio-master.webp", maximum: 2_200_000, width: 2048, height: 1152 },
+  { file: "outputs/media/palacio-depth.webp", maximum: 1_200_000, width: 2048, height: 1152 },
 ];
 
 for (const asset of budgets) {

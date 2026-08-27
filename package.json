@@ -13,6 +13,7 @@
     "test:portal": "node --test tests/potala/*.test.mjs",
     "preview:portal": "node scripts/serve-outputs.mjs",
     "prepare:arrival-v2": "node scripts/prepare-arrival-v2-assets.mjs",
+    "prepare:palace": "node scripts/prepare-palace-assets.mjs",
     "validate:portal": "node scripts/validate-portal-assets.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
