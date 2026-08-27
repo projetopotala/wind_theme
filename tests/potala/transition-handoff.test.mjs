@@ -10,12 +10,12 @@ function montarAmbiente({ reducedMotion = false } = {}) {
     documentElement: {
       dataset: {},
       classList: {
-        add: (c) => ordem.push('classe:' + c),
+        add: (c) => ordem.push('html:' + c),
       },
     },
     body: {
       classList: {
-        add: (c) => ordem.push('classe:' + c),
+        add: (c) => ordem.push('body:' + c),
       },
     },
     dispatchEvent: (evento) => ordem.push('evento:' + evento.type),
@@ -130,11 +130,11 @@ test("passagem adiciona classes de véu e dispara evento", async () => {
     handoff.crossTo({ entry: "scroll", soundEnabled: false });
 
     assert.ok(
-      ambiente.ordem.includes('classe:is-crossing'),
+      ambiente.ordem.includes('html:is-crossing'),
       "deve adicionar is-crossing em documentElement"
     );
     assert.ok(
-      ambiente.ordem.includes('classe:is-arrival-transitioning'),
+      ambiente.ordem.includes('body:is-arrival-transitioning'),
       "deve adicionar is-arrival-transitioning em body"
     );
     assert.ok(
@@ -146,24 +146,26 @@ test("passagem adiciona classes de véu e dispara evento", async () => {
   }
 });
 
-test("as classes do véu são adicionadas antes do evento de preparação", async () => {
+test("as classes do véu são adicionadas ao elemento correto, antes do evento de preparação", async () => {
   const ambiente = montarAmbiente();
   try {
     const handoff = await import("../../outputs/js/chegada/transition-handoff.js");
 
     handoff.crossTo({ entry: "scroll", soundEnabled: false });
 
-    // Captura a ordem completa de execução: classes e evento
+    // Captura a ordem completa de execução: qual elemento, qual classe, e em que sequência
     assert.deepEqual(
       ambiente.ordem,
-      ['classe:is-crossing', 'classe:is-arrival-transitioning', 'evento:potala:prepare-handoff'],
-      "classes do véu devem estar montadas antes do evento de preparação"
+      ['html:is-crossing', 'body:is-arrival-transitioning', 'evento:potala:prepare-handoff'],
+      "is-crossing no <html>, is-arrival-transitioning no <body>, ambas antes do evento"
     );
 
-    // Por que importa: o véu precisa estar visualmente pronto (classes adicionadas ao DOM)
-    // antes de qualquer ouvinte reagir ao evento potala:prepare-handoff. Hoje o único
-    // ouvinte (respiracao.js, fade de som) não lê as classes — então a ordem é defensiva,
-    // protegendo contra futuros ouvintes que possam depender do véu estar visível.
+    // Por que importa: o teste protege três coisas ao mesmo tempo:
+    // 1. O alvo correto de cada classe (html vs body) — são os ganchos do CSS do véu
+    // 2. A ordem das classes (um aparece antes do outro)
+    // 3. A ordem relativa ao evento (classes antes do evento)
+    // Hoje o único ouvinte (respiracao.js) não lê as classes, então a proteção é defensiva;
+    // mas garante que futuros ouvintes encontrem o véu visualmente pronto.
   } finally {
     limparAmbiente();
   }
