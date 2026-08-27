@@ -1,4 +1,5 @@
 import { buildJourneyLayout, sampleSegment } from "./journey-layout.js";
+import { GRASS_DEFAULTS, grassSwayOffset, grassTuftsForRange } from "./road-grass.js";
 
 function clamp(value, minimum = 0, maximum = 1) {
   return Math.min(maximum, Math.max(minimum, value));
@@ -108,6 +109,30 @@ export function buildMedievalRoadLayers(baseWidth, texturePattern = null) {
   ];
 }
 
+/**
+ * Arco da estrada que pode aparecer no quadro.
+ *
+ * A lista de tufos da estrada inteira é longa e a estrada redesenha a cada
+ * quadro de rolagem. Recortar o arco antes de desenhar é o que mantém o custo
+ * proporcional ao que se vê, e não ao tamanho da travessia.
+ */
+export function visibleArcRange({
+  layout,
+  cameraDistance = 0,
+  width = 1440,
+  height = 900,
+  margin = 200,
+} = {}) {
+  const total = Math.max(0, Number(layout?.totalLength) || 0);
+  // A diagonal cobre o pior caso: estrada atravessando o quadro na diagonal.
+  const reach = Math.hypot(width, height) * 0.5 + margin;
+  const center = Math.min(total, Math.max(0, Number(cameraDistance) || 0));
+  return {
+    from: Math.max(0, center - reach),
+    to: Math.min(total, center + reach),
+  };
+}
+
 export function computeRoadWidth({ width = 1440 } = {}) {
   const viewportWidth = Math.max(320, Number(width) || 1440);
   return viewportWidth < 720
@@ -131,6 +156,7 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
   let offsetY = 0;
   let renderedProgress = -1;
   let renderedOffset = "";
+  let grassPhase = 0;
   let frameId = 0;
   let paused = document.hidden;
   let destroyed = false;
@@ -149,6 +175,64 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     if (pavement) {
       pavement.width = canvas.width;
       pavement.height = canvas.height;
+    }
+  }
+
+  /** Ponto e normal da estrada a uma distância de arco dada. */
+  function pointAtDistance(distance) {
+    let covered = 0;
+    for (const segment of layout.segments) {
+      if (covered + segment.length >= distance) {
+        const local = (distance - covered) / Math.max(1, segment.length);
+        const here = sampleSegment(segment, local);
+        const ahead = sampleSegment(segment, Math.min(1, local + 0.01));
+        const dx = ahead.x - here.x;
+        const dy = ahead.y - here.y;
+        const size = Math.hypot(dx, dy) || 1;
+        // Normal é a tangente girada 90°.
+        return { x: here.x, y: here.y, normalX: -dy / size, normalY: dx / size };
+      }
+      covered += segment.length;
+    }
+    return null;
+  }
+
+  /**
+   * Desenha a grama nas duas bordas.
+   *
+   * Cada tufo é posicionado pela normal da curva no ponto correspondente, então
+   * a grama acompanha o traçado em vez de ser uma faixa reta ao lado dele.
+   */
+  function drawGrass(roadWidth, arcFrom, arcTo, phase) {
+    const tufts = grassTuftsForRange({
+      from: arcFrom,
+      to: arcTo,
+      spacing: GRASS_DEFAULTS.spacing,
+      seed: 17,
+    });
+    if (!tufts.length) return;
+
+    const half = roadWidth * 0.5;
+    context.lineCap = "round";
+
+    for (const tuft of tufts) {
+      const point = pointAtDistance(tuft.distance);
+      if (!point) continue;
+      const sway = reducedMotion ? 0 : grassSwayOffset(tuft, phase);
+      const baseX = point.x + point.normalX * half * tuft.side;
+      const baseY = point.y + point.normalY * half * tuft.side;
+      const tipX = baseX + point.normalX * tuft.height * tuft.side * 0.35
+        + tuft.lean * tuft.height + sway;
+      const tipY = baseY - tuft.height;
+
+      context.strokeStyle = tuft.height > 12
+        ? "rgba(104, 108, 66, .5)"
+        : "rgba(126, 128, 82, .42)";
+      context.lineWidth = 1.4;
+      context.beginPath();
+      context.moveTo(baseX, baseY);
+      context.quadraticCurveTo(baseX + tuft.lean * tuft.height * 0.5, baseY - tuft.height * 0.6, tipX, tipY);
+      context.stroke();
     }
   }
 
@@ -229,6 +313,18 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     context.shadowOffsetY = 0;
     context.globalAlpha = 1;
     context.globalCompositeOperation = "source-over";
+    context.restore();
+
+    if (!reducedMotion) grassPhase += 0.016 * 0.9;
+    const arc = visibleArcRange({
+      layout,
+      cameraDistance: progress * layout.totalLength,
+      width,
+      height,
+    });
+    context.save();
+    context.translate(translateX, translateY);
+    drawGrass(roadWidth, arc.from, arc.to, grassPhase);
     context.restore();
 
     drawPavement(layers[2].strokeStyle, roadWidth, translateX, translateY);
