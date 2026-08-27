@@ -140,6 +140,42 @@ export function computeRoadWidth({ width = 1440 } = {}) {
     : Math.max(170, Math.min(218, viewportWidth * 0.125));
 }
 
+/**
+ * Geometria de uma lâmina de grama: base, ponto de controle e ponta.
+ *
+ * A lâmina cresce pela normal da estrada no ponto dado, para fora da pista —
+ * nunca "para cima na tela". Numa estrada que corre quase vertical em trechos
+ * longos, "para cima na tela" corre junto do caminho, não para fora dele: a
+ * lâmina fica deitada sobre o calçamento e `drawPavement` a cobre. Inclinação
+ * e oscilação (`sway`) são perpendiculares ao crescimento — é por aí que a
+ * folha entorta e balança, mantendo a base presa à borda.
+ *
+ * `point` é o formato devolvido por `pointAtDistance`: `{ x, y, normalX,
+ * normalY }`.
+ */
+export function grassBladeGeometry({ point, tuft, baseRadius, sway = 0 }) {
+  const outX = point.normalX * tuft.side;
+  const outY = point.normalY * tuft.side;
+  const perpX = -outY;
+  const perpY = outX;
+  const bend = tuft.lean * tuft.height + sway;
+
+  // Base para dentro da pedra: a lâmina nasce enraizada na borda do
+  // calçamento e cavalga a pedra, em vez de flutuar na terra ao lado.
+  const baseX = point.x + outX * baseRadius;
+  const baseY = point.y + outY * baseRadius;
+  const tipX = baseX + outX * tuft.height + perpX * bend;
+  const tipY = baseY + outY * tuft.height + perpY * bend;
+  const ctrlX = baseX + outX * tuft.height * 0.55 + perpX * bend * 0.4;
+  const ctrlY = baseY + outY * tuft.height * 0.55 + perpY * bend * 0.4;
+
+  return {
+    base: { x: baseX, y: baseY },
+    control: { x: ctrlX, y: ctrlY },
+    tip: { x: tipX, y: tipY },
+  };
+}
+
 export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
   if (!canvas) throw new TypeError("canvas é obrigatório para a estrada");
   const context = canvas.getContext("2d", { alpha: true });
@@ -213,43 +249,22 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     if (!tufts.length) return;
 
     const half = roadWidth * 0.5;
+    const baseRadius = half * 0.94;
     context.lineCap = "round";
 
     for (const tuft of tufts) {
       const point = pointAtDistance(tuft.distance);
       if (!point) continue;
       const sway = reducedMotion ? 0 : grassSwayOffset(tuft, phase);
-
-      // O tufo cresce pela normal da curva, para fora da pista — nunca "para
-      // cima na tela". Nesta travessia a estrada corre quase vertical em
-      // trechos longos, e ali "para cima na tela" corre junto do caminho, não
-      // para fora dele: a lâmina ficava deitada sobre o calçamento e
-      // `drawPavement`, que roda depois com traço mais largo que a pista, cobria
-      // tudo. Inclinação e oscilação são perpendiculares ao crescimento — é
-      // por aí que a folha entorta e balança, mantendo a base presa à borda.
-      const outX = point.normalX * tuft.side;
-      const outY = point.normalY * tuft.side;
-      const perpX = -outY;
-      const perpY = outX;
-      const bend = tuft.lean * tuft.height + sway;
-
-      // Base para dentro da pedra: a lâmina nasce enraizada na borda do
-      // calçamento e cavalga a pedra, em vez de flutuar na terra ao lado.
-      const baseRadius = half * 0.94;
-      const baseX = point.x + outX * baseRadius;
-      const baseY = point.y + outY * baseRadius;
-      const tipX = baseX + outX * tuft.height + perpX * bend;
-      const tipY = baseY + outY * tuft.height + perpY * bend;
-      const ctrlX = baseX + outX * tuft.height * 0.55 + perpX * bend * 0.4;
-      const ctrlY = baseY + outY * tuft.height * 0.55 + perpY * bend * 0.4;
+      const { base, control, tip } = grassBladeGeometry({ point, tuft, baseRadius, sway });
 
       context.strokeStyle = tuft.height > 12
         ? "rgba(96, 118, 62, .62)"
         : "rgba(118, 132, 76, .5)";
       context.lineWidth = 1.4;
       context.beginPath();
-      context.moveTo(baseX, baseY);
-      context.quadraticCurveTo(ctrlX, ctrlY, tipX, tipY);
+      context.moveTo(base.x, base.y);
+      context.quadraticCurveTo(control.x, control.y, tip.x, tip.y);
       context.stroke();
     }
   }
