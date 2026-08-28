@@ -596,8 +596,13 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
 
   function onVisibilityChange() {
     paused = document.hidden;
-    if (paused) cancelAnimationFrame(frameId);
-    else {
+    if (paused) {
+      cancelAnimationFrame(frameId);
+      // O quadro cancelado não executará draw() para liberar este id.
+      // Sem zerá-lo, o retorno pelo bfcache limpa o canvas no resize,
+      // mas queueDraw() não repinta nem a estrada nem a grama.
+      frameId = 0;
+    } else {
       renderedProgress = -1;
       // Zera o relógio da grama: sem isso, o próximo quadro mediria o tempo
       // inteiro em que a aba ficou oculta como se fosse um `dt` de animação.
