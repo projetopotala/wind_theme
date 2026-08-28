@@ -1,6 +1,7 @@
 import { createArrivalScene } from "../chegada/arrival-scene.js";
 import { createSceneClock } from "../chegada/scene-clock.js";
 import { crossTo } from "../chegada/transition-handoff.js";
+import { readTravessiaState } from "../core/travessia-state.js";
 import { PALACE_PROFILE, selectPalaceAssets } from "./palace-profile.js";
 import { advanceHold, createHoldState, zoomForProgress } from "./hold-to-return.js";
 
@@ -10,6 +11,11 @@ const button = document.getElementById("palace-return");
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 if (visual && canvas && button) {
+  // O palácio não tem controle de som próprio: só repassa adiante o que a
+  // Home gravou ao cruzar para cá. Sem ler isto, `crossTo` usaria o padrão
+  // (desligado) e apagaria a preferência do visitante ao fechar o círculo.
+  const soundEnabled = readTravessiaState().soundEnabled === true;
+
   const scene = createArrivalScene({
     canvas,
     ...selectPalaceAssets(),
@@ -30,7 +36,7 @@ if (visual && canvas && button) {
       crossed = true;
       // O destino é a Chegada: é ela que fecha o círculo da travessia, não a
       // página anterior do palácio.
-      crossTo({ destination: "transcender.html" });
+      crossTo({ destination: "transcender.html", soundEnabled });
     }
   };
 

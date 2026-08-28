@@ -65,7 +65,18 @@ export function easeCurveTravel(progress) {
 }
 
 /**
- * Se a rolagem chegou ao fim da subida, com a passagem armada.
+ * Se a rolagem chegou ao fim da subida (`.journey-ascent`), com a passagem
+ * armada.
+ *
+ * Ancorado nos limites da subida, não no fim do documento: depois dela ainda
+ * existem `.journey-continuation` (175svh de texto) e `.journey-footer`, com
+ * o link "Voltar à Chegada" e o CTA do Instituto. Usar `scrollHeight` fazia a
+ * estrada congelar em progress=1 por todo esse trecho — a única forma de ler
+ * o rodapé era rolar até o fim do documento, o que já disparava a passagem;
+ * até focar o link por Tab rolava, armava e disparava, sem chance de clicar.
+ * A spec pede a passagem "ao fim da subida": o limite superior (`ascentEnd`)
+ * garante isso mesmo — sem ele, qualquer rolagem dentro da continuação
+ * continuaria satisfazendo `scrollTop >= maximo - 8` e disparando de novo.
  *
  * A margem de 8px existe porque a última rolagem raramente para no pixel
  * exato: em rolagem suave e em trackpad o documento encosta no fim com sobra
@@ -89,13 +100,18 @@ export function easeCurveTravel(progress) {
  */
 export function shouldCrossToPalace({
   scrollTop = 0,
-  scrollHeight = 0,
+  ascentStart = 0,
+  ascentEnd = 0,
   viewportHeight = 0,
   armed = false,
 } = {}) {
-  const maximo = scrollHeight - viewportHeight;
-  if (maximo <= 0) return false;
-  return armed && scrollTop >= maximo - 8;
+  const maximo = ascentEnd - viewportHeight;
+  if (maximo <= ascentStart) return false;
+  if (!armed) return false;
+  // Janela de uma tela: começa 8px antes do fim da subida (mesma tolerância
+  // de sempre) e termina quando o topo da viewport já passou do fim da
+  // subida — ou seja, quando o visitante já está dentro da continuação.
+  return scrollTop >= maximo - 8 && scrollTop < ascentEnd;
 }
 
 function roadStateForScroll(scrollCenter, elements, layout) {
@@ -123,7 +139,11 @@ function roadStateForScroll(scrollCenter, elements, layout) {
   return { progress: 1, sectionIndex: layout.segments.length - 1, local: 1 };
 }
 
-function mountSoundResume(root, enabled) {
+// `onToggle` repassa o estado corrente do som para fora: `crossTo`, ao levar
+// ao palácio, precisa do valor atual (ligado ou não agora), não do valor com
+// que a Home foi aberta — sem isso quem desliga o som na Home ainda chegaria
+// ao palácio com a preferência antiga gravada.
+function mountSoundResume(root, enabled, onToggle = () => {}) {
   if (!enabled) return () => {};
   const audio = document.createElement("audio");
   audio.src = "musica-fundo.mp3";
@@ -141,6 +161,7 @@ function mountSoundResume(root, enabled) {
       audio.pause();
       button.textContent = "Retomar som";
       button.setAttribute("aria-pressed", "false");
+      onToggle(false);
       return;
     }
     try {
@@ -148,6 +169,7 @@ function mountSoundResume(root, enabled) {
       await audio.play();
       button.textContent = "Silenciar";
       button.setAttribute("aria-pressed", "true");
+      onToggle(true);
     } catch {
       button.textContent = "Som indisponível";
     }
@@ -169,9 +191,19 @@ export function createHomeController({
   if (!root || !canvas) throw new TypeError("root e canvas são obrigatórios");
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const mounted = mountJourney(root, data);
+  // Único bloco sem informação da jornada: só existe como rolagem para a
+  // estrada percorrer, e é onde `shouldCrossToPalace` ancora o fim da subida
+  // (ver comentário na função) em vez do fim do documento.
+  const ascentElement = root.querySelector(".journey-ascent");
   const road = createHomeRoad(canvas, { regions: data.regions });
   const handoff = consumeHandoff();
-  const removeSound = mountSoundResume(root, handoff.soundEnabled === true);
+  // Preferência de som corrente: começa com o que a Chegada gravou e só muda
+  // se o visitante mexer no botão "Retomar som" — é o valor repassado ao
+  // cruzar para o palácio (ver o crossTo mais abaixo).
+  let soundEnabled = handoff.soundEnabled === true;
+  const removeSound = mountSoundResume(root, soundEnabled, (enabled) => {
+    soundEnabled = enabled;
+  });
   const lateralControllers = data.regions.flatMap((region, index) => {
     if (!region.lateral) return [];
     const stage = mounted.regions[index]?.querySelector(".region-stage");
@@ -253,11 +285,14 @@ export function createHomeController({
     road.setOffset(roadOffset.x, roadOffset.y);
     if (shouldCrossToPalace({
       scrollTop: document.scrollingElement.scrollTop,
-      scrollHeight: document.scrollingElement.scrollHeight,
+      ascentStart: ascentElement ? ascentElement.offsetTop : 0,
+      ascentEnd: ascentElement ? ascentElement.offsetTop + ascentElement.offsetHeight : 0,
       viewportHeight,
       armed: crossingArmed,
     })) {
-      crossTo({ destination: "palacio.html" });
+      // Repassa o som corrente, não o padrão: sem isso, quem entrou com som
+      // ligado perde o botão "Retomar som" ao fechar o círculo da travessia.
+      crossTo({ destination: "palacio.html", soundEnabled });
     }
     let activeRegion = null;
     let activePresence = 0;
