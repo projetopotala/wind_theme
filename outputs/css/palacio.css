@@ -1,0 +1,125 @@
+:root {
+  color-scheme: dark;
+  --palace-ink: #171310;
+  --palace-ivory: #f0e6d6;
+  --palace-gold: #d8b47c;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--palace-ink);
+  color: var(--palace-ivory);
+  font-family: Georgia, "Times New Roman", serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.palace {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  min-height: min(480px, 100svh);
+  overflow: hidden;
+}
+
+.palace-visual,
+.palace-fallback,
+.palace-fallback img,
+.palace-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.palace-fallback img {
+  display: block;
+  object-fit: cover;
+  transition: opacity 1.4s ease;
+}
+
+.palace-canvas {
+  display: block;
+  opacity: 0;
+  transition: opacity 1.6s cubic-bezier(.22, .72, .24, 1);
+}
+
+.palace-visual.is-scene-ready .palace-canvas { opacity: 1; }
+.palace-visual.is-scene-ready .palace-fallback img { opacity: .01; }
+
+/* O zoom é aplicado no conjunto, não só no canvas, para o fallback fotográfico
+   acompanhar quando o WebGL não estiver disponível. */
+.palace-visual {
+  transform: scale(var(--palace-zoom, 1));
+  transform-origin: 50% 46%;
+  will-change: transform;
+}
+
+.palace-return {
+  position: absolute;
+  z-index: 10;
+  bottom: max(9svh, calc(env(safe-area-inset-bottom) + 28px));
+  left: 50%;
+  display: grid;
+  min-width: 176px;
+  min-height: 52px;
+  padding: 0 26px;
+  place-items: center;
+  border: 1px solid rgba(216, 180, 124, .5);
+  border-radius: 999px;
+  background: rgba(23, 19, 16, .52);
+  color: var(--palace-ivory);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transform: translateX(-50%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.palace-return:focus-visible {
+  outline: 2px solid var(--palace-gold);
+  outline-offset: 4px;
+}
+
+/* O anel preenche conforme o progresso: é o retorno visual do gesto. */
+.palace-return-ring {
+  position: absolute;
+  inset: -1px;
+  border-radius: 999px;
+  background: conic-gradient(
+    var(--palace-gold) calc(var(--hold-progress, 0) * 360deg),
+    transparent 0
+  );
+  opacity: .5;
+  pointer-events: none;
+}
+
+.palace-return-label { position: relative; }
+
+.palace-return-hint {
+  position: absolute;
+  z-index: 10;
+  right: 0;
+  bottom: max(4svh, calc(env(safe-area-inset-bottom) + 8px));
+  left: 0;
+  margin: 0;
+  color: rgba(240, 230, 214, .62);
+  font-size: clamp(11px, 1.3vw, 14px);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.palace-noscript { padding: 24px; text-align: center; }
+.palace-noscript a { color: var(--palace-gold); }
+
+@media (prefers-reduced-motion: reduce) {
+  .palace-canvas { display: none; }
+  .palace-visual.is-scene-ready .palace-fallback img { opacity: 1; }
+  .palace-visual { transition: none; }
+  .palace-fallback img { transition-duration: .01ms !important; }
+}

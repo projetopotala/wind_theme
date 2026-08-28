@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#171310">
+  <meta name="description" content="O interior do Palácio Potala, ao fim da travessia.">
+  <title>Potala — O Palácio</title>
+  <link rel="preload" href="media/palacio-master.webp" as="image" type="image/webp" fetchpriority="high">
+  <link rel="stylesheet" href="css/palacio.css">
+  <script type="module" src="js/palacio/palace-controller.js"></script>
+</head>
+<body>
+  <main class="palace" id="palace">
+    <!-- "arrival-visual" é reaproveitada de propósito: createArrivalScene() busca essa
+         classe (canvas.closest(".arrival-visual")) para alternar is-scene-ready e o
+         fallback. Sem ela o motor da Chegada nunca revela o canvas nesta página. -->
+    <div class="palace-visual arrival-visual" id="palace-visual">
+      <picture class="palace-fallback">
+        <img src="media/palacio-master.webp"
+          alt="Corredor de colunas do Palácio Potala, com três pessoas caminhando em direção à luz de um vão de porta"
+          width="2048" height="1152" fetchpriority="high" decoding="async">
+      </picture>
+      <canvas class="palace-canvas" id="palace-scene" aria-hidden="true" hidden></canvas>
+    </div>
+
+    <button class="palace-return" id="palace-return" type="button"
+      aria-describedby="palace-return-hint">
+      <span class="palace-return-ring" aria-hidden="true"></span>
+      <span class="palace-return-label">Voltar ao começo</span>
+    </button>
+    <p class="palace-return-hint" id="palace-return-hint">
+      Segure o botão para atravessar a luz e retornar à Chegada. Enter também funciona.
+    </p>
+  </main>
+
+  <noscript>
+    <p class="palace-noscript"><a href="transcender.html">Voltar à Chegada</a></p>
+  </noscript>
+</body>
+</html>
