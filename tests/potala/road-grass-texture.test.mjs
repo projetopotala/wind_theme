@@ -82,3 +82,91 @@ test("a faixa de grama é desenhada antes do calçamento", async () => {
   // do calçamento as apagaria (o mesmo defeito já corrigido uma vez).
   assert.ok(fonte.indexOf("drawGrass(roadWidth, grassTufts, grassPhase)") > pedra);
 });
+
+/**
+ * Dublê de contexto 2D que anota o que foi pedido e onde.
+ *
+ * Guarda a translação acumulada em cada operação porque é exatamente aí que
+ * mora o defeito que este arquivo precisa pegar: a textura pintada na
+ * translação errada não dá erro nenhum, só gruda a grama no vidro.
+ */
+function contextoDeMentira() {
+  const chamadas = [];
+  const pilha = [];
+  let tx = 0;
+  let ty = 0;
+  return {
+    chamadas,
+    canvas: { width: 800, height: 600 },
+    filter: "none",
+    strokeStyle: "",
+    fillStyle: "",
+    lineWidth: 0,
+    lineJoin: "",
+    lineCap: "",
+    globalCompositeOperation: "source-over",
+    setTransform() { tx = 0; ty = 0; },
+    clearRect() {},
+    save() { pilha.push([tx, ty]); },
+    restore() { [tx, ty] = pilha.pop() || [0, 0]; },
+    translate(x, y) { tx += x; ty += y; },
+    stroke() {
+      chamadas.push({ tipo: "stroke", tx, ty, lineWidth: this.lineWidth, composite: this.globalCompositeOperation });
+    },
+    fillRect(x, y) {
+      chamadas.push({ tipo: "fillRect", x, y, tx, ty, fillStyle: this.fillStyle, composite: this.globalCompositeOperation });
+    },
+  };
+}
+
+test("a textura da grama fica presa ao chão, não à tela", async () => {
+  const { paintGrassBand, grassBandWidths: medidas } = await import("../../outputs/js/home/home-road.js");
+  const padrao = { patternMarker: true };
+  const alvo = contextoDeMentira();
+
+  paintGrassBand(alvo, {
+    path: {},
+    band: medidas(200),
+    pattern: padrao,
+    width: 800,
+    height: 600,
+    translateX: 137,
+    translateY: -412,
+  });
+
+  const textura = alvo.chamadas.find((c) => c.tipo === "fillRect" && c.fillStyle === padrao);
+  assert.ok(textura, "a textura precisa ser pintada");
+
+  // Sem esta translação a estrada rola por baixo de um gramado imóvel.
+  assert.equal(textura.tx, 137);
+  assert.equal(textura.ty, -412);
+  // E o retângulo recua o mesmo tanto, senão a faixa fica sem textura no
+  // pedaço da tela que a translação empurrou para fora.
+  assert.equal(textura.x, -137);
+  assert.equal(textura.y, 412);
+});
+
+test("a máscara é recortada antes de a textura entrar", async () => {
+  const { paintGrassBand, grassBandWidths: medidas } = await import("../../outputs/js/home/home-road.js");
+  const padrao = { patternMarker: true };
+  const alvo = contextoDeMentira();
+
+  paintGrassBand(alvo, {
+    path: {},
+    band: medidas(200),
+    pattern: padrao,
+    width: 800,
+    height: 600,
+    translateX: 10,
+    translateY: 20,
+  });
+
+  const recorte = alvo.chamadas.findIndex((c) => c.composite === "destination-out");
+  const textura = alvo.chamadas.findIndex((c) => c.fillStyle === padrao);
+  const banho = alvo.chamadas.findIndex((c) => c.composite === "source-atop");
+
+  // Textura antes do recorte: ela é apagada junto com a pista. Banho antes da
+  // textura: ele não tem em que se apoiar e some.
+  assert.ok(recorte >= 0 && textura > recorte, "a pista tem que ser apagada antes da textura");
+  assert.ok(banho > textura, "o banho quente vem depois da textura");
+});

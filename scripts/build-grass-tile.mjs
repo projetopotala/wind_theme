@@ -18,7 +18,7 @@
 import sharp from "sharp";
 
 const SIZE = 512;
-const BLADES = 2600;
+const BLADES = 3600;
 
 // Semente fixa: o mesmo ladrilho em qualquer máquina, como o resto da estrada.
 let semente = 20260828;
@@ -87,8 +87,11 @@ for (let i = 0; i < BLADES; i += 1) {
     x0: entre(0, SIZE),
     y0: entre(0, SIZE),
     angulo: entre(0, Math.PI * 2),
-    comprimento: entre(26, 96),
-    largura: entre(3.4, 8.6),
+    comprimento: entre(30, 104),
+    // Folha fina e longa, não fita larga: na largura anterior (até 8,6px) o
+    // ladrilho lia como grama grossa de brinquedo mesmo depois de reduzido pelo
+    // padrão. Mais folhas compensam a densidade que a largura deixou de dar.
+    largura: entre(2.0, 5.0),
     curva: entre(-0.5, 0.5),
     tom,
     // Do verde profundo da sombra ao verde-limão de quem pegou sol de frente.

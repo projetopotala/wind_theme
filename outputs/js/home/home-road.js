@@ -157,11 +157,15 @@ export const PAVEMENT_MASK_RATIO = 0.92;
 export function grassBandWidths(roadWidth) {
   const road = Math.max(72, Number(roadWidth) || 72);
   return {
-    outer: road * 2.24,
+    // A 2,24 sobrava quase uma pista inteira de grama de cada lado e a faixa
+    // competia com a estrada em vez de debruar. O que se quer é acostamento:
+    // uma orla estreita, larga o bastante para a folha existir e curta o
+    // bastante para o caminho continuar sendo o assunto.
+    outer: road * 1.5,
     inner: road * 0.98,
     // A borda de fora esfuma na terra; a de dentro some sob a pedra e por isso
     // pode ser mais curta.
-    outerFeather: Math.max(10, road * 0.2),
+    outerFeather: Math.max(8, road * 0.12),
     innerFeather: Math.max(5, road * 0.08),
   };
 }
@@ -207,6 +211,82 @@ export function grassBladeGeometry({ point, tuft, baseRadius, sway = 0 }) {
     control: { x: ctrlX, y: ctrlY },
     tip: { x: tipX, y: tipY },
   };
+}
+
+/** Banho quente aplicado por cima da grama, para ela caber na paleta sépia. */
+export const GRASS_TINT = "rgba(150, 124, 74, .26)";
+
+/**
+ * Pinta a faixa de grama numa tela auxiliar.
+ *
+ * Recebe o contexto em vez de fechá-lo dentro de `createHomeRoad` porque a
+ * ordem das operações aqui é toda ela frágil — máscara, recorte, textura,
+ * banho — e cada passo trocado de lugar produz um defeito diferente e mudo.
+ * Com o contexto por parâmetro, um dublê consegue conferir essa ordem.
+ */
+export function paintGrassBand(target, {
+  path,
+  band,
+  pattern,
+  width = 0,
+  height = 0,
+  ratio = 1,
+  translateX = 0,
+  translateY = 0,
+} = {}) {
+  if (!target || !path || !band || !pattern) return;
+
+  target.setTransform(ratio, 0, 0, ratio, 0, 0);
+  target.clearRect(0, 0, width, height);
+
+  // Máscara: o corredor inteiro borrado, com a pista apagada de dentro dele.
+  target.save();
+  target.translate(translateX, translateY);
+  target.lineJoin = "round";
+  target.lineCap = "round";
+
+  target.filter = `blur(${band.outerFeather.toFixed(1)}px)`;
+  target.strokeStyle = "#fff";
+  target.lineWidth = band.outer;
+  target.stroke(path);
+
+  target.globalCompositeOperation = "destination-out";
+  target.filter = `blur(${band.innerFeather.toFixed(1)}px)`;
+  target.lineWidth = band.inner;
+  target.stroke(path);
+
+  target.filter = "none";
+  target.restore();
+
+  /*
+   * A textura é presa ao CHÃO, não à tela.
+   *
+   * O padrão nasce na origem do sistema de coordenadas atual — pintar sem a
+   * translação da câmera prendia a grama ao vidro: a estrada rolava e a folha
+   * ficava parada no mesmo pixel, como se a paisagem deslizasse por baixo de um
+   * gramado imóvel. Com a mesma translação do traçado, cada folha fica presa ao
+   * ponto do chão onde nasceu e acompanha a estrada.
+   *
+   * O retângulo é recuado pela translação justamente para continuar cobrindo a
+   * tela inteira depois de o sistema ter se deslocado.
+   *
+   * `source-in` mantém só o que está dentro da máscara, então a faixa herda a
+   * queda suave das duas bordas em vez de terminar em corte reto.
+   */
+  target.save();
+  target.translate(translateX, translateY);
+  target.globalCompositeOperation = "source-in";
+  target.fillStyle = pattern;
+  target.fillRect(-translateX, -translateY, width, height);
+  target.restore();
+
+  // Banho quente: o ladrilho é um verde de meio-dia e a travessia é sépia. Sem
+  // ele a faixa lê como decalque colado ao lado da pedra. `source-atop` mantém
+  // o recorte já conquistado, então o banho não vaza para fora da faixa.
+  target.globalCompositeOperation = "source-atop";
+  target.fillStyle = GRASS_TINT;
+  target.fillRect(0, 0, width, height);
+  target.globalCompositeOperation = "source-over";
 }
 
 export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
@@ -331,47 +411,16 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
    */
   function drawGrassBand(roadWidth, translateX, translateY) {
     if (!shoulder || !grassTexture) return;
-    const band = grassBandWidths(roadWidth);
-
-    shoulderContext.setTransform(ratio, 0, 0, ratio, 0, 0);
-    shoulderContext.clearRect(0, 0, width, height);
-    shoulderContext.save();
-    shoulderContext.translate(translateX, translateY);
-    shoulderContext.lineJoin = "round";
-    shoulderContext.lineCap = "round";
-
-    shoulderContext.filter = `blur(${band.outerFeather.toFixed(1)}px)`;
-    shoulderContext.strokeStyle = "#fff";
-    shoulderContext.lineWidth = band.outer;
-    shoulderContext.stroke(path);
-
-    shoulderContext.globalCompositeOperation = "destination-out";
-    shoulderContext.filter = `blur(${band.innerFeather.toFixed(1)}px)`;
-    shoulderContext.lineWidth = band.inner;
-    shoulderContext.stroke(path);
-
-    shoulderContext.filter = "none";
-    shoulderContext.restore();
-
-    // `source-in` pinta a textura só onde a máscara tem alpha, então a faixa
-    // herda a queda suave das duas bordas em vez de terminar em corte reto.
-    // O preenchimento é feito sem a translação da câmera de propósito: o padrão
-    // fica preso à tela, e não ao traçado, o que impede a textura de escorregar
-    // dentro da própria faixa enquanto a estrada rola.
-    shoulderContext.globalCompositeOperation = "source-in";
-    shoulderContext.fillStyle = grassTexture;
-    shoulderContext.fillRect(0, 0, width, height);
-
-    // Banho quente por cima da grama.
-    //
-    // O ladrilho é um verde de meio-dia e a travessia inteira é sépia: sem este
-    // banho a faixa lê como decalque colado sobre a paisagem, viva demais ao
-    // lado da pedra. `source-atop` mantém o recorte já conquistado, então o
-    // banho não vaza para fora da faixa.
-    shoulderContext.globalCompositeOperation = "source-atop";
-    shoulderContext.fillStyle = "rgba(150, 124, 74, .26)";
-    shoulderContext.fillRect(0, 0, width, height);
-    shoulderContext.globalCompositeOperation = "source-over";
+    paintGrassBand(shoulderContext, {
+      path,
+      band: grassBandWidths(roadWidth),
+      pattern: grassTexture,
+      width,
+      height,
+      ratio,
+      translateX,
+      translateY,
+    });
 
     context.save();
     context.setTransform(1, 0, 0, 1, 0, 0);
@@ -560,8 +609,9 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     if (grassTexture?.setTransform && typeof DOMMatrix === "function") {
       // Folha menor que a pedra: em escala 1 uma única folha tinha o
       // comprimento de meia pista e a faixa lia como mato alto, não como
-      // acostamento visto de longe.
-      grassTexture.setTransform(new DOMMatrix().scale(.34));
+      // acostamento visto de longe. A 0,34 ainda lia grossa ao lado do
+      // paralelepípedo, que é a referência de escala mais próxima que o olho tem.
+      grassTexture.setTransform(new DOMMatrix().scale(.26));
     }
     renderedProgress = -1;
     queueDraw();
