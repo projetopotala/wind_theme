@@ -193,6 +193,12 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
   let renderedProgress = -1;
   let renderedOffset = "";
   let grassPhase = 0;
+  // Tempo real do último quadro em que a grama animou — não o dt fixo que a
+  // versão anterior assumia (`0.016`, ~1 quadro a 60fps). Assumir dt fixo faz
+  // a velocidade da oscilação depender da taxa de quadros do dispositivo;
+  // integrar com o tempo real decorrido mantém a mesma velocidade em
+  // qualquer taxa.
+  let lastGrassTime = 0;
   let frameId = 0;
   let paused = document.hidden;
   let destroyed = false;
@@ -238,14 +244,10 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
    *
    * Cada tufo é posicionado pela normal da curva no ponto correspondente, então
    * a grama acompanha o traçado em vez de ser uma faixa reta ao lado dele.
+   * Os tufos chegam prontos (`draw()` já os calculou, para decidir se a
+   * animação continua rodando) em vez de recalculados aqui.
    */
-  function drawGrass(roadWidth, arcFrom, arcTo, phase) {
-    const tufts = grassTuftsForRange({
-      from: arcFrom,
-      to: arcTo,
-      spacing: GRASS_DEFAULTS.spacing,
-      seed: 17,
-    });
+  function drawGrass(roadWidth, tufts, phase) {
     if (!tufts.length) return;
 
     const half = roadWidth * 0.5;
@@ -310,8 +312,37 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
 
   function draw() {
     frameId = 0;
+    if (destroyed || paused) return;
+
+    const now = performance.now();
+    // Tolera até 250ms (pausa breve, aba trocada sem passar por
+    // visibilitychange) sem deixar a grama saltar de fase; sem o teto, um
+    // gap grande no relógio real produziria uma oscilação visível de uma vez.
+    const dt = lastGrassTime ? Math.min(0.25, Math.max(0, (now - lastGrassTime) / 1000)) : 0;
+    lastGrassTime = now;
+
+    const arc = visibleArcRange({
+      layout,
+      cameraDistance: progress * layout.totalLength,
+      width,
+      height,
+    });
+    const grassTufts = grassTuftsForRange({
+      from: arc.from,
+      to: arc.to,
+      spacing: GRASS_DEFAULTS.spacing,
+      seed: 17,
+    });
+    // A grama balançando é a única coisa que pode mudar num quadro parado —
+    // progresso e offset iguais ao quadro anterior. Isso costuma acontecer
+    // bem quando o visitante olha a borda da estrada em repouso; sem esta
+    // condição o loop de `draw()` parava e a grama congelava exatamente aí.
+    // Custo medido como desprezível: ~15 segmentos, ~160 tufos visíveis.
+    const animatingGrass = !reducedMotion && grassTufts.length > 0;
+
     const offsetSignature = `${offsetX.toFixed(1)}:${offsetY.toFixed(1)}`;
-    if (destroyed || paused || (renderedProgress === progress && renderedOffset === offsetSignature)) return;
+    const staticFrame = renderedProgress === progress && renderedOffset === offsetSignature;
+    if (staticFrame && !animatingGrass) return;
     renderedProgress = progress;
     renderedOffset = offsetSignature;
     const camera = locate(layout, progress);
@@ -348,13 +379,10 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     context.globalCompositeOperation = "source-over";
     context.restore();
 
-    if (!reducedMotion) grassPhase += 0.016 * 0.9;
-    const arc = visibleArcRange({
-      layout,
-      cameraDistance: progress * layout.totalLength,
-      width,
-      height,
-    });
+    // Integra com o tempo real decorrido (`dt`, em segundos) em vez do dt fixo
+    // que a versão anterior assumia — mantém o `* 0.9` original, então a
+    // velocidade a 60fps não muda, mas passa a valer em qualquer taxa.
+    if (animatingGrass) grassPhase += dt * 0.9;
     drawPavement(layers[2].strokeStyle, roadWidth, translateX, translateY);
 
     // A grama tem que ser desenhada DEPOIS do calçamento: `drawPavement` monta
@@ -363,8 +391,14 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     // mesmo com a base cavalgando a borda da pista, como aqui.
     context.save();
     context.translate(translateX, translateY);
-    drawGrass(roadWidth, arc.from, arc.to, grassPhase);
+    drawGrass(roadWidth, grassTufts, grassPhase);
     context.restore();
+
+    // Sem grama para animar (repouso total ou movimento reduzido) o laço para
+    // e só volta a rodar quando `setProgress`/`setOffset` pedirem um quadro.
+    // Com grama, ele se mantém sozinho: é isso que faz a oscilação continuar
+    // parado numa região, sem depender de o visitante estar rolando.
+    if (animatingGrass) queueDraw();
   }
 
   function queueDraw() {
@@ -386,6 +420,9 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     if (paused) cancelAnimationFrame(frameId);
     else {
       renderedProgress = -1;
+      // Zera o relógio da grama: sem isso, o próximo quadro mediria o tempo
+      // inteiro em que a aba ficou oculta como se fosse um `dt` de animação.
+      lastGrassTime = 0;
       queueDraw();
     }
   }
