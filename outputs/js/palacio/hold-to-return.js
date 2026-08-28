@@ -11,6 +11,13 @@
  */
 
 export const HOLD_DURATION = 1500;
+// Em movimento reduzido o gesto continua sendo segurar — só o ZOOM vira corte
+// curto, não o portão de intenção. A versão anterior completava no primeiro
+// tick (`{ progress: 1, completed: true }` assim que `holding` ficava
+// verdadeiro), o que navega no `pointerdown`, sem chance de soltar para
+// cancelar: exatamente para quem tem limitação motora, mais sujeito a toque
+// acidental, é quando o cancelamento mais importa.
+export const REDUCED_MOTION_HOLD_DURATION = 350;
 const RELEASE_FACTOR = 1.8; // recua mais rápido do que avança
 const MAX_ZOOM = 1.85;
 
@@ -34,11 +41,8 @@ export function advanceHold(state, { elapsedMs = 0, holding = false, reducedMoti
   // troca de documento já disparada.
   if (current.completed) return { ...current, holding, progress: 1 };
 
-  if (holding && reducedMotion) {
-    return { progress: 1, holding: true, completed: true };
-  }
-
-  const delta = Math.max(0, Number(elapsedMs) || 0) / HOLD_DURATION;
+  const duration = reducedMotion ? REDUCED_MOTION_HOLD_DURATION : HOLD_DURATION;
+  const delta = Math.max(0, Number(elapsedMs) || 0) / duration;
   const progress = holding
     ? clamp(current.progress + delta)
     : clamp(current.progress - delta * RELEASE_FACTOR);

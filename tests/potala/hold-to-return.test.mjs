@@ -4,6 +4,7 @@ import {
   advanceHold,
   createHoldState,
   HOLD_DURATION,
+  REDUCED_MOTION_HOLD_DURATION,
   zoomForProgress,
 } from "../../outputs/js/palacio/hold-to-return.js";
 
@@ -57,9 +58,28 @@ test("depois de completar o estado não regride", () => {
   assert.equal(state.progress, 1);
 });
 
-test("em movimento reduzido a conclusão é imediata", () => {
-  const state = advanceHold(createHoldState(), { elapsedMs: 16, holding: true, reducedMotion: true });
-  assert.equal(state.completed, true);
+test("em movimento reduzido a conclusão é rápida, mas continua cancelável", () => {
+  // O portão de intenção não desaparece em movimento reduzido: só o ZOOM vira
+  // corte curto. Completar no primeiro tick navegaria no `pointerdown`, sem
+  // chance de soltar para cancelar — justamente para quem tem limitação
+  // motora, mais sujeito a toque acidental, é quando soltar mais importa.
+  let state = advanceHold(createHoldState(), { elapsedMs: 16, holding: true, reducedMotion: true });
+  assert.equal(state.completed, false, "um único quadro não pode completar sozinho");
+  assert.ok(state.progress > 0, "mas o progresso já avança");
+
+  // Soltar cedo cancela, como em movimento normal.
+  state = advanceHold(state, { elapsedMs: 16, holding: false, reducedMotion: true });
+  assert.equal(state.completed, false, "soltar cedo cancela mesmo em movimento reduzido");
+
+  // Segurando até a duração reduzida, completa — rápido, mas não instantâneo.
+  let completo = createHoldState();
+  let decorrido = 0;
+  while (decorrido < REDUCED_MOTION_HOLD_DURATION && !completo.completed) {
+    completo = advanceHold(completo, { elapsedMs: 25, holding: true, reducedMotion: true });
+    decorrido += 25;
+  }
+  assert.equal(completo.completed, true);
+  assert.ok(decorrido < HOLD_DURATION, "movimento reduzido precisa ser mais rápido que o normal");
 });
 
 test("o zoom cresce com o progresso e parte de 1", () => {
