@@ -122,8 +122,13 @@ export const JOURNEY_REGIONS = [
     category: "A loja",
     title: "Marketplace",
     description: "Cristais, incensos, livros e óleos essenciais — o que a casa reúne para levar junto.",
+    // `media` reaproveita o mesmo placeholder de "programacao" e
+    // "arte-cultura" (não existe asset próprio do marketplace ainda); o `alt`
+    // precisa descrever essa mesma imagem, não uma prateleira de loja que ela
+    // não mostra — o campo `media` não é renderizado hoje, mas o par não pode
+    // mentir sobre o que a imagem realmente é.
     media: "media/journey-cultura.webp",
-    alt: "Prateleiras de loja com cristais, incensos e livros",
+    alt: "Pavilhão com mesas de produtos artesanais dispostas ao entardecer",
     href: "marketplace.html",
     priority: 74,
     tags: ["cristais", "incensos", "livros"],
