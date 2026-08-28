@@ -15,6 +15,7 @@ const OUTPUT_SIZE = { width: 2048, height: 1152 };
 const FILES = [
   { source: "potala-interior-plate-1024x576.png", output: "palacio-master.webp", kind: "master" },
   { source: "potala-interior-depth-1024x576.png", output: "palacio-depth.webp", kind: "map" },
+  { source: "potala-interior-light-mask.png", output: "palacio-light-mask.webp", kind: "map" },
 ];
 
 export async function inspectPalaceSource(file) {
