@@ -52,6 +52,7 @@ function tracePath(layout) {
 }
 
 const ROAD_TEXTURE_URL = new URL("../../media/medieval-road-stones.webp", import.meta.url).href;
+const GRASS_TEXTURE_URL = new URL("../../media/grama-borda.webp", import.meta.url).href;
 
 /**
  * As quatro camadas do calçamento, da mais larga para a mais estreita.
@@ -133,6 +134,38 @@ export function visibleArcRange({
   };
 }
 
+/**
+ * Largura da máscara do calçamento, em múltiplos da largura da estrada.
+ *
+ * Exportada porque a faixa de grama precisa saber onde a pedra termina: as duas
+ * medidas têm de se sobrepor, e mantê-las como números soltos em funções
+ * diferentes fazia com que mexer numa abrisse uma falha na outra sem aviso.
+ */
+export const PAVEMENT_MASK_RATIO = 0.92;
+
+/**
+ * Medidas da faixa de grama que ladeia a estrada, em px.
+ *
+ * `outer` é a largura do traço que forma o corredor inteiro (pista mais os dois
+ * acostamentos) e `inner` a do traço que apaga a pista de volta, deixando só as
+ * margens. A regra que importa: a grama tem de COMEÇAR antes de a pedra acabar.
+ * Se a borda interna da grama nascer depois do fim da máscara do calçamento,
+ * abre-se uma coroa de terra nua entre as duas — que é exatamente a borda feia
+ * que a grama veio cobrir. Como a pedra é desenhada por cima, a sobreposição
+ * não aparece; a falha, sim.
+ */
+export function grassBandWidths(roadWidth) {
+  const road = Math.max(72, Number(roadWidth) || 72);
+  return {
+    outer: road * 2.24,
+    inner: road * 0.98,
+    // A borda de fora esfuma na terra; a de dentro some sob a pedra e por isso
+    // pode ser mais curta.
+    outerFeather: Math.max(10, road * 0.2),
+    innerFeather: Math.max(5, road * 0.08),
+  };
+}
+
 export function computeRoadWidth({ width = 1440 } = {}) {
   const viewportWidth = Math.max(320, Number(width) || 1440);
   return viewportWidth < 720
@@ -203,9 +236,15 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
   let paused = document.hidden;
   let destroyed = false;
   let roadTexture = null;
+  let grassTexture = null;
   const textureImage = new Image();
+  const grassImage = new Image();
   const pavement = typeof document !== "undefined" ? document.createElement("canvas") : null;
   const pavementContext = pavement ? pavement.getContext("2d", { alpha: true }) : null;
+  // Tela separada da do calçamento: as duas são montadas no mesmo quadro e
+  // reaproveitar uma só obrigaria a copiar a faixa antes de montar a pedra.
+  const shoulder = typeof document !== "undefined" ? document.createElement("canvas") : null;
+  const shoulderContext = shoulder ? shoulder.getContext("2d", { alpha: true }) : null;
 
   function configureCanvas() {
     ratio = Math.min(devicePixelRatio || 1, 1.5);
@@ -217,6 +256,10 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     if (pavement) {
       pavement.width = canvas.width;
       pavement.height = canvas.height;
+    }
+    if (shoulder) {
+      shoulder.width = canvas.width;
+      shoulder.height = canvas.height;
     }
   }
 
@@ -272,6 +315,72 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
   }
 
   /**
+   * Desenha a faixa de grama que ladeia a estrada.
+   *
+   * A textura entra como padrão repetido em espaço de tela, e não como imagem
+   * esticada ao longo do traçado: esticar sobre uma curva deforma a folha e
+   * denuncia a repetição justo onde o olho mais olha. Repetido, o ladrilho
+   * cobre qualquer traçado sem deformar — e como grama não tem direção
+   * dominante, a repetição não lê como padrão.
+   *
+   * A forma sai por recorte, não por duas faixas desenhadas de cada lado:
+   * traça-se o corredor inteiro borrado e depois a pista é apagada de dentro
+   * dele (`destination-out`). Duas faixas paralelas separadas não fecham nas
+   * curvas — a de dentro encurta, a de fora estica, e aparecem falhas na
+   * quina. O recorte acompanha a curva porque é o mesmo traçado.
+   */
+  function drawGrassBand(roadWidth, translateX, translateY) {
+    if (!shoulder || !grassTexture) return;
+    const band = grassBandWidths(roadWidth);
+
+    shoulderContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+    shoulderContext.clearRect(0, 0, width, height);
+    shoulderContext.save();
+    shoulderContext.translate(translateX, translateY);
+    shoulderContext.lineJoin = "round";
+    shoulderContext.lineCap = "round";
+
+    shoulderContext.filter = `blur(${band.outerFeather.toFixed(1)}px)`;
+    shoulderContext.strokeStyle = "#fff";
+    shoulderContext.lineWidth = band.outer;
+    shoulderContext.stroke(path);
+
+    shoulderContext.globalCompositeOperation = "destination-out";
+    shoulderContext.filter = `blur(${band.innerFeather.toFixed(1)}px)`;
+    shoulderContext.lineWidth = band.inner;
+    shoulderContext.stroke(path);
+
+    shoulderContext.filter = "none";
+    shoulderContext.restore();
+
+    // `source-in` pinta a textura só onde a máscara tem alpha, então a faixa
+    // herda a queda suave das duas bordas em vez de terminar em corte reto.
+    // O preenchimento é feito sem a translação da câmera de propósito: o padrão
+    // fica preso à tela, e não ao traçado, o que impede a textura de escorregar
+    // dentro da própria faixa enquanto a estrada rola.
+    shoulderContext.globalCompositeOperation = "source-in";
+    shoulderContext.fillStyle = grassTexture;
+    shoulderContext.fillRect(0, 0, width, height);
+
+    // Banho quente por cima da grama.
+    //
+    // O ladrilho é um verde de meio-dia e a travessia inteira é sépia: sem este
+    // banho a faixa lê como decalque colado sobre a paisagem, viva demais ao
+    // lado da pedra. `source-atop` mantém o recorte já conquistado, então o
+    // banho não vaza para fora da faixa.
+    shoulderContext.globalCompositeOperation = "source-atop";
+    shoulderContext.fillStyle = "rgba(150, 124, 74, .26)";
+    shoulderContext.fillRect(0, 0, width, height);
+    shoulderContext.globalCompositeOperation = "source-over";
+
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.globalAlpha = 0.8;
+    context.drawImage(shoulder, 0, 0);
+    context.restore();
+  }
+
+  /**
    * Desenha o calçamento com borda desfeita de verdade.
    *
    * Empilhar traços de larguras diferentes só produz degraus de opacidade — a
@@ -292,7 +401,7 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
 
     pavementContext.filter = `blur(${feather.toFixed(1)}px)`;
     pavementContext.strokeStyle = "#fff";
-    pavementContext.lineWidth = roadWidth * .92;
+    pavementContext.lineWidth = roadWidth * PAVEMENT_MASK_RATIO;
     pavementContext.stroke(path);
 
     pavementContext.filter = "none";
@@ -383,6 +492,9 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     // que a versão anterior assumia — mantém o `* 0.9` original, então a
     // velocidade a 60fps não muda, mas passa a valer em qualquer taxa.
     if (animatingGrass) grassPhase += dt * 0.9;
+    // Antes do calçamento: a pedra é desenhada por cima e cobre a sobra da
+    // faixa, deixando a grama nascer de sob a borda em vez de encostar nela.
+    drawGrassBand(roadWidth, translateX, translateY);
     drawPavement(layers[2].strokeStyle, roadWidth, translateX, translateY);
 
     // A grama tem que ser desenhada DEPOIS do calçamento: `drawPavement` monta
@@ -441,6 +553,20 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     queueDraw();
   };
   textureImage.src = ROAD_TEXTURE_URL;
+  grassImage.decoding = "async";
+  grassImage.onload = () => {
+    if (destroyed) return;
+    grassTexture = context.createPattern(grassImage, "repeat");
+    if (grassTexture?.setTransform && typeof DOMMatrix === "function") {
+      // Folha menor que a pedra: em escala 1 uma única folha tinha o
+      // comprimento de meia pista e a faixa lia como mato alto, não como
+      // acostamento visto de longe.
+      grassTexture.setTransform(new DOMMatrix().scale(.34));
+    }
+    renderedProgress = -1;
+    queueDraw();
+  };
+  grassImage.src = GRASS_TEXTURE_URL;
   document.addEventListener("visibilitychange", onVisibilityChange);
   queueDraw();
 
@@ -461,6 +587,7 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
     destroy() {
       destroyed = true;
       textureImage.onload = null;
+      grassImage.onload = null;
       cancelAnimationFrame(frameId);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     },

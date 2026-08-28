@@ -25,6 +25,10 @@ const budgets = [
   { file: "outputs/media/palacio-master.webp", maximum: 660_000, width: 2048, height: 1152 },
   { file: "outputs/media/palacio-depth.webp", maximum: 705_000, width: 2048, height: 1152 },
   { file: "outputs/media/palacio-light-mask.webp", maximum: 700_000, width: 2048, height: 1152 },
+  // O ladrilho da borda repete na tela inteira: quadrado é requisito, não
+  // detalhe — retangular, ele repetiria com passo diferente nos dois eixos e a
+  // grade apareceria. Orçamento a ~1,4× do peso real.
+  { file: "outputs/media/grama-borda.webp", maximum: 120_000, width: 512, height: 512 },
 ];
 
 for (const asset of budgets) {
