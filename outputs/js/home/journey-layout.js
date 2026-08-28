@@ -218,7 +218,6 @@ export function buildJourneyLayout(regions, viewport = {}) {
     regionId: null,
   };
   segments.push(ascent);
-  cursor = samePoint(ascent.to);
 
   return {
     width,
