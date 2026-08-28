@@ -195,6 +195,9 @@ if (arrival && visual && canvas) {
     if (!event.persisted) return;
     delete document.documentElement.dataset.transitioning;
     document.documentElement.classList.remove("is-crossing");
+    // Sair da página durante a abertura do véu congelaria as classes no
+    // bfcache e a Chegada voltaria coberta, sem nada para reabri-la.
+    document.documentElement.classList.remove("entry-pending", "entry-from-palace");
     document.body.classList.remove("is-arrival-transitioning");
     engine.resetTime();
     scene.resume();
@@ -212,8 +215,31 @@ if (arrival && visual && canvas) {
   window.addEventListener("pagehide", onPageHide);
   window.addEventListener("pageshow", onPageShow);
 
+  /**
+   * Abre o véu com que a página nasceu quando se chega vindo do palácio.
+   *
+   * Esperar a cena é de propósito: abrir antes revelaria a fotografia de
+   * fallback e depois trocaria para o canvas, um segundo salto bem no meio da
+   * chegada. Quando o WebGL falha a fotografia é a cena final, e abrir também
+   * está certo — por isso não depende de `ok`.
+   *
+   * `entry-pending` sai junto com o fim da animação; enquanto ela estiver lá, a
+   * regra que mantém o véu opaco voltaria a valer assim que a animação acabasse.
+   */
+  const openEntryVeil = () => {
+    const root = document.documentElement;
+    if (!root.classList.contains("entry-pending")) return;
+    root.classList.add("entry-from-palace");
+    const encerrar = () => root.classList.remove("entry-pending", "entry-from-palace");
+    const veil = document.querySelector(".arrival-transition");
+    veil?.addEventListener("animationend", encerrar, { once: true });
+    // Rede: sem animação (movimento reduzido) o evento nunca chega.
+    window.setTimeout(encerrar, 1800);
+  };
+
   scene.ready.then((ok) => {
     worldLayer?.layout(viewport(), plate);
+    openEntryVeil();
     if (!ok) return;
     engine.start();
   });

@@ -36,7 +36,10 @@ if (visual && canvas && button) {
       crossed = true;
       // O destino é a Chegada: é ela que fecha o círculo da travessia, não a
       // página anterior do palácio.
-      crossTo({ destination: "transcender.html", soundEnabled });
+      // `entry` é o que faz a Chegada nascer coberta e abrir o véu. Sem ele
+      // `sanitize` descarta o campo e a Chegada aparece inteira de uma vez,
+      // desfazendo a metade da passagem que acontece do outro lado.
+      crossTo({ destination: "transcender.html", entry: "keyboard", soundEnabled });
     }
   };
 

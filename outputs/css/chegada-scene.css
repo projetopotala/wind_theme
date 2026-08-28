@@ -379,6 +379,30 @@ body.is-arrival-transitioning .arrival-transition {
   transition: opacity .78s cubic-bezier(.4, 0, .2, 1);
 }
 
+/* CHEGADA vinda do palácio, fechando o círculo.
+ *
+ * O palácio sai lavando no claro — é a luz do vão de porta. Entrar aqui no
+ * mesmo claro mantém a passagem contínua e desemboca no amanhecer do vale, que
+ * já é uma cena clara. O véu escuro deste elemento fica para a SAÍDA rumo à
+ * Home, onde a Home também abre no escuro.
+ *
+ * Abre mais devagar do que fecha, 1,5s contra 0,78s: revelar pede mais tempo
+ * que encobrir, porque o olho precisa reencontrar a paisagem. */
+html.entry-pending .arrival-transition,
+html.entry-from-palace .arrival-transition {
+  opacity: 1;
+  background: radial-gradient(circle at 50% 46%, #fbf6ea, #f0e6d6 54%, #d8b47c 100%);
+}
+
+html.entry-from-palace .arrival-transition {
+  animation: arrival-veil-open 1.5s cubic-bezier(.22, .72, .24, 1) both;
+}
+
+@keyframes arrival-veil-open {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 body.is-arrival-transitioning .breath-launcher,
 body.is-arrival-transitioning .ambient-sound,
 body.is-arrival-transitioning .journey-scroll-cue,
@@ -456,6 +480,12 @@ body.is-arrival-transitioning .breathing-guide {
   .arrival-fallback img,
   .arrival-transition {
     transition-duration: .01ms !important;
+  }
+
+  /* A abertura do véu na volta do palácio também vira corte instantâneo: quem
+     pede menos movimento não deve receber um clarão de 1,5s. */
+  html.entry-from-palace .arrival-transition {
+    animation-duration: .01ms !important;
   }
 
   /* O poema continua: é texto, não movimento. Só o deslize e o escalonamento

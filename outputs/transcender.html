@@ -9,6 +9,24 @@
   <link rel="preload" href="media/chegada-v2-master.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="respiracao.css">
   <link rel="stylesheet" href="css/chegada-scene.css">
+  <script>
+    // O palácio fecha o véu antes de sair, mas esta página abria em brilho
+    // cheio: a volta ao começo virava corte. Marcada antes da primeira pintura,
+    // a Chegada nasce coberta e o véu se abre revelando o vale — a travessia
+    // fecha o círculo com as duas metades casadas.
+    //
+    // Inline e sem `defer` de propósito: depois do primeiro quadro já seria
+    // tarde, e o piscar que se quer evitar já teria acontecido.
+    try {
+      const chave = "potala.travessia.v1";
+      const handoff = JSON.parse(sessionStorage.getItem(chave) || "{}");
+      if (["scroll", "drag", "keyboard"].includes(handoff.entry)) {
+        document.documentElement.classList.add("entry-pending");
+        delete handoff.entry;
+        sessionStorage.setItem(chave, JSON.stringify(handoff));
+      }
+    } catch {}
+  </script>
   <script type="module" src="respiracao.js"></script>
   <script type="module" src="js/chegada/arrival-controller.js"></script>
 </head>

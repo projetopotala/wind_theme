@@ -153,8 +153,19 @@ html.is-crossing .palace-transition {
  * aparecia inteiro de uma vez — a saída era travessia e a chegada era corte.
  *
  * A abertura é mais lenta que o fechamento (1,5s contra 0,78s) porque revelar
- * pede mais tempo que encobrir: o olho precisa reencontrar a cena. */
-html.entry-pending .palace-transition { opacity: 1; }
+ * pede mais tempo que encobrir: o olho precisa reencontrar a cena.
+ *
+ * O véu aqui é ESCURO, não o claro da saída. A Home sai escurecendo, então
+ * abrir no bege criava um clarão entre as duas metades — escuro, bege, cena —
+ * lido como uma tela branca piscando no meio da travessia. Entrando na mesma
+ * cor com que a Home saiu, a passagem é uma só; o claro fica reservado para a
+ * SAÍDA, que é atravessar a luz do vão da porta. Mesmo gradiente do véu da
+ * Home, de propósito. */
+html.entry-pending .palace-transition,
+html.entry-from-home .palace-transition {
+  opacity: 1;
+  background: radial-gradient(circle at 50% 46%, #382f25, #121512 58%, #0d100e 100%);
+}
 
 html.entry-from-home .palace-transition {
   animation: palace-veil-open 1.5s cubic-bezier(.22, .72, .24, 1) both;
@@ -173,4 +184,5 @@ html.entry-from-home .palace-transition {
   /* `handoffDelayForMotion` já encurta o atraso da passagem para 80ms; o véu
      só precisa aparecer, sem a transição longa de opacidade. */
   html.is-crossing .palace-transition { transition-duration: .01ms !important; }
+  html.entry-from-home .palace-transition { animation-duration: .01ms !important; }
 }
