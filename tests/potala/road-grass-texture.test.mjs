@@ -170,3 +170,23 @@ test("a máscara é recortada antes de a textura entrar", async () => {
   assert.ok(recorte >= 0 && textura > recorte, "a pista tem que ser apagada antes da textura");
   assert.ok(banho > textura, "o banho quente vem depois da textura");
 });
+
+test("sobra miolo cheio entre as duas franjas da orla", () => {
+  for (const largura of [96, 132, 170, 218, 400]) {
+    const faixa = grassBandWidths(largura);
+    const espessura = (faixa.outer - faixa.inner) / 2;
+    const miolo = espessura - faixa.outerFeather - faixa.innerFeather;
+
+    /*
+     * Franjas somando mais que a espessura da orla deixam a faixa inteira em
+     * meio-tom: medido no canvas, 0,2% da grama chegava a opaca e metade ficava
+     * abaixo de meio alpha, o que lê como aquarela desbotada ao lado da pedra.
+     * O defeito não aparece em nenhum outro teste — a faixa continua sendo
+     * desenhada, só que nunca cheia.
+     */
+    assert.ok(
+      miolo > espessura * 0.3,
+      `com estrada de ${largura}px a orla é quase só franja (miolo de ${miolo.toFixed(1)}px em ${espessura.toFixed(1)}px)`,
+    );
+  }
+});

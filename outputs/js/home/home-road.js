@@ -156,17 +156,32 @@ export const PAVEMENT_MASK_RATIO = 0.92;
  */
 export function grassBandWidths(roadWidth) {
   const road = Math.max(72, Number(roadWidth) || 72);
+  // A 2,24 sobrava quase uma pista inteira de grama de cada lado e a faixa
+  // competia com a estrada em vez de debruar. O que se quer é acostamento: uma
+  // orla estreita, larga o bastante para a folha existir e curta o bastante
+  // para o caminho continuar sendo o assunto.
+  const outer = road * 1.5;
+  const inner = road * 0.98;
+  // Espessura da orla de um lado só: é dentro dela que as franjas têm de caber.
+  const espessura = (outer - inner) / 2;
+
   return {
-    // A 2,24 sobrava quase uma pista inteira de grama de cada lado e a faixa
-    // competia com a estrada em vez de debruar. O que se quer é acostamento:
-    // uma orla estreita, larga o bastante para a folha existir e curta o
-    // bastante para o caminho continuar sendo o assunto.
-    outer: road * 1.5,
-    inner: road * 0.98,
-    // A borda de fora esfuma na terra; a de dentro some sob a pedra e por isso
-    // pode ser mais curta.
-    outerFeather: Math.max(8, road * 0.12),
-    innerFeather: Math.max(5, road * 0.08),
+    outer,
+    inner,
+    /*
+     * As franjas saem da espessura da PRÓPRIA orla, não da largura da estrada.
+     *
+     * Presas à estrada, elas não encolheram junto quando a faixa estreitou, e
+     * as duas passaram a somar mais que a orla inteira: a medição no canvas deu
+     * 0,2% da grama chegando a opaca e metade dela abaixo de meio alpha. Uma
+     * faixa que é só franja lê como aquarela desbotada ao lado da pedra cheia —
+     * sobra esfumado e não sobra grama.
+     *
+     * Proporcionais, sempre resta um miolo cheio entre as duas quedas, seja
+     * qual for a largura da estrada.
+     */
+    outerFeather: Math.max(4, espessura * 0.3),
+    innerFeather: Math.max(3, espessura * 0.2),
   };
 }
 
@@ -214,7 +229,7 @@ export function grassBladeGeometry({ point, tuft, baseRadius, sway = 0 }) {
 }
 
 /** Banho quente aplicado por cima da grama, para ela caber na paleta sépia. */
-export const GRASS_TINT = "rgba(150, 124, 74, .26)";
+export const GRASS_TINT = "rgba(150, 124, 74, .17)";
 
 /**
  * Pinta a faixa de grama numa tela auxiliar.
@@ -424,7 +439,10 @@ export function createHomeRoad(canvas, { regions = [], viewport = {} } = {}) {
 
     context.save();
     context.setTransform(1, 0, 0, 1, 0, 0);
-    context.globalAlpha = 0.8;
+    // Quase opaca: a 0,8 o bege do fundo subia através da grama e a orla lia
+    // como aquarela desbotada ao lado da pedra cheia. O que ainda esfuma a
+    // faixa nas pontas é a própria máscara, não esta transparência geral.
+    context.globalAlpha = 0.97;
     context.drawImage(shoulder, 0, 0);
     context.restore();
   }
