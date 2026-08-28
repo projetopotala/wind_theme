@@ -8,6 +8,26 @@
   <title>Potala — O Palácio</title>
   <link rel="preload" href="media/palacio-master.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/palacio.css">
+  <script>
+    // A Home fecha o véu antes de sair, mas esta página abria em brilho cheio:
+    // a saída era suave e a chegada era um corte. Marcado antes de qualquer
+    // pintura, o palácio nasce coberto pelo mesmo véu e ele se abre revelando a
+    // cena — as duas metades da passagem passam a ser uma só.
+    //
+    // Inline e sem `defer` de propósito: se rodasse depois, o primeiro quadro
+    // já teria sido pintado sem o véu, que é exatamente o piscar a evitar.
+    try {
+      const chave = "potala.travessia.v1";
+      const handoff = JSON.parse(sessionStorage.getItem(chave) || "{}");
+      if (["scroll", "drag", "keyboard"].includes(handoff.entry)) {
+        document.documentElement.classList.add("entry-pending");
+        // Consumido, como a Home faz: a marca vale para esta chegada e não para
+        // uma visita direta depois. A preferência de som fica.
+        delete handoff.entry;
+        sessionStorage.setItem(chave, JSON.stringify(handoff));
+      }
+    } catch {}
+  </script>
   <script type="module" src="js/palacio/palace-controller.js"></script>
 </head>
 <body>

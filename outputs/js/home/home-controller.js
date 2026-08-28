@@ -292,7 +292,10 @@ export function createHomeController({
     })) {
       // Repassa o som corrente, não o padrão: sem isso, quem entrou com som
       // ligado perde o botão "Retomar som" ao fechar o círculo da travessia.
-      crossTo({ destination: "palacio.html", soundEnabled });
+      // `entry` não é decoração: é o que o palácio lê para nascer coberto pelo
+      // véu e abri-lo. Sem ele `sanitize` descarta o campo, o palácio abre em
+      // brilho cheio e a chegada vira corte — metade da passagem se perde.
+      crossTo({ destination: "palacio.html", entry: "scroll", soundEnabled });
     }
     let activeRegion = null;
     let activePresence = 0;

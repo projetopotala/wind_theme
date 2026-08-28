@@ -146,6 +146,25 @@ html.is-crossing .palace-transition {
   transition: opacity .78s cubic-bezier(.4, 0, .2, 1);
 }
 
+/* CHEGADA ao palácio, a outra metade da passagem.
+ *
+ * O véu já está opaco no primeiro quadro (marcado pelo script inline do head) e
+ * se abre revelando a cena. Sem isto a Home escurecia devagar e o palácio
+ * aparecia inteiro de uma vez — a saída era travessia e a chegada era corte.
+ *
+ * A abertura é mais lenta que o fechamento (1,5s contra 0,78s) porque revelar
+ * pede mais tempo que encobrir: o olho precisa reencontrar a cena. */
+html.entry-pending .palace-transition { opacity: 1; }
+
+html.entry-from-home .palace-transition {
+  animation: palace-veil-open 1.5s cubic-bezier(.22, .72, .24, 1) both;
+}
+
+@keyframes palace-veil-open {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .palace-canvas { display: none; }
   .palace-visual.is-scene-ready .palace-fallback img { opacity: 1; }

@@ -136,6 +136,8 @@ html.is-crossing .journey-entry-veil {
    do texto; o mesmo traço e o mesmo raio das páginas internas, para ser o mesmo
    sistema e não um enfeite novo. */
 .region-content {
+  /* Contexto de contêiner: é o que faz o cqi do título medir esta caixa. */
+  container-type: inline-size;
   position: absolute;
   z-index: 3;
   top: 50%;
@@ -213,17 +215,31 @@ html.is-crossing .journey-entry-veil {
 .region-category span { display: flex; align-items: center; gap: 12px; }
 .region-category span::after { content: ""; width: clamp(44px, 6vw, 92px); height: 1px; background: rgba(74, 55, 40, .26); }
 
+/* O título é medido pela CAIXA, não pela janela.
+ *
+ * Com `vw` o tamanho da fonte seguia a largura da tela enquanto a caixa seguia
+ * outra conta — `min(43vw, 650px)` no lado da estrada, `min(68vw, 760px)` em
+ * cima e embaixo, `min(76vw, 820px)` no centro — e nas larguras em que as duas
+ * contas se afastavam o texto saía pela borda. "Atendimentos" é uma palavra só
+ * e não quebra: não havia para onde ela fugir.
+ *
+ * `cqi` é 1% da largura da própria caixa, então o título encolhe junto com ela
+ * em qualquer combinação de largura e variante. Os tetos vêm da palavra mais
+ * larga de cada escala: "Atendimentos" ocupa 4,74× o tamanho da fonte, então
+ * 19cqi a deixa em 90% da caixa; nas display a pior é "Inspiração", com 3,51×,
+ * e 25cqi a deixa em 88%. A folga não é arredondamento: Georgia pode cair num
+ * substituto mais largo, e 95% de preenchimento estourava com poucos por cento
+ * de diferença. Os limites em rem seguram as pontas. */
 .region-content h2 {
-  max-width: 12ch;
   margin: 0;
   color: var(--ink);
-  font: 400 clamp(4.2rem, 8.4vw, 9.4rem)/.84 Georgia, "Times New Roman", serif;
+  font: 400 clamp(2.6rem, 25cqi, 9.4rem)/.84 Georgia, "Times New Roman", serif;
   letter-spacing: -.065em;
   text-wrap: balance;
 }
 
 .journey-region[data-title-scale="compact"] .region-content h2 {
-  font-size: clamp(4.1rem, 7vw, 7.25rem);
+  font-size: clamp(2.4rem, 19cqi, 7.25rem);
 }
 
 .region-description {
@@ -295,9 +311,9 @@ html.is-crossing .journey-entry-veil {
 .discovery--object .discovery-light { width: 22px; height: 9px; border-radius: 99px; }
 .discovery--paper .discovery-light { width: 14px; height: 20px; border-radius: 2px; background: #ebe4d6; }
 
-.region--type-ledger .region-content h2 { font-size: clamp(5rem, 11vw, 12rem); }
+.region--type-ledger .region-content h2 { font-size: clamp(3rem, 34cqi, 12rem); }
 .region--live-ribbon .region-category::after { content: ""; width: 54px; height: 1px; background: var(--gold); }
-.region--quiet-fullscreen .region-content h2 { font-size: clamp(4rem, 7vw, 8rem); }
+.region--quiet-fullscreen .region-content h2 { font-size: clamp(2.6rem, 25cqi, 8rem); }
 
 .journey-silence {
   position: relative;
@@ -415,8 +431,8 @@ html.is-crossing .journey-entry-veil {
   .journey-region[data-content-placement="center"] .region-content { right: auto; left: 50%; width: 86vw; }
   .region-category { gap: 8px; margin-bottom: 14px; font-size: 7px; letter-spacing: .16em; }
   .region-category span::after { width: 24px; }
-  .region-content h2, .region--type-ledger .region-content h2, .region--quiet-fullscreen .region-content h2 { font-size: clamp(2.65rem, 12.8vw, 4.8rem); line-height: .9; }
-  .journey-region[data-title-scale="compact"] .region-content h2 { font-size: clamp(2.2rem, 9.5vw, 4.6rem); }
+  .region-content h2, .region--type-ledger .region-content h2, .region--quiet-fullscreen .region-content h2 { font-size: clamp(1.7rem, 25cqi, 4.8rem); line-height: .9; }
+  .journey-region[data-title-scale="compact"] .region-content h2 { font-size: clamp(1.5rem, 19cqi, 4.6rem); }
   .region-description { margin-top: 18px; font-size: clamp(.82rem, 3.6vw, 1rem); line-height: 1.48; }
   .region-tags { gap: 4px; margin-top: 16px; }
   .region-tags li { padding: 5px 7px; font-size: 6px; }

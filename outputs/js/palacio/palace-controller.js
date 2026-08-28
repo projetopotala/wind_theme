@@ -127,7 +127,32 @@ if (visual && canvas && button) {
   // gesto de segurar (anel, zoom) mais precisa continuar funcionando — sem
   // isso só o teclado completaria o retorno, porque `applyHold` roda dentro
   // do `tick()` do relógio, não do listener de ponteiro.
+  /**
+   * Abre o véu com que a página nasceu quando se chega vindo da Home.
+   *
+   * A espera pela cena é de propósito: abrir antes de a placa estar pronta
+   * revelaria a fotografia de fallback e depois trocaria para o canvas, um
+   * segundo salto bem no meio da chegada. `scene.ready` resolve `false` quando o
+   * WebGL falha, e aí a fotografia é a cena final — abrir também está certo.
+   *
+   * `entry-pending` sai junto com o fim da animação, senão a regra que mantém o
+   * véu opaco voltaria a valer assim que a animação terminasse.
+   */
+  function openEntryVeil() {
+    const root = document.documentElement;
+    if (!root.classList.contains("entry-pending")) return;
+    root.classList.add("entry-from-home");
+    const encerrar = () => {
+      root.classList.remove("entry-pending", "entry-from-home");
+    };
+    const veil = document.getElementById("palace-transition");
+    if (veil) veil.addEventListener("animationend", encerrar, { once: true });
+    // Rede de segurança: sem animação (movimento reduzido) o evento não vem.
+    setTimeout(encerrar, 1800);
+  }
+
   scene.ready.then(() => {
     clock.start();
+    openEntryVeil();
   });
 }
