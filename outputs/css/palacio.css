@@ -109,17 +109,24 @@ html, body {
 
 .palace-return-label { position: relative; }
 
+/* A dica sai da tela, mas não do documento.
+ *
+ * Explicar o gesto por escrito quebrava o silêncio da cena — o anel que se
+ * enche enquanto se segura já é o aviso para quem enxerga. Quem usa leitor de
+ * tela não tem esse anel: sem este texto, `aria-describedby` apontaria para o
+ * vazio e o botão anunciaria só o destino, nunca como chegar nele. Escondido
+ * assim (e não com `display: none` ou `visibility: hidden`, que o tirariam
+ * também da árvore de acessibilidade) ele continua sendo lido. */
 .palace-return-hint {
   position: absolute;
-  z-index: 10;
-  right: 0;
-  bottom: max(4svh, calc(env(safe-area-inset-bottom) + 8px));
-  left: 0;
-  margin: 0;
-  color: rgba(240, 230, 214, .62);
-  font-size: clamp(11px, 1.3vw, 14px);
-  text-align: center;
-  text-wrap: balance;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .palace-noscript { padding: 24px; text-align: center; }

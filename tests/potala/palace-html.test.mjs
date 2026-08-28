@@ -43,3 +43,18 @@ test("o canvas do palácio precisa de um ancestral com a classe arrival-visual",
     "o canvas #palace-scene precisa estar dentro de um elemento com a classe arrival-visual",
   );
 });
+
+test("a dica do botão sai da tela sem sair da árvore de acessibilidade", async () => {
+  const css = await readFile("outputs/css/palacio.css", "utf8");
+  const inicio = css.indexOf(".palace-return-hint {");
+  assert.notEqual(inicio, -1);
+  const bloco = css.slice(inicio, css.indexOf("}", inicio));
+
+  // `display: none` e `visibility: hidden` tirariam o texto também do leitor de
+  // tela, e aí `aria-describedby` apontaria para o vazio: o botão anunciaria o
+  // destino sem nunca dizer que é preciso segurar.
+  assert.doesNotMatch(bloco, /display:\s*none/);
+  assert.doesNotMatch(bloco, /visibility:\s*hidden/);
+  assert.match(bloco, /clip-path:\s*inset\(50%\)/);
+  assert.match(bloco, /width:\s*1px/);
+});
