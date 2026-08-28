@@ -117,9 +117,33 @@ html, body {
 .palace-noscript { padding: 24px; text-align: center; }
 .palace-noscript a { color: var(--palace-gold); }
 
+/* O véu da travessia de volta à Chegada. `crossTo` marca `is-crossing` no
+   <html> e espera 850ms (`handoffDelayForMotion`) antes de trocar de
+   documento — sem esta regra esses 850ms passam com a cena parada na tela e
+   o documento troca num corte seco. Ao contrário do véu escuro da Chegada e
+   da Home, aqui a tela lava no CLARO: a travessia atravessa a luz do vão de
+   porta. Some por cima do botão e do anel de progresso de propósito, e o
+   momento coincide com o zoom que `zoomForProgress` já leva até 1,85. */
+.palace-transition {
+  position: absolute;
+  z-index: 60;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 46%, #fbf6ea, #f0e6d6 54%, #d8b47c 100%);
+}
+
+html.is-crossing .palace-transition {
+  opacity: 1;
+  transition: opacity .78s cubic-bezier(.4, 0, .2, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .palace-canvas { display: none; }
   .palace-visual.is-scene-ready .palace-fallback img { opacity: 1; }
   .palace-visual { transition: none; }
   .palace-fallback img { transition-duration: .01ms !important; }
+  /* `handoffDelayForMotion` já encurta o atraso da passagem para 80ms; o véu
+     só precisa aparecer, sem a transição longa de opacidade. */
+  html.is-crossing .palace-transition { transition-duration: .01ms !important; }
 }

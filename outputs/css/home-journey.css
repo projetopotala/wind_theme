@@ -55,6 +55,17 @@ body[data-story-page="true"] {
 .entry-from-arrival .journey-road { animation: entry-canvas-handoff 1.8s cubic-bezier(.22, .72, .24, 1) both; }
 .entry-from-arrival .prologue-copy { animation: entry-prologue-handoff 1.8s cubic-bezier(.22, .72, .24, 1) both; }
 
+/* Fecha o véu na SAÍDA para o palácio: `crossTo` marca `is-crossing` no
+   <html> e espera 850ms (`handoffDelayForMotion`) antes de trocar de
+   documento. Sem esta regra o elemento já existia (reaproveitado da entrada)
+   mas ficava invisível nesses 850ms, e a troca de página vinha como corte
+   seco. A transição cabe dentro do atraso — não pode ultrapassá-lo. */
+html.is-crossing .journey-entry-veil {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity .78s cubic-bezier(.4, 0, .2, 1);
+}
+
 .journey-prologue {
   position: relative;
   z-index: 4;
@@ -429,6 +440,9 @@ body[data-story-page="true"] {
   .entry-from-arrival .journey-entry-veil,
   .entry-from-arrival .journey-road,
   .entry-from-arrival .prologue-copy { animation-duration: .12s !important; }
+  /* `handoffDelayForMotion` já encurta o atraso da passagem para 80ms aqui;
+     o véu só precisa aparecer, sem a transição longa de opacidade. */
+  html.is-crossing .journey-entry-veil { transition-duration: .01ms !important; }
   /* Quem pediu menos movimento continua com o aparecer e desaparecer, mas por
      opacidade apenas: sem deslocamento, sem escala e sem desfoque. */
   .journey-region {

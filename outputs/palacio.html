@@ -32,6 +32,12 @@
     <p class="palace-return-hint" id="palace-return-hint">
       Segure o botão para atravessar a luz e retornar à Chegada. Enter também funciona.
     </p>
+
+    <!-- Véu da travessia: `crossTo` (transition-handoff.js) marca `is-crossing`
+         no <html> e espera 850ms antes de trocar de documento. Aqui ele lava no
+         CLARO, não no escuro — a travessia atravessa a luz do vão de porta, ao
+         contrário da Chegada e da Home, que escurecem. -->
+    <div class="palace-transition" id="palace-transition" aria-hidden="true"></div>
   </main>
 
   <noscript>
