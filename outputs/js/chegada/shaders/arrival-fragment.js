@@ -173,17 +173,6 @@ export const ARRIVAL_FRAGMENT_SHADER = `
     // Lábio: um brilho fino e contínuo onde a lâmina ainda não se quebrou.
     color += fallLip * pow(veil, 3.0) * vec3(0.12, 0.13, 0.14);
 
-    // Pé da queda: espuma difusa, mais lenta e mais branca que o corpo.
-    //
-    // A borda de baixo da máscara é quase uma reta, e puxar essa faixa para o
-    // branco desenhava uma barra acesa atravessando o poço. Duas correções: o
-    // ruído lento desfaz a régua, e a espuma é somada em vez de misturada, para
-    // a água por baixo continuar dourada de amanhecer em vez de virar cinza.
-    float foam = smoothstep(0.30, 0.92, spray * 0.6 + churn * 0.6);
-    float foamEdge = noise(vec2(uv.x * 26.0, uFallPhase * 0.12));
-    float basin = fallBasin * smoothstep(0.25, 0.78, foam * 0.7 + foamEdge * 0.5);
-    color += basin * vec3(0.20, 0.21, 0.21) * fallEnergy;
-
     // MIST
     float mistA = noise(vec2(uv.x * 1.6 + uTime * 0.018, uv.y * 3.0));
     float mistB = noise(vec2(uv.x * 0.8 - uTime * 0.031, uv.y * 1.7 + uTime * 0.008));
