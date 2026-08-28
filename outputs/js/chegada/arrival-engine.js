@@ -140,6 +140,19 @@ export function createArrivalEngine({
       pushWorld();
       return actor;
     },
+    /**
+     * Apaga o realce de aproximação sem mexer no que já foi despertado.
+     *
+     * Depois de ler o poema o ponteiro costuma estar parado, e é `proximity`
+     * que zera a atenção — sem nada para chamá-la, o anel do elemento ficava
+     * aceso indefinidamente, como se o visitante ainda estivesse com o cursor
+     * ali. `awakened` continua: essa marca é memória do que já foi tocado, e
+     * deve permanecer.
+     */
+    releaseAttention() {
+      worldState = feedProximity(worldState, null);
+      pushWorld();
+    },
     hit(uv) {
       return hitActor(uv.u, uv.v, undefined, { previousId: worldState.attentionId });
     },

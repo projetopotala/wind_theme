@@ -333,12 +333,26 @@ body.is-arrival-transitioning .world-prompt {
   pointer-events: none;
 }
 
+/* Tudo o que convida sai de cena enquanto o poema fala.
+ *
+ * O mundo e a sua legenda faltavam nesta lista, e o véu do poema é
+ * translúcido: o anel do próprio elemento clicado continuava aceso por cima do
+ * verso, junto com o rótulo. Era a única coisa na tela competindo com o texto —
+ * e logo o convite que já tinha sido aceito. */
 body.is-poem-open .journey-scroll-cue,
 body.is-poem-open .breath-launcher,
-body.is-poem-open .ambient-sound {
+body.is-poem-open .ambient-sound,
+body.is-poem-open .arrival-world,
+body.is-poem-open .world-prompt {
   opacity: 0;
   pointer-events: none;
   transition: opacity .5s ease;
+}
+
+/* `pointer-events: none` no contêiner não basta: os botões repõem `auto` e
+   continuariam respondendo ao passar do mouse, reacendendo o anel sob o véu. */
+body.is-poem-open .world-actor {
+  pointer-events: none;
 }
 
 .journey-scroll-cue {

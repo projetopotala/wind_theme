@@ -95,7 +95,12 @@ if (arrival && visual && canvas) {
       }
     };
 
-    if (poem?.show(actor, { onClose: respond })) return;
+    const aoFechar = () => {
+      engine?.releaseAttention();
+      respond();
+    };
+
+    if (poem?.show(actor, { onClose: aoFechar })) return;
     respond();
   };
 
