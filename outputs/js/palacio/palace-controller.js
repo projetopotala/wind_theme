@@ -26,10 +26,8 @@ if (visual && canvas && button) {
   const applyHold = (state) => {
     visual.style.setProperty("--palace-zoom", zoomForProgress(state.progress).toFixed(4));
     button.style.setProperty("--hold-progress", state.progress.toFixed(4));
-    button.setAttribute("aria-valuenow", Math.round(state.progress * 100));
     if (state.completed && !crossed) {
       crossed = true;
-      visual.classList.add("is-crossing-light");
       // O destino é a Chegada: é ela que fecha o círculo da travessia, não a
       // página anterior do palácio.
       crossTo({ destination: "transcender.html" });
@@ -67,13 +65,63 @@ if (visual && canvas && button) {
   };
   addEventListener("pointermove", onPointerMove, { passive: true });
 
-  document.addEventListener("visibilitychange", () => {
+  const onVisibilityChange = () => {
     if (document.hidden) { clock.stop(); scene.pause(); }
     else { clock.resetTime(); scene.resume(); clock.start(); }
-  });
+  };
+  document.addEventListener("visibilitychange", onVisibilityChange);
 
-  scene.ready.then((ok) => {
-    if (!ok) return;
+  const cleanup = () => {
+    clock.stop();
+    scene.destroy();
+    removeEventListener("pointermove", onPointerMove);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.removeEventListener("pagehide", onPageHide);
+    window.removeEventListener("pageshow", onPageShow);
+  };
+
+  /*
+   * O bfcache pode devolver esta página com o heap intacto: o visitante segura
+   * até o fim, `crossTo` já marcou `data-transitioning` e navegou para
+   * transcender.html, e ao apertar "voltar" o Chrome restaura palacio.html do
+   * cache sem recarregar — `hold` continua `{ progress: 1, completed: true }`,
+   * `crossed` continua `true` e o `<html>`/`<body>` continuam com as classes de
+   * travessia. Sem desarmar isso aqui, o anel fica cheio, o zoom no máximo, e
+   * o botão não responde mais: nem segurar nem Enter completam de novo, porque
+   * o guard local (`crossed`) já foi consumido e `crossTo` também recusa uma
+   * segunda travessia enquanto `data-transitioning` estiver setado. Espelha o
+   * mesmo mecanismo já usado em arrival-controller.js e home-controller.js.
+   */
+  const onPageHide = (event) => {
+    if (event.persisted) {
+      clock.stop();
+      scene.pause();
+    } else {
+      cleanup();
+    }
+  };
+  const onPageShow = (event) => {
+    if (!event.persisted) return;
+    delete document.documentElement.dataset.transitioning;
+    document.documentElement.classList.remove("is-crossing");
+    document.body.classList.remove("is-arrival-transitioning");
+    hold = createHoldState();
+    holding = false;
+    crossed = false;
+    applyHold(hold);
+    clock.resetTime();
+    scene.resume();
+    clock.start();
+  };
+  window.addEventListener("pagehide", onPageHide);
+  window.addEventListener("pageshow", onPageShow);
+
+  // O relógio inicia mesmo quando o WebGL falha: `scene.render()` já retorna
+  // cedo se a cena não carregou, e é justamente no fallback fotográfico que o
+  // gesto de segurar (anel, zoom) mais precisa continuar funcionando — sem
+  // isso só o teclado completaria o retorno, porque `applyHold` roda dentro
+  // do `tick()` do relógio, não do listener de ponteiro.
+  scene.ready.then(() => {
     clock.start();
   });
 }
