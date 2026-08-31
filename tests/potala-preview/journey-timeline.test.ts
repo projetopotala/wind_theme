@@ -4,17 +4,27 @@ import test from "node:test";
 import { JOURNEY_CONTENT, PRIMARY_CONTENT_IDS } from "../../features/potala-journey/data/journey-content";
 import {
   JOURNEY_CHECKPOINTS,
+  JOURNEY_MEDIA_MANIFEST,
+  JOURNEY_MEDIA_VERSION,
   JOURNEY_MEDIA,
   activeCheckpointForProgress,
   progressForCheckpoint,
   timeForJourneyProgress,
 } from "../../features/potala-journey/data/journey-timeline";
 
-test("mantem a midia de desenvolvimento isolada no manifesto", () => {
-  assert.deepEqual(JOURNEY_MEDIA, {
+test("seleciona o master V2 para a preview e preserva V1 como rollback", () => {
+  assert.equal(JOURNEY_MEDIA_VERSION, "v2");
+  assert.deepEqual(JOURNEY_MEDIA_MANIFEST.v1, {
     src: "/media/potala-journey.mp4",
     poster: "/media/potala-journey-poster.webp",
     duration: 155,
+    fps: 24,
+    development: true,
+  });
+  assert.deepEqual(JOURNEY_MEDIA, {
+    src: "/media/potala-journey-v2.mp4",
+    poster: "/media/potala-journey-v2-poster.webp",
+    duration: 89.167,
     fps: 24,
     development: true,
   });
@@ -31,8 +41,19 @@ test("timeline inclui exatamente as oito regioes como checkpoints primarios", ()
   );
 });
 
+test("cada portal primario possui uma zona normalizada de entrada, foco e saida", () => {
+  const primary = JOURNEY_CHECKPOINTS.filter((item) => item.importance === "primary");
+  for (const checkpoint of primary) {
+    assert.ok(checkpoint.focusRange, checkpoint.contentId);
+    assert.ok(checkpoint.focusRange.start < checkpoint.focusRange.focus, checkpoint.contentId);
+    assert.ok(checkpoint.focusRange.focus < checkpoint.focusRange.end, checkpoint.contentId);
+    assert.ok(checkpoint.focusRange.start >= 0, checkpoint.contentId);
+    assert.ok(checkpoint.focusRange.end <= 1, checkpoint.contentId);
+  }
+});
+
 test("checkpoints sao ordenados, validos e terminam antes do ultimo frame", () => {
-  const safeEnd = 155 - 1 / 24;
+  const safeEnd = 89.167 - 1 / 24;
   let previousEnd = 0;
   for (const checkpoint of JOURNEY_CHECKPOINTS) {
     assert.ok(checkpoint.videoStart >= previousEnd);
@@ -47,8 +68,8 @@ test("checkpoints sao ordenados, validos e terminam antes do ultimo frame", () =
 test("progress linear nunca busca alem do ultimo frame seguro", () => {
   assert.equal(timeForJourneyProgress(-1), 0);
   assert.equal(timeForJourneyProgress(0), 0);
-  assert.equal(timeForJourneyProgress(1), 155 - 1 / 24);
-  assert.equal(timeForJourneyProgress(2), 155 - 1 / 24);
+  assert.equal(timeForJourneyProgress(1), 89.167 - 1 / 24);
+  assert.equal(timeForJourneyProgress(2), 89.167 - 1 / 24);
 });
 
 test("progress crescente e reverso produzem timestamps deterministicos", () => {

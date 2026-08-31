@@ -149,8 +149,20 @@
 
 .checkpoint,
 .prelude {
+  position: relative;
   max-width: 36rem;
   text-wrap: balance;
+}
+
+.checkpoint[data-motion="live"]::before {
+  display: block;
+  width: clamp(2.2rem, 5vw, 4.5rem);
+  height: 1px;
+  margin-bottom: 1rem;
+  content: "";
+  background: linear-gradient(90deg, rgba(232, 213, 167, 0.88), rgba(232, 213, 167, 0));
+  transform-origin: left;
+  animation: checkpoint-line-breathe 5.5s ease-in-out infinite;
 }
 
 .category {
@@ -222,12 +234,18 @@
 
 .actions {
   margin-top: 1.5rem;
+  pointer-events: auto;
 }
 
 .actions a,
 .epilogue a {
   color: inherit;
   text-underline-offset: 0.35em;
+}
+
+.checkpoint[data-motion="live"] .actions a span {
+  display: inline-block;
+  animation: checkpoint-arrow-breathe 3.8s ease-in-out infinite;
 }
 
 .mediaStatus {
@@ -384,13 +402,28 @@
   }
 }
 
+@keyframes checkpoint-line-breathe {
+  0%, 100% { opacity: 0.6; transform: scaleX(0.86); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+
+@keyframes checkpoint-arrow-breathe {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(0.18rem); }
+}
+
+.overlayInner {
+  animation-duration: 360ms;
+}
+
 @media (orientation: portrait), (max-width: 760px) {
   .experience {
     height: 1200svh;
   }
 
   .video {
-    object-fit: contain;
+    object-fit: cover;
+    object-position: 50% 50%;
   }
 
   .videoShade {
@@ -471,6 +504,11 @@
   }
 
   .overlayInner {
+    animation: none;
+  }
+
+  .checkpoint::before,
+  .checkpoint .actions a span {
     animation: none;
   }
 }

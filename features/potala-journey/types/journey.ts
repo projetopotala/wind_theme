@@ -20,6 +20,20 @@ export type JourneyAction = {
   external?: boolean;
 };
 
+export type JourneyFocusRange = {
+  start: number;
+  focus: number;
+  end: number;
+};
+
+export type JourneyPortal = {
+  number: string;
+  href: string;
+  description: string;
+  alignment: "left" | "right";
+  secondaryIds: readonly string[];
+};
+
 export type JourneyContent = {
   id: string;
   kind: JourneyContentKind;
@@ -38,6 +52,7 @@ export type JourneyContent = {
   relatedContent?: readonly string[];
   actions?: readonly JourneyAction[];
   legacyHref?: string;
+  portal?: JourneyPortal;
 };
 
 export type JourneyCheckpoint = {
@@ -48,6 +63,7 @@ export type JourneyCheckpoint = {
   videoEnd: number;
   scrollWeight: number;
   importance: JourneyImportance;
+  focusRange?: JourneyFocusRange;
 };
 
 export type JourneyMediaManifest = {
@@ -57,6 +73,8 @@ export type JourneyMediaManifest = {
   fps: number;
   development: boolean;
 };
+
+export type JourneyMediaVersion = "v1" | "v2";
 
 export type JourneyBreathingSettings = {
   patternSeconds: readonly [number, number, number];

@@ -85,7 +85,7 @@ export function PotalaExperience() {
             onNavigate={scrollToProgress}
             flowMode={reducedMotion || mediaState === "error"}
           />
-          <JourneyOverlay checkpoint={activeCheckpoint} />
+          <JourneyOverlay checkpoint={activeCheckpoint} reducedMotion={reducedMotion} />
           {mediaState === "loading" && <p className={styles.mediaStatus}>Preparando a jornada…</p>}
           {mediaState === "error" && <p className={styles.mediaStatus}>A paisagem não pôde ser carregada.</p>}
         </JourneyViewport>

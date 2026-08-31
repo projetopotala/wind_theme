@@ -37,6 +37,33 @@ test("preserva as oito regioes principais na ordem original", () => {
   assert.ok(PRIMARY_CONTENT_IDS.every((id) => JOURNEY_CONTENT[id]?.description));
 });
 
+test("expoe as oito regioes como portais compactos de rotas canonicas", () => {
+  const expected = [
+    ["01", "quem-somos", "/quem-somos"],
+    ["02", "atendimentos", "/atendimentos"],
+    ["03", "cursos", "/cursos"],
+    ["04", "atividades", "/atividades"],
+    ["05", "profissionais", "/profissionais"],
+    ["06", "programacao", "/programacao"],
+    ["07", "arte-cultura", "/cultura"],
+    ["08", "inspiracao", "/inspiracao"],
+  ] as const;
+
+  assert.deepEqual(PRIMARY_CONTENT_IDS.map((id) => {
+    const portal = JOURNEY_CONTENT[id]?.portal;
+    return [portal?.number, id, portal?.href];
+  }), expected);
+
+  for (const id of PRIMARY_CONTENT_IDS) {
+    const portal = JOURNEY_CONTENT[id]?.portal;
+    assert.ok(portal?.description && portal.description.length < 90, id);
+    assert.ok(portal?.secondaryIds.length, id);
+    assert.ok(!portal?.href.includes("outputs"), id);
+    assert.ok(!portal?.href.includes("_legacy"), id);
+    assert.ok(!portal?.href.endsWith(".html"), id);
+  }
+});
+
 test("preserva as frases de transicao sem reescrita", () => {
   assert.deepEqual(JOURNEY_TRANSITIONS.map((item) => item.description), [
     "Conhecer também é uma forma de chegar.",

@@ -32,6 +32,13 @@ test("renderiza a nova experiencia somente em potala-preview", async () => {
   for (const title of ["Quem somos", "Atendimentos", "Cursos", "Atividades", "Profissionais", "Programação", "Arte e cultura", "Inspiração"]) {
     assert.match(html, new RegExp(title));
   }
+  for (const href of ["/quem-somos?from=journey", "/atendimentos?from=journey", "/cursos?from=journey", "/atividades?from=journey", "/profissionais?from=journey", "/programacao?from=journey", "/cultura?from=journey", "/inspiracao?from=journey"]) {
+    assert.ok(html.includes(`href="${href}"`), href);
+  }
+  assert.match(html, />01</);
+  assert.match(html, /Conhecer/);
+  assert.doesNotMatch(html, /outputs\//);
+  assert.doesNotMatch(html, /_legacy/);
   assert.match(html, /Ideias para continuar pensando/);
   assert.match(html, /Instituto Cultural Potala/);
   assert.match(html, /Rua 24 de Maio, 748/);
