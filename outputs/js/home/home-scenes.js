@@ -218,7 +218,12 @@ export function renderJourneyMenu(regions = []) {
   }).join("");
 
   return `
-    <nav class="journey-menu" aria-label="Seções da travessia" data-keeps-expansion>
+    <button class="journey-menu-toggle" type="button" data-menu-toggle
+      aria-expanded="false" aria-controls="journey-menu" aria-label="Abrir o menu de seções"
+      data-keeps-expansion>
+      <span class="journey-menu-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+    </button>
+    <nav class="journey-menu" id="journey-menu" aria-label="Seções da travessia" data-keeps-expansion inert>
       <ul>${itens}</ul>
     </nav>`;
 }

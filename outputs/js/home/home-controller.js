@@ -194,11 +194,39 @@ export function createHomeController({
     expansion.open(id);
   }
 
+  /*
+   * O menu nasce recolhido e o ícone o traz.
+   *
+   * `inert` acompanha a visibilidade porque opacidade zero não tira nada da
+   * ordem de tabulação: recolhido sem ele, o menu continuaria recebendo foco —
+   * nove paradas invisíveis antes de qualquer coisa que se veja na tela.
+   */
+  const menuNav = root.querySelector(".journey-menu");
+  const menuToggle = root.querySelector("[data-menu-toggle]");
+
+  function setMenuOpen(open) {
+    if (!menuNav || !menuToggle) return;
+    menuToggle.setAttribute("aria-expanded", String(open));
+    menuToggle.setAttribute("aria-label", open ? "Fechar o menu de seções" : "Abrir o menu de seções");
+    menuNav.classList.toggle("is-open", open);
+    if (open) menuNav.removeAttribute("inert");
+    else menuNav.setAttribute("inert", "");
+  }
+
+  const onMenuToggle = () => {
+    setMenuOpen(menuToggle?.getAttribute("aria-expanded") !== "true");
+  };
+  menuToggle?.addEventListener("click", onMenuToggle);
+
   const onMenuClick = (event) => {
     const botao = event.target.closest?.("[data-menu-target]");
-    if (botao) goToSection(botao.dataset.menuTarget);
+    if (!botao) return;
+    goToSection(botao.dataset.menuTarget);
+    // Escolhida a seção, o menu sai da frente: mantê-lo aberto esconderia
+    // justamente o bloco que o clique acabou de trazer.
+    setMenuOpen(false);
   };
-  root.querySelector(".journey-menu")?.addEventListener("click", onMenuClick);
+  menuNav?.addEventListener("click", onMenuClick);
 
   /*
    * Qual seção está sendo percorrida, para o menu dizer onde se está.
@@ -288,7 +316,8 @@ export function createHomeController({
       presenceObserver.disconnect();
       if (shiftFrame) cancelAnimationFrame(shiftFrame);
       currentObserver?.disconnect();
-      root.querySelector(".journey-menu")?.removeEventListener("click", onMenuClick);
+      menuNav?.removeEventListener("click", onMenuClick);
+      menuToggle?.removeEventListener("click", onMenuToggle);
       expansion.destroy();
       path.destroy();
       removeSound();

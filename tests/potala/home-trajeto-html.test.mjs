@@ -212,3 +212,38 @@ test("o menu das seções lista a jornada e é tocável no dedo", async () => {
   assert.match(atual, /background:/);
   assert.match(controlador, /setAttribute\("aria-current"/);
 });
+
+test("o menu nasce recolhido e o ícone o traz e o leva", async () => {
+  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
+  const cenas = await readFile(new URL("../../outputs/js/home/home-scenes.js", import.meta.url), "utf8");
+  const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
+
+  // Nasce recolhido e fora da ordem de tabulação.
+  assert.match(cenas, /<nav class="journey-menu"[^>]*inert>/);
+  assert.match(cenas, /aria-expanded="false" aria-controls="journey-menu"/);
+
+  /*
+   * `inert` acompanha a visibilidade porque opacidade zero não tira nada da
+   * ordem de tabulação: recolhido sem ele, o menu continuaria recebendo foco —
+   * nove paradas invisíveis antes de qualquer coisa visível na tela.
+   */
+  assert.match(controlador, /menuNav\.removeAttribute\("inert"\)/);
+  assert.match(controlador, /menuNav\.setAttribute\("inert", ""\)/);
+
+  // O rótulo do botão conta o estado a quem não vê o ícone virar X.
+  assert.match(controlador, /"Fechar o menu de seções" : "Abrir o menu de seções"/);
+
+  /*
+   * A saída é animada: sem a `visibility` atrasada na transição, o elemento
+   * some no primeiro quadro e a animação de saída não chega a ser vista.
+   */
+  const recolhido = css.slice(
+    css.indexOf(".journey-menu {"),
+    css.indexOf("}", css.indexOf(".journey-menu {")),
+  );
+  assert.match(recolhido, /transition:[\s\S]*visibility 0s linear \.42s/);
+  assert.match(recolhido, /transform: translateX\(-50%\) translateY\(14px\)/);
+
+  // E o ícone é o mesmo objeto mudando: as linhas giram, não trocam de ícone.
+  assert.match(css, /\[aria-expanded="true"\] \.journey-menu-icon i:first-child \{\s*transform:[^}]*rotate\(45deg\)/);
+});

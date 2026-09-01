@@ -572,6 +572,15 @@ html.is-crossing .journey-entry-veil {
  * seu fundo escuro é o mesmo dos blocos — o menu pertence à interface de
  * leitura, não à paisagem.
  */
+/*
+ * O menu nasce recolhido, e desce por baixo ao sair.
+ *
+ * Some para BAIXO, na direção do ícone que o chamou, em vez de simplesmente
+ * apagar: é o gesto que conta de onde ele veio e para onde volta. A
+ * `visibility` entra na transição com atraso para o elemento só desaparecer
+ * depois de terminar de sair — sem isso ele some no primeiro quadro e a
+ * animação de saída não chega a ser vista.
+ */
 .journey-menu {
   position: fixed;
   z-index: 30;
@@ -582,7 +591,20 @@ html.is-crossing .journey-entry-veil {
   border: 1px solid rgba(231, 202, 143, .2);
   border-radius: 999px;
   background: rgba(30, 22, 15, .88);
-  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(14px) scale(.97);
+  transition:
+    opacity .34s cubic-bezier(.2, .72, .2, 1),
+    transform .42s cubic-bezier(.2, .72, .2, 1),
+    visibility 0s linear .42s;
+}
+
+.journey-menu.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0) scale(1);
+  transition-delay: 0s;
 }
 
 .journey-menu ul {
@@ -656,4 +678,75 @@ html.is-crossing .journey-entry-veil {
 
 @media (prefers-reduced-motion: reduce) {
   .journey-menu button { transition-duration: .01ms !important; }
+}
+
+/*
+ * Ícone do menu, no canto inferior esquerdo.
+ *
+ * As três linhas viram um X girando: a mesma marca conta os dois estados, e a
+ * rotação diz que é o mesmo objeto mudando, não dois ícones se substituindo.
+ */
+.journey-menu-toggle {
+  position: fixed;
+  z-index: 31;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: max(14px, env(safe-area-inset-left));
+  display: grid;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(231, 202, 143, .22);
+  border-radius: 50%;
+  background: rgba(30, 22, 15, .88);
+  place-items: center;
+  cursor: pointer;
+  transition: border-color .3s ease, transform .3s cubic-bezier(.2, .72, .2, 1);
+}
+
+.journey-menu-toggle:hover { border-color: rgba(231, 202, 143, .5); }
+
+.journey-menu-toggle:focus-visible {
+  outline: 2px solid var(--journey-gold, #d9b071);
+  outline-offset: 3px;
+}
+
+.journey-menu-icon {
+  display: grid;
+  width: 18px;
+  gap: 4px;
+}
+
+.journey-menu-icon i {
+  display: block;
+  height: 1.5px;
+  border-radius: 2px;
+  background: var(--journey-ivory, #f7edda);
+  transition: transform .38s cubic-bezier(.2, .72, .2, 1), opacity .2s ease;
+}
+
+/* A linha do meio some e as outras duas se cruzam no lugar dela: os 5.5px são
+   a soma da altura da linha com o intervalo, que é o quanto cada uma precisa
+   andar para se encontrar no centro. */
+.journey-menu-toggle[aria-expanded="true"] .journey-menu-icon i:first-child {
+  transform: translateY(5.5px) rotate(45deg);
+}
+
+.journey-menu-toggle[aria-expanded="true"] .journey-menu-icon i:nth-child(2) {
+  opacity: 0;
+}
+
+.journey-menu-toggle[aria-expanded="true"] .journey-menu-icon i:last-child {
+  transform: translateY(-5.5px) rotate(-45deg);
+}
+
+@media (pointer: coarse) {
+  .journey-menu-toggle { width: 48px; height: 48px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-menu,
+  .journey-menu-toggle,
+  .journey-menu-icon i {
+    transition-duration: .01ms !important;
+    transition-delay: 0s !important;
+  }
 }
