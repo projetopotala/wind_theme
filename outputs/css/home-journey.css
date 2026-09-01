@@ -249,13 +249,29 @@ html.is-crossing .journey-entry-veil {
  * `justify-self: center` é o que tira o bloco de encostado no vão e o põe no
  * meio do espaço que acabou de ganhar.
  */
+/*
+ * A PÁGINA abre para o lado do bloco, e não só o bloco.
+ *
+ * As colunas ficam desiguais: a do lado que abriu toma a maior parte do que
+ * havia, e o vão do meio — com o trajeto dentro — desliza para o lado oposto.
+ * É a tela inteira cedendo espaço, que era o pedido; alargar só o bloco dentro
+ * da metade dele passava despercebido.
+ *
+ * O trajeto ACOMPANHA esse deslocamento. Ele não é desenhado pela grade, e sim
+ * por uma câmera: `home-controller` mede quanto o vão saiu do centro e manda a
+ * câmera andar o mesmo tanto. Sem isso a linha ficaria parada no meio da tela
+ * enquanto o vão anda, e o bloco aberto passaria por cima dela.
+ */
 .journey-region.is-expanded .region-stage {
-  /* O recuo externo quase some e o vão do meio encolhe — mas SIMETRICAMENTE,
-     que é o que mantém o trajeto no centro. O vão sobra bem mais largo que a
-     linha (a fita mede uns 14px contra 132px de vão), então a folga que ele
-     cede é espaço morto, não distância de segurança. */
   padding-inline: clamp(10px, 1.2vw, 18px);
-  grid-template-columns: minmax(0, 1fr) var(--journey-line-gutter-open) minmax(0, 1fr);
+}
+
+.journey-region.is-expanded[data-side="left"] .region-stage {
+  grid-template-columns: minmax(0, 1.42fr) var(--journey-line-gutter-open) minmax(0, .58fr);
+}
+
+.journey-region.is-expanded[data-side="right"] .region-stage {
+  grid-template-columns: minmax(0, .58fr) var(--journey-line-gutter-open) minmax(0, 1.42fr);
 }
 
 .journey-region.is-expanded .region-content {

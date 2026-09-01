@@ -101,35 +101,23 @@ test("o bloco fica cheio antes de chegar ao centro da tela", async () => {
   assert.ok(meioCaminho * fator >= 1, "a meio caminho do centro o bloco já devia estar opaco");
 });
 
-test("ao abrir, a folga vem da margem externa e o bloco se centra nela", async () => {
+test("ao abrir, a página desloca o vão e o trajeto é avisado", async () => {
   const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
-
-  const palcoAberto = css.slice(
-    css.indexOf(".journey-region.is-expanded .region-stage {"),
-    css.indexOf("}", css.indexOf(".journey-region.is-expanded .region-stage {")),
-  );
-  const blocoAberto = css.slice(
-    css.indexOf(".journey-region.is-expanded .region-content {"),
-    css.indexOf("}", css.indexOf(".journey-region.is-expanded .region-content {")),
-  );
+  const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
 
   /*
-   * A folga tem de sair do recuo EXTERNO, nunca do vão do meio. O trajeto é
-   * desenhado num canvas fixo, posicionado pela câmera e não pela grade:
-   * estreitar a coluna central para alargar a lateral moveria o vão sem mover
-   * a linha, e o bloco passaria por cima dela. Medido a 1280px: aberto, o
-   * bloco vai de 439 para 498px e para exatamente na borda do vão.
+   * As colunas ficam desiguais de propósito: é assim que a tela cede espaço
+   * para o lado do bloco, em vez de o bloco apenas engordar dentro da metade
+   * dele — o que passava despercebido.
    */
-  assert.match(palcoAberto, /padding-inline:/, "o recuo externo é que cede espaço");
+  assert.match(css, /is-expanded\[data-side="left"\] \.region-stage \{[^}]*grid-template-columns/);
+  assert.match(css, /is-expanded\[data-side="right"\] \.region-stage \{[^}]*grid-template-columns/);
 
-  // O vão pode encolher, mas só SIMETRICAMENTE: são as duas colunas laterais
-  // iguais que mantêm o vão — e portanto o trajeto — no centro da tela.
-  const colunas = palcoAberto.match(/grid-template-columns:\s*([^;]+)/)?.[1];
-  if (colunas) {
-    const [esquerda, , direita] = colunas.trim().split(/\s+(?![^(]*\))/);
-    assert.equal(esquerda, direita, `colunas assimétricas tiram a linha do centro: ${colunas}`);
-  }
-
-  // E o bloco deixa de ficar encostado no vão para ocupar o meio do espaço.
-  assert.match(blocoAberto, /justify-self:\s*center/);
+  /*
+   * E o trajeto tem de andar junto. Ele é desenhado por uma câmera, não pela
+   * grade: sem alguém medir o quanto o vão saiu do centro e repassar, a linha
+   * ficaria parada no meio da tela e o bloco aberto passaria por cima dela.
+   */
+  assert.match(controlador, /setLateralShift/);
+  assert.match(controlador, /gridTemplateColumns/, "a medida sai da grade já resolvida, não de uma segunda conta");
 });

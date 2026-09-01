@@ -51,6 +51,9 @@ export function createBlockExpansion(root, {
    * Trocar `location.href` num teste levaria o corredor inteiro junto.
    */
   navigate = (href) => { if (href) globalThis.location.assign(href); },
+  /* Avisado sempre que a expansão muda, para quem precisa acompanhar por fora —
+     hoje o trajeto, que anda junto com o vão quando a página abre para o lado. */
+  onChange = () => {},
 } = {}) {
   if (!root) throw new TypeError("root é obrigatório para controlar os blocos");
 
@@ -74,6 +77,7 @@ export function createBlockExpansion(root, {
     if (!current) return false;
     setExpanded(current, false);
     if (restoreFocus) current.summary.focus?.();
+    onChange(null);
     return true;
   }
 
@@ -84,6 +88,7 @@ export function createBlockExpansion(root, {
     close();
     setExpanded(next, true);
     activeId = id;
+    onChange(next);
     return true;
   }
 

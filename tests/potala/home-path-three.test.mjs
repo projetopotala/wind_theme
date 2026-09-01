@@ -133,3 +133,47 @@ test("a ponta da linha afina em vez de ser serrada", async () => {
   // E as duas lâminas têm de entrar no alfa, senão ficam calculadas e ignoradas.
   assert.match(fonte, /\* cabeca \* cauda;/);
 });
+
+test("o deslocamento em pixels vira unidades de mundo na mesma proporção", async () => {
+  const { worldShiftForPixels } = await import("../../outputs/js/home/home-path-three.js");
+
+  const tela = { viewportWidth: 1280, viewportHeight: 800 };
+  const meio = worldShiftForPixels({ pixels: 640, ...tela });
+  const inteiro = worldShiftForPixels({ pixels: 1280, ...tela });
+
+  /*
+   * A grade da página mede em pixels e a cena do trajeto em unidades de mundo
+   * vistas por uma câmera em perspectiva. Quando a página abre para um lado, o
+   * vão anda — e a linha precisa andar o MESMO tanto, ou passa a cruzar o
+   * bloco. Medido no navegador: pedindo 223px a linha andou 228, e pedindo
+   * -238 andou -243.
+   */
+  assert.ok(Math.abs(inteiro - meio * 2) < 1e-9, "a conversão precisa ser linear");
+  assert.equal(worldShiftForPixels({ pixels: 0, ...tela }), 0);
+  assert.ok(worldShiftForPixels({ pixels: -100, ...tela }) < 0, "o sinal precisa sobreviver");
+
+  /*
+   * A largura da janela NÃO entra na conta: a razão de aspecto aparece na
+   * largura visível e se cancela com a divisão por viewportWidth, sobrando
+   * mundo-por-pixel em função só da altura. Isso é o que se quer — o mesmo
+   * deslocamento em pixels move a linha o mesmo tanto em qualquer janela, e é
+   * por isso que ela continua dentro do vão numa tela larga.
+   */
+  const largo = worldShiftForPixels({ pixels: 640, viewportWidth: 2560, viewportHeight: 800 });
+  assert.ok(Math.abs(largo - meio) < 1e-9, "a largura da janela não pode mudar o passo");
+
+  const baixo = worldShiftForPixels({ pixels: 640, viewportWidth: 1280, viewportHeight: 400 });
+  assert.ok(baixo > meio, "janela mais baixa cobre menos mundo, então cada pixel vale mais");
+});
+
+test("a câmera usa o deslocamento lateral, e no sentido contrário", async () => {
+  const fonte = await readFile(
+    new URL("../../outputs/js/home/home-path-three.js", import.meta.url),
+    "utf8",
+  );
+
+  // Calcular o deslocamento e não aplicá-lo deixa a linha parada no meio da
+  // tela enquanto o vão anda — e o bloco aberto passa por cima dela.
+  assert.match(fonte, /camera\.position\.set\(point\.x \* 0\.12 - lateral/);
+  assert.match(fonte, /camera\.lookAt\(point\.x \* 0\.22 - lateral/);
+});

@@ -118,7 +118,28 @@ export function createHomeController({
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const mounted = mountJourney(root, { regions: blocks, discoveries: [] });
   const path = pathFactory(canvas, { blocks, reducedMotion });
-  const expansion = createBlockExpansion(root);
+  /**
+   * Quanto o vão do trajeto saiu do centro da tela, em pixels.
+   *
+   * A medida sai da própria grade já resolvida pelo navegador, e não de uma
+   * segunda cópia da conta no JavaScript: quando a página abre para um lado,
+   * as colunas mudam no CSS, e recalcular isso aqui criaria duas verdades que
+   * envelhecem separadas. Basta ler as larguras usadas.
+   */
+  function gutterOffsetFor(section) {
+    const stage = section?.querySelector?.(".region-stage");
+    if (!stage) return 0;
+    const estilo = getComputedStyle(stage);
+    const [esquerda, vao] = estilo.gridTemplateColumns.split(" ").map(parseFloat);
+    if (!Number.isFinite(esquerda) || !Number.isFinite(vao)) return 0;
+    const caixa = stage.getBoundingClientRect();
+    const centroDoVao = caixa.left + parseFloat(estilo.paddingLeft) + esquerda + vao / 2;
+    return centroDoVao - innerWidth / 2;
+  }
+
+  const expansion = createBlockExpansion(root, {
+    onChange: (entry) => path.setLateralShift?.(entry ? gutterOffsetFor(entry.section) : 0),
+  });
   const presenceObserver = createPresenceObserver(mounted.regions, { reducedMotion });
   const handoff = consumeHandoff();
   const removeSound = mountSoundResume(root, handoff.soundEnabled === true);

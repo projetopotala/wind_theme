@@ -221,3 +221,25 @@ test("clique fora do bloco fecha, sem navegar", () => {
   assert.equal(expansion.activeId, null);
   assert.deepEqual(destinos, []);
 });
+
+test("abrir e fechar avisam quem acompanha por fora", () => {
+  /*
+   * O trajeto é desenhado por uma câmera, não pela grade da página. Quando um
+   * bloco abre, o vão do meio desliza para o lado oposto — e sem este aviso a
+   * linha ficaria parada no centro da tela enquanto o vão anda, terminando por
+   * baixo do bloco aberto.
+   */
+  const root = createRoot(["quem-somos", "atendimentos"]);
+  const avisos = [];
+  const expansion = createBlockExpansion(root, {
+    onChange: (entry) => avisos.push(entry ? entry.id : null),
+  });
+
+  expansion.open("quem-somos");
+  expansion.open("atendimentos");
+  expansion.close();
+
+  // Trocar de bloco fecha o anterior: o aviso de fechamento vem antes do novo,
+  // senão quem escuta guardaria o deslocamento do bloco errado.
+  assert.deepEqual(avisos, ["quem-somos", null, "atendimentos", null]);
+});

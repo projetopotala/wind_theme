@@ -4,6 +4,9 @@ import { createHomePathFallback } from "./home-path-fallback.js";
 
 const clamp = (value) => Math.min(1, Math.max(0, Number(value) || 0));
 
+const CAMERA_FOV = 38;
+const CAMERA_DISTANCE = 3.75;
+
 /*
  * A linha é uma FITA com o brilho calculado por pixel, não dois tubos.
  *
@@ -135,6 +138,27 @@ export function buildRibbonAttributes(sample, segments = 240) {
   return { positions, normals, sides, arcs, indices };
 }
 
+/**
+ * Quanto vale, em unidades do mundo, um deslocamento medido em pixels na tela.
+ *
+ * A grade da página e a cena do trajeto vivem em sistemas diferentes: uma mede
+ * em pixels, a outra em unidades de mundo vistas por uma câmera em
+ * perspectiva. Quando a página abre espaço para um lado, o vão do meio anda —
+ * e a linha precisa andar junto, ou passa a cruzar o bloco. Esta conta é a
+ * ponte entre os dois, e é pura para poder ser conferida sem GPU.
+ */
+export function worldShiftForPixels({
+  pixels = 0,
+  viewportWidth = 1,
+  viewportHeight = 1,
+  distance = CAMERA_DISTANCE,
+  fov = CAMERA_FOV,
+} = {}) {
+  const alturaVisivel = 2 * distance * Math.tan((fov * Math.PI) / 360);
+  const larguraVisivel = alturaVisivel * (Math.max(1, viewportWidth) / Math.max(1, viewportHeight));
+  return (Number(pixels) || 0) / Math.max(1, viewportWidth) * larguraVisivel;
+}
+
 export function qualityForViewport({
   width = 1440,
   devicePixelRatio = 1,
@@ -172,7 +196,7 @@ export function createHomePath(canvas, {
   }
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 30);
+  const camera = new THREE.PerspectiveCamera(CAMERA_FOV, 1, 0.1, 30);
   const layout = buildHomePathLayout(blocks);
   const points = layout.points.map(({ x, y, z }) => new THREE.Vector3(x, y, z));
   const curve = new THREE.CatmullRomCurve3(points, false, "centripetal", 0.35);
@@ -184,6 +208,8 @@ export function createHomePath(canvas, {
   let progress = 0;
   let paused = false;
   let destroyed = false;
+  // Deslocamento lateral em unidades do mundo, positivo = linha para a direita.
+  let lateral = 0;
 
   const atributos = buildRibbonAttributes((t) => curve.getPointAt(t), quality.segments);
   const geometry = new THREE.BufferGeometry();
@@ -222,8 +248,9 @@ export function createHomePath(canvas, {
   function render() {
     if (paused || destroyed) return;
     const point = curve.getPointAt(clamp(progress));
-    camera.position.set(point.x * 0.12, point.y, 3.75);
-    camera.lookAt(point.x * 0.22, point.y - 0.3, 0);
+    // A câmera anda para o lado CONTRÁRIO ao que se quer ver a linha andar.
+    camera.position.set(point.x * 0.12 - lateral, point.y, CAMERA_DISTANCE);
+    camera.lookAt(point.x * 0.22 - lateral, point.y - 0.3, 0);
     material.uniforms.uReveal.value = clamp(progress);
     renderer.render(scene, camera);
   }
@@ -247,6 +274,15 @@ export function createHomePath(canvas, {
     layout,
     setProgress(value) {
       progress = clamp(value);
+      render();
+    },
+    /** Move a linha na horizontal, em pixels de tela. */
+    setLateralShift(pixels = 0) {
+      lateral = worldShiftForPixels({
+        pixels,
+        viewportWidth: canvas.clientWidth || globalThis.innerWidth || 1,
+        viewportHeight: canvas.clientHeight || globalThis.innerHeight || 1,
+      });
       render();
     },
     resize,
