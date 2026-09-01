@@ -44,7 +44,7 @@ test("o percurso entre informações desacelera a narrativa sem voltar a ficar l
   }
 });
 
-test("região renderizada é um destino clicável e não possui imagem própria", () => {
+test("bloco fechado controla detalhes expansíveis e não possui imagem própria", () => {
   assert.equal(typeof homeScenes.renderRegion, "function");
   const markup = homeScenes.renderRegion({
     id: "quem-somos",
@@ -57,8 +57,28 @@ test("região renderizada é um destino clicável e não possui imagem própria"
     roadPlacement: "right",
   }, 0, null, new Map());
 
-  assert.match(markup, /<a class="region-content" href="quem-somos\.html"/);
+  assert.match(markup, /<button[^>]+class="region-summary"[^>]+aria-expanded="false"/);
+  assert.match(markup, /aria-controls="quem-somos-details"/);
+  assert.match(markup, /id="quem-somos-details"[^>]+aria-hidden="true"/);
+  assert.match(markup, /data-side="left"/);
   assert.doesNotMatch(markup, /<figure|<img/);
+});
+
+test("escapa conteúdo editorial antes de inserir no HTML", () => {
+  const markup = homeScenes.renderRegion({
+    id: "seguro",
+    title: "<script>alert(1)</script>",
+    category: "Entrada & cuidado",
+    summary: "<img src=x onerror=alert(1)>",
+    body: "Texto <strong>sem markup</strong>",
+    href: "quem-somos.html",
+    tags: ["presença & escuta"],
+    side: "right",
+  }, 0, null, new Map());
+
+  assert.doesNotMatch(markup, /<script>|<img/);
+  assert.match(markup, /&lt;script&gt;/);
+  assert.match(markup, /Entrada &amp; cuidado/);
 });
 
 test("região pode declarar conteúdo centralizado sem alterar o lado do caminho", () => {

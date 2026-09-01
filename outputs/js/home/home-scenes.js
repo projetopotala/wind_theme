@@ -65,7 +65,33 @@ const featuredDiscoveries = [
 ];
 
 function renderTags(tags = []) {
-  return tags.map((tag) => `<li>${tag}</li>`).join("");
+  return tags.map((tag) => `<li>${escapeHtml(tag)}</li>`).join("");
+}
+
+function escapeHtml(value = "") {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]);
+}
+
+function safeToken(value, fallback) {
+  return String(value || fallback)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || fallback;
+}
+
+function safeHref(value) {
+  const href = String(value || "").trim();
+  if (/^https:\/\//i.test(href)) return escapeHtml(href);
+  if (/^(?:[a-z0-9][a-z0-9._/-]*\.html(?:[?#].*)?|#[a-z0-9_-]*)$/i.test(href)) return escapeHtml(href);
+  return "#";
 }
 
 function renderDiscovery(discovery, index) {
@@ -100,10 +126,22 @@ function renderLateralSide(ids, discoveriesById, side) {
 }
 
 export function renderRegion(region, index, discovery, discoveriesById) {
-  const side = region.roadPlacement === "left" ? "left" : "right";
-  const titleScale = Array.from(region.title).length >= 11 ? "compact" : "display";
+  const side = region.side === "left" || region.side === "right"
+    ? region.side
+    : region.roadPlacement === "right" ? "left"
+      : region.roadPlacement === "left" ? "right"
+        : index % 2 === 0 ? "left" : "right";
+  const roadSide = region.roadPlacement === "left" || region.roadPlacement === "right"
+    ? region.roadPlacement
+    : side === "left" ? "right" : "left";
+  const title = String(region.title || "");
+  const summary = region.summary ?? region.description ?? "";
+  const body = region.body ?? summary;
+  const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
+  const layoutVariant = safeToken(region.layoutVariant, "editorial");
+  const titleScale = Array.from(title).length >= 11 ? "compact" : "display";
   const { regionHeight } = journeyRhythmForIndex(index);
-  const lateral = region.lateral ? `
+  const lateral = region.lateral && discoveriesById ? `
     <div class="lateral-world" aria-label="Caminhos relacionados">
       ${renderLateralSide(region.lateral.left, discoveriesById, "left")}
       ${renderLateralSide(region.lateral.right, discoveriesById, "right")}
@@ -111,19 +149,25 @@ export function renderRegion(region, index, discovery, discoveriesById) {
   ` : "";
 
   return `
-    <section class="journey-region region--${region.layoutVariant}" id="${region.id}"
-      data-region-id="${region.id}" data-layout-variant="${region.layoutVariant}"
-      data-road-side="${side}" data-content-placement="${region.contentPlacement || "side"}"
+    <section class="journey-region region--${layoutVariant}" id="${id}"
+      data-region-id="${id}" data-layout-variant="${layoutVariant}"
+      data-side="${side}" data-road-side="${roadSide}" data-content-placement="${safeToken(region.contentPlacement, "side")}"
       data-title-scale="${titleScale}"
       style="--region-index:${index};--region-height:${regionHeight}svh">
-      <div class="region-stage"${region.lateral ? ' tabindex="0" role="group" aria-expanded="false" aria-label="Caminhos relacionados; use as setas ou arraste para os lados"' : ""}>
-        <a class="region-content" href="${region.href}" aria-label="Conhecer ${region.title}">
-          <p class="region-category"><span>${String(index + 1).padStart(2, "0")}</span>${region.category}</p>
-          <h2>${region.title}</h2>
-          <p class="region-description">${region.description}</p>
-          <ul class="region-tags" aria-label="Temas desta região">${renderTags(region.tags)}</ul>
-          <span class="region-link" aria-hidden="true">Conhecer este caminho <span>↗</span></span>
-        </a>
+      <div class="region-stage">
+        <article class="region-content" aria-labelledby="${id}-title">
+          <button class="region-summary" type="button" aria-expanded="false" aria-controls="${id}-details">
+            <span class="region-category"><span>${String(index + 1).padStart(2, "0")}</span>${escapeHtml(region.category)}</span>
+            <span class="region-title" id="${id}-title">${escapeHtml(title)}</span>
+            <span class="region-description">${escapeHtml(summary)}</span>
+            <span class="region-expand-label" aria-hidden="true">Descobrir <span>＋</span></span>
+          </button>
+          <div class="region-details" id="${id}-details" aria-hidden="true" inert>
+            <p>${escapeHtml(body)}</p>
+            <ul class="region-tags" aria-label="Temas desta região">${renderTags(region.tags)}</ul>
+            <a class="region-link" href="${safeHref(region.href)}" tabindex="-1">Conhecer este caminho <span aria-hidden="true">↗</span></a>
+          </div>
+        </article>
         ${renderDiscovery(discovery, index)}
         ${lateral}
       </div>
