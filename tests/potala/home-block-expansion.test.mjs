@@ -144,3 +144,80 @@ test("Escape fecha mesmo com o foco fora da jornada", () => {
   expansion.destroy();
   assert.equal(documento.ouvintes.has("keydown"), false);
 });
+
+/**
+ * Evento de clique com um alvo que responde a `closest`, como o DOM faz.
+ *
+ * O envelope importa: o handler lê `event.target.closest(...)`, então entregar
+ * o alvo cru no lugar do evento faz todo clique cair no ramo de "fora do
+ * bloco" — o teste passaria a medir outra coisa sem acusar nada.
+ */
+function cliqueEm({ summary = null, dentroDoBloco = false } = {}) {
+  return {
+    target: {
+      closest(seletor) {
+        if (seletor === ".region-summary") return summary;
+        if (seletor === ".region-content") return summary || dentroDoBloco ? {} : null;
+        return null;
+      },
+    },
+  };
+}
+
+test("o segundo clique leva ao destino em vez de fechar", () => {
+  const root = createRoot(["quem-somos"]);
+  const secao = root.sections[0];
+  secao.details.querySelector = (seletor) => (seletor === ".region-link"
+    ? { getAttribute: () => "quem-somos.html" }
+    : null);
+
+  const destinos = [];
+  const expansion = createBlockExpansion(root, { navigate: (href) => destinos.push(href) });
+
+  /*
+   * A regra aprovada era não redirecionar ao primeiro toque: quem só quer ler
+   * o resumo não pode ser jogado para outra página. Ela continua de pé — o
+   * primeiro clique abre e o texto completo aparece ali mesmo — e o segundo é
+   * uma escolha já informada, feita com o conteúdo à vista.
+   */
+  root.emit("click", cliqueEm({ summary: secao.summary }));
+  assert.equal(expansion.activeId, "quem-somos");
+  assert.deepEqual(destinos, [], "o primeiro clique não pode navegar");
+
+  root.emit("click", cliqueEm({ summary: secao.summary }));
+  assert.deepEqual(destinos, ["quem-somos.html"]);
+  assert.equal(expansion.activeId, "quem-somos", "navegar não fecha o bloco antes de sair");
+});
+
+test("o endereço sai do link visível, e não de uma segunda fonte", () => {
+  const root = createRoot(["quem-somos"]);
+  const secao = root.sections[0];
+  // Sem link declarado não há para onde ir — e o clique não pode inventar um
+  // destino nem quebrar.
+  secao.details.querySelector = () => null;
+
+  const destinos = [];
+  const expansion = createBlockExpansion(root, { navigate: (href) => destinos.push(href) });
+  root.emit("click", cliqueEm({ summary: secao.summary }));
+  root.emit("click", cliqueEm({ summary: secao.summary }));
+
+  assert.deepEqual(destinos, [undefined]);
+  assert.equal(expansion.activeId, "quem-somos");
+});
+
+test("clique fora do bloco fecha, sem navegar", () => {
+  /*
+   * Isto virou necessário quando o segundo clique passou a navegar: sem ele,
+   * quem abrisse um bloco sem querer no telefone não teria como fechá-lo —
+   * tocar de novo levaria para outra página e Escape não existe no toque.
+   */
+  const root = createRoot(["quem-somos"]);
+  const destinos = [];
+  const expansion = createBlockExpansion(root, { navigate: (href) => destinos.push(href) });
+
+  expansion.open("quem-somos");
+  root.emit("click", cliqueEm({ summary: null }));
+
+  assert.equal(expansion.activeId, null);
+  assert.deepEqual(destinos, []);
+});

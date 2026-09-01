@@ -174,6 +174,7 @@ html.is-crossing .journey-entry-veil {
 .region-stage {
   position: sticky;
   top: 0;
+  transition: padding .72s cubic-bezier(.2, .72, .2, 1);
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--journey-line-gutter) minmax(0, 1fr);
   align-items: center;
@@ -197,6 +198,7 @@ html.is-crossing .journey-entry-veil {
   transform: translate3d(0, 30px, 0) scale(.98);
   transition:
     width .72s cubic-bezier(.2, .72, .2, 1),
+    justify-self .72s cubic-bezier(.2, .72, .2, 1),
     background .72s ease,
     opacity .9s cubic-bezier(.2, .7, .2, 1),
     transform .9s cubic-bezier(.2, .7, .2, 1);
@@ -234,8 +236,25 @@ html.is-crossing .journey-entry-veil {
   transform: translate3d(0, 0, 0) scale(1);
 }
 
+/*
+ * Ao abrir, a página cede espaço para o lado do bloco e ele se centra nele.
+ *
+ * A folga vem da margem EXTERNA, nunca do vão do meio. O trajeto é desenhado
+ * num canvas fixo, posicionado pela câmera, e não pela grade: encolher a
+ * coluna do meio para alargar a lateral moveria o vão sem mover a linha, e o
+ * bloco passaria por cima dela. Estreitando a margem de fora, as duas colunas
+ * crescem por igual, o vão continua no centro e a linha segue livre.
+ *
+ * `justify-self: center` é o que tira o bloco de encostado no vão e o põe no
+ * meio do espaço que acabou de ganhar.
+ */
+.journey-region.is-expanded .region-stage {
+  padding-inline: clamp(16px, 2.2vw, 34px);
+}
+
 .journey-region.is-expanded .region-content {
-  width: min(43vw, 680px);
+  width: 100%;
+  justify-self: center;
   background: var(--journey-panel-open);
 }
 

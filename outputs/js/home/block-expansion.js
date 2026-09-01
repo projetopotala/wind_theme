@@ -46,6 +46,11 @@ export function createBlockExpansion(root, {
    * um gesto global de "desfazer o que está aberto".
    */
   keyboardTarget = root?.ownerDocument ?? root,
+  /*
+   * A navegação é injetável para o teste poder observá-la sem sair da página.
+   * Trocar `location.href` num teste levaria o corredor inteiro junto.
+   */
+  navigate = (href) => { if (href) globalThis.location.assign(href); },
 } = {}) {
   if (!root) throw new TypeError("root é obrigatório para controlar os blocos");
 
@@ -84,11 +89,41 @@ export function createBlockExpansion(root, {
 
   function onClick(event) {
     const summary = event.target?.closest?.(".region-summary");
-    if (!summary) return;
+
+    /*
+     * Clique fora de qualquer bloco fecha o que estiver aberto.
+     *
+     * Isto passou a ser necessário quando o segundo clique virou navegação: sem
+     * ele, quem abriu um bloco sem querer no telefone não teria como fechá-lo —
+     * tocar de novo levaria para outra página, e Escape não existe no toque. A
+     * única saída seria abrir outro bloco.
+     */
+    if (!summary) {
+      if (activeId && !event.target?.closest?.(".region-content")) close();
+      return;
+    }
+
     const entry = entries.find(({ section }) => section.contains(summary));
     if (!entry) return;
-    if (activeId === entry.id) close({ restoreFocus: true });
-    else open(entry.id);
+
+    /*
+     * O PRIMEIRO clique abre; o SEGUNDO leva ao destino.
+     *
+     * A regra aprovada era não redirecionar ao primeiro toque — alguém que só
+     * quer ler o resumo não pode ser jogado para outra página. Ela continua de
+     * pé: o primeiro clique abre e o texto completo aparece ali mesmo. O
+     * segundo é uma escolha já informada, feita com o conteúdo à vista.
+     *
+     * O link explícito dentro da área expandida continua existindo: é ele que
+     * anuncia o destino a quem usa leitor de tela, e é dele que sai o endereço
+     * usado aqui — para não haver duas verdades sobre para onde o bloco leva.
+     */
+    if (activeId === entry.id) {
+      navigate(entry.details.querySelector?.(".region-link")?.getAttribute?.("href"));
+      return;
+    }
+
+    open(entry.id);
   }
 
   function onKeydown(event) {
