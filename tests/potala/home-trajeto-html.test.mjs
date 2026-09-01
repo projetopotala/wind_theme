@@ -121,7 +121,14 @@ test("ao abrir, a folga vem da margem externa e o bloco se centra nela", async (
    * bloco vai de 439 para 498px e para exatamente na borda do vão.
    */
   assert.match(palcoAberto, /padding-inline:/, "o recuo externo é que cede espaço");
-  assert.doesNotMatch(palcoAberto, /grid-template-columns/, "o vão do trajeto não pode se mexer");
+
+  // O vão pode encolher, mas só SIMETRICAMENTE: são as duas colunas laterais
+  // iguais que mantêm o vão — e portanto o trajeto — no centro da tela.
+  const colunas = palcoAberto.match(/grid-template-columns:\s*([^;]+)/)?.[1];
+  if (colunas) {
+    const [esquerda, , direita] = colunas.trim().split(/\s+(?![^(]*\))/);
+    assert.equal(esquerda, direita, `colunas assimétricas tiram a linha do centro: ${colunas}`);
+  }
 
   // E o bloco deixa de ficar encostado no vão para ocupar o meio do espaço.
   assert.match(blocoAberto, /justify-self:\s*center/);

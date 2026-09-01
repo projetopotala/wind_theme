@@ -15,6 +15,7 @@
   --journey-panel: rgba(43, 32, 22, 1);
   --journey-panel-open: rgba(38, 28, 19, 1);
   --journey-line-gutter: clamp(104px, 15vw, 210px);
+  --journey-line-gutter-open: clamp(76px, 10.5vw, 148px);
 }
 
 html {
@@ -249,7 +250,12 @@ html.is-crossing .journey-entry-veil {
  * meio do espaço que acabou de ganhar.
  */
 .journey-region.is-expanded .region-stage {
-  padding-inline: clamp(16px, 2.2vw, 34px);
+  /* O recuo externo quase some e o vão do meio encolhe — mas SIMETRICAMENTE,
+     que é o que mantém o trajeto no centro. O vão sobra bem mais largo que a
+     linha (a fita mede uns 14px contra 132px de vão), então a folga que ele
+     cede é espaço morto, não distância de segurança. */
+  padding-inline: clamp(10px, 1.2vw, 18px);
+  grid-template-columns: minmax(0, 1fr) var(--journey-line-gutter-open) minmax(0, 1fr);
 }
 
 .journey-region.is-expanded .region-content {
