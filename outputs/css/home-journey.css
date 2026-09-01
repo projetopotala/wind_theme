@@ -175,7 +175,12 @@ html.is-crossing .journey-entry-veil {
 .region-stage {
   position: sticky;
   top: 0;
-  transition: padding .72s cubic-bezier(.2, .72, .2, 1);
+  /* As colunas entram na transição: sem isso a página saltava de largura de um
+     quadro para o outro, e o deslocamento — que é o gesto todo — não existia,
+     só o antes e o depois. */
+  transition:
+    padding .72s cubic-bezier(.2, .72, .2, 1),
+    grid-template-columns .72s cubic-bezier(.2, .72, .2, 1);
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--journey-line-gutter) minmax(0, 1fr);
   align-items: center;

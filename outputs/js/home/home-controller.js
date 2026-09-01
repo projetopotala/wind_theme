@@ -137,8 +137,37 @@ export function createHomeController({
     return centroDoVao - innerWidth / 2;
   }
 
+  /*
+   * A linha segue a ANIMAÇÃO do CSS, medindo-a a cada quadro.
+   *
+   * A alternativa seria repetir a curva de easing em JavaScript e animar a
+   * câmera em paralelo. Duas curvas que precisam coincidir acabam divergindo —
+   * basta alguém ajustar o tempo de um lado — e a divergência aparece
+   * exatamente como o defeito que se quer evitar: a linha chegando antes ou
+   * depois do vão que deveria ocupar.
+   *
+   * Lendo a grade interpolada, não há segunda curva: a linha está onde o vão
+   * está, quadro a quadro, por construção. A leitura de layout por quadro é
+   * limitada à duração da transição, e não ao tempo todo.
+   */
+  let shiftFrame = 0;
+  let shiftUntil = 0;
+
+  function followGutter(section) {
+    shiftFrame = 0;
+    if (destroyed) return;
+    path.setLateralShift?.(section ? gutterOffsetFor(section) : 0);
+    if (performance.now() < shiftUntil) shiftFrame = requestAnimationFrame(() => followGutter(section));
+  }
+
   const expansion = createBlockExpansion(root, {
-    onChange: (entry) => path.setLateralShift?.(entry ? gutterOffsetFor(entry.section) : 0),
+    onChange: (entry) => {
+      if (shiftFrame) cancelAnimationFrame(shiftFrame);
+      shiftFrame = 0;
+      // A janela cobre a transição do CSS com uma folga curta, e só ela.
+      shiftUntil = performance.now() + (reducedMotion ? 0 : 820);
+      followGutter(entry?.section ?? null);
+    },
   });
   const presenceObserver = createPresenceObserver(mounted.regions, { reducedMotion });
   const handoff = consumeHandoff();
@@ -203,6 +232,7 @@ export function createHomeController({
       cancelAnimationFrame(frameId);
       clearTimeout(entryTimer);
       presenceObserver.disconnect();
+      if (shiftFrame) cancelAnimationFrame(shiftFrame);
       expansion.destroy();
       path.destroy();
       removeSound();

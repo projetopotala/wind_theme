@@ -121,3 +121,33 @@ test("ao abrir, a página desloca o vão e o trajeto é avisado", async () => {
   assert.match(controlador, /setLateralShift/);
   assert.match(controlador, /gridTemplateColumns/, "a medida sai da grade já resolvida, não de uma segunda conta");
 });
+
+test("o deslocamento é animado, e a linha segue a animação em vez de repeti-la", async () => {
+  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
+  const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
+
+  const palco = css.slice(css.indexOf(".region-stage {"), css.indexOf("}", css.indexOf(".region-stage {")));
+
+  /*
+   * Sem as colunas na transição a página saltava de largura de um quadro para
+   * o outro: existiam o antes e o depois, mas não o deslocamento — que é o
+   * gesto inteiro. Conferido no navegador que elas interpolam mesmo: a 25% do
+   * tempo, a grade lê 545.6px 177.5px 444.6px.
+   */
+  assert.match(palco, /transition:[^;]*grid-template-columns/);
+
+  /*
+   * E a linha SEGUE essa animação, medindo-a. Animar a câmera em paralelo, com
+   * a curva repetida em JavaScript, criaria duas curvas que precisam coincidir
+   * — e que divergem assim que alguém ajustar o tempo de um lado só. A
+   * divergência aparece exatamente como o defeito a evitar: a linha chegando
+   * antes ou depois do vão que deveria ocupar.
+   */
+  assert.match(controlador, /requestAnimationFrame\(\(\) => followGutter/);
+  assert.doesNotMatch(controlador, /cubic-bezier|easeOut|bezier\(/, "a curva não pode ser repetida no JS");
+
+  // A leitura por quadro é limitada à transição, e o quadro pendente é
+  // cancelado ao destruir — senão sobra um laço rodando sobre um DOM morto.
+  assert.match(controlador, /shiftUntil = performance\.now\(\)/);
+  assert.match(controlador, /if \(shiftFrame\) cancelAnimationFrame\(shiftFrame\);\s*\n\s*expansion\.destroy\(\);/);
+});
