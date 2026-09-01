@@ -13,10 +13,23 @@
  * Ecossistema, que são sépia — a referência empresta a COMPOSIÇÃO, não a
  * gradação.
  */
+/*
+ * Janela à esquerda, texto à direita — o modelo da segunda referência.
+ *
+ * As duas colunas são desiguais de propósito (1,05 contra 1): a imagem entra
+ * primeiro no olho e o texto responde a ela. Iguais, a composição fica
+ * simétrica e perde a hierarquia — vira duas metades disputando, em vez de uma
+ * abertura e sua legenda.
+ *
+ * `align-items: center` alinha os dois blocos pelo meio, e não pelo topo: a
+ * coluna de texto é bem mais curta que a janela, e encostada no topo deixaria
+ * um vazio grande embaixo dela.
+ */
 .atend-janela {
   display: grid;
-  gap: clamp(26px, 4vw, 48px);
-  justify-items: center;
+  gap: clamp(26px, 5vw, 72px);
+  align-items: center;
+  grid-template-columns: 1.05fr 1fr;
   /* Fora da coluna de texto, ela pode ser mais larga que 74ch — que era o teto
      real enquanto vivia dentro de .article-shell, tornando o `min(…, 760px)`
      da moldura uma promessa que nunca se cumpria (medido: 368px numa janela de
@@ -117,18 +130,17 @@
 }
 
 /*
- * O título vive FORA da moldura, embaixo, como na capa da referência. Dentro
- * dela competiria com as vidraças; embaixo, ele fecha a composição e devolve o
- * silêncio que a página precisa antes do texto começar.
+ * A coluna de texto: título, uma linha subordinada e o parágrafo de abertura.
+ *
+ * Alinhada à esquerda, como na referência — centralizada, o texto perderia a
+ * margem comum que o amarra ao título e as três partes flutuariam soltas.
  */
-.atend-titulo-bloco {
+.atend-abertura {
   display: grid;
-  gap: 10px;
-  justify-items: center;
-  /* O ritmo abaixo do cabeçalho já vem de `.article-head`; aqui só se anula,
-     porque a janela é que separa este bloco do texto. */
+  gap: clamp(10px, 1.4vw, 18px);
+  /* O ritmo abaixo do cabeçalho já vem de `.article-head`; aqui se anula,
+     porque quem separa esta abertura do texto é a própria janela. */
   margin-bottom: 0;
-  text-align: center;
 }
 
 /*
@@ -143,13 +155,40 @@
  */
 .atend-titulo {
   margin: 0;
-  font-size: clamp(2.6rem, 8vw, 5.4rem);
-  letter-spacing: .06em;
-  line-height: .95;
-  text-transform: uppercase;
+  /* Sem versal e sem espacejamento largo: a referência é um título em caixa
+     alta e baixa, leve, quebrando em mais de uma linha. A versal que a capa
+     anterior pedia endurecia a página inteira. */
+  font-size: clamp(2.4rem, 5.6vw, 4.4rem);
+  font-weight: 400;
+  line-height: 1.04;
+}
+
+.atend-linha {
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.05rem, 2.1vw, 1.6rem);
+}
+
+.atend-lead {
+  /* Mais estreito que a coluna: é o bloco pequeno da referência, e uma linha
+     longa demais aqui competiria com o título em vez de acompanhá-lo. */
+  max-width: 42ch;
+  margin: clamp(8px, 1.6vw, 22px) 0 0;
+  color: var(--ink-soft);
+  font-size: .96rem;
+  line-height: 1.65;
 }
 
 .atend-oraculos { border-top: 1px solid rgba(74, 55, 40, .16); padding-top: clamp(24px, 4vw, 44px); }
+
+/* Empilhado antes do ponto em que as vidraças viram uma coluna: lado a lado,
+   abaixo disto a janela fica estreita demais para quatro rótulos legíveis e o
+   texto vira uma tira. */
+@media (max-width: 900px) {
+  .atend-janela { grid-template-columns: minmax(0, 1fr); }
+  .atend-lead { max-width: none; }
+}
 
 @media (max-width: 620px) {
   /* Uma coluna: com duas, cada vidraça fica estreita demais para o rótulo, que
