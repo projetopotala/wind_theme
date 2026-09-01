@@ -111,3 +111,25 @@ test("o shader converte a cor para sRGB na saída", async () => {
    */
   assert.match(fonte, /#include <colorspace_fragment>/);
 });
+
+test("a ponta da linha afina em vez de ser serrada", async () => {
+  const fonte = await readFile(
+    new URL("../../outputs/js/home/home-path-three.js", import.meta.url),
+    "utf8",
+  );
+
+  /*
+   * Só com `discard` a fita terminava numa aresta reta e perpendicular: um toco
+   * de ponta chata parado no céu, que era o que mais denunciava a luz como
+   * objeto desenhado. A lâmina resolve — mas precisa encolher quando ainda há
+   * pouco arco revelado, senão ela e a do começo se cruzam e apagam a linha
+   * inteira. Medido antes desse cuidado: nada era desenhado até uns 8% de
+   * rolagem, e o trajeto parecia não existir no alto da página.
+   */
+  assert.match(fonte, /float lamina = min\(uTipFade, uReveal \* 0\.5\);/);
+  assert.match(fonte, /float cabeca = 1\.0 - smoothstep\(uReveal - lamina, uReveal, vArc\);/);
+  assert.match(fonte, /float cauda = smoothstep\(0\.0, lamina \* 0\.6, vArc\);/);
+
+  // E as duas lâminas têm de entrar no alfa, senão ficam calculadas e ignoradas.
+  assert.match(fonte, /\* cabeca \* cauda;/);
+});

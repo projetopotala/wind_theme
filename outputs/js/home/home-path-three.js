@@ -37,6 +37,7 @@ const RIBBON_FRAGMENT = `
 precision highp float;
 uniform float uReveal;
 uniform float uOpacity;
+uniform float uTipFade;
 uniform vec3 uGold;
 varying float vSide;
 varying float vArc;
@@ -45,10 +46,34 @@ void main() {
   // a ponta acompanha a rolagem sem depender de quantos triângulos existem.
   if (vArc > uReveal) discard;
 
+  /*
+   * A PONTA AFINA, não é serrada.
+   *
+   * Cortar a fita com discard puro deixava uma aresta reta e perpendicular no
+   * fim da linha — um toco de ponta chata parado no céu, que é o que mais
+   * denunciava a luz como um objeto desenhado. Aqui a opacidade cai ao longo
+   * do último trecho do arco, então a linha some numa lâmina em vez de acabar
+   * num talho.
+   *
+   * O mesmo vale para o começo: a linha nasce do nada em vez de já existir
+   * inteira quando a página abre.
+   */
+  /*
+   * A lâmina encolhe quando ainda há pouco trajeto revelado.
+   *
+   * Com um comprimento fixo, as duas — a da ponta e a do começo — se cruzavam
+   * enquanto uReveal era pequeno e apagavam a linha inteira: medido, nada era
+   * desenhado até uns 8% de rolagem, e o trajeto parecia simplesmente não
+   * existir no alto da página.
+   */
+  float lamina = min(uTipFade, uReveal * 0.5);
+  float cabeca = 1.0 - smoothstep(uReveal - lamina, uReveal, vArc);
+  float cauda = smoothstep(0.0, lamina * 0.6, vArc);
+
   float distance = abs(vSide) * 7.0;
   float core = 1.0 - smoothstep(0.55, 0.93, distance);
   float glow = exp(-distance * distance / 5.0) * 0.19;
-  float alpha = clamp(core * 0.94 + glow, 0.0, 1.0);
+  float alpha = clamp(core * 0.94 + glow, 0.0, 1.0) * cabeca * cauda;
   gl_FragColor = vec4(uGold, alpha * uOpacity);
 
   /*
@@ -172,6 +197,9 @@ export function createHomePath(canvas, {
     uniforms: {
       uReveal: { value: 0 },
       uOpacity: { value: 1 },
+      // Comprimento da lâmina em fração do arco. Curto demais e volta a parecer
+      // corte; longo demais e a ponta some antes de chegar ao bloco seguinte.
+      uTipFade: { value: 0.06 },
       // A meia-largura da fita em unidades do mundo. O núcleo aceso ocupa cerca
       // de 13% dela (0,93 de 7 no shader); o resto é o halo se apagando.
       uWidth: { value: 0.1 },
