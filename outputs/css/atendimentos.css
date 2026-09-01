@@ -198,7 +198,28 @@
  */
 body[data-section="atendimentos"] .article-shell {
   justify-self: start;
+  /*
+   * A coluna ocupa a largura inteira, e não os 74ch das outras seções.
+   *
+   * Travada em 74ch e alinhada à esquerda, ela deixava a metade direita da
+   * página vazia — a abertura usa a largura toda, e o corpo abaixo abandonava
+   * metade dela. Solta, `.article-groups` (que já é `auto-fit`) se espalha
+   * sozinha e preenche o que sobrava.
+   *
+   * O texto corrido NÃO acompanha: `.article-block p` continua com o teto de
+   * 62ch que vem do sistema. Linha de 1.200px é ilegível, e encher a largura
+   * com parágrafo seria trocar um problema de composição por um de leitura.
+   */
+  width: 100%;
   margin-inline: 0;
+}
+
+/* A lista de acessos também se espalha: quatro itens curtos empilhados numa
+   coluna de 1.200px deixariam a mesma metade vazia que os cartões acabaram de
+   preencher. */
+body[data-section="atendimentos"] .article-list {
+  gap: clamp(10px, 1.6vw, 18px);
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
 }
 
 .atend-oraculos { border-top: 1px solid rgba(74, 55, 40, .16); padding-top: clamp(24px, 4vw, 44px); }
