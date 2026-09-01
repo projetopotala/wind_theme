@@ -3,26 +3,24 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const htmlUrl = new URL("../../outputs/transcender.html", import.meta.url);
-const controllerUrl = new URL("../../outputs/js/chegada/arrival-plate-controller.js", import.meta.url);
+const controllerUrl = new URL("../../outputs/js/chegada/arrival-controller.js", import.meta.url);
 
-test("a Chegada usa a placa principal e entrada somente por rolagem", async () => {
+test("a Chegada usa cena progressiva e entrada somente por rolagem", async () => {
   const [html, controller] = await Promise.all([
     readFile(htmlUrl, "utf8"),
     readFile(controllerUrl, "utf8"),
   ]);
 
-  // WebP, não o PNG de 2,5 MB: esta é a primeira coisa que a página baixa, com
-  // fetchpriority alto, e o original cru custava dez vezes mais bytes sem
-  // diferença nenhuma na tela.
-  assert.match(html, /media\/chegada\.webp/);
-  assert.doesNotMatch(html, /media\/chegada\.png/);
-  assert.match(html, /width="1586" height="992"/);
+  assert.match(html, /id="arrival-scene"/);
+  assert.match(html, /chegada-v2-master\.webp/);
+  assert.match(html, /width="2048" height="1152"/);
+  assert.match(html, /chegada-landscape-mobile\.webp/);
   assert.match(html, /class="journey-scroll-cue"/);
-  assert.match(html, /js\/chegada\/arrival-plate-controller\.js/);
+  assert.match(html, /js\/chegada\/arrival-controller\.js/);
   assert.doesNotMatch(html, /id="transcend-button"|class="arrival-drag"/);
   assert.doesNotMatch(html, /class="arrival-identity"|class="arrival-presence"/);
-  assert.doesNotMatch(html, /id="arrival-scene"|id="arrival-nature"|id="arrival-world"|id="world-poem"/);
-  assert.doesNotMatch(controller, /WebGL|THREE|createSpriteLayer|arrival-sprites/);
+  assert.doesNotMatch(html, /id="arrival-people"/);
+  assert.doesNotMatch(controller, /createSpriteLayer|arrival-sprites/);
   assert.doesNotMatch(controller, /drag-controller|createDragController/);
   assert.doesNotMatch(html, /<video\b/i);
   assert.doesNotMatch(html, /data:image\//i);

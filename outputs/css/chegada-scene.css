@@ -1,52 +1,66 @@
 :root {
   color-scheme: dark;
-  --arrival-progress: 0;
-  --arrival-pointer-x: 0px;
-  --arrival-pointer-y: 0px;
-  --arrival-ivory: #f4ead7;
-  --arrival-gold: #d5b878;
-  --arrival-brown: #211b15;
+  --arrival-ink: #161a18;
+  --arrival-ivory: #efe8d8;
+  --arrival-gold: #cbb48b;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html,
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--arrival-ink);
+  scroll-behavior: auto;
+}
+
 body {
   min-width: 320px;
   min-height: 100%;
   margin: 0;
-  background: var(--arrival-brown);
-}
-
-body {
-  overflow-x: clip;
+  overflow-x: hidden;
+  background: var(--arrival-ink);
   color: var(--arrival-ivory);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Georgia, "Times New Roman", serif;
   -webkit-font-smoothing: antialiased;
 }
 
-button { font: inherit; }
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
 
 .arrival {
   position: relative;
+  min-height: 185vh;
   min-height: 185svh;
-  background: var(--arrival-brown);
+  background: var(--arrival-ink);
+  touch-action: pan-y;
 }
 
 .arrival-sticky {
   position: sticky;
   top: 0;
-  width: 100%;
-  height: 100svh;
-  min-height: 560px;
-  overflow: hidden;
   isolation: isolate;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  /* Em paisagem no celular a viewport tem menos de 480px de altura. Um mínimo
+     fixo deixaria o sticky mais alto que a tela e ele deixaria de grudar. */
+  min-height: min(480px, 100svh);
+  overflow: hidden;
+  background: #3e443f;
 }
 
 .arrival-visual,
-.arrival-plate,
-.arrival-plate img,
+.arrival-fallback,
+.arrival-fallback img,
+.arrival-canvas,
+.arrival-nature-canvas,
 .arrival-atmosphere,
+.arrival-horizon,
 .arrival-transition {
   position: absolute;
   inset: 0;
@@ -55,86 +69,343 @@ button { font: inherit; }
 }
 
 .arrival-visual {
-  --breath-light: 1;
   z-index: 0;
   overflow: hidden;
-  background: #3f3225;
+  background: #4c504b;
 }
 
-.arrival-plate {
+.arrival-fallback {
   display: block;
-  overflow: hidden;
+  margin: 0;
 }
 
-.arrival-plate img {
+.arrival-fallback img {
   display: block;
   object-fit: cover;
-  object-position: center 52%;
-  transform:
-    translate3d(var(--arrival-pointer-x), var(--arrival-pointer-y), 0)
-    scale(calc(1.035 + var(--arrival-progress) * .035));
-  filter: brightness(var(--breath-light)) saturate(.93) contrast(1.02);
-  transition: filter 2.8s ease, transform .35s ease-out;
-  will-change: transform;
+  transform: scale(1.012);
+  filter: none;
+  transition: opacity 1.4s ease;
+}
+
+.arrival-canvas {
+  z-index: 1;
+  display: block;
+  opacity: 0;
+  transition: opacity 1.6s cubic-bezier(.22, .72, .24, 1);
+}
+
+.arrival-visual.is-scene-ready .arrival-canvas {
+  opacity: 1;
+}
+
+.arrival-visual.is-scene-ready .arrival-fallback img {
+  opacity: .01;
+}
+
+.arrival-nature-canvas {
+  z-index: 2;
+  display: block;
+  pointer-events: none;
+}
+
+/* Os dois canvas nascem com o atributo hidden e o perdem quando a cena carrega;
+   na queda para a fotografia ele volta. O display acima venceria esse hidden e
+   deixaria a tela pendurada por cima da foto, então o guard é o que faz o
+   atributo valer alguma coisa. */
+.arrival-canvas[hidden],
+.arrival-nature-canvas[hidden] {
+  display: none;
 }
 
 .arrival-atmosphere {
-  z-index: 1;
+  z-index: 3;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(24, 18, 12, .12), transparent 40%, rgba(25, 18, 11, .22)),
-    radial-gradient(circle at 52% 44%, rgba(255, 225, 165, calc(.03 + var(--arrival-progress) * .12)), transparent 42%);
-  opacity: calc(.82 - var(--arrival-progress) * .18);
+    linear-gradient(180deg, rgba(16, 20, 19, .14) 0%, transparent 34%, rgba(15, 18, 17, .17) 100%),
+    linear-gradient(90deg, rgba(12, 14, 13, .23) 0%, transparent 27%, transparent 74%, rgba(13, 15, 14, .16) 100%);
   transition: opacity 1.2s ease;
 }
 
-.arrival-visual[data-breath-phase="inhale"] { --breath-light: 1.08; }
-.arrival-visual[data-breath-phase="hold"] { --breath-light: 1.075; }
-.arrival-visual[data-breath-phase="exhale"] { --breath-light: .97; }
+.arrival-horizon {
+  z-index: 4;
+  pointer-events: none;
+  opacity: calc(.08 + var(--arrival-progress, 0) * .26);
+  background: radial-gradient(circle at 50% 55%, rgba(236, 200, 137, .32), transparent 28%);
+  mix-blend-mode: screen;
+  transition: opacity .25s linear;
+}
+
+.arrival-world,
+.world-prompt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.arrival-world {
+  z-index: 6;
+}
+
+.world-prompt {
+  inset: auto clamp(18px, 8%, 110px) max(7%, calc(env(safe-area-inset-bottom) + 18px));
+  z-index: 7;
+  height: auto;
+  margin: 0;
+  color: var(--arrival-ivory);
+  font-size: clamp(13px, 1.5vw, 18px);
+  line-height: 1.45;
+  letter-spacing: .04em;
+  text-align: center;
+  text-shadow: 0 1px 12px rgba(12, 14, 13, .7);
+  text-wrap: balance;
+  opacity: .92;
+}
+
+.world-actor {
+  position: absolute;
+  z-index: 1;
+  width: calc(var(--actor-radius, 8%) * 1.15);
+  height: calc(var(--actor-radius, 8%) * 1.15);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--arrival-ivory);
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.world-actor span {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(18, 20, 18, .55);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-50%) translateY(4px);
+  transition: opacity .28s ease, transform .28s ease;
+}
+
+.world-actor:hover,
+.world-actor.is-near,
+.world-actor:focus-visible {
+  border-color: rgba(237, 224, 199, .28);
+  background: rgba(236, 200, 137, .05);
+}
+
+.world-actor.is-awakened {
+  box-shadow: inset 0 0 0 1px rgba(203, 180, 139, .35);
+}
+
+.world-actor:hover span,
+.world-actor.is-near span,
+.world-actor:focus-visible span {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+body.is-arrival-transitioning .arrival-world,
+body.is-arrival-transitioning .world-prompt {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .38s ease;
+}
+
+/* O poema do lugar. Fixo, e não absoluto dentro do visual, porque a tela inteira
+   escurece — inclusive os botões de respiração e som, que ficariam boiando
+   acesos sobre o escuro se o véu parasse na moldura da paisagem. */
+.world-poem {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2.6vh, 26px);
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 6vw, 80px);
+  background: radial-gradient(circle at 50% 46%, rgba(14, 17, 15, .88), rgba(9, 11, 10, .96) 62%);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--poem-fade-out, 900ms) cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Obrigatória, e não uma formalidade: `display: flex` acima vence o `display:
+   none` que o atributo hidden traz por padrão. Sem esta regra o poema fechado
+   continua ocupando a tela inteira — invisível, mas engolindo todo clique antes
+   que ele chegue nos lugares do mundo. */
+.world-poem[hidden] {
+  display: none;
+}
+
+.world-poem[data-state="open"] {
+  opacity: 1;
+  transition-duration: var(--poem-fade-in, 900ms);
+}
+
+.world-poem:focus {
+  outline: none;
+}
+
+.world-poem-kicker {
+  margin: 0;
+  color: var(--arrival-gold);
+  font-size: clamp(10px, 1.1vw, 12px);
+  font-weight: 700;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity var(--poem-fade-in, 900ms) ease;
+}
+
+.world-poem-verse {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1.2vh, 14px);
+  max-width: 22em;
+  margin: 0;
+  color: var(--arrival-ivory);
+  font-size: clamp(20px, 3.4vw, 40px);
+  font-style: italic;
+  line-height: 1.34;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.world-poem-verse span {
+  display: block;
+  opacity: 0;
+  /* Cada verso entra um passo depois do anterior, no ritmo de quem lê em voz
+     alta. O atraso vem do índice, então poemas de outro tamanho continuam
+     cadenciados sem tocar no CSS. */
+  transform: translateY(10px);
+  transition:
+    opacity var(--poem-fade-in, 900ms) ease,
+    transform var(--poem-fade-in, 900ms) cubic-bezier(.22, .72, .24, 1);
+  transition-delay: calc(var(--poem-line, 0) * var(--poem-stagger, 420ms));
+}
+
+.world-poem-source {
+  margin: 0;
+  color: var(--arrival-ivory);
+  font-size: clamp(12px, 1.4vw, 15px);
+  letter-spacing: .1em;
+  opacity: 0;
+  transition: opacity var(--poem-fade-in, 900ms) ease;
+  transition-delay: calc(var(--poem-line-count, 3) * var(--poem-stagger, 420ms));
+}
+
+.world-poem[data-state="open"] .world-poem-kicker {
+  opacity: .8;
+}
+
+.world-poem[data-state="open"] .world-poem-verse span {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.world-poem[data-state="open"] .world-poem-source {
+  opacity: .55;
+}
+
+/* Na saída tudo apaga junto: escalonar a despedida faria o poema se desmanchar
+   verso a verso, o que lê como falha e não como fim. */
+.world-poem[data-state="leaving"] .world-poem-kicker,
+.world-poem[data-state="leaving"] .world-poem-verse span,
+.world-poem[data-state="leaving"] .world-poem-source {
+  transition-delay: 0ms;
+}
+
+/* Enquanto o poema se apaga ele ainda ocupa a tela por causa da transição, mas
+   já não deve engolir o próximo clique do visitante. */
+.world-poem[data-state="leaving"] {
+  pointer-events: none;
+}
+
+/* Tudo o que convida sai de cena enquanto o poema fala.
+ *
+ * O mundo e a sua legenda faltavam nesta lista, e o véu do poema é
+ * translúcido: o anel do próprio elemento clicado continuava aceso por cima do
+ * verso, junto com o rótulo. Era a única coisa na tela competindo com o texto —
+ * e logo o convite que já tinha sido aceito. */
+body.is-poem-open .journey-scroll-cue,
+body.is-poem-open .breath-launcher,
+body.is-poem-open .ambient-sound,
+body.is-poem-open .arrival-world,
+body.is-poem-open .world-prompt {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .5s ease;
+}
+
+/* `pointer-events: none` no contêiner não basta: os botões repõem `auto` e
+   continuariam respondendo ao passar do mouse, reacendendo o anel sob o véu. */
+body.is-poem-open .world-actor {
+  pointer-events: none;
+}
 
 .journey-scroll-cue {
-  position: fixed;
-  z-index: 20;
+  position: absolute;
+  z-index: 10;
+  right: max(24px, 4vw, calc(env(safe-area-inset-right) + 14px));
   top: 50%;
-  right: max(24px, calc(env(safe-area-inset-right) + 18px));
   width: 1px;
-  height: min(32vh, 260px);
-  background: rgba(244, 234, 215, .3);
-  transform: translateY(-50%);
+  height: clamp(126px, 24svh, 196px);
+  background: rgba(237, 224, 199, .18);
   pointer-events: none;
+  transform: translateY(-50%);
 }
 
 .journey-scroll-cue span {
   position: absolute;
   top: var(--journey-scroll-position, 0%);
   left: 50%;
-  width: 8px;
-  height: 8px;
-  border: 1px solid rgba(244, 234, 215, .75);
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--arrival-gold);
-  box-shadow: 0 0 18px rgba(213, 184, 120, .65);
-  transform: translate(-50%, -50%);
+  background: rgba(244, 229, 200, .88);
+  box-shadow: 0 0 16px rgba(239, 205, 144, .5);
+  transform: translate3d(-50%, -50%, 0);
+  will-change: transform;
 }
 
 .arrival-transition {
-  z-index: 100;
-  background: #211b15;
-  opacity: 0;
-  visibility: hidden;
+  z-index: 60;
   pointer-events: none;
-  transition: opacity .85s cubic-bezier(.4, 0, .2, 1), visibility .85s;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(56, 48, 38, .96), rgba(18, 20, 18, .99) 54%, #0d100e 100%);
 }
 
 body.is-arrival-transitioning .arrival-transition {
   opacity: 1;
-  visibility: visible;
+  transition: opacity .78s cubic-bezier(.4, 0, .2, 1);
 }
 
-html.entry-pending .arrival-transition {
-  background: #fbf6ea;
+/* CHEGADA vinda do palácio, fechando o círculo.
+ *
+ * O palácio sai lavando no claro — é a luz do vão de porta. Entrar aqui no
+ * mesmo claro mantém a passagem contínua e desemboca no amanhecer do vale, que
+ * já é uma cena clara. O véu escuro deste elemento fica para a SAÍDA rumo à
+ * Home, onde a Home também abre no escuro.
+ *
+ * Abre mais devagar do que fecha, 1,5s contra 0,78s: revelar pede mais tempo
+ * que encobrir, porque o olho precisa reencontrar a paisagem. */
+html.entry-pending .arrival-transition,
+html.entry-from-palace .arrival-transition {
   opacity: 1;
-  visibility: visible;
+  background: radial-gradient(circle at 50% 46%, #fbf6ea, #f0e6d6 54%, #d8b47c 100%);
 }
 
 html.entry-from-palace .arrival-transition {
@@ -142,8 +413,8 @@ html.entry-from-palace .arrival-transition {
 }
 
 @keyframes arrival-veil-open {
-  from { opacity: 1; visibility: visible; }
-  to { opacity: 0; visibility: hidden; }
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 body.is-arrival-transitioning .breath-launcher,
@@ -152,40 +423,136 @@ body.is-arrival-transitioning .journey-scroll-cue,
 body.is-arrival-transitioning .breathing-guide {
   opacity: 0;
   pointer-events: none;
+  transition: opacity .38s ease;
 }
 
 .arrival-noscript {
   position: fixed;
-  z-index: 110;
-  right: 24px;
-  bottom: 24px;
+  z-index: 100;
+  inset: auto 0 24px;
+  margin: 0;
+  text-align: center;
 }
 
-.arrival-noscript a { color: var(--arrival-ivory); }
+.arrival-noscript a {
+  color: white;
+}
 
 @media (max-width: 720px) {
-  .arrival { min-height: 170svh; }
-  .arrival-sticky { min-height: 480px; }
-  .arrival-plate img {
-    /* O recorte mobile JÁ nasce centrado nos 58% do ponto focal. Repetir o
-       deslocamento aqui empurraria a imagem uma segunda vez e tiraria o
-       caminho do eixo. O `center` é o valor certo justamente porque o
-       enquadramento foi resolvido no arquivo, não no CSS. */
-    object-position: center;
-    transform: scale(calc(1.08 + var(--arrival-progress) * .025));
+  .arrival {
+    min-height: 170svh;
   }
-  .journey-scroll-cue { right: 15px; height: 22vh; }
+
+  .journey-scroll-cue {
+    top: 44%;
+    right: max(18px, calc(env(safe-area-inset-right) + 10px));
+    height: 108px;
+  }
+
+}
+
+/* Celular deitado: a faixa de 720px não alcança esta tela, porque a largura é
+   grande e a altura é mínima. Sem esta regra a travessia fica longa demais e a
+   marca de progresso ocupa quase toda a altura útil. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .arrival {
+    min-height: 150svh;
+  }
+
+  .journey-scroll-cue {
+    top: 50%;
+    height: clamp(64px, 34svh, 118px);
+  }
+
+  .world-prompt {
+    inset: auto clamp(16px, 6%, 80px) max(12px, calc(env(safe-area-inset-bottom) + 8px));
+    font-size: clamp(12px, 3.4svh, 16px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .arrival-plate img {
-    transform: scale(1.035);
-    transition: none;
+  html {
+    scroll-behavior: auto;
   }
-  .arrival-atmosphere,
-  .arrival-transition,
-  .breath-launcher,
-  .ambient-sound,
-  .breathing-guide { transition-duration: .01ms !important; }
-  html.entry-from-palace .arrival-transition { animation-duration: .01ms; }
+
+  .arrival {
+    min-height: 120svh;
+  }
+
+  .arrival-canvas {
+    display: none;
+  }
+
+  .arrival-nature-canvas {
+    display: none;
+  }
+
+  .arrival-visual.is-scene-ready .arrival-fallback img {
+    opacity: 1;
+  }
+
+  .arrival-fallback img,
+  .arrival-transition {
+    transition-duration: .01ms !important;
+  }
+
+  /* A abertura do véu na volta do palácio também vira corte instantâneo: quem
+     pede menos movimento não deve receber um clarão de 1,5s. */
+  html.entry-from-palace .arrival-transition {
+    animation-duration: .01ms !important;
+  }
+
+  /* O poema continua: é texto, não movimento. Só o deslize e o escalonamento
+     saem, e o tempo em tela já vem alongado do JS para compensar. */
+  .world-poem,
+  .world-poem-kicker,
+  .world-poem-verse span,
+  .world-poem-source {
+    transition-duration: .01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .world-poem-verse span {
+    transform: none;
+  }
+}
+
+.arrival-debug {
+  position: fixed;
+  z-index: 80;
+  right: 16px;
+  bottom: 16px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border: 1px solid rgba(237, 224, 199, .28);
+  border-radius: 10px;
+  background: rgba(16, 18, 16, .88);
+  color: #efe8d8;
+  font: 12px/1.45 ui-monospace, monospace;
+  pointer-events: auto;
+}
+
+.arrival-debug-title {
+  margin: 0 0 8px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.arrival-debug label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 6px 0;
+}
+
+.arrival-debug select {
+  margin-left: auto;
+  background: #222;
+  color: inherit;
+  border: 1px solid rgba(237, 224, 199, .3);
+}
+
+.arrival-debug p[data-debug="metrics"] {
+  margin: 8px 0 0;
+  opacity: .85;
 }

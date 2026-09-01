@@ -3,17 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#211b15">
+  <meta name="theme-color" content="#171a18">
   <meta name="description" content="Um espaço de chegada antes de entrar no Ecossistema Potala.">
   <title>Potala — Chegada</title>
-  <!-- Um preload por recorte, com a MESMA media query do <picture> abaixo.
-       Sem a query, o telefone baixaria a paisagem inteira além do recorte que
-       vai usar — dois arquivos, um deles jogado fora, na coisa mais pesada e
-       mais prioritária da página. -->
-  <link rel="preload" href="media/chegada.webp" as="image" type="image/webp"
-    media="(min-width: 721px)" fetchpriority="high">
-  <link rel="preload" href="media/chegada-mobile.webp" as="image" type="image/webp"
-    media="(max-width: 720px)" fetchpriority="high">
+  <link rel="preload" href="media/chegada-v2-master.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="respiracao.css">
   <link rel="stylesheet" href="css/chegada-scene.css">
   <script>
@@ -35,23 +28,27 @@
     } catch {}
   </script>
   <script type="module" src="respiracao.js"></script>
-  <script type="module" src="js/chegada/arrival-plate-controller.js"></script>
+  <script type="module" src="js/chegada/arrival-controller.js"></script>
 </head>
 <body>
   <main class="arrival" id="arrival">
     <section class="arrival-sticky" aria-label="Chegada ao Instituto Potala">
       <div class="arrival-visual" id="arrival-visual">
-        <picture class="arrival-plate">
-          <!-- No telefone o quadro é vertical: a paisagem inteira encolhida
-               deixaria o caminho, que é o assunto, pequeno demais para se ler.
-               O recorte retrato nasce do mesmo ponto focal (58% da largura). -->
-          <source media="(max-width: 720px)" srcset="media/chegada-mobile.webp"
-            width="744" height="992">
-          <img src="media/chegada.webp" alt="Paisagem contemplativa do caminho de chegada ao Instituto Potala"
-            width="1586" height="992" fetchpriority="high" decoding="async">
+        <picture class="arrival-fallback">
+          <source media="(max-width: 720px) and (orientation: portrait)"
+            srcset="media/chegada-landscape-mobile.webp">
+          <img src="media/chegada-v2-master.webp" alt="Vale ao amanhecer com uma árvore antiga, um templo de pedra, o rio e pessoas no caminho"
+            width="2048" height="1152" fetchpriority="high" decoding="async">
         </picture>
+        <canvas class="arrival-canvas" id="arrival-scene" aria-hidden="true" hidden></canvas>
+        <canvas class="arrival-nature-canvas" id="arrival-nature" aria-hidden="true" hidden></canvas>
         <div class="arrival-atmosphere" aria-hidden="true"></div>
+        <div class="arrival-horizon" aria-hidden="true"></div>
+        <div class="arrival-world" id="arrival-world" hidden></div>
+        <p class="world-prompt" id="world-prompt" aria-live="polite"></p>
       </div>
+
+      <div class="world-poem" id="world-poem" hidden></div>
 
       <button class="breath-launcher" id="breath-launcher" type="button"
         aria-controls="breathing-guide" aria-expanded="false">
