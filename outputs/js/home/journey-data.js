@@ -23,8 +23,7 @@ export const JOURNEY_REGIONS = [
      * ímpar à direita), e os pares se formam de dois em dois na mesma ordem.
      * Mudar a ordem aqui muda com quem ela divide a passagem.
      *
-     * O destino é atendimentos.html porque não existe recepcao.html — é para lá
-     * que o mesmo conteúdo já apontava quando era só um callout de serviço.
+     * O destino é a página própria da Recepção, que passou a existir.
      */
     id: "recepcao",
     type: "region",
@@ -33,7 +32,7 @@ export const JOURNEY_REGIONS = [
     description: "Comece com uma conversa: um primeiro contato para entender possibilidades sem escolher sozinho.",
     media: "media/journey-cuidado.webp",
     alt: "Abrigo acolhedor aberto para um lago e montanhas cobertas por névoa",
-    href: "atendimentos.html",
+    href: "recepcao.html",
     priority: 96,
     tags: ["acolhimento", "escuta", "primeiro contato"],
     relatedContent: ["atendimentos", "profissionais"],
@@ -215,7 +214,7 @@ export const JOURNEY_DISCOVERIES = [
     category: "Recepção",
     title: "Comece com uma conversa",
     description: "Um primeiro contato para compreender possibilidades sem escolher sozinho.",
-    href: "atendimentos.html",
+    href: "recepcao.html",
     relatedContent: ["atendimentos", "profissionais"],
     layoutVariant: "soft-callout",
   },

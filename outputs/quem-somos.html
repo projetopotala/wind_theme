@@ -3,53 +3,80 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#edf1ed">
-  <meta name="description" content="Conheça a história, o propósito e a comunidade do Instituto Potala.">
+  <meta name="theme-color" content="#f1e8dd">
+  <meta name="description" content="Conheça a história, a filosofia e o ecossistema humano do Instituto Potala.">
   <title>Quem somos — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
+  <link rel="preload" href="media/quem-somos-acolhimento.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
+  <link rel="stylesheet" href="css/quem-somos.css">
   <script defer src="secoes.js"></script>
 </head>
 <body data-section="quem-somos">
-  <main class="page-view page-view--article" id="conteudo">
-    <div class="article-shell">
-      <header class="article-head">
-        <p class="page-kicker">Instituto Potala</p>
-        <h1 class="page-title">Quem somos</h1>
-        <p class="page-lead">Somos todos um único instituto: salas espaçosas, uma loja, centenas de terapeutas de diversas cidades — todos afins, porque o mesmo propósito nos move.</p>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+
+  <main class="about-page" id="conteudo">
+    <section class="about-hero" aria-labelledby="about-title">
+      <div class="about-hero-copy">
+        <p class="about-kicker">Quem somos</p>
+        <h1 id="about-title">Um lugar onde muitos caminhos se encontram.</h1>
+        <p class="about-lead">O Potala reúne cuidado, conhecimento, cultura e convivência para que cada pessoa possa descobrir, em seu próprio tempo, aquilo que faz sentido para sua jornada.</p>
+        <a class="about-action" href="#historia">Conhecer nossa história <span aria-hidden="true">↓</span></a>
+      </div>
+
+      <figure class="about-hero-visual">
+        <img src="media/quem-somos-acolhimento.webp"
+          alt="Grupo de pessoas de diferentes gerações reunido em uma conversa acolhedora"
+          width="1664" height="936" fetchpriority="high" decoding="async">
+      </figure>
+    </section>
+
+    <section class="about-opening" id="visao" aria-labelledby="vision-title">
+      <p class="about-number">01</p>
+      <div>
+        <p class="about-kicker">Uma visão de cuidado</p>
+        <h2 id="vision-title">Somos todos um único instituto.</h2>
+      </div>
+      <div class="about-prose">
+        <p>O Potala nasceu da convicção de que o desenvolvimento humano acontece quando diferentes saberes podem dialogar. Cada pessoa chega com uma história, necessidades e possibilidades próprias.</p>
+        <p>Por isso, não oferecemos uma única resposta. Criamos um ambiente onde ciência, tradições de cuidado, educação, arte, cultura e espiritualidade possam se encontrar com respeito e consciência.</p>
+      </div>
+    </section>
+
+    <section class="about-history" id="historia" aria-labelledby="history-title">
+      <div class="about-history-mark" aria-hidden="true"><span>2012</span></div>
+      <div class="about-history-copy">
+        <p class="about-kicker">Origem e propósito</p>
+        <h2 id="history-title">Estender as mãos para que novos caminhos possam surgir.</h2>
+        <p>O Instituto Cultural Potala foi inaugurado em 26 de maio de 2012, em Indaiatuba. Seu nome remete ao Monte Potala, no Tibete, associado à morada de Avalokiteshvara — figura que simboliza a compaixão e a escuta dos clamores do mundo.</p>
+        <p>Essa imagem inspira uma missão simples e profunda: acolher pessoas e promover saúde física, mental e emocional por meio de experiências que respeitem a individualidade de cada ser humano.</p>
+      </div>
+    </section>
+
+    <section class="about-ecosystem" id="ecossistema" aria-labelledby="ecosystem-title">
+      <header>
+        <p class="about-kicker">Ecossistema Potala</p>
+        <h2 id="ecosystem-title">Cuidar também é aprender, conviver, criar e transformar.</h2>
       </header>
 
-      <section class="article-block">
-        <h2>A origem</h2>
-        <p>O Instituto Cultural Potala foi inaugurado em 26 de maio de 2012, em Indaiatuba, no interior de São Paulo. Sua filosofia se inspira na lenda budista de Avalokiteshvara, cujo objetivo era tirar do inferno as tantas almas sofridas.</p>
-        <p>A casa nasceu desse gesto: estender as mãos a quem sofre e fazer diferença na vida das pessoas que chegam. É daí que vem o nome, e é daí que vem o modo de receber.</p>
-      </section>
+      <div class="about-paths" aria-label="Dimensões do Ecossistema Potala">
+        <div><span>01</span><strong>Cuidado</strong><p>Atendimentos e práticas que acolhem o momento presente.</p></div>
+        <div><span>02</span><strong>Conhecimento</strong><p>Cursos e conteúdos que ampliam a compreensão e a autonomia.</p></div>
+        <div><span>03</span><strong>Movimento</strong><p>Corpo, arte e experiências que transformam conhecimento em vida.</p></div>
+        <div><span>04</span><strong>Convivência</strong><p>Pessoas e iniciativas reunidas por um propósito comum.</p></div>
+      </div>
+    </section>
 
-      <section class="article-block">
-        <h2>O propósito</h2>
-        <p>A missão central é promover a saúde física, mental e emocional daqueles que nos procuram — por meio da medicina integrativa, dos cursos e grupos de estudo, dos oráculos e dos exercícios físicos, da meditação, do cinema e dos livros, da arte e da cultura.</p>
-        <p>Há um princípio que organiza tudo isso: reconhecer a individualidade de cada pessoa. Não tratamos pessoas diferentes com o mesmo diagnóstico. Cada história e cada necessidade pedem um caminho próprio.</p>
-      </section>
+    <section class="about-signature" aria-labelledby="signature-title">
+      <p class="about-kicker">Nossa essência</p>
+      <h2 id="signature-title">Não queremos indicar um único caminho. Queremos iluminar possibilidades para que cada pessoa reconheça o seu.</h2>
+      <a class="about-action about-action--light" href="transcendido.html">Voltar à travessia <span aria-hidden="true">↗</span></a>
+    </section>
 
-      <section class="article-block">
-        <h2>A casa</h2>
-        <p>O espaço reúne cinco salas para atendimentos e um amplo salão para cursos e palestras. É também uma loja de produtos esotéricos, com cristais, incensos, óleos essenciais, livros, baralhos de tarô e alimentos saudáveis.</p>
-      </section>
-
-      <section class="article-block">
-        <h2>A comunidade</h2>
-        <p>Centenas de terapeutas de diversas cidades integram o Potala: acupunturistas, massoterapeutas, reikianos, psicoterapeutas, tarólogos e numerólogos, entre muitas outras formações.</p>
-        <p>As práticas atravessam tradições — yoga, pilates, tai chi chuan, reiki, astrologia, constelações sistêmicas, medicina chinesa e ayurvédica — sem que nenhuma delas precise anular a outra.</p>
-      </section>
-
-      <p class="article-note">Fazer deste mundo um lugar melhor é o propósito que nos reúne.</p>
-
-      <footer class="article-foot">
-        <p>Rua 24 de Maio, 748 — Centro, Indaiatuba/SP · (19) 3834-6147 · WhatsApp (19) 99776-6131</p>
-        <p><a href="https://www.institutopotala.com/quemsomos" rel="noreferrer">institutopotala.com</a> · contato@institutopotala.com</p>
-        <a class="article-back" href="transcendido.html">Voltar à travessia</a>
-      </footer>
-    </div>
+    <footer class="about-footer">
+      <p>Instituto Cultural Potala · Indaiatuba, SP</p>
+      <a href="https://www.institutopotala.com/quemsomos" rel="noreferrer">Conhecer o site oficial</a>
+    </footer>
   </main>
 </body>
 </html>

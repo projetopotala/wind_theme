@@ -56,9 +56,8 @@ test("relações apontam para conteúdo existente", () => {
 test("cada região leva a uma página local própria", async () => {
   const expectedDestinations = [
     "quem-somos.html",
-    // A Recepção aponta para atendimentos.html porque não existe recepcao.html;
-    // é para lá que o mesmo conteúdo já apontava como callout de serviço.
-    "atendimentos.html",
+    // A Recepção ganhou página própria; antes emprestava a dos Atendimentos.
+    "recepcao.html",
     "atendimentos.html",
     "cursos.html",
     "atividades.html",

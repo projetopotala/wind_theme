@@ -6,6 +6,7 @@
     { key: "inicio", label: "Início", href: "transcendido.html" },
     { key: "quem-somos", label: "Quem somos", href: "quem-somos.html" },
     { key: "atendimentos", label: "Atendimentos", href: "atendimentos.html" },
+    { key: "recepcao", label: "Recepção", href: "recepcao.html" },
     { key: "atividades", label: "Atividades", href: "atividades.html" },
     { key: "cursos", label: "Cursos", href: "cursos.html" },
     { key: "programacao", label: "Programação", href: "programacao.html" },
