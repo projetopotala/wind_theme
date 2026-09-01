@@ -113,3 +113,34 @@ test("destroy remove os listeners e fecha a expansão", () => {
   assert.equal(root.sections[0].summary.getAttribute("aria-expanded"), "false");
 });
 
+
+test("Escape fecha mesmo com o foco fora da jornada", () => {
+  /*
+   * Medido na prévia antes da correção: com o foco no botão de resumo o Escape
+   * fechava; com o foco no body, não fechava nada. Basta clicar no fundo da
+   * página, ou voltar de um link de dentro do bloco aberto, para cair nesse
+   * segundo caso — e aí a única saída era procurar o botão de novo.
+   */
+  const root = createRoot(["quem-somos"]);
+  const documento = {
+    ouvintes: new Map(),
+    addEventListener(type, listener) { this.ouvintes.set(type, listener); },
+    removeEventListener(type, listener) {
+      if (this.ouvintes.get(type) === listener) this.ouvintes.delete(type);
+    },
+  };
+
+  const expansion = createBlockExpansion(root, { keyboardTarget: documento });
+  expansion.open("quem-somos");
+
+  // A raiz não pode mais ser o alvo do teclado: se for, o defeito voltou.
+  root.emit("keydown", { key: "Escape", preventDefault() {} });
+  assert.equal(expansion.activeId, "quem-somos", "a raiz não deve mais escutar o Escape");
+
+  documento.ouvintes.get("keydown")({ key: "Escape", preventDefault() {} });
+  assert.equal(expansion.activeId, null);
+
+  // E o destroy tem de soltar do mesmo alvo em que se prendeu.
+  expansion.destroy();
+  assert.equal(documento.ouvintes.has("keydown"), false);
+});

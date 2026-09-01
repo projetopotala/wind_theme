@@ -31,7 +31,22 @@ function setExpanded(entry, expanded) {
   setFocusable(entry.details, expanded);
 }
 
-export function createBlockExpansion(root) {
+export function createBlockExpansion(root, {
+  /*
+   * O Escape escuta o DOCUMENTO, não a jornada.
+   *
+   * Preso à raiz, ele só funcionava enquanto o foco estivesse dentro dela — o
+   * caminho comum, porque abrir um bloco foca o resumo. Mas basta clicar no
+   * fundo da página, ou voltar de um link do bloco aberto, para o foco cair no
+   * body: dali o Escape não fechava mais nada, e a única saída era achar o
+   * botão de novo. Medido na prévia: com foco no resumo fechava, com foco no
+   * body não.
+   *
+   * O clique continua na raiz porque ali a delegação é a intenção; o Escape é
+   * um gesto global de "desfazer o que está aberto".
+   */
+  keyboardTarget = root?.ownerDocument ?? root,
+} = {}) {
   if (!root) throw new TypeError("root é obrigatório para controlar os blocos");
 
   const entries = [...root.querySelectorAll(".journey-region")]
@@ -83,14 +98,14 @@ export function createBlockExpansion(root) {
   }
 
   root.addEventListener("click", onClick);
-  root.addEventListener("keydown", onKeydown);
+  keyboardTarget.addEventListener("keydown", onKeydown);
 
   return {
     open,
     close,
     destroy() {
       root.removeEventListener("click", onClick);
-      root.removeEventListener("keydown", onKeydown);
+      keyboardTarget.removeEventListener("keydown", onKeydown);
       close();
     },
     get activeId() {
