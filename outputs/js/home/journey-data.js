@@ -1,3 +1,5 @@
+import { normalizeHomeBlocks } from "./content-model.js";
+
 export const JOURNEY_REGIONS = [
   {
     id: "quem-somos",
@@ -152,6 +154,34 @@ export const JOURNEY_REGIONS = [
     roadPlacement: "left",
   },
 ];
+
+const EXPANDED_COPY = {
+  "quem-somos": "Conheça a visão que reúne cuidado, conhecimento, cultura e convivência em um mesmo ecossistema humano.",
+  atendimentos: "Encontre acolhimento, orientação e práticas que respeitam o momento e a história de cada pessoa.",
+  cursos: "Formações, oficinas e vivências aproximam estudo e experiência para abrir novas possibilidades.",
+  atividades: "Práticas corporais, arte e convivência transformam conhecimento em experiência compartilhada.",
+  profissionais: "Conheça trajetórias e especialidades reunidas pelo compromisso de escutar e acompanhar.",
+  programacao: "Descubra o que está acontecendo agora: encontros, práticas, cursos e experiências abertas à comunidade.",
+  "arte-cultura": "Cinema, música, literatura e criação ampliam nossos modos de perceber, conviver e cuidar.",
+  marketplace: "Uma seleção contextual de livros, aromas, objetos e materiais que podem acompanhar sua prática.",
+  inspiracao: "Textos, meditações e pausas para recuperar espaço, presença e um ritmo mais atento.",
+};
+
+export const DEFAULT_HOME_BLOCKS = normalizeHomeBlocks(JOURNEY_REGIONS.map((region, position) => ({
+  id: region.id,
+  slug: region.id,
+  category: region.category,
+  title: region.title,
+  summary: region.description,
+  body: EXPANDED_COPY[region.id],
+  image: "",
+  icon: "",
+  tags: region.tags,
+  href: region.href,
+  side: position % 2 === 0 ? "left" : "right",
+  position,
+  published: true,
+})));
 
 export const JOURNEY_DISCOVERIES = [
   {
