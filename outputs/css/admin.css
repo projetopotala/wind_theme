@@ -1,0 +1,187 @@
+/*
+ * Painel editorial — prévia local.
+ *
+ * Deliberadamente sóbrio e sem a atmosfera da travessia: aqui não se
+ * contempla, se trabalha. Emprestar a paisagem, a névoa e o dourado da Home
+ * disputaria atenção com os campos e tornaria mais difícil ler o que se está
+ * editando. O parentesco fica no tipo e na paleta terrosa, e para aí.
+ */
+:root {
+  color-scheme: dark;
+  --admin-ink: #1b1712;
+  --admin-surface: #241e18;
+  --admin-line: rgba(231, 202, 143, .22);
+  --admin-ivory: #f2e8d6;
+  --admin-gold: #d9b071;
+  --admin-alert: #f0a58a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--admin-ink);
+  color: var(--admin-ivory);
+  font-family: Georgia, "Times New Roman", serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.admin { padding: clamp(20px, 4vw, 56px); }
+
+.admin-kicker {
+  margin: 0 0 6px;
+  color: var(--admin-gold);
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+
+.admin-entry { max-width: 640px; margin: 8vh auto; text-align: left; }
+.admin-entry h1 { margin: 0 0 18px; font-size: clamp(2rem, 5vw, 3rem); font-weight: 400; }
+
+.admin-warning {
+  margin: 0 0 24px;
+  padding: 16px 18px;
+  border: 1px solid var(--admin-line);
+  border-left: 3px solid var(--admin-alert);
+  border-radius: 12px;
+  background: rgba(58, 40, 28, .5);
+  line-height: 1.55;
+}
+
+.admin-open,
+.admin-head-actions button,
+.admin-save,
+.admin-row-actions button {
+  padding: 10px 18px;
+  border: 1px solid var(--admin-line);
+  border-radius: 999px;
+  background: rgba(58, 46, 34, .6);
+  color: var(--admin-ivory);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.admin-open { font-size: 15px; padding: 12px 26px; }
+.admin-open:hover,
+.admin-head-actions button:hover,
+.admin-save:hover,
+.admin-row-actions button:hover { border-color: var(--admin-gold); }
+
+/* Foco sempre visível: metade do trabalho aqui é reordenar pelo teclado, e um
+   foco invisível transformaria isso em adivinhação. */
+:focus-visible { outline: 2px solid var(--admin-gold); outline-offset: 3px; }
+
+.admin-entry-links a,
+.admin-link { color: var(--admin-gold); }
+
+.admin-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-head h2 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 400; }
+.admin-head-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+.admin-status {
+  min-height: 1.5em;
+  margin: 14px 0 0;
+  color: var(--admin-gold);
+  font-size: 14px;
+}
+
+.admin-hint { margin: 0 0 12px; color: rgba(242, 232, 214, .62); font-size: 13px; }
+
+.admin-columns {
+  display: grid;
+  gap: clamp(18px, 3vw, 36px);
+  align-items: start;
+  margin-top: 18px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+}
+
+.admin-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+
+.admin-row {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  background: var(--admin-surface);
+  grid-template-columns: auto auto minmax(0, 1fr);
+}
+
+.admin-row-grip {
+  width: 14px;
+  height: 18px;
+  background:
+    radial-gradient(circle, var(--admin-line) 1.4px, transparent 1.5px) 0 0 / 7px 6px;
+  cursor: grab;
+}
+
+.admin-row-order { color: var(--admin-gold); font-size: 13px; }
+.admin-row-main { display: grid; gap: 2px; min-width: 0; }
+.admin-row-main strong { font-weight: 400; }
+.admin-row-meta { color: rgba(242, 232, 214, .58); font-size: 12px; }
+
+.admin-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.admin-row-actions button { padding: 6px 12px; font-size: 12px; }
+.admin-row-actions button[disabled] { opacity: .38; cursor: not-allowed; }
+
+.admin-form {
+  display: grid;
+  gap: 6px;
+  padding: clamp(16px, 2.4vw, 26px);
+  border: 1px solid var(--admin-line);
+  border-radius: 18px;
+  background: var(--admin-surface);
+}
+
+.admin-form h3 { margin: 0 0 8px; font-size: 1.1rem; font-weight: 400; }
+.admin-form label { margin-top: 10px; font-size: 13px; color: rgba(242, 232, 214, .78); }
+
+.admin-form input[type="text"],
+.admin-form textarea,
+.admin-form select {
+  padding: 10px 12px;
+  border: 1px solid var(--admin-line);
+  border-radius: 10px;
+  background: rgba(20, 16, 12, .7);
+  color: var(--admin-ivory);
+  font: inherit;
+  font-size: 15px;
+}
+
+.admin-form textarea { resize: vertical; }
+
+/* O contorno vermelho não é a mensagem: quem não distingue a cor precisa do
+   texto ao lado do campo, e é ele que `aria-invalid` associa. */
+.admin-form [aria-invalid="true"] { border-color: var(--admin-alert); }
+
+.admin-error:empty { display: none; }
+.admin-error { margin: 4px 0 0; color: var(--admin-alert); font-size: 13px; }
+
+.admin-check { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
+.admin-save { margin-top: 18px; justify-self: start; }
+
+@media (max-width: 860px) {
+  .admin-columns { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}

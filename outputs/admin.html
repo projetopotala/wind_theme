@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#211b15">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Painel editorial local da Travessia Potala.">
+  <title>Potala — Painel editorial (prévia local)</title>
+  <link rel="stylesheet" href="css/admin.css">
+  <script type="module" src="js/admin/admin-controller.js"></script>
+</head>
+<body>
+  <main class="admin">
+    <!-- A entrada não pede senha, e o aviso diz por quê.
+         Um campo de senha aqui seria pior que inútil: ensinaria o hábito de
+         digitar a senha real numa tela que não protege nada, e quem tiver o
+         endereço entra do mesmo jeito. A proteção real chega na Entrega 2, por
+         políticas RLS no Supabase — esconder botão no navegador nunca foi
+         proteção. -->
+    <section class="admin-entry" id="admin-entry" aria-labelledby="admin-entry-title">
+      <p class="admin-kicker">Instituto Potala</p>
+      <h1 id="admin-entry-title">Painel editorial</h1>
+      <p class="admin-warning" role="note">
+        <strong>Prévia local.</strong> Este acesso não representa autenticação real:
+        as alterações ficam apenas neste navegador e qualquer pessoa com o endereço
+        abre esta página. A proteção por conta e permissões entra na próxima etapa.
+      </p>
+      <button class="admin-open" id="admin-open" type="button">Abrir painel local</button>
+      <p class="admin-entry-links"><a href="transcendido.html">Ver a Home</a></p>
+    </section>
+
+    <section class="admin-panel" id="admin-panel" aria-labelledby="admin-panel-title" hidden>
+      <header class="admin-head">
+        <h2 id="admin-panel-title" tabindex="-1">Blocos da jornada</h2>
+        <div class="admin-head-actions">
+          <button type="button" data-admin-new>Novo bloco</button>
+          <a class="admin-link" href="transcendido.html">Ver Home</a>
+          <button type="button" data-admin-reset>Restaurar conteúdo original</button>
+        </div>
+      </header>
+
+      <!-- A faixa de status é a única confirmação de que a ação valeu, e vive
+           fora da lista de propósito: a lista é redesenhada a cada mudança, e um
+           aviso dentro dela seria destruído antes de ser lido em voz alta. -->
+      <p class="admin-status" data-admin-status role="status" aria-live="polite"></p>
+
+      <div class="admin-columns">
+        <div class="admin-list-wrap">
+          <p class="admin-hint">
+            Arraste para reordenar, ou use “Mover acima” e “Mover abaixo” — os dois
+            caminhos fazem a mesma coisa.
+          </p>
+          <ol class="admin-list" data-admin-list aria-label="Ordem dos blocos na Home"></ol>
+        </div>
+
+        <form class="admin-form" data-admin-form novalidate>
+          <h3>Conteúdo do bloco</h3>
+
+          <label for="admin-title">Título</label>
+          <input id="admin-title" name="title" type="text" autocomplete="off"
+            aria-describedby="erro-title">
+          <p class="admin-error" id="erro-title" data-error-for="title"></p>
+
+          <label for="admin-category">Categoria</label>
+          <input id="admin-category" name="category" type="text" autocomplete="off">
+
+          <label for="admin-summary">Resumo (bloco fechado)</label>
+          <textarea id="admin-summary" name="summary" rows="3"
+            aria-describedby="erro-summary"></textarea>
+          <p class="admin-error" id="erro-summary" data-error-for="summary"></p>
+
+          <label for="admin-body">Texto completo (bloco aberto)</label>
+          <textarea id="admin-body" name="body" rows="5"></textarea>
+
+          <label for="admin-side">Lado do trajeto</label>
+          <select id="admin-side" name="side" aria-describedby="erro-side">
+            <option value="left">Esquerda</option>
+            <option value="right">Direita</option>
+          </select>
+          <p class="admin-error" id="erro-side" data-error-for="side"></p>
+
+          <label for="admin-href">Destino</label>
+          <input id="admin-href" name="href" type="text" autocomplete="off"
+            placeholder="quem-somos.html" aria-describedby="erro-href">
+          <p class="admin-error" id="erro-href" data-error-for="href"></p>
+
+          <label for="admin-image">Imagem (caminho ou URL)</label>
+          <input id="admin-image" name="image" type="text" autocomplete="off"
+            placeholder="media/journey-cultura.webp">
+
+          <label for="admin-tags">Temas (separados por vírgula)</label>
+          <input id="admin-tags" name="tags" type="text" autocomplete="off">
+
+          <label class="admin-check">
+            <input id="admin-published" name="published" type="checkbox" checked>
+            Publicado na Home
+          </label>
+
+          <input name="id" type="hidden">
+          <input name="slug" type="hidden">
+
+          <button class="admin-save" type="submit">Salvar bloco</button>
+        </form>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
