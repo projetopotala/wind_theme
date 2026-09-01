@@ -149,7 +149,10 @@ test("o deslocamento é animado, e a linha segue a animação em vez de repeti-l
   // A leitura por quadro é limitada à transição, e o quadro pendente é
   // cancelado ao destruir — senão sobra um laço rodando sobre um DOM morto.
   assert.match(controlador, /shiftUntil = performance\.now\(\)/);
-  assert.match(controlador, /if \(shiftFrame\) cancelAnimationFrame\(shiftFrame\);\s*\n\s*expansion\.destroy\(\);/);
+  // O que importa é o cancelamento acontecer na limpeza — não estar colado na
+  // linha seguinte, que muda toda vez que algo novo entra no destroy.
+  const limpeza = controlador.slice(controlador.indexOf("destroy() {"));
+  assert.match(limpeza, /cancelAnimationFrame\(shiftFrame\)/);
 });
 
 test("as seções andam aos pares, e a irmã recua em vez de ser empurrada", async () => {
@@ -175,4 +178,37 @@ test("as seções andam aos pares, e a irmã recua em vez de ser empurrada", asy
   // E o recuo MULTIPLICA a presença: fixo, a irmã acenderia com o par ainda
   // fora da tela, enquanto a aberta continuaria invisível.
   assert.match(recuo, /calc\(clamp\([^)]*var\(--region-presence/);
+});
+
+test("o menu das seções lista a jornada e é tocável no dedo", async () => {
+  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
+  const cenas = await readFile(new URL("../../outputs/js/home/home-scenes.js", import.meta.url), "utf8");
+  const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
+
+  assert.match(cenas, /export function renderJourneyMenu/);
+  assert.match(cenas, /aria-label="Seções da travessia"/);
+
+  /*
+   * São botões, e não âncoras: as regiões viraram `display: contents` dentro do
+   * palco do par, e um elemento sem caixa própria não é destino de âncora — o
+   * navegador não teria para onde rolar. O controlador leva ao par e abre o
+   * bloco pedido.
+   */
+  assert.match(cenas, /<button type="button" data-menu-target=/);
+  assert.match(controlador, /closest\("\.journey-pair"\)/);
+  assert.match(controlador, /expansion\.open\(id\)/);
+
+  // Alvo de toque de 44px: medido, o botão tinha 32px — passa no mouse e falha
+  // no dedo. Fica atrás de `pointer: coarse` para não engordar a barra de quem
+  // usa mouse.
+  assert.match(css, /@media \(pointer: coarse\)[^{]*\{[^}]*\.journey-menu button \{ min-height: 44px/);
+
+  // A seção atual se distingue por FUNDO, não só por cor de texto — e
+  // `aria-current` conta o mesmo a quem usa leitor de tela.
+  const atual = css.slice(
+    css.indexOf('.journey-menu button[aria-current="true"] {'),
+    css.indexOf("}", css.indexOf('.journey-menu button[aria-current="true"] {')),
+  );
+  assert.match(atual, /background:/);
+  assert.match(controlador, /setAttribute\("aria-current"/);
 });

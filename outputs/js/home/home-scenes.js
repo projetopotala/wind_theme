@@ -194,6 +194,35 @@ export function renderPair(markups, pairIndex, pairHeight) {
   `;
 }
 
+/**
+ * Menu das seções, fixo no rodapé.
+ *
+ * São botões, e não links de âncora: as regiões passaram a ser `display:
+ * contents` dentro do palco do par, e um elemento sem caixa própria não é
+ * destino de âncora — o navegador não teria para onde rolar. Quem sabe a
+ * geometria é o controlador, que rola até o PAR e abre o bloco pedido.
+ *
+ * A ordem e os números repetem os da jornada de propósito: o menu é um índice
+ * do mesmo caminho, não uma segunda organização do conteúdo.
+ */
+export function renderJourneyMenu(regions = []) {
+  const itens = regions.map((region, index) => {
+    const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
+    return `
+      <li>
+        <button type="button" data-menu-target="${id}">
+          <span aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
+          ${escapeHtml(String(region.title || ""))}
+        </button>
+      </li>`;
+  }).join("");
+
+  return `
+    <nav class="journey-menu" aria-label="Seções da travessia" data-keeps-expansion>
+      <ul>${itens}</ul>
+    </nav>`;
+}
+
 export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
   if (!root) throw new TypeError("root é obrigatório para montar a jornada");
   const discoveriesById = new Map(discoveries.map((item) => [item.id, item]));
@@ -229,6 +258,7 @@ export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
       </div>
     </section>
     <div class="journey-regions">${regionMarkup}</div>
+    ${renderJourneyMenu(regions)}
     <section class="journey-continuation" aria-labelledby="continuation-title">
       <div>
         <p>Uma jornada não precisa terminar aqui.</p>
@@ -245,6 +275,7 @@ export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
   return {
     regions: [...root.querySelectorAll(".journey-region")],
     pairs: [...root.querySelectorAll(".journey-pair")],
+    menuItems: [...root.querySelectorAll("[data-menu-target]")],
     silences: [...root.querySelectorAll(".journey-silence")],
     pathSections: [...root.querySelectorAll(".journey-pair, .journey-silence")],
     discoveries: [...root.querySelectorAll(".journey-discovery")],

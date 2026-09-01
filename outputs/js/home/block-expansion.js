@@ -104,7 +104,17 @@ export function createBlockExpansion(root, {
      * única saída seria abrir outro bloco.
      */
     if (!summary) {
-      if (activeId && !event.target?.closest?.(".region-content")) close();
+      /*
+       * `[data-keeps-expansion]` é a saída para quem abre blocos de fora.
+       *
+       * O menu das seções vive dentro da mesma raiz, então o clique nele
+       * borbulha até aqui: ele abria o bloco pedido e este ramo o fechava no
+       * mesmo gesto, sem erro nenhum — o menu simplesmente não funcionava. O
+       * atributo é genérico de propósito, para a expansão não precisar
+       * conhecer o menu pelo nome.
+       */
+      const preserva = event.target?.closest?.("[data-keeps-expansion]");
+      if (activeId && !preserva && !event.target?.closest?.(".region-content")) close();
       return;
     }
 

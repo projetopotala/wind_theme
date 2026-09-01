@@ -178,6 +178,52 @@ export function createHomeController({
    * propriedade herda dele para os dois blocos, que assim entram e saem juntos.
    */
   const presenceObserver = createPresenceObserver(mounted.pairs, { reducedMotion });
+  /*
+   * O menu leva ao PAR, e abre o bloco pedido.
+   *
+   * Rolar até a região não funcionaria: com `display: contents` ela não tem
+   * caixa própria, então não há posição para onde rolar. Quem tem geometria é
+   * o par — e chegar lá mostrando os dois blocos sem dizer qual foi pedido
+   * deixaria o clique pela metade, por isso o bloco também abre.
+   */
+  function goToSection(id) {
+    const region = root.querySelector(`.journey-region[data-region-id="${CSS.escape(id)}"]`);
+    const pair = region?.closest(".journey-pair");
+    if (!pair) return;
+    pair.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+    expansion.open(id);
+  }
+
+  const onMenuClick = (event) => {
+    const botao = event.target.closest?.("[data-menu-target]");
+    if (botao) goToSection(botao.dataset.menuTarget);
+  };
+  root.querySelector(".journey-menu")?.addEventListener("click", onMenuClick);
+
+  /*
+   * Qual seção está sendo percorrida, para o menu dizer onde se está.
+   *
+   * A faixa estreita no meio da tela (as margens de -45%) é o que impede dois
+   * pares de se dizerem atuais ao mesmo tempo durante a passagem de um para o
+   * outro. Observador em vez de leitura por quadro: saber a seção atual não
+   * justifica medir layout 60 vezes por segundo.
+   */
+  const currentObserver = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver(
+    (entradas) => {
+      for (const entrada of entradas) {
+        if (!entrada.isIntersecting) continue;
+        const ids = [...entrada.target.querySelectorAll(".journey-region")]
+          .map((region) => region.dataset.regionId);
+        for (const item of mounted.menuItems) {
+          const atual = ids.includes(item.dataset.menuTarget);
+          item.setAttribute("aria-current", atual ? "true" : "false");
+        }
+      }
+    },
+    { rootMargin: "-45% 0px -45% 0px" },
+  );
+  mounted.pairs.forEach((pair) => currentObserver?.observe(pair));
+
   const handoff = consumeHandoff();
   const removeSound = mountSoundResume(root, handoff.soundEnabled === true);
   let frameId = 0;
@@ -241,6 +287,8 @@ export function createHomeController({
       clearTimeout(entryTimer);
       presenceObserver.disconnect();
       if (shiftFrame) cancelAnimationFrame(shiftFrame);
+      currentObserver?.disconnect();
+      root.querySelector(".journey-menu")?.removeEventListener("click", onMenuClick);
       expansion.destroy();
       path.destroy();
       removeSound();

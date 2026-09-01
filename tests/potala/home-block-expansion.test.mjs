@@ -243,3 +243,26 @@ test("abrir e fechar avisam quem acompanha por fora", () => {
   // senão quem escuta guardaria o deslocamento do bloco errado.
   assert.deepEqual(avisos, ["quem-somos", null, "atendimentos", null]);
 });
+
+test("clique vindo de quem abre blocos por fora não fecha o que acabou de abrir", () => {
+  /*
+   * O menu das seções vive dentro da mesma raiz, então o clique nele borbulha
+   * até o fechamento por clique-fora: ele abria o bloco pedido e o mesmo gesto
+   * o fechava, sem erro nenhum — o menu simplesmente não funcionava. Medido no
+   * navegador antes da correção: nenhum bloco ficava aberto.
+   *
+   * O atributo é genérico para a expansão não precisar conhecer o menu pelo
+   * nome — qualquer controle que abra blocos de fora pode se marcar assim.
+   */
+  const root = createRoot(["quem-somos"]);
+  const expansion = createBlockExpansion(root, { navigate: () => {} });
+  expansion.open("quem-somos");
+
+  root.emit("click", {
+    target: {
+      closest: (seletor) => (seletor === "[data-keeps-expansion]" ? {} : null),
+    },
+  });
+
+  assert.equal(expansion.activeId, "quem-somos");
+});
