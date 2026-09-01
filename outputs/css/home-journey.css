@@ -1,10 +1,37 @@
-body[data-story-page="true"] {
-  background:
-    linear-gradient(180deg, rgba(211, 198, 179, .78), rgba(196, 178, 154, .86)),
-    url("../media/chegada-landscape.webp") center / cover fixed no-repeat;
+:root {
+  --journey-ink: #302318;
+  --journey-ivory: #f7edda;
+  --journey-gold: #d7ba78;
+  --journey-panel: rgba(77, 57, 39, .82);
+  --journey-panel-open: rgba(69, 49, 32, .94);
+  --journey-line-gutter: clamp(104px, 15vw, 210px);
 }
 
-#journey-root { position: relative; }
+html {
+  scroll-behavior: auto;
+  background: #5c4936;
+}
+
+body[data-story-page="true"] {
+  position: relative;
+  min-height: 100%;
+  background:
+    linear-gradient(rgba(67, 51, 36, .15), rgba(48, 35, 24, .3)),
+    url("../media/home-travessia.webp") center / cover fixed no-repeat,
+    #6c5740;
+  color: var(--journey-ivory);
+}
+
+body[data-story-page="true"]::before {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 223, 160, .18), transparent 42%),
+    linear-gradient(90deg, rgba(36, 25, 17, .2), transparent 35%, transparent 65%, rgba(36, 25, 17, .2));
+}
 
 .journey-road {
   position: fixed;
@@ -13,464 +40,423 @@ body[data-story-page="true"] {
   width: 100vw;
   height: 100svh;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+}
+
+body.is-ready .journey-road { opacity: 1; }
+
+#journey-root {
+  position: relative;
+  z-index: 4;
+  min-height: 100svh;
+  isolation: isolate;
+}
+
+.journey-entry-veil {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  background: #0d100e;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .9s cubic-bezier(.4, 0, .2, 1), visibility .9s;
+}
+
+.entry-pending .journey-entry-veil {
+  opacity: 1;
+  visibility: visible;
+}
+
+.entry-from-arrival .journey-entry-veil {
+  animation: entry-veil-reveal 1.8s cubic-bezier(.22, .72, .24, 1) both;
+}
+
+html.is-crossing .journey-entry-veil {
+  opacity: 1;
+  visibility: visible;
+}
+
+@keyframes entry-veil-reveal {
+  from { opacity: 1; visibility: visible; }
+  to { opacity: 0; visibility: hidden; }
 }
 
 .journey-scroll-cue {
   position: fixed;
-  z-index: 24;
+  z-index: 30;
   top: 50%;
-  right: max(24px, 4vw);
+  right: max(22px, calc(env(safe-area-inset-right) + 16px));
   width: 1px;
-  height: clamp(126px, 24svh, 196px);
-  pointer-events: none;
-  background: rgba(79, 62, 43, .24);
+  height: min(30vh, 250px);
+  background: rgba(247, 237, 218, .27);
   transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .journey-scroll-cue span {
   position: absolute;
   top: var(--journey-scroll-position, 0%);
   left: 50%;
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
+  border: 1px solid rgba(255, 244, 220, .8);
   border-radius: 50%;
-  background: rgba(108, 78, 43, .88);
-  box-shadow: 0 0 13px rgba(162, 119, 65, .42);
-  transform: translate3d(-50%, -50%, 0);
-  will-change: transform;
+  background: var(--journey-gold);
+  box-shadow: 0 0 20px rgba(231, 193, 111, .76);
+  transform: translate(-50%, -50%);
+  transition: top .16s linear;
 }
 
-.journey-entry-veil {
-  position: fixed;
-  z-index: 80;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  background: radial-gradient(circle at 50% 46%, #382f25, #121512 58%, #0d100e 100%);
-}
-
-.entry-pending .journey-entry-veil { opacity: 1; visibility: visible; }
-.entry-from-arrival .journey-entry-veil { animation: entry-veil-reveal 1.8s cubic-bezier(.4, 0, .2, 1) both; }
-.entry-from-arrival .journey-road { animation: entry-canvas-handoff 1.8s cubic-bezier(.22, .72, .24, 1) both; }
-.entry-from-arrival .prologue-copy { animation: entry-prologue-handoff 1.8s cubic-bezier(.22, .72, .24, 1) both; }
-
-/* Fecha o véu na SAÍDA para o palácio: `crossTo` marca `is-crossing` no
-   <html> e espera 850ms (`handoffDelayForMotion`) antes de trocar de
-   documento. Sem esta regra o elemento já existia (reaproveitado da entrada)
-   mas ficava invisível nesses 850ms, e a troca de página vinha como corte
-   seco. A transição cabe dentro do atraso — não pode ultrapassá-lo. */
-html.is-crossing .journey-entry-veil {
-  visibility: visible;
-  opacity: 1;
-  transition: opacity .78s cubic-bezier(.4, 0, .2, 1);
-}
-
-.journey-prologue {
+.journey-prologue,
+.journey-continuation {
   position: relative;
-  z-index: 4;
-  min-height: 155svh;
+  display: grid;
+  min-height: 112svh;
+  padding: clamp(70px, 9vw, 140px);
+  place-items: center;
+  text-align: center;
 }
 
-.prologue-copy {
+.prologue-copy,
+.journey-continuation > div {
+  max-width: 900px;
+  padding: clamp(30px, 5vw, 68px);
+  text-shadow: 0 2px 28px rgba(35, 24, 15, .55);
+}
+
+.prologue-copy p,
+.journey-continuation p {
+  margin: 0 0 18px;
+  color: var(--journey-gold);
+  font-size: clamp(.68rem, .9vw, .88rem);
+  font-weight: 700;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+}
+
+.prologue-copy h1,
+.journey-continuation h2 {
+  margin: 0;
+  color: var(--journey-ivory);
+  font: 400 clamp(4.6rem, 12vw, 11rem)/.84 Georgia, "Times New Roman", serif;
+  letter-spacing: -.065em;
+}
+
+.prologue-copy > span {
+  display: inline-block;
+  margin-top: 24px;
+  color: rgba(247, 237, 218, .72);
+  letter-spacing: .12em;
+}
+
+.journey-region {
+  position: relative;
+  /* O valor real chega por atributo, escrito por journeyRhythmForIndex — este
+     é só o fallback de antes de o JS montar. Ele precisa CASAR com o ritmo de
+     lá: descasado, a página nasce curta e salta de altura quando o script
+     entra, e o teste de ritmo passa a medir uma altura que ninguém vê. */
+  min-height: var(--region-height, 196svh);
+  pointer-events: none;
+}
+
+.region-stage {
   position: sticky;
   top: 0;
   display: grid;
-  min-height: 100svh;
-  padding: clamp(30px, 5vw, 74px) 35vw clamp(30px, 5vw, 74px) clamp(30px, 7vw, 110px);
-  align-content: center;
-  justify-items: center;
-  text-align: center;
-  pointer-events: none;
-}
-
-.prologue-copy::before {
-  content: "";
-  position: absolute;
-  inset: 12% 14%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(238, 242, 237, .72), rgba(224, 233, 231, .24) 52%, transparent 72%);
-  filter: blur(18px);
-}
-
-.prologue-copy > * { position: relative; }
-.prologue-copy p { margin: 0 0 20px; color: var(--ink-soft); font-size: 10px; font-weight: 700; letter-spacing: .34em; text-transform: uppercase; }
-.prologue-copy h1 { margin: 0; color: var(--ink); font: 400 clamp(5rem, 10.5vw, 10.5rem)/.82 Georgia, serif; letter-spacing: -.065em; }
-.prologue-copy span { margin-top: 34px; color: rgba(74, 55, 40, .52); font: italic 17px/1.4 Georgia, serif; }
-
-.journey-region {
-  --region-presence: 0;
-  --region-x: 0px;
-  --region-y: 0px;
-  position: relative;
-  min-height: var(--region-height, 184svh);
-  pointer-events: none;
-}
-.journey-region.is-present { pointer-events: auto; }
-
-.region-stage {
-  --lateral-x: 0px;
-  position: sticky;
-  top: 0;
+  grid-template-columns: minmax(0, 1fr) var(--journey-line-gutter) minmax(0, 1fr);
+  align-items: center;
   width: 100%;
   height: 100svh;
-  min-height: 520px;
-  overflow: hidden;
+  min-height: 560px;
+  padding: clamp(36px, 5vw, 84px);
 }
 
-.region-stage[aria-expanded] { touch-action: pan-y; outline: none; }
-.region-stage[aria-expanded]:focus-visible { box-shadow: inset 0 0 0 2px rgba(74, 55, 40, .42); }
-
-/* A presença já é calculada e amortecida no controlador; aqui ela deixa de ser
-   só opacidade e passa a ter corpo — a informação sobe, entra em foco e cresce
-   ao aparecer, e faz o caminho inverso ao sair. */
-.journey-region {
-  --presence-fade: calc(1 - var(--region-presence));
-  --presence-lift: calc(var(--presence-fade) * 82px);
-  --presence-scale: calc(1 - var(--presence-fade) * .13);
-  --presence-blur: calc(var(--presence-fade) * 9px);
-}
-
-/* A informação fica sobre a paisagem, e sem delimitação o texto disputava com a
-   fotografia. A linha marca o território do encontro e devolve leitura ao corpo
-   do texto; o mesmo traço e o mesmo raio das páginas internas, para ser o mesmo
-   sistema e não um enfeite novo. */
 .region-content {
-  /* Contexto de contêiner: é o que faz o cqi do título medir esta caixa. */
-  container-type: inline-size;
-  position: absolute;
-  z-index: 3;
-  top: 50%;
-  width: min(43vw, 650px);
-  padding: clamp(24px, 2.6vw, 40px) clamp(26px, 2.8vw, 44px) clamp(28px, 3vw, 46px);
-  border: 1px solid rgba(74, 55, 40, .2);
-  border-radius: 20px;
-  background: linear-gradient(
-    155deg,
-    rgba(252, 250, 246, .58),
-    rgba(246, 242, 234, .34) 62%,
-    rgba(240, 236, 227, .2)
-  );
+  position: relative;
+  width: min(35vw, 500px);
+  max-height: min(78svh, 720px);
+  overflow: auto;
+  border: 1px solid rgba(231, 202, 143, .28);
+  border-radius: clamp(22px, 3vw, 42px);
+  background: var(--journey-panel);
+  box-shadow: 0 24px 80px rgba(29, 20, 13, .28);
+  color: var(--journey-ivory);
+  opacity: 0;
+  transform: translate3d(0, 30px, 0) scale(.98);
+  transition:
+    width .72s cubic-bezier(.2, .72, .2, 1),
+    background .72s ease,
+    opacity .9s cubic-bezier(.2, .7, .2, 1),
+    transform .9s cubic-bezier(.2, .7, .2, 1);
+  pointer-events: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(215, 186, 120, .5) transparent;
+}
+
+.journey-region[data-side="left"] .region-content {
+  grid-column: 1;
+  justify-self: end;
+  transform-origin: right center;
+}
+
+.journey-region[data-side="right"] .region-content {
+  grid-column: 3;
+  justify-self: start;
+  transform-origin: left center;
+}
+
+.journey-region.is-present .region-content {
+  opacity: clamp(.32, var(--region-presence, 1), 1);
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.journey-region.is-expanded .region-content {
+  width: min(43vw, 680px);
+  background: var(--journey-panel-open);
+}
+
+.region-summary {
+  display: block;
+  width: 100%;
+  padding: clamp(28px, 4vw, 58px);
+  border: 0;
   color: inherit;
-  text-decoration: none;
-  opacity: var(--region-presence);
-  filter: blur(var(--presence-blur));
-  transform:
-    translate3d(
-      calc(var(--lateral-x) + var(--region-x)),
-      calc(-50% + var(--region-y) + var(--presence-lift)),
-      0
-    )
-    scale(var(--presence-scale));
-  will-change: opacity, transform, filter;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
 
-.journey-region[data-road-side="left"] .region-content { right: clamp(5vw, 8vw, 132px); }
-.journey-region[data-road-side="right"] .region-content { left: clamp(5vw, 8vw, 132px); }
-
-.journey-region[data-road-side="top"] .region-content {
-  top: 62%;
-  right: clamp(5vw, 8vw, 132px);
-  left: auto;
-  width: min(68vw, 760px);
+.region-summary:focus-visible,
+.region-link:focus-visible,
+.journey-continuation a:focus-visible,
+.journey-footer a:focus-visible,
+.journey-sound:focus-visible {
+  outline: 2px solid var(--journey-gold);
+  outline-offset: 4px;
 }
-.journey-region[data-road-side="bottom"] .region-content {
-  top: 34%;
-  left: clamp(5vw, 8vw, 132px);
-  width: min(68vw, 760px);
-}
-
-.journey-region[data-content-placement="center"] .region-content {
-  right: auto;
-  left: 50%;
-  width: min(76vw, 820px);
-  text-align: center;
-  transform:
-    translate3d(
-      calc(-50% + var(--lateral-x) + var(--region-x)),
-      calc(-50% + var(--region-y) + var(--presence-lift)),
-      0
-    )
-    scale(var(--presence-scale));
-}
-
-.journey-region[data-content-placement="center"] .region-category,
-.journey-region[data-content-placement="center"] .region-tags,
-.journey-region[data-content-placement="center"] .region-link { justify-content: center; }
-.journey-region[data-content-placement="center"] .region-content h2,
-.journey-region[data-content-placement="center"] .region-description { margin-right: auto; margin-left: auto; }
 
 .region-category {
   display: flex;
   align-items: center;
-  gap: 17px;
-  margin: 0 0 clamp(20px, 3vw, 38px);
-  color: rgba(74, 55, 40, .58);
-  font-size: 10px;
+  gap: 14px;
+  margin-bottom: clamp(28px, 5vh, 54px);
+  color: rgba(240, 216, 169, .8);
+  font-size: .66rem;
   font-weight: 700;
-  letter-spacing: .23em;
+  letter-spacing: .22em;
   text-transform: uppercase;
 }
 
-.region-category span { display: flex; align-items: center; gap: 12px; }
-.region-category span::after { content: ""; width: clamp(44px, 6vw, 92px); height: 1px; background: rgba(74, 55, 40, .26); }
-
-/* O título é medido pela CAIXA, não pela janela.
- *
- * Com `vw` o tamanho da fonte seguia a largura da tela enquanto a caixa seguia
- * outra conta — `min(43vw, 650px)` no lado da estrada, `min(68vw, 760px)` em
- * cima e embaixo, `min(76vw, 820px)` no centro — e nas larguras em que as duas
- * contas se afastavam o texto saía pela borda. "Atendimentos" é uma palavra só
- * e não quebra: não havia para onde ela fugir.
- *
- * `cqi` é 1% da largura da própria caixa, então o título encolhe junto com ela
- * em qualquer combinação de largura e variante. Os tetos vêm da palavra mais
- * larga de cada escala: "Atendimentos" ocupa 4,74× o tamanho da fonte, então
- * 19cqi a deixa em 90% da caixa; nas display a pior é "Inspiração", com 3,51×,
- * e 25cqi a deixa em 88%. A folga não é arredondamento: Georgia pode cair num
- * substituto mais largo, e 95% de preenchimento estourava com poucos por cento
- * de diferença. Os limites em rem seguram as pontas. */
-.region-content h2 {
-  margin: 0;
-  color: var(--ink);
-  font: 400 clamp(2.6rem, 25cqi, 9.4rem)/.84 Georgia, "Times New Roman", serif;
-  letter-spacing: -.065em;
-  text-wrap: balance;
+.region-category::after {
+  width: 72px;
+  height: 1px;
+  background: currentColor;
+  content: "";
+  opacity: .45;
 }
 
-.journey-region[data-title-scale="compact"] .region-content h2 {
-  font-size: clamp(2.4rem, 19cqi, 7.25rem);
+.region-title {
+  display: block;
+  color: var(--journey-ivory);
+  font: 400 clamp(3rem, 5.6vw, 6.7rem)/.86 Georgia, "Times New Roman", serif;
+  letter-spacing: -.065em;
+  overflow-wrap: anywhere;
+}
+
+.journey-region[data-title-scale="compact"] .region-title {
+  font-size: clamp(2.55rem, 4.7vw, 5.8rem);
 }
 
 .region-description {
-  max-width: 39rem;
-  margin: clamp(24px, 3vw, 40px) 0 0;
-  color: rgba(74, 55, 40, .76);
-  font: 400 clamp(1rem, 1.35vw, 1.3rem)/1.6 Arial, sans-serif;
-  text-wrap: pretty;
+  display: block;
+  max-width: 43ch;
+  margin-top: 28px;
+  color: rgba(247, 237, 218, .76);
+  font-size: clamp(.98rem, 1.35vw, 1.18rem);
+  line-height: 1.65;
 }
 
-.region-tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 24px 0 0; padding: 0; list-style: none; }
-.region-tags li { padding: 7px 10px; border: 1px solid rgba(74, 55, 40, .18); border-radius: 999px; color: rgba(74, 55, 40, .65); background: rgba(237, 241, 237, .48); font-size: 8px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-.region-link { display: inline-flex; gap: 10px; margin-top: 28px; color: var(--ink); font-size: 10px; font-weight: 750; letter-spacing: .18em; text-decoration: none; text-transform: uppercase; }
-.region-link::after { content: ""; display: block; width: 0; height: 1px; margin-top: 17px; background: currentColor; transition: width .35s ease; }
-.region-content:hover .region-link::after, .region-content:focus-visible .region-link::after { width: 100%; }
-.region-content:focus-visible, .journey-discovery:focus-visible, .journey-continuation a:focus-visible, .journey-footer a:focus-visible, .journey-sound:focus-visible { outline: 2px solid var(--ink); outline-offset: 7px; }
-
-.journey-discovery {
-  position: absolute;
-  z-index: 4;
-  bottom: 9svh;
+.region-expand-label {
   display: flex;
   align-items: center;
-  gap: 14px;
-  max-width: min(340px, 34vw);
-  color: var(--ink);
+  gap: 10px;
+  margin-top: 28px;
+  color: var(--journey-gold);
+  font-size: .67rem;
+  font-weight: 700;
+  letter-spacing: .19em;
+  text-transform: uppercase;
+}
+
+.region-expand-label span {
+  font-size: 1rem;
+  transition: transform .4s ease;
+}
+
+.journey-region.is-expanded .region-expand-label span { transform: rotate(45deg); }
+
+.region-details {
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 clamp(28px, 4vw, 58px);
+  opacity: 0;
+  visibility: hidden;
+  transition: max-height .65s cubic-bezier(.2, .72, .2, 1), opacity .45s ease, padding .65s ease, visibility .65s;
+}
+
+.journey-region.is-expanded .region-details {
+  max-height: 520px;
+  padding-bottom: clamp(30px, 4vw, 54px);
+  opacity: 1;
+  visibility: visible;
+}
+
+.region-details p {
+  margin: 0 0 22px;
+  color: rgba(247, 237, 218, .8);
+  font-size: 1rem;
+  line-height: 1.72;
+}
+
+.region-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.region-tags li {
+  padding: 8px 12px;
+  border: 1px solid rgba(231, 202, 143, .24);
+  border-radius: 999px;
+  color: rgba(247, 237, 218, .72);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.region-link,
+.journey-continuation a,
+.journey-footer a {
+  display: inline-flex;
+  gap: 10px;
+  margin-top: 24px;
+  color: var(--journey-gold);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .16em;
   text-decoration: none;
-  opacity: var(--region-presence);
-  filter: blur(var(--presence-blur));
-  transform:
-    translate3d(
-      calc(var(--lateral-x) + var(--region-x)),
-      calc(var(--region-y) + var(--presence-lift)),
-      0
-    )
-    scale(var(--presence-scale));
-  will-change: opacity, transform, filter;
+  text-transform: uppercase;
 }
 
-.journey-region[data-road-side="left"] .journey-discovery { right: clamp(5vw, 9vw, 150px); }
-.journey-region[data-road-side="right"] .journey-discovery { left: clamp(5vw, 9vw, 150px); }
-.journey-region[data-road-side="top"] .journey-discovery { right: clamp(5vw, 9vw, 150px); }
-/* Aqui a estrada corre na horizontal logo abaixo e a descoberta precisa caber
-   entre ela e a caixa de texto. A caixa tem altura em pixels, não em svh: numa
-   tela baixa ela ocupa metade do quadro e uma posição fixa em svh caía dentro
-   dela. Ancorar em `calc(topo da caixa + meia altura dela + folga)` faz a
-   descoberta seguir a caixa em qualquer altura de tela. */
-.journey-region[data-road-side="bottom"] .journey-discovery {
-  top: calc(34% + 230px);
-  bottom: auto;
-  left: clamp(5vw, 9vw, 150px);
-}
-
-/* Mesma amarração do outro lado: aqui a estrada corre acima, então a descoberta
-   desce, mas continua presa à caixa em vez de ao rodapé da janela — colada em
-   `bottom` ela subia por cima do texto quando a tela encurtava. */
-.journey-region[data-road-side="top"] .journey-discovery {
-  top: calc(62% + 230px);
-  bottom: auto;
-}
-.discovery-light { width: 15px; height: 15px; flex: 0 0 auto; border: 1px solid rgba(183, 165, 141, .62); border-radius: 50%; background: #f2dfb8; box-shadow: 0 0 20px rgba(196, 164, 105, .52), 0 0 44px rgba(183, 152, 105, .3); transition: transform .4s ease, box-shadow .4s ease; }
-.discovery-copy { display: grid; gap: 3px; }
-.discovery-copy small { color: rgba(74, 55, 40, .55); font-size: 8px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
-.discovery-copy strong { font: 400 18px/1.15 Georgia, serif; }
-.discovery-copy > span { max-height: 0; overflow: hidden; opacity: 0; color: rgba(74, 55, 40, .66); font-size: 11px; line-height: 1.5; transition: max-height .5s ease, opacity .35s ease; }
-.journey-discovery:hover .discovery-light, .journey-discovery:focus-visible .discovery-light { transform: scale(1.24); box-shadow: 0 0 30px rgba(196, 164, 105, .65), 0 0 60px rgba(183, 152, 105, .42); }
-.journey-discovery:hover .discovery-copy > span, .journey-discovery:focus-visible .discovery-copy > span { max-height: 55px; opacity: 1; }
-.discovery--phrase .discovery-light { border-radius: 3px 50% 50%; transform: rotate(45deg); }
-.discovery--object .discovery-light { width: 22px; height: 9px; border-radius: 99px; }
-.discovery--paper .discovery-light { width: 14px; height: 20px; border-radius: 2px; background: #ebe4d6; }
-
-.region--type-ledger .region-content h2 { font-size: clamp(3rem, 34cqi, 12rem); }
-.region--live-ribbon .region-category::after { content: ""; width: 54px; height: 1px; background: var(--gold); }
-.region--quiet-fullscreen .region-content h2 { font-size: clamp(2.6rem, 25cqi, 8rem); }
-
-.journey-silence {
-  position: relative;
-  display: grid;
-  min-height: var(--silence-height, 88svh);
-  place-items: center;
-  pointer-events: none;
-}
-
-/* A subida é irmã do silêncio: bloco sem conteúdo, existindo só como rolagem
-   para a estrada percorrer. */
-.journey-ascent {
-  position: relative;
-  z-index: 1;
-  min-height: var(--ascent-height, 120svh);
-  pointer-events: none;
-}
-
-
-.lateral-world { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
-.lateral-reveal { position: absolute; top: 50%; display: grid; gap: 8px; width: min(280px, 24vw); opacity: 0; transform: translateY(-50%); transition: opacity .25s ease; }
-.lateral-reveal--left { left: 3vw; text-align: right; }
-.lateral-reveal--right { right: 3vw; }
-.lateral-reveal a { display: grid; gap: 4px; padding: 12px; color: var(--ink); text-decoration: none; }
-.lateral-reveal small { font-size: 8px; letter-spacing: .14em; text-transform: uppercase; }
-.lateral-reveal strong { font: 400 18px/1.2 Georgia, serif; }
-.region-stage.is-lateral-left .lateral-reveal--left,
-.region-stage.is-lateral-right .lateral-reveal--right { opacity: 1; pointer-events: auto; }
-.region-stage.is-lateral-left .lateral-reveal--left a,
-.region-stage.is-lateral-right .lateral-reveal--right a { pointer-events: auto; }
-.region-stage.is-lateral-returning .region-content,
-.region-stage.is-lateral-returning .journey-discovery { transition: transform 620ms cubic-bezier(.16, 1, .3, 1); }
+.journey-silence { min-height: var(--silence-height, 30svh); }
 
 .journey-continuation {
+  min-height: 130svh;
+  background: linear-gradient(180deg, transparent, rgba(44, 31, 20, .36));
+}
+
+.journey-continuation h2 {
+  font-size: clamp(3rem, 8vw, 8rem);
+  line-height: .95;
+}
+
+.journey-footer {
   position: relative;
-  z-index: 3;
-  display: grid;
-  min-height: 175svh;
-  padding: 12svh 8vw 26svh;
-  align-items: end;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 30svh;
+  padding: clamp(36px, 7vw, 92px);
+  border-top: 1px solid rgba(231, 202, 143, .18);
+  background: rgba(39, 28, 19, .86);
+  color: rgba(247, 237, 218, .68);
 }
 
-.journey-continuation > div { width: min(750px, 78vw); margin-left: auto; }
-.journey-continuation p { margin: 0 0 16px; color: rgba(74, 55, 40, .52); font: italic 17px/1.4 Georgia, serif; }
-.journey-continuation h2 { margin: 0; color: var(--ink); font: 400 clamp(3.5rem, 7vw, 8rem)/.92 Georgia, serif; letter-spacing: -.05em; }
-.journey-continuation a { display: inline-flex; gap: 10px; margin-top: 36px; font-size: 10px; font-weight: 750; letter-spacing: .16em; text-decoration: none; text-transform: uppercase; }
-
-.journey-footer { position: relative; z-index: 3; display: flex; justify-content: space-between; gap: 24px; padding: 28px clamp(24px, 5vw, 72px); border-top: 1px solid rgba(74, 55, 40, .12); color: rgba(74, 55, 40, .58); font-size: 10px; letter-spacing: .08em; }
 .journey-footer p { margin: 0; }
+.journey-footer a { margin: 0; }
 
-.journey-sound { position: fixed; z-index: 30; bottom: max(18px, calc(env(safe-area-inset-bottom) + 12px)); left: max(18px, calc(env(safe-area-inset-left) + 12px)); min-height: 38px; padding: 0 14px; border: 1px solid rgba(74, 55, 40, .2); border-radius: 999px; color: var(--ink); background: rgba(237, 241, 237, .74); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-size: 9px; font-weight: 700; letter-spacing: .12em; cursor: pointer; }
-
-@keyframes entry-veil-reveal {
-  0%, 20% { opacity: 1; visibility: visible; }
-  100% { opacity: 0; visibility: hidden; }
-}
-
-@keyframes entry-canvas-handoff {
-  0%, 22% { opacity: 0; }
-  76%, 100% { opacity: 1; }
-}
-
-@keyframes entry-prologue-handoff {
-  0%, 38% { opacity: 0; transform: translate3d(0, 14px, 0); }
-  100% { opacity: 1; transform: translate3d(0, 0, 0); }
-}
-
-/* Tela baixa e larga: caixa, descoberta e estrada disputam a mesma faixa
-   vertical. Subir a caixa é o que abre espaço — a estrada não pode se mexer,
-   porque ela é a espinha da travessia. */
-/* Tela baixa: a caixa tem altura em pixels e a estrada não pode sair do lugar,
-   então quem cede é o bloco. Compactar o encontro central é o que abre faixa
-   para a descoberta caber entre ele e o caminho sem encostar em nenhum dos dois. */
-@media (max-height: 780px) {
-  .journey-region[data-content-placement="center"] .region-content {
-    padding: 20px 26px 22px;
-  }
-  .journey-region[data-content-placement="center"] .region-content h2 {
-    font-size: clamp(2.6rem, 5.2vw, 4.1rem);
-  }
-  .journey-region[data-content-placement="center"] .region-category { margin-bottom: 14px; }
-  .journey-region[data-content-placement="center"] .region-description {
-    margin-top: 15px;
-    font-size: clamp(.94rem, 1.2vw, 1.05rem);
-  }
-  .journey-region[data-content-placement="center"] .region-tags { margin-top: 14px; }
-  .journey-region[data-content-placement="center"] .region-link { margin-top: 16px; }
-
-  /* Deste lado a descoberta fica entre a caixa e a estrada, e a faixa é curta:
-     o recuo menor reparte a sobra pelos dois lados em vez de colar no caminho. */
-  .journey-region[data-road-side="bottom"] .region-content { top: 30%; }
-  .journey-region[data-road-side="bottom"] .journey-discovery { top: calc(30% + 148px); }
-  .journey-region[data-road-side="top"] .region-content { top: 58%; }
-  .journey-region[data-road-side="top"] .journey-discovery { top: calc(58% + 170px); }
+.journey-sound {
+  position: fixed;
+  z-index: 40;
+  bottom: max(18px, calc(env(safe-area-inset-bottom) + 12px));
+  left: 18px;
+  padding: 11px 15px;
+  border: 1px solid rgba(231, 202, 143, .35);
+  border-radius: 999px;
+  color: var(--journey-ivory);
+  background: rgba(54, 39, 27, .78);
+  cursor: pointer;
 }
 
 @media (max-width: 720px) {
-  body[data-story-page="true"] { background-attachment: scroll; }
-  .journey-prologue { min-height: 138svh; }
-  .prologue-copy { padding-right: 31vw; padding-left: 6vw; }
-  .prologue-copy h1 { font-size: clamp(3.7rem, 17vw, 6.4rem); }
-  .journey-region, .journey-region:nth-of-type(n) { min-height: var(--region-height, 184svh); }
-  /* A moldura consome largura útil, então no celular a caixa cresce e o
-     acolchoamento encolhe — senão a descrição quebra em quatro linhas. */
-  .region-content {
-    top: 46%;
-    width: 58vw;
-    padding: 17px 17px 19px;
-    border-radius: 15px;
+  :root { --journey-line-gutter: 72px; }
+
+  body[data-story-page="true"] {
+    background:
+      linear-gradient(rgba(67, 51, 36, .18), rgba(48, 35, 24, .34)),
+      url("../media/home-travessia-mobile.webp") center / cover fixed no-repeat,
+      #6c5740;
   }
-  .journey-region[data-road-side="left"] .region-content { right: 5vw; }
-  .journey-region[data-road-side="right"] .region-content { left: 5vw; }
-  .journey-region[data-road-side="top"] .region-content { top: 60%; right: 6vw; left: auto; width: 82vw; }
-  .journey-region[data-road-side="bottom"] .region-content { top: 32%; left: 6vw; width: 82vw; }
-  .journey-region[data-content-placement="center"] .region-content { right: auto; left: 50%; width: 86vw; }
-  .region-category { gap: 8px; margin-bottom: 14px; font-size: 7px; letter-spacing: .16em; }
-  .region-category span::after { width: 24px; }
-  .region-content h2, .region--type-ledger .region-content h2, .region--quiet-fullscreen .region-content h2 { font-size: clamp(1.7rem, 25cqi, 4.8rem); line-height: .9; }
-  .journey-region[data-title-scale="compact"] .region-content h2 { font-size: clamp(1.5rem, 19cqi, 4.6rem); }
-  .region-description { margin-top: 18px; font-size: clamp(.82rem, 3.6vw, 1rem); line-height: 1.48; }
-  .region-tags { gap: 4px; margin-top: 16px; }
-  .region-tags li { padding: 5px 7px; font-size: 6px; }
-  .region-link { margin-top: 19px; font-size: 7px; }
-  .journey-discovery { bottom: 8svh; max-width: 48vw; }
-  .journey-region[data-road-side="left"] .journey-discovery { right: 5vw; }
-  .journey-region[data-road-side="right"] .journey-discovery { left: 5vw; }
-  .journey-region[data-road-side="top"] .journey-discovery { right: 6vw; }
-  .journey-region[data-road-side="bottom"] .journey-discovery { top: 69svh; left: 6vw; }
-  .discovery-copy strong { font-size: 14px; }
-  .discovery-copy > span { display: none; }
-  .lateral-reveal { width: 42vw; }
-  .journey-continuation { min-height: 145svh; padding-right: 6vw; padding-left: 6vw; }
-  .journey-continuation > div { width: 78vw; }
-  .journey-continuation h2 { font-size: clamp(3rem, 14vw, 5.5rem); }
-  .journey-footer { flex-direction: column; }
-  .journey-scroll-cue { right: 18px; height: 108px; }
+
+  .journey-path { transform: translateX(-32vw); }
+  .journey-scroll-cue { right: 14px; height: 22vh; }
+
+  .journey-prologue,
+  .journey-continuation {
+    min-height: 105svh;
+    padding: 64px 22px;
+  }
+
+  .prologue-copy,
+  .journey-continuation > div { padding: 24px 12px; }
+
+  .region-stage {
+    grid-template-columns: var(--journey-line-gutter) minmax(0, 1fr);
+    padding: 32px 22px 32px 10px;
+  }
+
+  .journey-region[data-side] .region-content {
+    grid-column: 2;
+    justify-self: stretch;
+    width: 100%;
+    max-height: 76svh;
+    transform-origin: left center;
+  }
+
+  .journey-region.is-expanded .region-content { width: 100%; }
+
+  .region-summary { padding: 28px 24px; }
+  .region-details { padding-right: 24px; padding-left: 24px; }
+  .region-category { margin-bottom: 26px; }
+  .region-title { font-size: clamp(2.7rem, 15vw, 4.8rem); }
+  .journey-region[data-title-scale="compact"] .region-title { font-size: clamp(2.35rem, 12.5vw, 4.1rem); }
+  .region-description { font-size: .95rem; }
+
+  .journey-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 36svh;
+    padding: 48px 26px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .entry-from-arrival .journey-entry-veil,
-  .entry-from-arrival .journey-road,
-  .entry-from-arrival .prologue-copy { animation-duration: .12s !important; }
-  /* `handoffDelayForMotion` já encurta o atraso da passagem para 80ms aqui;
-     o véu só precisa aparecer, sem a transição longa de opacidade. */
-  html.is-crossing .journey-entry-veil { transition-duration: .01ms !important; }
-  /* Quem pediu menos movimento continua com o aparecer e desaparecer, mas por
-     opacidade apenas: sem deslocamento, sem escala e sem desfoque. */
-  .journey-region {
-    --region-x: 0px !important;
-    --region-y: 0px !important;
-    --presence-lift: 0px !important;
-    --presence-scale: 1 !important;
-    --presence-blur: 0px !important;
-  }
-  .region-content, .journey-discovery { will-change: opacity; }
-  .region-stage.is-lateral-returning .region-content,
-  .region-stage.is-lateral-returning .journey-discovery { transition-duration: .01ms !important; }
-  .region-link::after, .discovery-light, .discovery-copy > span { transition-duration: .01ms !important; }
-  .journey-road { opacity: .78; }
+  .journey-road,
+  .journey-entry-veil,
+  .region-content,
+  .region-details,
+  .region-expand-label span,
+  .journey-scroll-cue span { transition-duration: .01ms !important; }
+  .entry-from-arrival .journey-entry-veil { animation-duration: .01ms; }
+  .region-content { transform: none; }
+  .journey-path { transform: none; }
 }

@@ -14,6 +14,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Código de terceiros, minificado, publicado como veio: revisar o estilo
+    // dele não diz nada sobre este projeto e o ruído esconderia os avisos que
+    // importam. O que precisa ser garantido aqui — que os pedaços do bundle
+    // foram todos copiados — está em tests/potala/vendor-three.test.mjs.
+    "outputs/vendor/**",
   ]),
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

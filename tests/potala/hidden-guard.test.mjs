@@ -67,8 +67,10 @@ test("todo elemento que nasce hidden e ganha display no CSS tem guard [hidden]",
   const css = stripComments(`${sceneCss}\n${breathCss}`);
 
   const started = hiddenClasses(html);
-  assert.ok(started.has("world-poem"), "o poema precisa nascer hidden");
-  assert.ok(started.size >= 3, "esperava vários elementos hidden na Chegada");
+  // O poema e o mundo de atores saíram com a cena antiga; a varredura genérica
+  // continua valendo para o que ficou — e para o que vier depois, que é o ponto
+  // deste teste: ele não conhece nome nenhum de elemento.
+  assert.ok(started.size >= 1, "esperava ao menos um elemento hidden na Chegada");
 
   const displayed = classesGivenDisplay(css);
   const guarded = classesGuarded(css);
@@ -81,11 +83,10 @@ test("todo elemento que nasce hidden e ganha display no CSS tem guard [hidden]",
   );
 });
 
-test("o véu do poema não pode ficar clicável enquanto está fechado", async () => {
-  const css = stripComments(await read("../../outputs/css/chegada-scene.css"));
-
-  // Cinto e suspensório do caso que quebrou: o guard existe, nomeado.
-  assert.match(css, /\.world-poem\[hidden\][^{]*\{[^}]*display\s*:\s*none/);
-  // E o véu cobre a tela toda, que é justamente o que torna a falha invisível.
-  assert.match(css, /\.world-poem\s*\{[^}]*position\s*:\s*fixed/);
-});
+/*
+ * O teste do véu do poema saiu daqui junto com o poema: a Chegada passou a ser
+ * uma composição única com chegada.png, sem mundo de atores nem versos. O que
+ * ele protegia — véu que cobre a tela inteira, nasce hidden e o CSS devolve
+ * display, ficando clicável e invisível — continua protegido pela varredura
+ * genérica acima, que não depende de conhecer o nome do elemento.
+ */

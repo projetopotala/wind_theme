@@ -13,22 +13,16 @@ import {
  * que qualquer coisa acesa por cima dele compete com o texto.
  */
 
-test("o mundo e a sua legenda somem junto com o resto enquanto o poema fala", async () => {
-  const css = await readFile("outputs/css/chegada-scene.css", "utf8");
-  const inicio = css.indexOf("body.is-poem-open .journey-scroll-cue");
-  assert.notEqual(inicio, -1, "a regra do poema aberto sumiu");
-  const seletores = css.slice(inicio, css.indexOf("{", inicio));
-
-  // Faltando aqui, o anel do elemento clicado fica aceso sobre o próprio verso
-  // que ele abriu — foi assim que o defeito apareceu.
-  assert.match(seletores, /body\.is-poem-open \.arrival-world/);
-  assert.match(seletores, /body\.is-poem-open \.world-prompt/);
-
-  // `pointer-events: none` no contêiner não basta: os botões repõem `auto`.
-  const atores = css.indexOf("body.is-poem-open .world-actor");
-  assert.notEqual(atores, -1, "os botões precisam parar de responder ao ponteiro");
-  assert.match(css.slice(atores, css.indexOf("}", atores)), /pointer-events:\s*none/);
-});
+/*
+ * A regra CSS que apagava o mundo e a legenda enquanto o poema falava saiu com
+ * a cena antiga: a Chegada virou uma composição única com chegada.png, sem
+ * atores nem versos, e a regra passou a não ter a que se aplicar. O teste dela
+ * saiu junto — guardar um seletor que não pode existir só produziria uma
+ * falha permanente sem defeito por trás.
+ *
+ * O que continua abaixo testa os módulos em si, que seguem no repositório e
+ * seguem coerentes: soltar a atenção sem apagar a memória do que foi tocado.
+ */
 
 test("fechar o poema apaga o realce sem apagar a memória do que foi tocado", () => {
   const ator = { id: "tree", action: "wind", x: 0.2, y: 0.3, cue: "…", label: "A árvore" };
