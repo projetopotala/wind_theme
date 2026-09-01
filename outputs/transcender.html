@@ -6,7 +6,14 @@
   <meta name="theme-color" content="#211b15">
   <meta name="description" content="Um espaço de chegada antes de entrar no Ecossistema Potala.">
   <title>Potala — Chegada</title>
-  <link rel="preload" href="media/chegada.png" as="image" type="image/png" fetchpriority="high">
+  <!-- Um preload por recorte, com a MESMA media query do <picture> abaixo.
+       Sem a query, o telefone baixaria a paisagem inteira além do recorte que
+       vai usar — dois arquivos, um deles jogado fora, na coisa mais pesada e
+       mais prioritária da página. -->
+  <link rel="preload" href="media/chegada.webp" as="image" type="image/webp"
+    media="(min-width: 721px)" fetchpriority="high">
+  <link rel="preload" href="media/chegada-mobile.webp" as="image" type="image/webp"
+    media="(max-width: 720px)" fetchpriority="high">
   <link rel="stylesheet" href="respiracao.css">
   <link rel="stylesheet" href="css/chegada-scene.css">
   <script>
@@ -35,7 +42,12 @@
     <section class="arrival-sticky" aria-label="Chegada ao Instituto Potala">
       <div class="arrival-visual" id="arrival-visual">
         <picture class="arrival-plate">
-          <img src="media/chegada.png" alt="Paisagem contemplativa do caminho de chegada ao Instituto Potala"
+          <!-- No telefone o quadro é vertical: a paisagem inteira encolhida
+               deixaria o caminho, que é o assunto, pequeno demais para se ler.
+               O recorte retrato nasce do mesmo ponto focal (58% da largura). -->
+          <source media="(max-width: 720px)" srcset="media/chegada-mobile.webp"
+            width="744" height="992">
+          <img src="media/chegada.webp" alt="Paisagem contemplativa do caminho de chegada ao Instituto Potala"
             width="1586" height="992" fetchpriority="high" decoding="async">
         </picture>
         <div class="arrival-atmosphere" aria-hidden="true"></div>

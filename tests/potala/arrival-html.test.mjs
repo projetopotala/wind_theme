@@ -11,7 +11,11 @@ test("a Chegada usa a placa principal e entrada somente por rolagem", async () =
     readFile(controllerUrl, "utf8"),
   ]);
 
-  assert.match(html, /media\/chegada\.png/);
+  // WebP, não o PNG de 2,5 MB: esta é a primeira coisa que a página baixa, com
+  // fetchpriority alto, e o original cru custava dez vezes mais bytes sem
+  // diferença nenhuma na tela.
+  assert.match(html, /media\/chegada\.webp/);
+  assert.doesNotMatch(html, /media\/chegada\.png/);
   assert.match(html, /width="1586" height="992"/);
   assert.match(html, /class="journey-scroll-cue"/);
   assert.match(html, /js\/chegada\/arrival-plate-controller\.js/);

@@ -167,7 +167,11 @@ body.is-arrival-transitioning .breathing-guide {
   .arrival { min-height: 170svh; }
   .arrival-sticky { min-height: 480px; }
   .arrival-plate img {
-    object-position: 58% center;
+    /* O recorte mobile JÁ nasce centrado nos 58% do ponto focal. Repetir o
+       deslocamento aqui empurraria a imagem uma segunda vez e tiraria o
+       caminho do eixo. O `center` é o valor certo justamente porque o
+       enquadramento foi resolvido no arquivo, não no CSS. */
+    object-position: center;
     transform: scale(calc(1.08 + var(--arrival-progress) * .025));
   }
   .journey-scroll-cue { right: 15px; height: 22vh; }

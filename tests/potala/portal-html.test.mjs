@@ -12,7 +12,7 @@ test("respiração é opt-in e a placa da Chegada é a imagem principal", () => 
   // A cena WebGL em camadas deu lugar a uma composição única com chegada.png;
   // o que este teste ainda guarda é o que NÃO podia se perder junto com ela:
   // a respiração continua opt-in e o som nunca começa sozinho.
-  assert.match(chegada, /<img[^>]+src="media\/chegada\.png"/);
+  assert.match(chegada, /<img[^>]+src="media\/chegada\.webp"/);
   assert.doesNotMatch(chegada, /<audio[^>]*autoplay/i);
 });
 
