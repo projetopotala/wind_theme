@@ -50,6 +50,17 @@ void main() {
   float glow = exp(-distance * distance / 5.0) * 0.19;
   float alpha = clamp(core * 0.94 + glow, 0.0, 1.0);
   gl_FragColor = vec4(uGold, alpha * uOpacity);
+
+  /*
+   * Sem esta linha a cor sai errada e nada acusa.
+   *
+   * THREE.Color guarda o valor em espaço linear, e é o renderizador que o
+   * converte de volta para sRGB na saída — mas só para os materiais dele. Um
+   * ShaderMaterial que escreve gl_FragColor direto pula essa etapa, e o
+   * dourado chega à tela mais escuro e mais saturado do que foi pedido:
+   * medido, 0xf3e2c2 aparecia como rgb(229,194,138).
+   */
+  #include <colorspace_fragment>
 }`;
 
 /**
@@ -164,7 +175,10 @@ export function createHomePath(canvas, {
       // A meia-largura da fita em unidades do mundo. O núcleo aceso ocupa cerca
       // de 13% dela (0,93 de 7 no shader); o resto é o halo se apagando.
       uWidth: { value: 0.1 },
-      uGold: { value: new THREE.Color(0xe6bd78) },
+      // Puxado para o branco: o dourado de antes (0xe6bd78) lia como fio de
+      // metal sobre a paisagem sépia. Clareado, volta a ler como luz — a cor
+      // ainda é quente, mas o núcleo aceso agora é quase branco.
+      uGold: { value: new THREE.Color(0xf3e2c2) },
     },
     vertexShader: RIBBON_VERTEX,
     fragmentShader: RIBBON_FRAGMENT,

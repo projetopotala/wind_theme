@@ -77,3 +77,26 @@ test("o bloco editorial tem fundo próprio, não a paisagem por baixo", async ()
   const conteudo = css.slice(css.indexOf(".region-content {"), css.indexOf("}", css.indexOf(".region-content {")));
   assert.doesNotMatch(conteudo, /backdrop-filter/);
 });
+
+test("o bloco fica cheio antes de chegar ao centro da tela", async () => {
+  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
+  const { presenceForRegionBounds } = await import("../../outputs/js/home/home-scenes.js");
+
+  const regra = css.slice(
+    css.indexOf(".journey-region.is-present .region-content {"),
+    css.indexOf("}", css.indexOf(".journey-region.is-present .region-content {")),
+  );
+  const fator = Number(regra.match(/--region-presence[^)]*\)\s*\*\s*([\d.]+)/)?.[1]);
+  assert.ok(fator >= 2, `a curva de opacidade precisa saturar cedo; achei ${fator || "nenhum fator"}`);
+
+  /*
+   * Sem a saturação, a opacidade seguia a presença: um bloco a meio caminho do
+   * centro ficava a meia opacidade, e a paisagem atravessava o painel bem na
+   * hora da leitura. O aparecer e o desaparecer continuam — nas pontas, onde
+   * são efeito — mas o miolo da passagem fica cheio.
+   */
+  const viewport = 720;
+  const meioCaminho = presenceForRegionBounds({ top: 250, bottom: 1930, viewportHeight: viewport });
+  assert.ok(meioCaminho > 0.2 && meioCaminho < 0.9, "o caso medido precisa ser um meio-termo");
+  assert.ok(meioCaminho * fator >= 1, "a meio caminho do centro o bloco já devia estar opaco");
+});

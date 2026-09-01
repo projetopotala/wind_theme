@@ -95,3 +95,19 @@ test("o brilho é uma queda contínua, não uma casca de opacidade fixa", async 
   // A revelação corta pelo comprimento do arco, e não por intervalo de índices.
   assert.match(fonte, /if \(vArc > uReveal\) discard;/);
 });
+
+test("o shader converte a cor para sRGB na saída", async () => {
+  const fonte = await readFile(
+    new URL("../../outputs/js/home/home-path-three.js", import.meta.url),
+    "utf8",
+  );
+
+  /*
+   * THREE.Color guarda o valor em espaço linear e é o renderizador que o
+   * converte de volta na saída — mas só para os materiais dele. Um
+   * ShaderMaterial que escreve gl_FragColor direto pula essa etapa, e a cor
+   * chega à tela mais escura e mais saturada do que foi pedida, sem erro
+   * nenhum: medido, 0xf3e2c2 saía como rgb(229,194,138) até esta linha entrar.
+   */
+  assert.match(fonte, /#include <colorspace_fragment>/);
+});

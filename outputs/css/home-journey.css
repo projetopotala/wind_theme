@@ -12,8 +12,8 @@
    *
    * Sem `backdrop-filter` de propósito: o bloco escala e translada, e desfoque
    * em superfície grande em movimento é caro em toda máquina. */
-  --journey-panel: rgba(43, 32, 22, .955);
-  --journey-panel-open: rgba(38, 28, 19, .975);
+  --journey-panel: rgba(43, 32, 22, 1);
+  --journey-panel-open: rgba(38, 28, 19, 1);
   --journey-line-gutter: clamp(104px, 15vw, 210px);
 }
 
@@ -218,7 +218,19 @@ html.is-crossing .journey-entry-veil {
 }
 
 .journey-region.is-present .region-content {
-  opacity: clamp(.32, var(--region-presence, 1), 1);
+  /*
+   * O bloco fica CHEIO quase o tempo todo; a presença só desenha as pontas.
+   *
+   * Antes a opacidade seguia a presença linearmente, então um bloco a meio
+   * caminho do centro ficava a meia opacidade — e é justamente aí que se lê.
+   * A paisagem atravessava o painel enquanto o texto estava sendo lido, que é
+   * o oposto do que um painel de leitura serve para fazer.
+   *
+   * O fator 2.2 satura a curva: a opacidade chega a 1 com ~45% de presença e
+   * fica lá. O aparecer e o desaparecer continuam existindo — nas bordas da
+   * tela, onde são efeito — mas somem do meio, onde eram estorvo.
+   */
+  opacity: clamp(.32, calc(var(--region-presence, 1) * 2.2), 1);
   transform: translate3d(0, 0, 0) scale(1);
 }
 
