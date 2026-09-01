@@ -64,11 +64,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* A imagem cede contraste para o texto que vai por cima dela: sem isso o
-     rótulo some sobre a parte clara da paisagem, que é justamente onde ele
-     cai em três das quatro vidraças. */
-  filter: saturate(.82) brightness(.86);
-  transition: transform .7s cubic-bezier(.2, .72, .2, 1), filter .5s ease;
+  /* Só `transform`, que o compositor resolve sozinho. O escurecimento que
+     antes vinha de `filter` foi assado no arquivo pelo script — e `filter` não
+     é propriedade de compositor, então animá-lo obrigava a refiltrar 162 mil
+     pixels na vidraça grande a cada quadro dos 500ms. */
+  transition: transform .7s cubic-bezier(.2, .72, .2, 1);
 }
 
 /*
@@ -109,7 +109,6 @@
 .atend-vidraca a:hover img,
 .atend-vidraca a:focus-visible img {
   transform: scale(1.04);
-  filter: saturate(.95) brightness(.95);
 }
 
 .atend-vidraca a:focus-visible {
