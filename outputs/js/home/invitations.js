@@ -13,6 +13,7 @@
  */
 const CONVITES = {
   "quem-somos": "Conheça quem somos",
+  recepcao: "Comece com uma conversa",
   atendimentos: "Conheça nossos atendimentos",
   cursos: "Conheça nossos cursos",
   atividades: "Conheça nossas atividades",

@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
+import { JOURNEY_REGIONS } from "../../outputs/js/home/journey-data.js";
 import * as homeScenes from "../../outputs/js/home/home-scenes.js";
 
 const {
@@ -35,7 +37,13 @@ test("o fade começa somente quando a informação entra na área visível", () 
 
 test("o percurso entre informações desacelera a narrativa sem voltar a ficar longo", () => {
   assert.equal(typeof journeyRhythmForIndex, "function");
-  for (let index = 0; index < 8; index += 1) {
+
+  /*
+   * O laço percorre TODAS as transições, e não um número escrito à mão: com
+   * oito fixos, acrescentar uma região deixava os últimos trechos sem medida —
+   * o guarda continuava verde sobre um pedaço da jornada que ninguém olhava.
+   */
+  for (let index = 0; index < JOURNEY_REGIONS.length - 1; index += 1) {
     const current = journeyRhythmForIndex(index);
     const next = journeyRhythmForIndex(index + 1);
     const centerDistance = current.regionHeight / 2 + current.silenceHeight + next.regionHeight / 2;

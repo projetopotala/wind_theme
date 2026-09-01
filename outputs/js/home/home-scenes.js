@@ -39,8 +39,8 @@ export function presenceForRegionBounds({ top, bottom, viewportHeight }) {
 // O silêncio não é só pausa: é o trecho de rolagem em que a curva inteira passa.
 // Com 10svh a estrada virava 90° sete vezes mais rápido do que corria na reta, e
 // a virada dava solavanco. O silêncio volta a ser proporcional ao arco.
-const regionHeights = [198, 192, 195, 202, 192, 195, 202, 196, 192];
-const silenceHeights = [44, 48, 42, 46, 43, 50, 44, 46];
+const regionHeights = [198, 194, 192, 195, 202, 192, 195, 202, 196, 192];
+const silenceHeights = [45, 44, 48, 42, 46, 43, 50, 44, 46];
 
 /** Rolagem da subida final, em svh. Sem informação: só caminho. */
 export const ASCENT_HEIGHT = 120;
@@ -53,8 +53,12 @@ export function journeyRhythmForIndex(index) {
   };
 }
 
+/* Indexada por POSIÇÃO da região, não por id: uma região nova no meio empurra
+   todas as seguintes, e sem acompanhar aqui cada seção passa a receber a
+   descoberta da vizinha. */
 const featuredDiscoveries = [
   "acao-social",
+  "atendimento-online",
   "recepcao",
   "blog",
   "saude-integrativa",

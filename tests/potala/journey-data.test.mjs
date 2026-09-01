@@ -7,8 +7,14 @@ import {
   findRelatedContent,
 } from "../../outputs/js/home/journey-data.js";
 
+/*
+ * A ordem importa além da narrativa: o lado de cada bloco nasce da posição
+ * (par à esquerda, ímpar à direita) e os pares se formam de dois em dois. A
+ * Recepção vem logo depois de "Quem somos" para dividir a passagem com ela.
+ */
 const expected = [
   "quem-somos",
+  "recepcao",
   "atendimentos",
   "cursos",
   "atividades",
@@ -19,7 +25,7 @@ const expected = [
   "inspiracao",
 ];
 
-test("define exatamente as nove regiões na ordem narrativa", () => {
+test("define exatamente as dez regiões na ordem narrativa", () => {
   assert.deepEqual(JOURNEY_REGIONS.map((region) => region.id), expected);
   assert.ok(JOURNEY_REGIONS.every((region) => region.href && region.href !== "#"));
 });
@@ -50,6 +56,9 @@ test("relações apontam para conteúdo existente", () => {
 test("cada região leva a uma página local própria", async () => {
   const expectedDestinations = [
     "quem-somos.html",
+    // A Recepção aponta para atendimentos.html porque não existe recepcao.html;
+    // é para lá que o mesmo conteúdo já apontava como callout de serviço.
+    "atendimentos.html",
     "atendimentos.html",
     "cursos.html",
     "atividades.html",
@@ -65,3 +74,4 @@ test("cada região leva a uma página local própria", async () => {
     assert.ok(html, destination);
   }
 });
+

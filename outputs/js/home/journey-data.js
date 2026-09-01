@@ -17,6 +17,30 @@ export const JOURNEY_REGIONS = [
     roadPlacement: "right",
   },
   {
+    /*
+     * A Recepção fica ao LADO de "Quem somos", e é por isso que ela vem logo
+     * depois na lista: o lado de cada bloco nasce da posição (par à esquerda,
+     * ímpar à direita), e os pares se formam de dois em dois na mesma ordem.
+     * Mudar a ordem aqui muda com quem ela divide a passagem.
+     *
+     * O destino é atendimentos.html porque não existe recepcao.html — é para lá
+     * que o mesmo conteúdo já apontava quando era só um callout de serviço.
+     */
+    id: "recepcao",
+    type: "region",
+    category: "O primeiro contato",
+    title: "Recepção",
+    description: "Comece com uma conversa: um primeiro contato para entender possibilidades sem escolher sozinho.",
+    media: "media/journey-cuidado.webp",
+    alt: "Abrigo acolhedor aberto para um lago e montanhas cobertas por névoa",
+    href: "atendimentos.html",
+    priority: 96,
+    tags: ["acolhimento", "escuta", "primeiro contato"],
+    relatedContent: ["atendimentos", "profissionais"],
+    layoutVariant: "editorial-right",
+    roadPlacement: "left",
+  },
+  {
     id: "atendimentos",
     type: "region",
     category: "O cuidado",
@@ -157,6 +181,7 @@ export const JOURNEY_REGIONS = [
 
 const EXPANDED_COPY = {
   "quem-somos": "Conheça a visão que reúne cuidado, conhecimento, cultura e convivência em um mesmo ecossistema humano.",
+  recepcao: "Ninguém precisa saber de antemão o que procura. A conversa inicial existe para escutar o momento e apresentar os caminhos possíveis, sem pressa e sem compromisso.",
   atendimentos: "Encontre acolhimento, orientação e práticas que respeitam o momento e a história de cada pessoa.",
   cursos: "Formações, oficinas e vivências aproximam estudo e experiência para abrir novas possibilidades.",
   atividades: "Práticas corporais, arte e convivência transformam conhecimento em experiência compartilhada.",
