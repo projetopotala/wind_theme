@@ -14,6 +14,8 @@
     "preview:portal": "node scripts/serve-outputs.mjs",
     "prepare:arrival-v2": "node scripts/prepare-arrival-v2-assets.mjs",
     "prepare:palace": "node scripts/prepare-palace-assets.mjs",
+    "prepare:home-travessia": "node scripts/prepare-home-travessia-assets.mjs",
+    "vendor:three": "node scripts/vendor-three.mjs",
     "validate:portal": "node scripts/validate-portal-assets.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
@@ -21,7 +23,8 @@
   "dependencies": {
     "drizzle-orm": "0.45.2",
     "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react-dom": "19.2.6",
+    "three": "0.185.1"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
