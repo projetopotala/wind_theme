@@ -162,14 +162,28 @@ html.is-crossing .journey-entry-veil {
   letter-spacing: .12em;
 }
 
-.journey-region {
+/*
+ * O PAR é a unidade de rolagem; a região é só o bloco dentro dele.
+ *
+ * Antes cada seção tinha altura própria e ocupava uma tela inteira, com o lado
+ * oposto vazio. Agora duas dividem a mesma passagem — uma de cada lado do
+ * trajeto — e a travessia encurta pela metade sem perder nenhuma delas.
+ *
+ * O valor real chega por atributo, escrito por journeyRhythmForIndex; este é só
+ * o fallback de antes de o JS montar, e precisa CASAR com o ritmo de lá:
+ * descasado, a página nasce curta e salta de altura quando o script entra.
+ */
+.journey-pair {
   position: relative;
-  /* O valor real chega por atributo, escrito por journeyRhythmForIndex — este
-     é só o fallback de antes de o JS montar. Ele precisa CASAR com o ritmo de
-     lá: descasado, a página nasce curta e salta de altura quando o script
-     entra, e o teste de ritmo passa a medir uma altura que ninguém vê. */
-  min-height: var(--region-height, 196svh);
+  min-height: var(--pair-height, 196svh);
   pointer-events: none;
+}
+
+/* `display: contents` faz o bloco herdar a grade do palco do par: sem isso a
+   região seria mais uma caixa entre o palco e o conteúdo, e as colunas
+   deixariam de alcançar quem precisa delas. */
+.journey-region {
+  display: contents;
 }
 
 .region-stage {
@@ -215,17 +229,19 @@ html.is-crossing .journey-entry-veil {
 
 .journey-region[data-side="left"] .region-content {
   grid-column: 1;
+  grid-row: 1;
   justify-self: end;
   transform-origin: right center;
 }
 
 .journey-region[data-side="right"] .region-content {
   grid-column: 3;
+  grid-row: 1;
   justify-self: start;
   transform-origin: left center;
 }
 
-.journey-region.is-present .region-content {
+.journey-pair.is-present .region-content {
   /*
    * O bloco fica CHEIO quase o tempo todo; a presença só desenha as pontas.
    *
@@ -267,15 +283,34 @@ html.is-crossing .journey-entry-veil {
  * câmera andar o mesmo tanto. Sem isso a linha ficaria parada no meio da tela
  * enquanto o vão anda, e o bloco aberto passaria por cima dela.
  */
-.journey-region.is-expanded .region-stage {
+.journey-pair:has(.journey-region.is-expanded) .region-stage {
   padding-inline: clamp(10px, 1.2vw, 18px);
 }
 
-.journey-region.is-expanded[data-side="left"] .region-stage {
+.journey-pair:has(.journey-region.is-expanded[data-side="left"]) .region-stage {
   grid-template-columns: minmax(0, 1.42fr) var(--journey-line-gutter-open) minmax(0, .58fr);
 }
 
-.journey-region.is-expanded[data-side="right"] .region-stage {
+/*
+ * A irmã RECUA; não é empurrada para fora.
+ *
+ * A coluna do lado que não abriu encolhe, mas o bloco dela mantinha a largura
+ * de antes: medido, ele ia parar em 1370px numa janela de 1280 — metade fora
+ * da tela. Encolher junto é o que transforma o empurrão em recuo.
+ *
+ * E ela cede também em presença: apagada, deixa claro qual das duas está sendo
+ * lida, sem sumir — continua clicável, e clicar nela é o que devolve o espaço
+ * para o seu lado.
+ */
+.journey-pair:has(.journey-region.is-expanded) .journey-region:not(.is-expanded) .region-content {
+  width: 100%;
+  /* Multiplica a presença em vez de substituí-la: com um valor fixo a irmã
+     recuada ficaria acesa mesmo com o par ainda fora da tela, enquanto a que
+     está aberta continuaria invisível. */
+  opacity: calc(clamp(.32, var(--region-presence, 1) * 2.2, 1) * .34);
+}
+
+.journey-pair:has(.journey-region.is-expanded[data-side="right"]) .region-stage {
   grid-template-columns: minmax(0, .58fr) var(--journey-line-gutter-open) minmax(0, 1.42fr);
 }
 

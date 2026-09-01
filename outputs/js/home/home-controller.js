@@ -127,7 +127,7 @@ export function createHomeController({
    * envelhecem separadas. Basta ler as larguras usadas.
    */
   function gutterOffsetFor(section) {
-    const stage = section?.querySelector?.(".region-stage");
+    const stage = section?.closest?.(".region-stage");
     if (!stage) return 0;
     const estilo = getComputedStyle(stage);
     const [esquerda, vao] = estilo.gridTemplateColumns.split(" ").map(parseFloat);
@@ -169,7 +169,15 @@ export function createHomeController({
       followGutter(entry?.section ?? null);
     },
   });
-  const presenceObserver = createPresenceObserver(mounted.regions, { reducedMotion });
+  /*
+   * A presença é medida no PAR, não no bloco.
+   *
+   * O bloco agora vive dentro de um palco fixo, então suas bordas praticamente
+   * não se mexem em relação à tela — observá-lo devolveria presença constante e
+   * o aparecer/desaparecer sumiria. É o par que atravessa a tela, e a
+   * propriedade herda dele para os dois blocos, que assim entram e saem juntos.
+   */
+  const presenceObserver = createPresenceObserver(mounted.pairs, { reducedMotion });
   const handoff = consumeHandoff();
   const removeSound = mountSoundResume(root, handoff.soundEnabled === true);
   let frameId = 0;

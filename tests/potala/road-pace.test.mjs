@@ -18,8 +18,11 @@ const VIEWPORT = { width: 1440, height: 810 };
 /** Altura de uma região, lida do CSS, em múltiplos da altura da tela. */
 async function regionHeightInScreens() {
   const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
-  const found = css.match(/--region-height,\s*(\d+(?:\.\d+)?)svh/);
-  assert.ok(found, "não achei --region-height no CSS da jornada");
+    // O par virou a unidade de rolagem: é a altura DELE que diz quanto de estrada
+  // passa por passagem. `--region-height` continua existindo, mas descreve o
+  // bloco dentro do palco, que não anda com a rolagem.
+  const found = css.match(/--pair-height,\s*(\d+(?:\.\d+)?)svh/);
+  assert.ok(found, "não achei --pair-height no CSS da jornada");
   return Number(found[1]) / 100;
 }
 

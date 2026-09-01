@@ -1,7 +1,15 @@
 const X_PATTERN = [-0.08, 0.12, -0.16, 0.07, 0.17, -0.11, -0.04, 0.14, -0.09];
 
 export function buildHomePathLayout(blocks = []) {
-  const safeBlocks = Array.isArray(blocks) ? blocks : [];
+  /*
+   * Um ponto de curva por PAR, não por bloco.
+   *
+   * Os dois blocos de um par dividem a mesma passagem de rolagem, então dois
+   * pontos ali dariam à curva duas dobras onde o visitante percorre uma só — a
+   * linha serpentearia duas vezes por tela enquanto a página anda uma.
+   */
+  const todos = Array.isArray(blocks) ? blocks : [];
+  const safeBlocks = todos.filter((_, index) => index % 2 === 0);
   const count = Math.max(1, safeBlocks.length);
   const spacing = 2.15;
   const checkpoints = safeBlocks.map((block, index) => ({

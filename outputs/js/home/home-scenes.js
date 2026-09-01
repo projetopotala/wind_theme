@@ -149,12 +149,11 @@ export function renderRegion(region, index, discovery, discoveriesById) {
   ` : "";
 
   return `
-    <section class="journey-region region--${layoutVariant}" id="${id}"
+    <div class="journey-region region--${layoutVariant}" id="${id}"
       data-region-id="${id}" data-layout-variant="${layoutVariant}"
       data-side="${side}" data-road-side="${roadSide}" data-content-placement="${safeToken(region.contentPlacement, "side")}"
       data-title-scale="${titleScale}"
       style="--region-index:${index};--region-height:${regionHeight}svh">
-      <div class="region-stage">
         <article class="region-content" aria-labelledby="${id}-title">
           <button class="region-summary" type="button" aria-expanded="false" aria-controls="${id}-details">
             <span class="region-category"><span>${String(index + 1).padStart(2, "0")}</span>${escapeHtml(region.category)}</span>
@@ -170,7 +169,27 @@ export function renderRegion(region, index, discovery, discoveriesById) {
         </article>
         ${renderDiscovery(discovery, index)}
         ${lateral}
-      </div>
+    </div>
+  `;
+}
+
+/**
+ * Duas seções lado a lado, uma de cada lado do trajeto.
+ *
+ * O par — e não o bloco — passa a ser a unidade de rolagem: é ele que tem
+ * altura, palco fixo e presença. Antes cada seção ocupava uma tela inteira com
+ * o lado oposto vazio; agora as duas dividem a mesma passagem, e a travessia
+ * encurta pela metade sem perder nenhuma delas.
+ *
+ * O palco sobe para cá justamente porque é ele que reserva o vão do meio: com
+ * um palco por bloco, os dois vãos se sobreporiam e cada bloco reservaria um
+ * espaço que o outro já estava usando.
+ */
+export function renderPair(markups, pairIndex, pairHeight) {
+  return `
+    <section class="journey-pair" data-pair-index="${pairIndex}"
+      style="--pair-height:${pairHeight}svh">
+      <div class="region-stage">${markups.join("")}</div>
     </section>
   `;
 }
@@ -178,16 +197,28 @@ export function renderRegion(region, index, discovery, discoveriesById) {
 export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
   if (!root) throw new TypeError("root é obrigatório para montar a jornada");
   const discoveriesById = new Map(discoveries.map((item) => [item.id, item]));
-  const regionMarkup = regions.map((region, index) => {
-    const discovery = discoveriesById.get(featuredDiscoveries[index]);
-    const markup = renderRegion(region, index, discovery, discoveriesById);
-    if (index === regions.length - 1) return markup;
-    // Os silêncios continuam existindo como pausa e como trecho de estrada; só
-    // não carregam mais texto.
-    const { silenceHeight } = journeyRhythmForIndex(index);
-    return `${markup}
-      <div class="journey-silence" aria-hidden="true" style="--silence-height:${silenceHeight}svh"></div>`;
-  }).join("");
+  const blocos = regions.map((region, index) => renderRegion(
+    region,
+    index,
+    discoveriesById.get(featuredDiscoveries[index]),
+    discoveriesById,
+  ));
+
+  const pares = [];
+  for (let inicio = 0; inicio < blocos.length; inicio += 2) {
+    const pairIndex = pares.length;
+    // A altura do par vem do ritmo do primeiro dos dois: é a mesma passagem
+    // que uma seção sozinha ocupava, agora carregando duas.
+    const { regionHeight, silenceHeight } = journeyRhythmForIndex(inicio);
+    pares.push(renderPair(blocos.slice(inicio, inicio + 2), pairIndex, regionHeight));
+    if (inicio + 2 < blocos.length) {
+      // Os silêncios continuam existindo como pausa e como trecho de estrada;
+      // só não carregam mais texto.
+      pares.push(`<div class="journey-silence" aria-hidden="true" style="--silence-height:${silenceHeight}svh"></div>`);
+    }
+  }
+
+  const regionMarkup = pares.join("");
 
   root.innerHTML = `
     <section class="journey-prologue" id="inicio" aria-labelledby="journey-title">
@@ -213,8 +244,9 @@ export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
 
   return {
     regions: [...root.querySelectorAll(".journey-region")],
+    pairs: [...root.querySelectorAll(".journey-pair")],
     silences: [...root.querySelectorAll(".journey-silence")],
-    pathSections: [...root.querySelectorAll(".journey-region, .journey-silence")],
+    pathSections: [...root.querySelectorAll(".journey-pair, .journey-silence")],
     discoveries: [...root.querySelectorAll(".journey-discovery")],
   };
 }

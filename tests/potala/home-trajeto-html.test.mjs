@@ -83,8 +83,8 @@ test("o bloco fica cheio antes de chegar ao centro da tela", async () => {
   const { presenceForRegionBounds } = await import("../../outputs/js/home/home-scenes.js");
 
   const regra = css.slice(
-    css.indexOf(".journey-region.is-present .region-content {"),
-    css.indexOf("}", css.indexOf(".journey-region.is-present .region-content {")),
+    css.indexOf(".journey-pair.is-present .region-content {"),
+    css.indexOf("}", css.indexOf(".journey-pair.is-present .region-content {")),
   );
   const fator = Number(regra.match(/--region-presence[^)]*\)\s*\*\s*([\d.]+)/)?.[1]);
   assert.ok(fator >= 2, `a curva de opacidade precisa saturar cedo; achei ${fator || "nenhum fator"}`);
@@ -110,8 +110,8 @@ test("ao abrir, a página desloca o vão e o trajeto é avisado", async () => {
    * para o lado do bloco, em vez de o bloco apenas engordar dentro da metade
    * dele — o que passava despercebido.
    */
-  assert.match(css, /is-expanded\[data-side="left"\] \.region-stage \{[^}]*grid-template-columns/);
-  assert.match(css, /is-expanded\[data-side="right"\] \.region-stage \{[^}]*grid-template-columns/);
+  assert.match(css, /is-expanded\[data-side="left"\]\) \.region-stage \{[^}]*grid-template-columns/);
+  assert.match(css, /is-expanded\[data-side="right"\]\) \.region-stage \{[^}]*grid-template-columns/);
 
   /*
    * E o trajeto tem de andar junto. Ele é desenhado por uma câmera, não pela
@@ -150,4 +150,29 @@ test("o deslocamento é animado, e a linha segue a animação em vez de repeti-l
   // cancelado ao destruir — senão sobra um laço rodando sobre um DOM morto.
   assert.match(controlador, /shiftUntil = performance\.now\(\)/);
   assert.match(controlador, /if \(shiftFrame\) cancelAnimationFrame\(shiftFrame\);\s*\n\s*expansion\.destroy\(\);/);
+});
+
+test("as seções andam aos pares, e a irmã recua em vez de ser empurrada", async () => {
+  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
+  const cenas = await readFile(new URL("../../outputs/js/home/home-scenes.js", import.meta.url), "utf8");
+
+  // O par é a unidade de rolagem: é ele que tem altura e atravessa a tela.
+  assert.match(css, /\.journey-pair \{[^}]*min-height: var\(--pair-height/);
+  assert.match(cenas, /export function renderPair/);
+  assert.match(cenas, /inicio \+= 2/, "os blocos são agrupados de dois em dois");
+
+  /*
+   * A irmã encolhe junto com a coluna dela. Sem isso ela mantinha a largura de
+   * antes numa coluna estreitada e ia parar fora da tela: medido, 1370px numa
+   * janela de 1280. Encolher é o que transforma o empurrão em recuo.
+   */
+  const recuo = css.slice(
+    css.indexOf(".journey-region:not(.is-expanded) .region-content {"),
+    css.indexOf("}", css.indexOf(".journey-region:not(.is-expanded) .region-content {")),
+  );
+  assert.match(recuo, /width: 100%/);
+
+  // E o recuo MULTIPLICA a presença: fixo, a irmã acenderia com o par ainda
+  // fora da tela, enquanto a aberta continuaria invisível.
+  assert.match(recuo, /calc\(clamp\([^)]*var\(--region-presence/);
 });

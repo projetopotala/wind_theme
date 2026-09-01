@@ -4,11 +4,23 @@ import test from "node:test";
 import { DEFAULT_HOME_BLOCKS } from "../../outputs/js/home/journey-data.js";
 import { buildHomePathLayout } from "../../outputs/js/home/home-path-layout.js";
 
-test("checkpoints seguem a ordem editorial e preservam os lados", () => {
-  const layout = buildHomePathLayout(DEFAULT_HOME_BLOCKS.slice(0, 4));
+test("há um ponto de curva por PAR, na ordem editorial", () => {
+  /*
+   * As seções passaram a andar aos pares — uma de cada lado do trajeto,
+   * dividindo a mesma passagem de rolagem. Um ponto por bloco daria à curva
+   * duas dobras onde o visitante percorre uma só: a linha serpentearia duas
+   * vezes por tela enquanto a página anda uma.
+   *
+   * O `side` do checkpoint deixou de dizer algo sobre o trajeto — cada par tem
+   * os dois lados — e por isso não é mais afirmado aqui.
+   */
+  const quatro = buildHomePathLayout(DEFAULT_HOME_BLOCKS.slice(0, 4));
+  assert.equal(quatro.checkpoints.length, 2);
 
-  assert.deepEqual(layout.checkpoints.map(({ side }) => side), ["left", "right", "left", "right"]);
-  assert.ok(layout.checkpoints.every((checkpoint, index, all) => (
+  const cinco = buildHomePathLayout(DEFAULT_HOME_BLOCKS.slice(0, 5));
+  assert.equal(cinco.checkpoints.length, 3, "um par incompleto ainda é uma passagem");
+
+  assert.ok(cinco.checkpoints.every((checkpoint, index, all) => (
     index === 0 || checkpoint.progress > all[index - 1].progress
   )));
 });
