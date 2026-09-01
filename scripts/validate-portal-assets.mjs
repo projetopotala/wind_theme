@@ -19,6 +19,8 @@ const budgets = [
   { file: "outputs/media/journey-cuidado.webp", maximum: 900_000 },
   { file: "outputs/media/journey-cultura.webp", maximum: 900_000 },
   { file: "outputs/media/journey-inspiracao.webp", maximum: 900_000 },
+  { file: "outputs/media/home-travessia.webp", maximum: 1_800_000, width: 2048, height: 1152 },
+  { file: "outputs/media/home-travessia-mobile.webp", maximum: 1_300_000, width: 1080, height: 1440 },
   // Orçamento a ~2× do peso real (328.756 e 351.236 bytes): a folga anterior
   // (6,7× e 3,4×) não pegava nada — um orçamento que aceita o dobro do
   // arquivo não é orçamento.
