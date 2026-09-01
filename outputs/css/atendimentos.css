@@ -174,6 +174,33 @@
   line-height: 1.65;
 }
 
+/*
+ * O texto abaixo divide a margem esquerda com a janela.
+ *
+ * `.article-shell` é uma coluna centrada — o certo nas outras nove seções, que
+ * abrem com um cabeçalho igualmente centrado na página. Aqui a abertura tem
+ * janela à esquerda e título à direita, e a coluna centrada não se alinhava com
+ * nenhuma das duas: medido a 1440px, a janela começava em 115 e o texto em 383,
+ * 268px de desencontro que faziam o corpo da página flutuar no meio.
+ *
+ * Alinhado à esquerda, a página passa a ter uma borda só, que é a da janela.
+ * A regra é restrita a esta seção porque é só aqui que a abertura é dividida —
+ * nas outras, centrar continua certo.
+ *
+ * Zerar a margem não basta, e a razão está no pai: `.page-view` é uma grade com
+ * `place-items: center`. `.page-view--article` tenta devolvê-la a `display:
+ * block`, mas é declarada num @import que vem ANTES, então perde para
+ * `.page-view` e a grade permanece. Com grade, quem centraliza é o alinhamento
+ * do item, não a margem — por isso `justify-self`.
+ *
+ * Sem efeito no telefone: ali `.article-shell` já ocupa 100% da largura, e um
+ * item que preenche a coluna não tem para onde ser alinhado.
+ */
+body[data-section="atendimentos"] .article-shell {
+  justify-self: start;
+  margin-inline: 0;
+}
+
 .atend-oraculos { border-top: 1px solid rgba(74, 55, 40, .16); padding-top: clamp(24px, 4vw, 44px); }
 
 /* Empilhado antes do ponto em que as vidraças viram uma coluna: lado a lado,
