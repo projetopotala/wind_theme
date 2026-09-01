@@ -48,3 +48,32 @@ test("montagem solicita somente blocos publicados e os entrega ao controlador", 
   assert.equal(result, controller);
 });
 
+
+test("o bloco editorial tem fundo próprio, não a paisagem por baixo", async () => {
+  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
+
+  // Regex literal por token: montar a expressão com `new RegExp` e string
+  // obriga a escapar duas vezes, e um escape a menos passa despercebido
+  // porque a busca simplesmente devolve nada.
+  const alfa = (regex, nome) => {
+    const achado = css.match(regex);
+    assert.ok(achado, `${nome} sumiu do CSS`);
+    return Number(achado[1]);
+  };
+
+
+  /*
+   * A .82 a paisagem atravessava o bloco: o texto ficava sobre montanha, água e
+   * névoa ao mesmo tempo, e o contraste mudava de linha para linha conforme o
+   * que passava por trás. Um painel de leitura precisa de fundo próprio; o
+   * pouco de transparência que resta serve para ele pertencer à cena, não para
+   * a cena ser lida através dele.
+   */
+  assert.ok(alfa(/--journey-panel:\s*rgba\([^)]*,\s*([\d.]+)\s*\)/, "--journey-panel") >= .92, "o bloco fechado está transparente demais para ler");
+  assert.ok(alfa(/--journey-panel-open:\s*rgba\([^)]*,\s*([\d.]+)\s*\)/, "--journey-panel-open") >= .95, "o bloco aberto está transparente demais para ler");
+
+  // Sem desfoque de fundo: o bloco escala e translada, e desfocar superfície
+  // grande em movimento é caro em toda máquina.
+  const conteudo = css.slice(css.indexOf(".region-content {"), css.indexOf("}", css.indexOf(".region-content {")));
+  assert.doesNotMatch(conteudo, /backdrop-filter/);
+});

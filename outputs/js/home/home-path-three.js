@@ -57,8 +57,17 @@ export function createHomePath(canvas, {
   let paused = false;
   let destroyed = false;
 
-  const coreGeometry = new THREE.TubeGeometry(curve, quality.tubularSegments, 0.028, quality.radialSegments, false);
-  const haloGeometry = new THREE.TubeGeometry(curve, quality.tubularSegments, 0.095, quality.radialSegments, false);
+  /*
+   * Fio fino com halo largo, e não um traço grosso.
+   *
+   * O que faz uma linha de luz parecer luz é a razão entre as duas partes: um
+   * núcleo estreito o bastante para o olho lê-lo como brilho, e um halo várias
+   * vezes mais largo e quase transparente ao redor. Engrossando o núcleo a
+   * linha vira um tubo dourado desenhado por cima da paisagem — some a luz e
+   * sobra o objeto. O halo carrega a presença; o núcleo, a nitidez.
+   */
+  const coreGeometry = new THREE.TubeGeometry(curve, quality.tubularSegments, 0.0135, quality.radialSegments, false);
+  const haloGeometry = new THREE.TubeGeometry(curve, quality.tubularSegments, 0.058, quality.radialSegments, false);
   const coreMaterial = new THREE.MeshBasicMaterial({
     color: 0xffedb4,
     transparent: true,
@@ -69,7 +78,9 @@ export function createHomePath(canvas, {
   const haloMaterial = new THREE.MeshBasicMaterial({
     color: 0xdca34f,
     transparent: true,
-    opacity: 0.24,
+    // Mais fraco que antes porque o halo encolheu junto: mantendo 0,24 num raio
+    // menor a borda ficaria dura, e é o esmaecido dela que dá o ar aceso.
+    opacity: 0.19,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });

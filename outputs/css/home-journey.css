@@ -2,8 +2,18 @@
   --journey-ink: #302318;
   --journey-ivory: #f7edda;
   --journey-gold: #d7ba78;
-  --journey-panel: rgba(77, 57, 39, .82);
-  --journey-panel-open: rgba(69, 49, 32, .94);
+  /* Quase opacos, e escuros.
+   *
+   * A .82 a paisagem atravessava o bloco: o texto ficava sobre montanha, água e
+   * névoa ao mesmo tempo, e o contraste mudava de linha para linha conforme o
+   * que passava por trás. Um painel de leitura precisa de um fundo próprio —
+   * o pouco de transparência que resta serve para ele pertencer à cena, não
+   * para deixar a cena ser lida através dele.
+   *
+   * Sem `backdrop-filter` de propósito: o bloco escala e translada, e desfoque
+   * em superfície grande em movimento é caro em toda máquina. */
+  --journey-panel: rgba(43, 32, 22, .955);
+  --journey-panel-open: rgba(38, 28, 19, .975);
   --journey-line-gutter: clamp(104px, 15vw, 210px);
 }
 
