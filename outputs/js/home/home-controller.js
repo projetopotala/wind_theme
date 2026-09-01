@@ -108,6 +108,26 @@ function createPresenceObserver(regions, { reducedMotion = false } = {}) {
   return observer;
 }
 
+/**
+ * Rolar o bastante para dizer "segui em frente" fecha o bloco aberto.
+ *
+ * O limiar existe para separar decisão de tremor: um toque no trackpad, o
+ * repique de uma rolagem por inércia ou o ajuste de meia linha não podem
+ * fechar o que a pessoa está lendo. Uma fração da altura da tela mede isso
+ * melhor que um número fixo — a mesma distância que é um empurrão num monitor
+ * é meia página num celular.
+ */
+export function shouldCloseOnScroll({
+  openedAt = 0,
+  scrollTop = 0,
+  viewportHeight = 1,
+  fraction = 0.18,
+  minimum = 90,
+} = {}) {
+  const limiar = Math.max(minimum, Math.max(1, Number(viewportHeight) || 1) * fraction);
+  return Math.abs(Number(scrollTop) - Number(openedAt)) > limiar;
+}
+
 export function createHomeController({
   root,
   canvas,
@@ -161,6 +181,27 @@ export function createHomeController({
     if (performance.now() < shiftUntil) shiftFrame = requestAnimationFrame(() => followGutter(section));
   }
 
+  /*
+   * De onde a rolagem começou a contar, e quando ela não deve contar.
+   *
+   * O menu e o convite ABREM um bloco e rolam até ele: sem a trégua, essa
+   * própria rolagem fecharia o bloco que o clique acabou de trazer. Enquanto a
+   * rolagem programada está em curso, a origem acompanha o movimento; ela só
+   * congela quando os eventos param de chegar, e é daí em diante que o gesto
+   * do visitante passa a valer.
+   */
+  let openScrollY = 0;
+  let settleTimer = 0;
+  let awaitingScroll = false;
+
+  function armAutoClose({ programmatic = false } = {}) {
+    openScrollY = scrollY;
+    awaitingScroll = programmatic;
+    clearTimeout(settleTimer);
+    if (!programmatic) return;
+    settleTimer = setTimeout(() => { awaitingScroll = false; }, 260);
+  }
+
   const expansion = createBlockExpansion(root, {
     onChange: (entry) => {
       if (shiftFrame) cancelAnimationFrame(shiftFrame);
@@ -168,6 +209,7 @@ export function createHomeController({
       // A janela cobre a transição do CSS com uma folga curta, e só ela.
       shiftUntil = performance.now() + (reducedMotion ? 0 : 820);
       followGutter(entry?.section ?? null);
+      if (entry) armAutoClose();
     },
   });
   /*
@@ -193,6 +235,8 @@ export function createHomeController({
     if (!pair) return;
     pair.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
     expansion.open(id);
+    // A rolagem que o próprio clique disparou não pode fechar o que ele abriu.
+    armAutoClose({ programmatic: true });
   }
 
   /*
@@ -319,6 +363,22 @@ export function createHomeController({
   function update() {
     frameId = 0;
     if (destroyed || document.hidden) return;
+
+    if (expansion.activeId) {
+      if (awaitingScroll) {
+        // Rolagem programada em curso: a origem anda junto e o relógio de
+        // repouso recomeça a cada quadro que ainda se mexe.
+        openScrollY = scrollY;
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(() => { awaitingScroll = false; }, 260);
+      } else if (shouldCloseOnScroll({
+        openedAt: openScrollY,
+        scrollTop: scrollY,
+        viewportHeight: innerHeight,
+      })) {
+        expansion.close();
+      }
+    }
     const progress = scrollProgressForDocument({
       scrollTop: scrollY,
       scrollHeight: document.documentElement.scrollHeight,
@@ -375,6 +435,7 @@ export function createHomeController({
       menuNav?.removeEventListener("click", onMenuClick);
       menuToggle?.removeEventListener("click", onMenuToggle);
       clearTimeout(inviteTimer);
+      clearTimeout(settleTimer);
       invite?.removeEventListener("pointerenter", pauseInvitation);
       invite?.removeEventListener("pointerleave", resumeInvitation);
       invite?.removeEventListener("focus", pauseInvitation);
