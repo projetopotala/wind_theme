@@ -1,3 +1,4 @@
+import { invitationsFor } from "./invitations.js";
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
 const smoothstep = (value) => {
   const t = clamp(value);
@@ -205,6 +206,25 @@ export function renderPair(markups, pairIndex, pairHeight) {
  * A ordem e os números repetem os da jornada de propósito: o menu é um índice
  * do mesmo caminho, não uma segunda organização do conteúdo.
  */
+/**
+ * O convite que gira no canto superior direito.
+ *
+ * Nasce com o primeiro convite já escrito no HTML, e não vazio à espera do
+ * script: um retângulo em branco no canto é pior que retângulo nenhum, e quem
+ * abrir a página com o JavaScript lento vê o convite mesmo assim.
+ */
+export function renderInvitation(invitations = []) {
+  const primeiro = invitations[0];
+  if (!primeiro) return "";
+
+  return `
+    <button class="journey-invite" type="button" data-invite
+      data-invite-target="${primeiro.id}" data-keeps-expansion>
+      <span class="journey-invite-mark" aria-hidden="true"></span>
+      <span class="journey-invite-text" data-invite-text>${escapeHtml(primeiro.text)}</span>
+    </button>`;
+}
+
 export function renderJourneyMenu(regions = []) {
   const itens = regions.map((region, index) => {
     const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
@@ -263,6 +283,7 @@ export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
       </div>
     </section>
     <div class="journey-regions">${regionMarkup}</div>
+    ${renderInvitation(invitationsFor(regions))}
     ${renderJourneyMenu(regions)}
     <section class="journey-continuation" aria-labelledby="continuation-title">
       <div>
@@ -281,6 +302,7 @@ export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
     regions: [...root.querySelectorAll(".journey-region")],
     pairs: [...root.querySelectorAll(".journey-pair")],
     menuItems: [...root.querySelectorAll("[data-menu-target]")],
+    invite: root.querySelector?.("[data-invite]") ?? null,
     silences: [...root.querySelectorAll(".journey-silence")],
     pathSections: [...root.querySelectorAll(".journey-pair, .journey-silence")],
     discoveries: [...root.querySelectorAll(".journey-discovery")],

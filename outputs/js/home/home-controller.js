@@ -1,6 +1,7 @@
 import { consumeHandoff } from "../core/travessia-state.js";
 import { damp, scrollCuePosition, scrollProgressForDocument } from "../core/math.js";
 import { createBlockExpansion } from "./block-expansion.js";
+import { invitationsFor, nextInvitationIndex } from "./invitations.js";
 import { createLocalContentRepository } from "./content-repository.js";
 import { DEFAULT_HOME_BLOCKS } from "./journey-data.js";
 import { createHomePath } from "./home-path-three.js";
@@ -258,6 +259,61 @@ export function createHomeController({
   let entryTimer = 0;
   let destroyed = false;
 
+  /*
+   * O convite gira, mas para quando alguém olha.
+   *
+   * Texto que se troca sozinho é conteúdo em movimento: quem está lendo pode
+   * ser interrompido no meio da frase. Pausar no ponteiro e no foco é o mínimo
+   * — e com `prefers-reduced-motion` ele não gira de jeito nenhum, mostrando um
+   * convite só. A alternativa (girar mais devagar) não resolve: continuaria
+   * trocando sob os olhos de quem pediu para nada se mexer.
+   */
+  const invite = mounted.invite;
+  const inviteTexto = invite?.querySelector?.("[data-invite-text]") ?? null;
+  const convites = invitationsFor(blocks);
+  let inviteIndex = 0;
+  let inviteTimer = 0;
+  let invitePausado = false;
+
+  function showInvitation(index) {
+    const convite = convites[index];
+    if (!convite || !invite || !inviteTexto) return;
+    inviteIndex = index;
+    invite.dataset.inviteTarget = convite.id;
+    // A troca acontece com o texto já apagado: escrever antes de sair faria a
+    // frase nova aparecer por um quadro no lugar da antiga, antes da animação.
+    invite.classList.add("is-swapping");
+    setTimeout(() => {
+      inviteTexto.textContent = convite.text;
+      invite.classList.remove("is-swapping");
+    }, reducedMotion ? 0 : 260);
+  }
+
+  function scheduleInvitation() {
+    if (reducedMotion || convites.length < 2 || destroyed) return;
+    clearTimeout(inviteTimer);
+    inviteTimer = setTimeout(() => {
+      if (!invitePausado) showInvitation(nextInvitationIndex(inviteIndex, convites.length));
+      scheduleInvitation();
+    }, 4600);
+  }
+
+  const pauseInvitation = () => { invitePausado = true; };
+  const resumeInvitation = () => { invitePausado = false; };
+  const onInviteClick = () => {
+    if (invite?.dataset.inviteTarget) goToSection(invite.dataset.inviteTarget);
+  };
+
+  if (invite) {
+    invite.addEventListener("pointerenter", pauseInvitation);
+    invite.addEventListener("pointerleave", resumeInvitation);
+    invite.addEventListener("focus", pauseInvitation);
+    invite.addEventListener("blur", resumeInvitation);
+    invite.addEventListener("click", onInviteClick);
+    scheduleInvitation();
+  }
+
+
   if (handoff.entry) entryTimer = holdEntryHandoff(document.documentElement);
 
   function update() {
@@ -318,6 +374,12 @@ export function createHomeController({
       currentObserver?.disconnect();
       menuNav?.removeEventListener("click", onMenuClick);
       menuToggle?.removeEventListener("click", onMenuToggle);
+      clearTimeout(inviteTimer);
+      invite?.removeEventListener("pointerenter", pauseInvitation);
+      invite?.removeEventListener("pointerleave", resumeInvitation);
+      invite?.removeEventListener("focus", pauseInvitation);
+      invite?.removeEventListener("blur", resumeInvitation);
+      invite?.removeEventListener("click", onInviteClick);
       expansion.destroy();
       path.destroy();
       removeSound();

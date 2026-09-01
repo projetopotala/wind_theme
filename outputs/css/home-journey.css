@@ -750,3 +750,72 @@ html.is-crossing .journey-entry-veil {
     transition-delay: 0s !important;
   }
 }
+
+/*
+ * Convite girando — canto superior direito.
+ *
+ * Retângulo de cantos arredondados, do mesmo escuro dos blocos: pertence à
+ * interface de leitura, não à paisagem. A troca de frase sobe e desce em vez
+ * de só apagar, para o olho ler substituição e não piscada.
+ */
+.journey-invite {
+  position: fixed;
+  z-index: 31;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: min(78vw, 330px);
+  min-height: 44px;
+  padding: 11px 18px;
+  border: 1px solid rgba(231, 202, 143, .22);
+  border-radius: 16px;
+  background: rgba(30, 22, 15, .88);
+  color: rgba(247, 237, 218, .88);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: .03em;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .3s ease, color .3s ease;
+}
+
+.journey-invite:hover,
+.journey-invite:focus-visible { border-color: rgba(231, 202, 143, .5); color: var(--journey-ivory); }
+
+.journey-invite:focus-visible {
+  outline: 2px solid var(--journey-gold, #d9b071);
+  outline-offset: 3px;
+}
+
+/* O ponto dourado dá ao convite a mesma marca do trajeto: é o caminho
+   chamando, não um aviso do sistema. */
+.journey-invite-mark {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--journey-gold, #d9b071);
+  box-shadow: 0 0 10px rgba(217, 176, 113, .8);
+}
+
+.journey-invite-text {
+  display: block;
+  transition: opacity .26s ease, transform .26s cubic-bezier(.2, .72, .2, 1);
+}
+
+.journey-invite.is-swapping .journey-invite-text {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+@media (max-width: 720px) {
+  .journey-invite { max-width: calc(100vw - 28px); font-size: 12px; padding: 10px 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-invite,
+  .journey-invite-text { transition-duration: .01ms !important; }
+  .journey-invite.is-swapping .journey-invite-text { transform: none; }
+}
