@@ -35,7 +35,20 @@
      da moldura uma promessa que nunca se cumpria (medido: 368px numa janela de
      420px, exatamente a largura do shell). */
   width: 100%;
-  margin-bottom: clamp(40px, 7vw, 88px);
+  /*
+   * O ar abaixo da janela cresce com a largura, e só com ela.
+   *
+   * A moldura termina exatamente onde a seção termina — ela é o elemento mais
+   * alto —, então este é o único espaço entre a base da janela e o texto.
+   * Medido a 1440px, eram 88px: pouco para uma página com esta quantidade de
+   * respiro, e a base da janela ficava colada no que vem depois.
+   *
+   * O piso de 44px é praticamente o que o mobile já tinha (40px): ali a janela
+   * está empilhada e alta, e somar espaço só alongaria a rolagem sem melhorar
+   * nada. É a inclinação de 9vw que faz o desktop respirar sem tocar no
+   * telefone.
+   */
+  margin-bottom: clamp(44px, 9vw, 150px);
 }
 
 .atend-moldura {
