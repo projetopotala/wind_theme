@@ -32,7 +32,7 @@
 
   if (body.dataset.storyPage === "true") {
     import("./js/home/home-controller.js")
-      .then(({ mountHomeJourney }) => mountHomeJourney())
+      .then(async ({ mountHomeJourney }) => mountHomeJourney())
       .catch((error) => {
         console.error("Não foi possível iniciar a Travessia.", error);
         body.classList.add("is-ready", "is-home-fallback");

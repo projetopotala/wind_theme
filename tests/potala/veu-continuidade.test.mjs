@@ -33,14 +33,14 @@ test("as páginas de destino nascem cobertas antes da primeira pintura", async (
   }
 });
 
-test("quem sai grava o `entry` que faz o destino abrir o véu", async () => {
+test("as páginas que ainda fazem travessia gravam o `entry` para abrir o véu", async () => {
   const palace = await readFile("outputs/js/palacio/palace-controller.js", "utf8");
-  const home = await readFile("outputs/js/home/home-controller.js", "utf8");
+  const chegada = await readFile("outputs/js/chegada/arrival-controller.js", "utf8");
 
   // `sanitize` em travessia-state.js descarta o campo se ele não vier, e sem
   // ele a página de destino aparece inteira de uma vez.
   assert.match(palace, /crossTo\(\{[^}]*entry:\s*"(scroll|drag|keyboard)"/);
-  assert.match(home, /crossTo\(\{[^}]*entry:\s*"(scroll|drag|keyboard)"/);
+  assert.match(chegada, /enterHome\(\{[^}]*entry:\s*"(scroll|drag|keyboard)"/);
 });
 
 test("a chegada abre na mesma cor em que a saída fechou", async () => {

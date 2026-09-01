@@ -175,7 +175,7 @@ export function renderRegion(region, index, discovery, discoveriesById) {
   `;
 }
 
-export function mountJourney(root, { regions, discoveries }) {
+export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
   if (!root) throw new TypeError("root é obrigatório para montar a jornada");
   const discoveriesById = new Map(discoveries.map((item) => [item.id, item]));
   const regionMarkup = regions.map((region, index) => {
@@ -198,7 +198,6 @@ export function mountJourney(root, { regions, discoveries }) {
       </div>
     </section>
     <div class="journey-regions">${regionMarkup}</div>
-    <div class="journey-ascent" aria-hidden="true" style="--ascent-height:${ASCENT_HEIGHT}svh"></div>
     <section class="journey-continuation" aria-labelledby="continuation-title">
       <div>
         <p>Uma jornada não precisa terminar aqui.</p>
@@ -215,7 +214,7 @@ export function mountJourney(root, { regions, discoveries }) {
   return {
     regions: [...root.querySelectorAll(".journey-region")],
     silences: [...root.querySelectorAll(".journey-silence")],
-    pathSections: [...root.querySelectorAll(".journey-region, .journey-silence, .journey-ascent")],
+    pathSections: [...root.querySelectorAll(".journey-region, .journey-silence")],
     discoveries: [...root.querySelectorAll(".journey-discovery")],
   };
 }
