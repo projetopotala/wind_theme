@@ -16,10 +16,9 @@
  * centralizar corta o horizonte ao meio numa paisagem apertada, e o que sobra é
  * céu sem chão.
  *
- * O escurecimento é assado NO ARQUIVO, não aplicado por `filter` no navegador.
- * As duas coisas dão a mesma imagem, mas dessaturar e escurecer reduzem a
- * entropia: medido, os quatro arquivos caem de 109,8 KB para 94,9 KB — e o
- * custo de filtrar meio milhão de pixels a cada pintura desaparece junto.
+ * O ajuste de tom é assado NO ARQUIVO, não aplicado por `filter` no navegador:
+ * as duas coisas dão a mesma imagem, mas filtrar meio milhão de pixels a cada
+ * pintura custa, e assar não custa nada em runtime.
  *
  *   node scripts/prepare-atendimentos-panes.mjs
  */
@@ -46,10 +45,11 @@ await mkdir(midia, { recursive: true });
 for (const { origem, destino, altura, posicao } of VIDRACAS) {
   await sharp(path.join(midia, `${origem}.webp`), { failOn: "error" })
     .resize(LARGURA, altura, { fit: "cover", position: posicao ?? "centre" })
-    // A imagem cede contraste para o rótulo que vai por cima dela: sem isso o
-    // texto some sobre a parte clara da paisagem, que é justamente onde ele cai
-    // em três das quatro vidraças.
-    .modulate({ saturation: .82, brightness: .86 })
+    // Toque leve, só para as quatro lerem como uma janela só e não como quatro
+    // fotografias de origens diferentes. O escurecimento forte que havia aqui
+    // existia para o rótulo sobreviver por cima da imagem; sem rótulo, ele só
+    // apagaria a vista.
+    .modulate({ saturation: .94, brightness: .96 })
     .webp({ quality: 82, effort: 5 })
     .toFile(path.join(midia, `${destino}.webp`));
 }

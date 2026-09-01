@@ -37,13 +37,13 @@ const budgets = [
   // `aspect-ratio` em css/atendimentos.css: recortar diferente sem mudar o CSS
   // faria a imagem esticar em silêncio, e é isto que passa a acusar.
   //
-  // Os tetos são ~1,4× o peso real. Frouxos, deixariam passar a volta do
-  // escurecimento para o CSS — que devolveria 15 KB aos quatro arquivos sem
-  // que nada acusasse.
-  { file: "outputs/media/atendimentos-vidraca-1.webp", maximum: 34_000, width: 520, height: 340 },
-  { file: "outputs/media/atendimentos-vidraca-2.webp", maximum: 18_000, width: 520, height: 340 },
-  { file: "outputs/media/atendimentos-vidraca-3.webp", maximum: 42_000, width: 520, height: 660 },
-  { file: "outputs/media/atendimentos-vidraca-4.webp", maximum: 44_000, width: 520, height: 660 },
+  // Os tetos são ~1,4× o peso real. Frouxos, deixariam passar a volta do ajuste
+  // de tom para o CSS — que devolveria peso aos quatro arquivos e o custo de
+  // filtrar meio milhão de pixels a cada pintura, sem que nada acusasse.
+  { file: "outputs/media/atendimentos-vidraca-1.webp", maximum: 37_000, width: 520, height: 340 },
+  { file: "outputs/media/atendimentos-vidraca-2.webp", maximum: 19_000, width: 520, height: 340 },
+  { file: "outputs/media/atendimentos-vidraca-3.webp", maximum: 47_000, width: 520, height: 660 },
+  { file: "outputs/media/atendimentos-vidraca-4.webp", maximum: 48_000, width: 520, height: 660 },
   // O ladrilho da borda repete na tela inteira: quadrado é requisito, não
   // detalhe — retangular, ele repetiria com passo diferente nos dois eixos e a
   // grade apareceria. Orçamento a ~1,4× do peso real.

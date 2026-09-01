@@ -98,26 +98,7 @@
 .atend-vidraca a { aspect-ratio: 520 / 660; }
 .atend-vidraca:nth-child(-n + 2) a { aspect-ratio: 520 / 340; }
 
-.atend-vidraca-texto {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  display: grid;
-  gap: 4px;
-  padding: clamp(14px, 2vw, 22px);
-  /* O degradê nasce do pé da vidraça e não cobre a imagem inteira: é o que
-     mantém a vista visível e o rótulo legível ao mesmo tempo. */
-  background: linear-gradient(to top, rgba(28, 20, 14, .82), rgba(28, 20, 14, .38) 52%, transparent);
-  font-size: clamp(.92rem, 1.4vw, 1.05rem);
-  line-height: 1.3;
-}
 
-.atend-vidraca-num {
-  color: var(--gold);
-  font-size: .68rem;
-  letter-spacing: .22em;
-}
 
 .atend-vidraca a:hover img,
 .atend-vidraca a:focus-visible img {

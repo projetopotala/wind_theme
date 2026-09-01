@@ -26,46 +26,32 @@
 
          A janela fica à ESQUERDA e o texto à direita, como na segunda
          referência: a imagem entra primeiro no olho e o título responde a ela.
-         Na ordem do documento a janela também vem primeiro, então quem navega
-         por teclado ou leitor de tela encontra as portas antes da explicação —
-         que é a mesma ordem que o olho segue. -->
+
+         As vidraças não trazem rótulo escrito — a janela é imagem. O nome de
+         cada porta vive no `aria-label` do link: sem ele o leitor de tela
+         anunciaria quatro links vazios, já que a imagem é decorativa e não tem
+         mais texto para emprestar. -->
     <section class="atend-janela" aria-labelledby="atend-titulo">
       <div class="atend-moldura">
         <ul class="atend-vidracas">
           <li class="atend-vidraca">
-            <a href="#primeira-visita">
+            <a href="#primeira-visita" aria-label="É minha primeira visita">
               <img src="media/atendimentos-vidraca-1.webp" alt="" width="520" height="340" decoding="async">
-              <span class="atend-vidraca-texto">
-                <span class="atend-vidraca-num" aria-hidden="true">01</span>
-                É minha primeira visita
-              </span>
             </a>
           </li>
           <li class="atend-vidraca">
-            <a href="#oraculos">
+            <a href="#oraculos" aria-label="Procuro um oráculo">
               <img src="media/atendimentos-vidraca-2.webp" alt="" width="520" height="340" decoding="async">
-              <span class="atend-vidraca-texto">
-                <span class="atend-vidraca-num" aria-hidden="true">02</span>
-                Procuro um oráculo
-              </span>
             </a>
           </li>
           <li class="atend-vidraca">
-            <a href="#online">
+            <a href="#online" aria-label="Quero atendimento online">
               <img src="media/atendimentos-vidraca-3.webp" alt="" width="520" height="660" fetchpriority="high" decoding="async">
-              <span class="atend-vidraca-texto">
-                <span class="atend-vidraca-num" aria-hidden="true">03</span>
-                Quero atendimento online
-              </span>
             </a>
           </li>
           <li class="atend-vidraca">
-            <a href="#caminhos">
+            <a href="#caminhos" aria-label="Não sei qual técnica escolher">
               <img src="media/atendimentos-vidraca-4.webp" alt="" width="520" height="660" fetchpriority="high" decoding="async">
-              <span class="atend-vidraca-texto">
-                <span class="atend-vidraca-num" aria-hidden="true">04</span>
-                Não sei qual técnica escolher
-              </span>
             </a>
           </li>
         </ul>
