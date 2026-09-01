@@ -1,0 +1,177 @@
+/*
+ * A janela dos Atendimentos.
+ *
+ * A referência é uma capa: uma janela emoldurada, vidraças com vistas
+ * diferentes, e o título embaixo em serifa larga. O que faz a composição
+ * funcionar não são as fotos — é a MOLDURA. Sem as barras que separam as
+ * vidraças, quatro imagens lado a lado leem como galeria de cartões; com elas,
+ * leem como uma janela só, e a janela é a imagem que a própria seção usa para
+ * se explicar: portas diferentes para necessidades diferentes.
+ *
+ * A paleta continua a do portal, quente e clara, e não o preto e branco da
+ * referência. Monocromático aqui brigaria com todas as outras páginas do
+ * Ecossistema, que são sépia — a referência empresta a COMPOSIÇÃO, não a
+ * gradação.
+ */
+.atend-janela {
+  display: grid;
+  gap: clamp(26px, 4vw, 48px);
+  justify-items: center;
+  /* Fora da coluna de texto, ela pode ser mais larga que 74ch — que era o teto
+     real enquanto vivia dentro de .article-shell, tornando o `min(…, 760px)`
+     da moldura uma promessa que nunca se cumpria (medido: 368px numa janela de
+     420px, exatamente a largura do shell). */
+  width: 100%;
+  margin-bottom: clamp(40px, 7vw, 88px);
+}
+
+.atend-moldura {
+  width: min(100%, 760px);
+  margin-inline: auto;
+  padding: clamp(9px, 1.4vw, 14px);
+  border: 1px solid rgba(74, 55, 40, .34);
+  background: var(--brown);
+  box-shadow: 0 30px 70px rgba(74, 55, 40, .18);
+}
+
+/*
+ * As barras da janela são o `gap` sobre o fundo da moldura, e não bordas em
+ * cada vidraça: bordas somariam duas linhas entre vidraças vizinhas e uma só
+ * nas beiradas, e a grade sairia com espessuras desiguais — o defeito que
+ * denuncia uma janela desenhada às pressas.
+ */
+.atend-vidracas {
+  display: grid;
+  gap: clamp(9px, 1.4vw, 14px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.atend-vidraca a {
+  position: relative;
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  color: #f7efe2;
+  text-decoration: none;
+}
+
+.atend-vidraca img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* A imagem cede contraste para o texto que vai por cima dela: sem isso o
+     rótulo some sobre a parte clara da paisagem, que é justamente onde ele
+     cai em três das quatro vidraças. */
+  filter: saturate(.82) brightness(.86);
+  transition: transform .7s cubic-bezier(.2, .72, .2, 1), filter .5s ease;
+}
+
+/*
+ * A fila de cima é baixa e a de baixo é alta, como na referência: é a diferença
+ * de proporção que faz a grade ler como janela, e não como quatro cartões.
+ *
+ * Posicional, e não por classe no HTML. A versão anterior marcava as duas
+ * primeiras com um modificador — batizado, ainda por cima, ao contrário do que
+ * fazia — e emparelhava com `:not()`, que herda a especificidade do argumento.
+ * O par ficava em (0,2,1) e VENCIA a regra do mobile, em (0,1,1): medido numa
+ * janela de 420px, as vidraças 3 e 4 continuavam em 520/660 enquanto as duas
+ * primeiras já tinham virado 16/10.
+ */
+.atend-vidraca a { aspect-ratio: 520 / 660; }
+.atend-vidraca:nth-child(-n + 2) a { aspect-ratio: 520 / 340; }
+
+.atend-vidraca-texto {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  gap: 4px;
+  padding: clamp(14px, 2vw, 22px);
+  /* O degradê nasce do pé da vidraça e não cobre a imagem inteira: é o que
+     mantém a vista visível e o rótulo legível ao mesmo tempo. */
+  background: linear-gradient(to top, rgba(28, 20, 14, .82), rgba(28, 20, 14, .38) 52%, transparent);
+  font-size: clamp(.92rem, 1.4vw, 1.05rem);
+  line-height: 1.3;
+}
+
+.atend-vidraca-num {
+  color: var(--gold);
+  font-size: .68rem;
+  letter-spacing: .22em;
+}
+
+.atend-vidraca a:hover img,
+.atend-vidraca a:focus-visible img {
+  transform: scale(1.04);
+  filter: saturate(.95) brightness(.95);
+}
+
+.atend-vidraca a:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -4px;
+}
+
+/*
+ * O título vive FORA da moldura, embaixo, como na capa da referência. Dentro
+ * dela competiria com as vidraças; embaixo, ele fecha a composição e devolve o
+ * silêncio que a página precisa antes do texto começar.
+ */
+.atend-titulo-bloco {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  /* O ritmo abaixo do cabeçalho já vem de `.article-head`; aqui só se anula,
+     porque a janela é que separa este bloco do texto. */
+  margin-bottom: 0;
+  text-align: center;
+}
+
+/*
+ * O título SOMA a `.page-title`, em vez de substituí-la.
+ *
+ * A referência pede serifa em versal, centrada, fechando a composição abaixo da
+ * janela — e `.page-title` abre a página alinhada à esquerda. Mas trocar uma
+ * pela outra faria desta a única das dez seções fora do sistema tipográfico do
+ * portal: uma futura mudança de escala alcançaria nove páginas e pularia esta,
+ * em silêncio. Herdando e sobrescrevendo só o que muda, a divergência fica
+ * declarada e limitada.
+ */
+.atend-titulo {
+  margin: 0;
+  font-size: clamp(2.6rem, 8vw, 5.4rem);
+  letter-spacing: .06em;
+  line-height: .95;
+  text-transform: uppercase;
+}
+
+.atend-oraculos { border-top: 1px solid rgba(74, 55, 40, .16); padding-top: clamp(24px, 4vw, 44px); }
+
+@media (max-width: 620px) {
+  /* Uma coluna: com duas, cada vidraça fica estreita demais para o rótulo, que
+     passa a quebrar em três linhas sobre a imagem. A moldura continua — é ela
+     que sustenta a leitura de janela mesmo empilhada. */
+  .atend-vidracas { grid-template-columns: minmax(0, 1fr); }
+  .atend-vidraca a,
+  .atend-vidraca:nth-child(-n + 2) a { aspect-ratio: 16 / 10; }
+
+  /*
+   * A proporção muda, então o navegador recorta de novo — e recortaria pelo
+   * centro, jogando fora o enquadramento que o script escolheu de propósito
+   * (topo na primeira, base na última). Estas duas linhas repetem aquela
+   * escolha na única camada que sobrou para ela.
+   */
+  .atend-vidraca:first-child img { object-position: center top; }
+  .atend-vidraca:last-child img { object-position: center bottom; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atend-vidraca img { transition-duration: .01ms !important; }
+  .atend-vidraca a:hover img,
+  .atend-vidraca a:focus-visible img { transform: none; }
+}

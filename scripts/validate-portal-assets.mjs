@@ -33,6 +33,13 @@ const budgets = [
   // PNG original, que custava dez vezes isto.
   { file: "outputs/media/chegada.webp", maximum: 320_000, width: 1586, height: 992 },
   { file: "outputs/media/chegada-mobile.webp", maximum: 140_000, width: 744, height: 992 },
+  // As vidraças da janela dos Atendimentos. As dimensões aqui são o par do
+  // `aspect-ratio` em css/atendimentos.css: recortar diferente sem mudar o CSS
+  // faria a imagem esticar em silêncio, e é isto que passa a acusar.
+  { file: "outputs/media/atendimentos-vidraca-1.webp", maximum: 60_000, width: 520, height: 340 },
+  { file: "outputs/media/atendimentos-vidraca-2.webp", maximum: 60_000, width: 520, height: 340 },
+  { file: "outputs/media/atendimentos-vidraca-3.webp", maximum: 70_000, width: 520, height: 660 },
+  { file: "outputs/media/atendimentos-vidraca-4.webp", maximum: 70_000, width: 520, height: 660 },
   // O ladrilho da borda repete na tela inteira: quadrado é requisito, não
   // detalhe — retangular, ele repetiria com passo diferente nos dois eixos e a
   // grade apareceria. Orçamento a ~1,4× do peso real.
