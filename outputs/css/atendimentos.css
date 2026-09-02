@@ -1,257 +1,324 @@
-/*
- * A janela dos Atendimentos.
- *
- * A referência é uma capa: uma janela emoldurada, vidraças com vistas
- * diferentes, e o título embaixo em serifa larga. O que faz a composição
- * funcionar não são as fotos — é a MOLDURA. Sem as barras que separam as
- * vidraças, quatro imagens lado a lado leem como galeria de cartões; com elas,
- * leem como uma janela só, e a janela é a imagem que a própria seção usa para
- * se explicar: portas diferentes para necessidades diferentes.
- *
- * A paleta continua a do portal, quente e clara, e não o preto e branco da
- * referência. Monocromático aqui brigaria com todas as outras páginas do
- * Ecossistema, que são sépia — a referência empresta a COMPOSIÇÃO, não a
- * gradação.
- */
-/*
- * Janela à esquerda, texto à direita — o modelo da segunda referência.
- *
- * As duas colunas são desiguais de propósito (1,05 contra 1): a imagem entra
- * primeiro no olho e o texto responde a ela. Iguais, a composição fica
- * simétrica e perde a hierarquia — vira duas metades disputando, em vez de uma
- * abertura e sua legenda.
- *
- * `align-items: center` alinha os dois blocos pelo meio, e não pelo topo: a
- * coluna de texto é bem mais curta que a janela, e encostada no topo deixaria
- * um vazio grande embaixo dela.
- */
-.atend-janela {
-  display: grid;
-  gap: clamp(26px, 5vw, 72px);
-  align-items: center;
-  grid-template-columns: 1.05fr 1fr;
-  /* Fora da coluna de texto, ela pode ser mais larga que 74ch — que era o teto
-     real enquanto vivia dentro de .article-shell, tornando o `min(…, 760px)`
-     da moldura uma promessa que nunca se cumpria (medido: 368px numa janela de
-     420px, exatamente a largura do shell). */
-  width: 100%;
-  /*
-   * O ar abaixo da janela cresce com a largura, e só com ela.
-   *
-   * A moldura termina exatamente onde a seção termina — ela é o elemento mais
-   * alto —, então este é o único espaço entre a base da janela e o texto.
-   * Medido a 1440px, eram 88px: pouco para uma página com esta quantidade de
-   * respiro, e a base da janela ficava colada no que vem depois.
-   *
-   * O piso de 44px é praticamente o que o mobile já tinha (40px): ali a janela
-   * está empilhada e alta, e somar espaço só alongaria a rolagem sem melhorar
-   * nada. É a inclinação de 9vw que faz o desktop respirar sem tocar no
-   * telefone.
-   */
-  margin-bottom: clamp(44px, 9vw, 150px);
+:root {
+  --care-paper: #f2eee7;
+  --care-paper-deep: #e6ddd1;
+  --care-earth: #5b3f31;
+  --care-earth-dark: #2b211b;
+  --care-ink: #4e3529;
+  --care-muted: #795f50;
+  --care-line: rgba(91, 63, 49, .22);
+  --care-gold: #ad8a55;
 }
 
-.atend-moldura {
-  width: min(100%, 760px);
-  margin-inline: auto;
-  padding: clamp(9px, 1.4vw, 14px);
-  border: 1px solid rgba(74, 55, 40, .34);
-  background: var(--brown);
-  box-shadow: 0 30px 70px rgba(74, 55, 40, .18);
-}
+html { background: var(--care-paper); }
 
-/*
- * As barras da janela são o `gap` sobre o fundo da moldura, e não bordas em
- * cada vidraça: bordas somariam duas linhas entre vidraças vizinhas e uma só
- * nas beiradas, e a grade sairia com espessuras desiguais — o defeito que
- * denuncia uma janela desenhada às pressas.
- */
-.atend-vidracas {
-  display: grid;
-  gap: clamp(9px, 1.4vw, 14px);
+body[data-section="atendimentos"] {
   margin: 0;
-  padding: 0;
-  list-style: none;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: var(--care-paper);
+  color: var(--care-ink);
 }
 
-.atend-vidraca a {
-  position: relative;
-  display: block;
-  height: 100%;
+.care-page {
+  min-height: 100vh;
   overflow: hidden;
-  background: var(--ink);
-  color: #f7efe2;
-  text-decoration: none;
+  background:
+    radial-gradient(circle at 8% 18%, rgba(188, 157, 116, .13), transparent 26rem),
+    var(--care-paper);
 }
 
-.atend-vidraca img {
+.care-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+  gap: clamp(34px, 7vw, 112px);
+  align-items: center;
+  width: min(100%, 1540px);
+  min-height: min(900px, 100svh);
+  margin-inline: auto;
+  padding: clamp(76px, 9vw, 132px) clamp(24px, 6vw, 92px) clamp(58px, 8vw, 112px);
+}
+
+.care-hero-visual {
+  position: relative;
+  min-height: clamp(520px, 69vw, 760px);
+  margin: 0;
+  overflow: hidden;
+  border-radius: 2px 72px 2px 2px;
+  background: var(--care-earth-dark);
+  box-shadow: 0 34px 80px rgba(62, 42, 31, .2);
+}
+
+.care-hero-visual::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 58%, rgba(43, 33, 27, .2));
+  content: "";
+  pointer-events: none;
+}
+
+.care-hero-visual img {
   display: block;
   width: 100%;
   height: 100%;
+  min-height: inherit;
   object-fit: cover;
-  /* Só `transform`, que o compositor resolve sozinho. O escurecimento que
-     antes vinha de `filter` foi assado no arquivo pelo script — e `filter` não
-     é propriedade de compositor, então animá-lo obrigava a refiltrar 162 mil
-     pixels na vidraça grande a cada quadro dos 500ms. */
-  transition: transform .7s cubic-bezier(.2, .72, .2, 1);
+  object-position: center 44%;
 }
 
-/*
- * A fila de cima é baixa e a de baixo é alta, como na referência: é a diferença
- * de proporção que faz a grade ler como janela, e não como quatro cartões.
- *
- * Posicional, e não por classe no HTML. A versão anterior marcava as duas
- * primeiras com um modificador — batizado, ainda por cima, ao contrário do que
- * fazia — e emparelhava com `:not()`, que herda a especificidade do argumento.
- * O par ficava em (0,2,1) e VENCIA a regra do mobile, em (0,1,1): medido numa
- * janela de 420px, as vidraças 3 e 4 continuavam em 520/660 enquanto as duas
- * primeiras já tinham virado 16/10.
- */
-.atend-vidraca a { aspect-ratio: 520 / 660; }
-.atend-vidraca:nth-child(-n + 2) a { aspect-ratio: 520 / 340; }
+.care-hero-copy { max-width: 530px; }
 
-
-
-.atend-vidraca a:hover img,
-.atend-vidraca a:focus-visible img {
-  transform: scale(1.04);
+.care-kicker,
+.care-index {
+  margin: 0 0 16px;
+  color: var(--care-gold);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .21em;
+  text-transform: uppercase;
 }
 
-.atend-vidraca a:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: -4px;
-}
-
-/*
- * A coluna de texto: título, uma linha subordinada e o parágrafo de abertura.
- *
- * Alinhada à esquerda, como na referência — centralizada, o texto perderia a
- * margem comum que o amarra ao título e as três partes flutuariam soltas.
- */
-.atend-abertura {
-  display: grid;
-  gap: clamp(10px, 1.4vw, 18px);
-  /* O ritmo abaixo do cabeçalho já vem de `.article-head`; aqui se anula,
-     porque quem separa esta abertura do texto é a própria janela. */
-  margin-bottom: 0;
-}
-
-/*
- * O título SOMA a `.page-title`, em vez de substituí-la.
- *
- * A referência pede serifa em versal, centrada, fechando a composição abaixo da
- * janela — e `.page-title` abre a página alinhada à esquerda. Mas trocar uma
- * pela outra faria desta a única das dez seções fora do sistema tipográfico do
- * portal: uma futura mudança de escala alcançaria nove páginas e pularia esta,
- * em silêncio. Herdando e sobrescrevendo só o que muda, a divergência fica
- * declarada e limitada.
- */
-.atend-titulo {
-  margin: 0;
-  /* Sem versal e sem espacejamento largo: a referência é um título em caixa
-     alta e baixa, leve, quebrando em mais de uma linha. A versal que a capa
-     anterior pedia endurecia a página inteira. */
-  font-size: clamp(2.4rem, 5.6vw, 4.4rem);
-  font-weight: 400;
-  line-height: 1.04;
-}
-
-.atend-linha {
-  margin: 0;
-  color: var(--ink-soft);
+.care-hero h1,
+.care-page h2,
+.care-page h3,
+.care-subtitle {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.05rem, 2.1vw, 1.6rem);
+  font-weight: 400;
 }
 
-.atend-lead {
-  /* Mais estreito que a coluna: é o bloco pequeno da referência, e uma linha
-     longa demais aqui competiria com o título em vez de acompanhá-lo. */
-  max-width: 42ch;
-  margin: clamp(8px, 1.6vw, 22px) 0 0;
-  color: var(--ink-soft);
-  font-size: .96rem;
-  line-height: 1.65;
+.care-hero h1 {
+  margin: 0;
+  font-size: clamp(4.2rem, 5.6vw, 6.3rem);
+  line-height: .83;
+  letter-spacing: -.065em;
 }
 
-/*
- * O texto abaixo divide a margem esquerda com a janela.
- *
- * `.article-shell` é uma coluna centrada — o certo nas outras nove seções, que
- * abrem com um cabeçalho igualmente centrado na página. Aqui a abertura tem
- * janela à esquerda e título à direita, e a coluna centrada não se alinhava com
- * nenhuma das duas: medido a 1440px, a janela começava em 115 e o texto em 383,
- * 268px de desencontro que faziam o corpo da página flutuar no meio.
- *
- * Alinhado à esquerda, a página passa a ter uma borda só, que é a da janela.
- * A regra é restrita a esta seção porque é só aqui que a abertura é dividida —
- * nas outras, centrar continua certo.
- *
- * Zerar a margem não basta, e a razão está no pai: `.page-view` é uma grade com
- * `place-items: center`. `.page-view--article` tenta devolvê-la a `display:
- * block`, mas é declarada num @import que vem ANTES, então perde para
- * `.page-view` e a grade permanece. Com grade, quem centraliza é o alinhamento
- * do item, não a margem — por isso `justify-self`.
- *
- * Sem efeito no telefone: ali `.article-shell` já ocupa 100% da largura, e um
- * item que preenche a coluna não tem para onde ser alinhado.
- */
-body[data-section="atendimentos"] .article-shell {
-  justify-self: start;
-  /*
-   * A coluna ocupa a largura inteira, e não os 74ch das outras seções.
-   *
-   * Travada em 74ch e alinhada à esquerda, ela deixava a metade direita da
-   * página vazia — a abertura usa a largura toda, e o corpo abaixo abandonava
-   * metade dela. Solta, `.article-groups` (que já é `auto-fit`) se espalha
-   * sozinha e preenche o que sobrava.
-   *
-   * O texto corrido NÃO acompanha: `.article-block p` continua com o teto de
-   * 62ch que vem do sistema. Linha de 1.200px é ilegível, e encher a largura
-   * com parágrafo seria trocar um problema de composição por um de leitura.
-   */
+.care-subtitle {
+  margin: clamp(18px, 2.2vw, 30px) 0 0;
+  color: var(--care-muted);
+  font-size: clamp(1.35rem, 2.2vw, 2.05rem);
+}
+
+.care-lead {
+  max-width: 46ch;
+  margin: clamp(28px, 4vw, 54px) 0 0;
+  color: var(--care-muted);
+  font-size: clamp(1rem, 1.15vw, 1.14rem);
+  line-height: 1.75;
+}
+
+.care-action,
+.care-text-link {
+  display: inline-flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 32px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid currentColor;
+  color: var(--care-earth);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.care-action span,
+.care-text-link span { transition: transform .35s ease; }
+.care-action:hover span,
+.care-action:focus-visible span { transform: translateY(4px); }
+.care-text-link:hover span,
+.care-text-link:focus-visible span { transform: translate(3px, -3px); }
+
+.care-orientation,
+.care-oracles,
+.care-closing {
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(320px, 1.18fr);
+  gap: clamp(42px, 8vw, 132px);
+  width: min(100%, 1260px);
+  margin-inline: auto;
+  padding: clamp(92px, 13vw, 190px) clamp(24px, 6vw, 80px);
+}
+
+.care-heading h2,
+.care-section-head h2,
+.care-oracles h2,
+.care-closing h2 {
+  margin: 0;
+  font-size: clamp(2.6rem, 5.2vw, 5.8rem);
+  line-height: .98;
+  letter-spacing: -.04em;
+}
+
+.care-prose,
+.care-closing-copy {
+  align-self: end;
+  max-width: 570px;
+}
+
+.care-prose p,
+.care-section-head > p:last-child,
+.care-oracles-copy > p,
+.care-closing-copy > p {
+  margin: 0 0 1.35em;
+  color: var(--care-muted);
+  font-size: clamp(1rem, 1.2vw, 1.15rem);
+  line-height: 1.8;
+}
+
+.care-possibilities {
+  padding: clamp(90px, 12vw, 170px) clamp(24px, 7vw, 112px);
+  background: var(--care-paper-deep);
+}
+
+.care-section-head {
+  width: min(100%, 1080px);
+  margin: 0 auto clamp(58px, 8vw, 104px);
+}
+
+.care-section-head h2 { max-width: 13ch; }
+.care-section-head > p:last-child { max-width: 58ch; margin: 34px 0 0 auto; }
+
+.care-spectrum {
+  width: min(100%, 1080px);
+  margin-inline: auto;
+  border-top: 1px solid var(--care-line);
+}
+
+.care-spectrum article,
+.care-access-list article {
+  display: grid;
+  grid-template-columns: 54px minmax(190px, .72fr) minmax(0, 1.28fr);
+  gap: clamp(18px, 4vw, 56px);
+  align-items: baseline;
+  padding: clamp(28px, 4vw, 48px) 0;
+  border-bottom: 1px solid var(--care-line);
+}
+
+.care-spectrum span,
+.care-access-list span {
+  color: var(--care-gold);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: .7rem;
+  letter-spacing: .16em;
+}
+
+.care-spectrum h3,
+.care-access-list h3 {
+  margin: 0;
+  font-size: clamp(1.55rem, 2.3vw, 2.4rem);
+}
+
+.care-spectrum p,
+.care-access-list p {
+  max-width: 50ch;
+  margin: 0;
+  color: var(--care-muted);
+  line-height: 1.7;
+}
+
+.care-oracles {
   width: 100%;
-  margin-inline: 0;
+  max-width: none;
+  background: var(--care-earth-dark);
+  color: #efe4d5;
 }
 
-/* A lista de acessos também se espalha: quatro itens curtos empilhados numa
-   coluna de 1.200px deixariam a mesma metade vazia que os cartões acabaram de
-   preencher. */
-body[data-section="atendimentos"] .article-list {
-  gap: clamp(10px, 1.6vw, 18px);
-  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+.care-oracles > div:first-child,
+.care-oracles-copy {
+  width: min(100%, 520px);
+  justify-self: center;
 }
 
-.atend-oraculos { border-top: 1px solid rgba(74, 55, 40, .16); padding-top: clamp(24px, 4vw, 44px); }
+.care-oracles-copy > p { color: rgba(239, 228, 213, .7); }
+.care-text-link--light { color: #e4cfae; }
 
-/* Empilhado antes do ponto em que as vidraças viram uma coluna: lado a lado,
-   abaixo disto a janela fica estreita demais para quatro rótulos legíveis e o
-   texto vira uma tira. */
-@media (max-width: 900px) {
-  .atend-janela { grid-template-columns: minmax(0, 1fr); }
-  .atend-lead { max-width: none; }
+.care-access { padding: clamp(90px, 12vw, 168px) clamp(24px, 7vw, 112px); }
+.care-section-head--compact { margin-bottom: clamp(50px, 7vw, 88px); }
+.care-access-list { width: min(100%, 1080px); margin-inline: auto; border-top: 1px solid var(--care-line); }
+.care-access-list article { grid-template-columns: 54px minmax(0, 1fr); }
+.care-access-list article > div { display: grid; grid-template-columns: minmax(180px, .65fr) minmax(0, 1.35fr); gap: clamp(24px, 5vw, 72px); }
+
+.care-closing {
+  width: 100%;
+  max-width: none;
+  background: #d8c7b4;
 }
 
-@media (max-width: 620px) {
-  /* Uma coluna: com duas, cada vidraça fica estreita demais para o rótulo, que
-     passa a quebrar em três linhas sobre a imagem. A moldura continua — é ela
-     que sustenta a leitura de janela mesmo empilhada. */
-  .atend-vidracas { grid-template-columns: minmax(0, 1fr); }
-  .atend-vidraca a,
-  .atend-vidraca:nth-child(-n + 2) a { aspect-ratio: 16 / 10; }
+.care-closing > div { width: min(100%, 520px); justify-self: center; }
+.care-closing-actions { display: flex; flex-wrap: wrap; gap: 18px 34px; margin-top: 32px; }
+.care-closing-actions a {
+  color: var(--care-earth);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
 
-  /*
-   * A proporção muda, então o navegador recorta de novo — e recortaria pelo
-   * centro, jogando fora o enquadramento que o script escolheu de propósito
-   * (topo na primeira, base na última). Estas duas linhas repetem aquela
-   * escolha na única camada que sobrou para ela.
-   */
-  .atend-vidraca:first-child img { object-position: center top; }
-  .atend-vidraca:last-child img { object-position: center bottom; }
+.care-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 30px clamp(24px, 6vw, 80px);
+  background: var(--care-earth-dark);
+  color: rgba(239, 228, 213, .65);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: .76rem;
+  letter-spacing: .08em;
+}
+
+.care-footer p { margin: 0; }
+.care-footer a { color: #efe4d5; }
+
+.care-page a:focus-visible {
+  outline: 2px solid var(--care-gold);
+  outline-offset: 6px;
+}
+
+@media (max-width: 1000px) {
+  .care-hero { gap: clamp(28px, 4vw, 52px); }
+  .care-hero h1 { font-size: clamp(3.4rem, 5.4vw, 5.6rem); }
+}
+
+@media (max-width: 800px) {
+  .care-hero {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    padding-top: 82px;
+  }
+
+  .care-hero-visual { min-height: min(116vw, 680px); border-radius: 2px 50px 2px 2px; }
+  .care-hero-copy { max-width: 620px; }
+
+  .care-orientation,
+  .care-oracles,
+  .care-closing { grid-template-columns: minmax(0, 1fr); }
+
+  .care-prose,
+  .care-closing-copy { max-width: 640px; }
+
+  .care-section-head > p:last-child { margin-left: 0; }
+}
+
+@media (max-width: 600px) {
+  .care-hero { padding-inline: 18px; }
+  .care-hero h1 { font-size: clamp(3rem, 13.5vw, 4.6rem); }
+
+  .care-spectrum article,
+  .care-access-list article,
+  .care-access-list article > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .care-spectrum span,
+  .care-access-list span { margin-bottom: 6px; }
+
+  .care-footer { flex-direction: column; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .atend-vidraca img { transition-duration: .01ms !important; }
-  .atend-vidraca a:hover img,
-  .atend-vidraca a:focus-visible img { transform: none; }
+  .care-action span,
+  .care-text-link span { transition: none; }
 }
