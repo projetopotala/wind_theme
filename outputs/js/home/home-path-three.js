@@ -41,6 +41,7 @@ precision highp float;
 uniform float uReveal;
 uniform float uOpacity;
 uniform float uTipFade;
+uniform float uHeadGlow;
 uniform vec3 uGold;
 varying float vSide;
 varying float vArc;
@@ -50,33 +51,61 @@ void main() {
   if (vArc > uReveal) discard;
 
   /*
-   * A PONTA AFINA, não é serrada.
+   * A LÂMINA: o trecho, medido em arco, onde a ponta deixa de ser linha.
    *
-   * Cortar a fita com discard puro deixava uma aresta reta e perpendicular no
-   * fim da linha — um toco de ponta chata parado no céu, que é o que mais
-   * denunciava a luz como um objeto desenhado. Aqui a opacidade cai ao longo
-   * do último trecho do arco, então a linha some numa lâmina em vez de acabar
-   * num talho.
-   *
-   * O mesmo vale para o começo: a linha nasce do nada em vez de já existir
-   * inteira quando a página abre.
-   */
-  /*
-   * A lâmina encolhe quando ainda há pouco trajeto revelado.
-   *
-   * Com um comprimento fixo, as duas — a da ponta e a do começo — se cruzavam
-   * enquanto uReveal era pequeno e apagavam a linha inteira: medido, nada era
-   * desenhado até uns 8% de rolagem, e o trajeto parecia simplesmente não
-   * existir no alto da página.
+   * Ela encolhe quando ainda há pouco trajeto revelado. Com um comprimento
+   * fixo, a lâmina da ponta e a do começo se cruzavam enquanto uReveal era
+   * pequeno e apagavam a linha inteira: medido, nada era desenhado até uns 8%
+   * de rolagem, e o trajeto parecia simplesmente não existir no alto da página.
    */
   float lamina = min(uTipFade, uReveal * 0.5);
-  float cabeca = 1.0 - smoothstep(uReveal - lamina, uReveal, vArc);
+  float atras = uReveal - vArc;
+
+  /*
+   * A PONTA LIDERA, não se apaga.
+   *
+   * Antes a ponta era o ponto MAIS FRACO da linha: a opacidade caía a zero ao
+   * longo da lâmina inteira e o trecho da frente ia sumindo. Medido num quadro
+   * de 450px, a fita ia perdendo corpo justamente onde o olho a procura — 15px
+   * de largura no alto, 9px perto da ponta, nada depois. Uma luz que desce tem
+   * o contrário disso: o que vem à frente é a cabeça, e o rastro é que fica
+   * para trás.
+   *
+   * Aqui a lâmina faz duas coisas ao mesmo tempo. A fita AFINA ("estreita"),
+   * então a linha vira um ponto em vez de um toco de ponta chata — que era o
+   * defeito que a queda de opacidade tinha vindo resolver. E o halo ACENDE
+   * ("brasa"), então o ponto tem um bolo de luz em volta.
+   *
+   * "corte" fecha o último fio de arco. É curto de propósito: longo demais e a
+   * cabeça volta a se apagar, que é o que se está desfazendo.
+   */
+  float estreita = mix(0.44, 1.0, smoothstep(0.0, lamina, atras));
+  float corte = smoothstep(0.0, lamina * 0.18, atras);
   float cauda = smoothstep(0.0, lamina * 0.6, vArc);
 
-  float distance = abs(vSide) * 7.0;
+  float eixo = abs(vSide) * 7.0;
+  float distance = eixo / estreita;
   float core = 1.0 - smoothstep(0.55, 0.93, distance);
   float glow = exp(-distance * distance / 5.0) * 0.19;
-  float alpha = clamp(core * 0.94 + glow, 0.0, 1.0) * cabeca * cauda;
+
+  /*
+   * O núcleo já satura em 255 no meio da fita, então "mais brilho" na cabeça
+   * não teria para onde ir: uma cabeça mais clara que o branco é a mesma
+   * imagem. O que o olho pode ver é a luz INCHAR — e por isso a brasa é um
+   * segundo halo, mais largo, que só existe perto da ponta.
+   *
+   * Ele usa "eixo" e não "distance": medindo pela distância já estreitada, o
+   * afinamento da ponta encolhia o halo mais rápido do que a brasa o acendia, e
+   * a cabeça continuava a ser o trecho MAIS FINO da fita — medido, 8px contra
+   * 17px no rastro, exatamente o contrário do que se quer.
+   *
+   * Somado, não multiplicado pelo halo estreito: multiplicar amarraria o
+   * tamanho do bolo de luz à largura do fio, que é a amarra que se está
+   * desfazendo.
+   */
+  float brasa = exp(-eixo * eixo / 5.0) * 0.19
+    * exp(-(atras * atras) / (lamina * lamina * 0.42)) * uHeadGlow;
+  float alpha = clamp(core * 0.94 + glow + brasa, 0.0, 1.0) * corte * cauda;
   gl_FragColor = vec4(uGold, alpha * uOpacity);
 
   /*
@@ -90,7 +119,6 @@ void main() {
    */
   #include <colorspace_fragment>
 }`;
-
 /**
  * Vértices da fita a partir de uma função que devolve o ponto em t.
  *
@@ -226,6 +254,8 @@ export function createHomePath(canvas, {
       // Comprimento da lâmina em fração do arco. Curto demais e volta a parecer
       // corte; longo demais e a ponta some antes de chegar ao bloco seguinte.
       uTipFade: { value: 0.06 },
+      // Quanto o halo incha na cabeça, em múltiplos dele mesmo.
+      uHeadGlow: { value: 6.0 },
       // A meia-largura da fita em unidades do mundo. O núcleo aceso ocupa cerca
       // de 13% dela (0,93 de 7 no shader); o resto é o halo se apagando.
       uWidth: { value: 0.1 },
@@ -250,7 +280,16 @@ export function createHomePath(canvas, {
     const point = curve.getPointAt(clamp(progress));
     // A câmera anda para o lado CONTRÁRIO ao que se quer ver a linha andar.
     camera.position.set(point.x * 0.12 - lateral, point.y, CAMERA_DISTANCE);
-    camera.lookAt(point.x * 0.22 - lateral, point.y - 0.3, 0);
+    /*
+     * A câmera mira ACIMA da cabeça, e é isso que dá altura à descida.
+     *
+     * Mirando abaixo, a ponta da luz parava a 35% do alto do quadro e os dois
+     * terços de baixo ficavam sem linha nenhuma — medido, igual em todos os
+     * valores de rolagem, de 0,15 a 1,0. A linha não descia: entrava pelo topo
+     * e terminava logo ali. Com a mira acima, a cabeça desce para perto de 60%
+     * e o rastro ocupa o quadro.
+     */
+    camera.lookAt(point.x * 0.22 - lateral, point.y + 0.2, 0);
     material.uniforms.uReveal.value = clamp(progress);
     renderer.render(scene, camera);
   }

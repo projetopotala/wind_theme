@@ -112,7 +112,7 @@ test("o shader converte a cor para sRGB na saída", async () => {
   assert.match(fonte, /#include <colorspace_fragment>/);
 });
 
-test("a ponta da linha afina em vez de ser serrada", async () => {
+test("a ponta da linha lidera em vez de se apagar", async () => {
   const fonte = await readFile(
     new URL("../../outputs/js/home/home-path-three.js", import.meta.url),
     "utf8",
@@ -127,11 +127,53 @@ test("a ponta da linha afina em vez de ser serrada", async () => {
    * rolagem, e o trajeto parecia não existir no alto da página.
    */
   assert.match(fonte, /float lamina = min\(uTipFade, uReveal \* 0\.5\);/);
-  assert.match(fonte, /float cabeca = 1\.0 - smoothstep\(uReveal - lamina, uReveal, vArc\);/);
   assert.match(fonte, /float cauda = smoothstep\(0\.0, lamina \* 0\.6, vArc\);/);
 
-  // E as duas lâminas têm de entrar no alfa, senão ficam calculadas e ignoradas.
-  assert.match(fonte, /\* cabeca \* cauda;/);
+  /*
+   * A primeira lâmina apagava a ponta ao longo de todo o seu comprimento, e com
+   * isso a cabeça da luz virava o trecho mais fraco da fita: medido num quadro
+   * de 450px, 15px de largura no rastro contra 9px perto da ponta, sumindo
+   * depois. Uma luz que desce tem o contrário disso.
+   *
+   * As três peças que desfazem aquilo: a fita AFINA na ponta, o corte fecha o
+   * último fio de arco, e a brasa acende um halo largo em volta da cabeça.
+   */
+  assert.match(fonte, /float estreita = mix\(0\.44, 1\.0, smoothstep\(0\.0, lamina, atras\)\);/);
+  assert.match(fonte, /float distance = eixo \/ estreita;/);
+  assert.match(fonte, /float corte = smoothstep\(0\.0, lamina \* 0\.18, atras\);/);
+
+  /*
+   * A brasa mede por "eixo", a distância NOMINAL ao eixo, e não por "distance",
+   * que já vem estreitada. Medindo pela estreitada, o afinamento encolhia o
+   * halo mais rápido do que a brasa o acendia e a cabeça continuava sendo o
+   * trecho mais fino da fita — que é justamente o defeito.
+   */
+  // A quebra de linha da declaração não é parte do que se afirma aqui.
+  const numaLinha = fonte.replace(/\s+/g, " ");
+  assert.match(numaLinha, /float brasa = exp\(-eixo \* eixo \/ 5\.0\) \* 0\.19 \* exp\(-\(atras \* atras\) \/ \(lamina \* lamina \* 0\.42\)\) \* uHeadGlow;/);
+
+  // E as três têm de entrar no alfa, senão ficam calculadas e ignoradas.
+  assert.match(fonte, /float alpha = clamp\(core \* 0\.94 \+ glow \+ brasa, 0\.0, 1\.0\) \* corte \* cauda;/);
+});
+
+test("a câmera mira acima da cabeça, e a luz desce dentro do quadro", async () => {
+  const fonte = await readFile(
+    new URL("../../outputs/js/home/home-path-three.js", import.meta.url),
+    "utf8",
+  );
+
+  /*
+   * Mirando ABAIXO da cabeça, a ponta da luz parava a 35% do alto do quadro e
+   * os dois terços de baixo ficavam sem linha nenhuma — medido lendo os pixels
+   * da fita, igual em todos os valores de rolagem, de 0,15 a 1,0. A linha não
+   * descia: entrava pelo topo e terminava logo ali. Com a mira acima, a cabeça
+   * cai para 57% do quadro e o rastro ocupa o resto.
+   *
+   * O sinal é o teste: um `-` aqui devolve o defeito inteiro.
+   */
+  const mira = fonte.match(/camera\.lookAt\([^;]*\);/);
+  assert.ok(mira, "a câmera precisa de um alvo explícito");
+  assert.match(mira[0], /point\.y \+ 0\.2/);
 });
 
 test("o deslocamento em pixels vira unidades de mundo na mesma proporção", async () => {
