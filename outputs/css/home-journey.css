@@ -186,6 +186,28 @@ html.is-crossing .journey-entry-veil {
   letter-spacing: -.065em;
 }
 
+/*
+ * "Bem-vindo." cabe numa linha só, sempre.
+ *
+ * O hífen é o problema. Ele é um ponto de quebra legítimo, então o navegador
+ * partia a palavra em "Bem-" e "vindo." assim que o texto passava da caixa —
+ * e passava: medido a 1826px, a fonte batia no teto de 11rem e o texto pedia
+ * 793px numa caixa interna de 764px. No telefone o mesmo, pelo outro lado: a
+ * 375px a fonte parava no piso de 4,6rem e pedia 332px numa caixa de 307px.
+ *
+ * "nowrap" declara a intenção e impede a quebra; o tamanho é que passa a ter
+ * de caber. Medida a proporção do texto — 4,5053 vezes o tamanho da fonte,
+ * igual a 375 e a 1280 — os limites daqui saem dela com folga para variação
+ * de fonte de fallback.
+ *
+ * A regra vale só para o h1 do prólogo. O h2 da continuação é uma frase
+ * inteira, e proibir a quebra ali jogaria a frase para fora da tela.
+ */
+.prologue-copy h1 {
+  font-size: min(14.6vw, 10rem);
+  white-space: nowrap;
+}
+
 .prologue-copy > span {
   display: inline-block;
   margin-top: 24px;
@@ -585,6 +607,10 @@ html.is-crossing .journey-entry-veil {
 
   .prologue-copy,
   .journey-continuation > div { padding: 24px 12px; }
+
+  /* No telefone a caixa é a tela menos as folgas, não os 900px do desktop, e
+     a conta muda com ela: 16,5vw cabe de 320px para cima. */
+  .prologue-copy h1 { font-size: 16.5vw; }
 
   /*
    * Uma coluna de conteúdo, DUAS linhas — uma para cada bloco do par.
