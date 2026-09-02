@@ -3,59 +3,53 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#edf1ed">
-  <meta name="description" content="A loja do Instituto Potala: cristais, incensos, livros, óleos essenciais e alimentos saudáveis.">
-  <title>Instituto Potala — Marketplace</title>
+  <meta name="theme-color" content="#f2e9dc">
+  <meta name="description" content="Marketplace do Instituto Potala: escolhas contextualizadas por conhecimento e cuidado.">
+  <title>Marketplace — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
+  <link rel="preload" href="media/marketplace-contexto.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
-  <script src="secoes.js" defer></script>
+  <link rel="stylesheet" href="css/section-photographic.css">
+  <script type="module" src="secoes.js"></script>
+  <script type="module" src="js/sections/front-demo.js"></script>
 </head>
 <body data-section="marketplace">
-  <main class="page-view page-view--article" id="conteudo">
-    <div class="article-shell">
-      <header class="article-head">
-        <p class="page-kicker">A loja</p>
-        <h1 class="page-title">Marketplace</h1>
-        <p class="page-lead">O que a casa reúne para você levar junto — e continuar em casa o que começou aqui.</p>
-      </header>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <main class="photo-page" id="conteudo" data-section-family="photographic">
+    <section class="photo-hero" aria-labelledby="market-title">
+      <figure class="photo-hero-visual" data-reveal><img src="media/marketplace-contexto.webp" alt="Visitante lê um livro diante de uma seleção cuidadosa de produtos naturais" width="1600" height="1000" fetchpriority="high" decoding="async"></figure>
+      <div class="photo-hero-copy" data-reveal>
+        <p class="photo-kicker">Escolhas com contexto</p>
+        <h1 id="market-title">Marketplace</h1>
+        <p class="photo-subtitle">conhecimento antes da compra</p>
+        <p class="photo-lead">Produtos aparecem como continuidade de uma prática, de um estudo ou de uma orientação — nunca como atalhos para o cuidado.</p>
+        <a class="photo-action" href="#colecao">Conhecer a curadoria <span aria-hidden="true">↓</span></a>
+      </div>
+    </section>
 
-      <section class="article-block">
-        <h2>Mais de três mil produtos</h2>
-        <p>A loja ocupa a entrada do instituto e existe pelo mesmo motivo das salas de atendimento: dar continuidade ao cuidado. O incenso que acompanha a meditação, o livro que aprofunda o curso, o óleo essencial que a aromaterapia indicou.</p>
+    <section class="photo-intro" aria-labelledby="market-intro-title">
+      <p class="photo-index">01</p>
+      <div data-reveal><p class="photo-kicker">Levar algo consigo</p><h2 id="market-intro-title">O objeto importa quando a escolha faz sentido.</h2></div>
+      <div class="photo-prose" data-reveal><p>A curadoria reúne itens relacionados à vida do Instituto. Um livro pode aprofundar um curso; um óleo essencial pode acompanhar uma orientação; um objeto pode recordar uma prática.</p></div>
+    </section>
 
-        <div class="article-groups">
-          <div class="article-group">
-            <h3>Cristais</h3>
-            <p>Peças brutas e polidas, para coleção, para prática ou para presentear.</p>
-          </div>
-          <div class="article-group">
-            <h3>Incensos e óleos</h3>
-            <p>Incensos naturais e óleos essenciais, incluindo os usados nas formações de aromaterapia.</p>
-          </div>
-          <div class="article-group">
-            <h3>Livros e oráculos</h3>
-            <p>Títulos que acompanham os cursos e os grupos de estudo, e baralhos de tarô e outros oráculos.</p>
-          </div>
-          <div class="article-group">
-            <h3>Alimentos saudáveis</h3>
-            <p>Produtos naturais selecionados, para quem quer levar a prática também para a mesa.</p>
-          </div>
-        </div>
-      </section>
+    <section class="photo-list" id="colecao" aria-labelledby="market-list-title">
+      <header class="photo-list-head" data-reveal><div><p class="photo-kicker">Uma curadoria viva</p><h2 id="market-list-title">Descobertas para continuar em casa.</h2></div><p>O acervo e a disponibilidade mudam. As categorias abaixo mostram a relação entre os produtos e as experiências do Ecossistema.</p></header>
+      <div class="photo-rows">
+        <article data-reveal><span>01</span><h3>Livros</h3><p>Leituras que acompanham cursos, grupos de estudo, cultura e processos de autoconhecimento.</p></article>
+        <article data-reveal><span>02</span><h3>Óleos essenciais</h3><p>Itens ligados à aromaterapia, apresentados com contexto e orientação de uso responsável.</p></article>
+        <article data-reveal><span>03</span><h3>Cristais e objetos</h3><p>Peças escolhidas por sua relação com práticas, simbolismos e interesses pessoais.</p></article>
+        <article data-reveal><span>04</span><h3>Bem-estar cotidiano</h3><p>Incensos, produtos naturais e outros itens para apoiar rituais simples de presença.</p></article>
+      </div>
+    </section>
 
-      <section class="article-block">
-        <h2>Como comprar</h2>
-        <p>A loja é presencial, na entrada do instituto, aberta nos horários de funcionamento da casa. Encomendas e dúvidas sobre disponibilidade são atendidas pelo WhatsApp.</p>
-      </section>
+    <section class="photo-dark" aria-labelledby="market-context-title">
+      <div data-reveal><p class="photo-kicker">Antes de escolher</p><h2 id="market-context-title">Curadoria não é prescrição.</h2></div>
+      <div class="photo-dark-copy" data-reveal><p>Produtos não substituem atendimento, diagnóstico ou tratamento. Quando houver dúvida, converse com a equipe ou procure orientação profissional adequada.</p><a class="photo-link" href="recepcao.html">Pedir orientação ↗</a></div>
+    </section>
 
-      <p class="article-note">Levar um objeto é levar a lembrança de uma prática — e é assim que ela continua depois que você sai daqui.</p>
-
-      <footer class="article-foot">
-        <p>Rua 24 de Maio, 748 — Centro, Indaiatuba/SP · (19) 3834-6147 · WhatsApp (19) 99776-6131</p>
-        <p><a href="https://www.institutopotala.com" rel="noreferrer">institutopotala.com</a> · contato@institutopotala.com</p>
-        <a class="article-back" href="transcendido.html">Voltar à travessia</a>
-      </footer>
-    </div>
+    <section class="photo-closing" aria-labelledby="market-closing-title"><div data-reveal><p class="photo-kicker">Conexões</p><h2 id="market-closing-title">Descubra primeiro. Escolha depois.</h2></div><div class="photo-closing-copy" data-reveal><p>Explore cursos, cultura e atendimentos que dão significado às escolhas reunidas aqui.</p><div class="photo-connections"><a class="photo-link" href="cursos.html">Cursos ↗</a><a class="photo-link" href="cultura.html">Arte e Cultura ↗</a><a class="photo-link" href="atendimentos.html">Atendimentos ↗</a></div></div></section>
+    <footer class="photo-footer"><p>Rua 24 de Maio, 748 — Centro, Indaiatuba/SP · (19) 3834-6147</p><a class="article-back" href="transcendido.html">Voltar à travessia</a></footer>
   </main>
 </body>
 </html>

@@ -3,67 +3,70 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#edf1ed">
-  <meta name="description" content="Cine Potala, café filosófico, saraus e oficinas: a vida cultural do instituto.">
-  <title>Instituto Potala — Cultura</title>
+  <meta name="theme-color" content="#f4ecdf">
+  <meta name="description" content="Arte, cultura e convivência no Instituto Potala.">
+  <title>Arte e Cultura — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
+  <link rel="preload" href="media/journey-cultura.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
-  <script src="secoes.js" defer></script>
+  <link rel="stylesheet" href="css/section-editorial.css">
+  <script type="module" src="secoes.js"></script>
+  <script type="module" src="js/sections/front-demo.js"></script>
 </head>
 <body data-section="cultura" data-entry="right" data-left="programacao.html">
-  <main class="page-view page-view--article" aria-label="Cultura. Deslize para a esquerda para voltar à Programação.">
-    <div class="article-shell">
-      <header class="article-head">
-        <p class="page-kicker">O encontro</p>
-        <h1 class="page-title">Arte e cultura</h1>
-        <p class="page-lead">Cinema, música, livros, conversa e criação ampliam o modo como encontramos o mundo.</p>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <main class="editorial-page" id="conteudo" data-section-family="editorial">
+    <section class="editorial-hero" aria-labelledby="culture-title">
+      <div class="editorial-hero-copy" data-reveal>
+        <p class="editorial-kicker">O encontro</p>
+        <h1 id="culture-title">Arte e cultura</h1>
+        <p class="editorial-lead">Cinema, música, livros e conversa criam outras formas de compreender a vida — juntos.</p>
+        <a class="editorial-action" href="#encontros">Entrar nesse espaço <span aria-hidden="true">↓</span></a>
+      </div>
+      <figure class="editorial-hero-visual" data-reveal>
+        <img src="media/journey-cultura.webp" alt="Ambiente cultural iluminado que convida ao encontro e à contemplação" width="1600" height="900" fetchpriority="high" decoding="async">
+        <figcaption>Criação, presença e convivência</figcaption>
+      </figure>
+    </section>
+
+    <section class="editorial-chapter" aria-labelledby="culture-opening-title">
+      <p class="editorial-index">01</p>
+      <div data-reveal><p class="editorial-kicker">Uma forma de cuidado</p><h2 id="culture-opening-title">A arte também nos transforma.</h2></div>
+      <div class="editorial-prose" data-reveal>
+        <p>A vida cultural do Potala não aparece como intervalo do cuidado. Ela faz parte dele. Uma obra, uma conversa ou uma apresentação podem abrir perguntas que nenhuma explicação abriria sozinha.</p>
+        <p>Por isso, artistas, leitores, estudantes e visitantes dividem o mesmo espaço de escuta e descoberta.</p>
+      </div>
+    </section>
+
+    <section class="editorial-collection" id="encontros" aria-labelledby="culture-meetings-title">
+      <header class="editorial-collection-head" data-reveal>
+        <div><p class="editorial-kicker">A casa em movimento</p><h2 id="culture-meetings-title">Experiências para ver, ouvir e criar.</h2></div>
+        <p>Os encontros variam ao longo do ano e ocupam a casa de diferentes maneiras, preservando sempre o espaço para presença e troca.</p>
       </header>
+      <div class="editorial-grid">
+        <article data-reveal><span>01</span><h3>Cine Potala</h3><p>Sessões em que o filme abre uma conversa, em vez de encerrar um tema.</p></article>
+        <article data-reveal><span>02</span><h3>Biblioteca Potala</h3><p>Livros para consulta, estudo e continuidade das descobertas iniciadas na casa.</p></article>
+        <article data-reveal><span>03</span><h3>Café filosófico</h3><p>Pensamento compartilhado em encontros abertos, sem exigir formação prévia.</p></article>
+        <article data-reveal><span>04</span><h3>Saraus e lançamentos</h3><p>Palavra, música e presença reunidas em noites de criação e escuta.</p></article>
+        <article data-reveal><span>05</span><h3>Oficinas</h3><p>Experiências de arte e expressão em que aprender também significa fazer.</p></article>
+        <article data-reveal><span>06</span><h3>Rodas de conversa</h3><p>Encontros onde escutar tem a mesma importância que falar.</p></article>
+      </div>
+    </section>
 
-      <section class="article-block">
-        <h2>O que acontece na casa</h2>
-        <p>A parte cultural do Potala não é um acessório do trabalho terapêutico: é outra forma de fazer a mesma coisa. Um filme, uma roda de conversa ou um sarau também são maneiras de compreender a vida.</p>
+    <section class="editorial-quote" aria-label="Síntese de Arte e Cultura"><blockquote data-reveal>Existem ideias que só aparecem quando pessoas se encontram.</blockquote></section>
 
-        <div class="article-groups">
-          <div class="article-group">
-            <h3>Cine Potala</h3>
-            <p>Sessões seguidas de conversa, em que o filme é ponto de partida e não ponto final.</p>
-          </div>
-          <div class="article-group">
-            <h3>Café filosófico</h3>
-            <p>Encontros de pensamento e discussão aberta, sem exigência de formação prévia.</p>
-          </div>
-          <div class="article-group">
-            <h3>Rodas de conversa</h3>
-            <p>Grupos reunidos em torno de um tema, onde escutar vale tanto quanto falar.</p>
-          </div>
-          <div class="article-group">
-            <h3>Saraus e lançamentos</h3>
-            <p>Noites de leitura, apresentações e lançamentos de livros de autores da comunidade.</p>
-          </div>
-          <div class="article-group">
-            <h3>Música e dança</h3>
-            <p>Apresentações de dança e de música, muitas vezes por quem estuda na própria casa.</p>
-          </div>
-          <div class="article-group">
-            <h3>Oficinas</h3>
-            <p>Oficinas de arte, de henna do oriente e torneios de xadrez.</p>
-          </div>
+    <section class="editorial-closing" aria-labelledby="culture-closing-title">
+      <div data-reveal><p class="editorial-kicker">Próximos encontros</p><h2 id="culture-closing-title">A programação revela o que está acontecendo agora.</h2></div>
+      <div class="editorial-closing-copy" data-reveal>
+        <p>Consulte os encontros culturais atuais ou retorne à travessia para descobrir outros caminhos do Ecossistema.</p>
+        <div class="editorial-connections">
+          <a class="editorial-link" href="programacao.html">Ver programação <span aria-hidden="true">↗</span></a>
+          <a class="editorial-link" href="inspiracao.html">Encontrar inspiração <span aria-hidden="true">↗</span></a>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="article-block">
-        <h2>Livros e objetos</h2>
-        <p>A loja do instituto reúne mais de três mil produtos — cristais, incensos, livros, óleos essenciais e alimentos saudáveis. Os livros acompanham os cursos e os grupos de estudo, e não o contrário.</p>
-      </section>
-
-      <p class="article-note">As datas dos encontros culturais entram na programação do mês.</p>
-
-      <footer class="article-foot">
-        <p>Rua 24 de Maio, 748 — Centro, Indaiatuba/SP · (19) 3834-6147 · WhatsApp (19) 99776-6131</p>
-        <p><a href="https://www.institutopotala.com/programacao" rel="noreferrer">Agenda no site oficial</a> · contato@institutopotala.com</p>
-        <a class="article-back" href="transcendido.html">Voltar à travessia</a>
-      </footer>
-    </div>
+    <footer class="editorial-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>
   </main>
 </body>
 </html>

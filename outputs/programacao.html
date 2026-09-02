@@ -3,55 +3,61 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#edf1ed">
-  <meta name="description" content="A agenda viva do Instituto Potala: atendimentos, aulas, cursos e encontros.">
-  <title>Instituto Potala — Programação</title>
+  <meta name="theme-color" content="#211a15">
+  <meta name="description" content="A programação viva do Instituto Potala e caminhos para encontrar o que acontece agora.">
+  <title>Programação — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
+  <link rel="preload" href="media/home-travessia.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
-  <script src="secoes.js" defer></script>
+  <link rel="stylesheet" href="css/section-guided.css">
+  <script type="module" src="secoes.js"></script>
+  <script type="module" src="js/sections/front-demo.js"></script>
 </head>
 <body data-section="programacao" data-entry="down" data-left="saude-integrativa.html" data-right="cultura.html">
-  <main class="page-view page-view--article" aria-label="Programação. Deslize horizontalmente para navegar.">
-    <div class="article-shell">
-      <header class="article-head">
-        <p class="page-kicker">O Potala está vivo</p>
-        <h1 class="page-title">Programação</h1>
-        <p class="page-lead">Atendimentos, cursos, vivências e atividades formam uma agenda em movimento.</p>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <main class="guided-page" id="conteudo" data-section-family="guided">
+    <section class="guided-hero" aria-labelledby="schedule-title">
+      <img class="guided-hero-image" src="media/home-travessia.webp" alt="Caminho iluminado pela paisagem que representa a agenda viva do Instituto" width="1600" height="900" fetchpriority="high" decoding="async">
+      <div class="guided-hero-copy" data-reveal>
+        <p class="guided-kicker">O Potala está vivo</p>
+        <h1 id="schedule-title">Programação</h1>
+        <p class="guided-lead">Aulas, atendimentos, cursos e encontros mudam com a vida da casa. Encontre uma forma simples de começar.</p>
+        <a class="guided-scroll" href="#orientacao">Explorar a agenda <span aria-hidden="true">↓</span></a>
+      </div>
+    </section>
+
+    <section class="guided-intro" aria-labelledby="schedule-intro-title">
+      <p class="guided-index">01</p>
+      <div data-reveal><p class="guided-kicker">Uma agenda em movimento</p><h2 id="schedule-intro-title">Cada semana abre novas possibilidades.</h2></div>
+      <div class="guided-prose" data-reveal>
+        <p>A programação reúne o que acontece no Instituto sem reduzir a experiência a um calendário. Você pode chegar por uma necessidade, uma curiosidade ou simplesmente pela vontade de participar.</p>
+        <p>Como horários e turmas mudam, os detalhes atuais permanecem no site oficial.</p>
+      </div>
+    </section>
+
+    <section class="guided-choice-section" id="orientacao" aria-labelledby="schedule-choices-title" data-guided-group>
+      <header class="guided-choice-head" data-reveal>
+        <div><p class="guided-kicker">Escolha uma direção</p><h2 id="schedule-choices-title">O que combina com o seu momento?</h2></div>
+        <p>Esta seleção é apenas uma orientação visual. Ela não agenda nem armazena informações.</p>
       </header>
+      <div class="guided-options">
+        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Para algo imediato, consulte Acontece hoje e confirme os horários atualizados no site oficial."><span>01</span><strong>Acontece hoje</strong><small>Veja atendimentos, aulas e encontros disponíveis no dia.</small></button>
+        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="As Atividades permanentes criam continuidade: práticas corporais, grupos e encontros semanais."><span>02</span><strong>Atividades permanentes</strong><small>Encontre práticas que podem fazer parte da sua rotina.</small></button>
+        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Cursos e vivências permitem experimentar um tema ou seguir por uma formação mais longa."><span>03</span><strong>Aprender algo novo</strong><small>Conheça cursos, oficinas, vivências e grupos de estudo.</small></button>
+        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Eventos culturais e comunitários aproximam cinema, música, conversa, arte e convivência."><span>04</span><strong>Participar de um encontro</strong><small>Descubra acontecimentos culturais e experiências em grupo.</small></button>
+      </div>
+      <div class="guided-response" aria-live="polite"><p data-guided-response>Escolha uma possibilidade para receber uma orientação breve.</p></div>
+      <div class="guided-links">
+        <a class="guided-link" href="https://www.institutopotala.com/programacao" rel="noreferrer">Ver programação atual ↗</a>
+        <a class="guided-link" href="recepcao.html">Pedir orientação ↗</a>
+      </div>
+    </section>
 
-      <section class="article-block">
-        <h2>O que acontece todo mês</h2>
-        <ul class="article-list">
-          <li><strong>Atendimentos online</strong> — terapias e leituras oraculares agendáveis à distância, com terapeutas da casa.</li>
-          <li><strong>Atendimentos presenciais</strong> — acupuntura, massagens, reiki, osteopatia, hipnoterapia e homeopatia, entre outras técnicas.</li>
-          <li><strong>Aulas corporais semanais</strong> — yoga, tai chi, kung fu, dança de salão, zouk e qi gong, em turmas mensais.</li>
-          <li><strong>Cursos e vivências</strong> — formações curtas e workshops abertos a cada temporada.</li>
-        </ul>
-      </section>
-
-      <section class="article-block">
-        <h2>Encontros regulares</h2>
-        <ul class="article-list">
-          <li><strong>Tratamento espiritual</strong> — gratuito, à noite, em datas quinzenais.</li>
-          <li><strong>Ciclo de Expansão da Consciência</strong> — palestras, meditações, oficinas e rodas de cura.</li>
-          <li><strong>Constelações sistêmicas</strong> — encontros em grupo com data marcada.</li>
-          <li><strong>Atendimento solidário</strong> — orientações holísticas gratuitas.</li>
-        </ul>
-      </section>
-
-      <section class="article-block">
-        <h2>Como participar</h2>
-        <p>As inscrições e os agendamentos são feitos pelo WhatsApp do instituto. A agenda do mês corrente, com profissionais, horários e valores de cada atividade, fica publicada no site oficial.</p>
-      </section>
-
-      <p class="article-note">Datas, valores e turmas mudam a cada mês. Confirme sempre na agenda publicada antes de se programar.</p>
-
-      <footer class="article-foot">
-        <p>Rua 24 de Maio, 748 — Centro, Indaiatuba/SP · (19) 3834-6147 · WhatsApp (19) 99776-6131</p>
-        <p><a href="https://www.institutopotala.com/programacao" rel="noreferrer">Programação do mês no site oficial</a> · contato@institutopotala.com</p>
-        <a class="article-back" href="transcendido.html">Voltar à travessia</a>
-      </footer>
-    </div>
+    <section class="guided-closing" aria-labelledby="schedule-closing-title">
+      <div data-reveal><p class="guided-kicker">Chegar com calma</p><h2 id="schedule-closing-title">Você não precisa participar de tudo.</h2></div>
+      <div class="guided-closing-copy" data-reveal><p>Escolha apenas o que faz sentido agora. Outros caminhos continuarão disponíveis quando seu momento mudar.</p></div>
+    </section>
+    <footer class="guided-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>
   </main>
 </body>
 </html>

@@ -2,43 +2,59 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#edf1ed">
-  <meta name="description" content="Um espaço de inspiração e pausa no Ecossistema Potala.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#211a15">
+  <meta name="description" content="Um espaço de pausa, presença e inspiração no Ecossistema Potala.">
   <title>Inspiração — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
+  <link rel="preload" href="media/journey-inspiracao.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
-  <script defer src="secoes.js"></script>
+  <link rel="stylesheet" href="css/section-guided.css">
+  <script type="module" src="secoes.js"></script>
+  <script type="module" src="js/sections/front-demo.js"></script>
 </head>
 <body data-section="inspiracao">
-  <main class="page-view page-view--article" id="conteudo">
-    <div class="article-shell">
-      <header class="article-head">
-        <p class="page-kicker">Uma pausa</p>
-        <h1 class="page-title">Inspiração</h1>
-        <p class="page-lead">Nem todo encontro precisa pedir uma decisão. Alguns apenas devolvem espaço.</p>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <main class="guided-page" id="conteudo" data-section-family="guided">
+    <section class="guided-hero" aria-labelledby="inspiration-title">
+      <img class="guided-hero-image" src="media/journey-inspiracao.webp" alt="Paisagem silenciosa iluminada por uma luz suave ao longe" width="1600" height="900" fetchpriority="high" decoding="async">
+      <div class="guided-hero-copy" data-reveal>
+        <p class="guided-kicker">Uma pausa no caminho</p>
+        <h1 id="inspiration-title">Inspiração</h1>
+        <p class="guided-lead">Nem toda visita precisa terminar em uma escolha. Às vezes, basta encontrar alguns minutos de presença.</p>
+        <a class="guided-scroll" href="#pausa">Ficar um instante <span aria-hidden="true">↓</span></a>
+      </div>
+    </section>
+
+    <section class="guided-intro" aria-labelledby="inspiration-intro-title">
+      <p class="guided-index">01</p>
+      <div data-reveal><p class="guided-kicker">Escutar o mundo</p><h2 id="inspiration-intro-title">O silêncio também pode orientar.</h2></div>
+      <div class="guided-prose" data-reveal>
+        <p>O nome Potala recorda a imagem de Avalokiteshvara, associado à compaixão e à escuta dos clamores do mundo. Aqui, essa lembrança se transforma em convite: diminuir o ruído para perceber o que pede atenção.</p>
+        <p>Este espaço está preparado para receber, no futuro, meditações, músicas, mantras e pequenas reflexões.</p>
+      </div>
+    </section>
+
+    <section class="guided-choice-section" id="pausa" aria-labelledby="inspiration-choices-title" data-guided-group>
+      <header class="guided-choice-head" data-reveal>
+        <div><p class="guided-kicker">Escolha sua pausa</p><h2 id="inspiration-choices-title">Como você quer estar aqui?</h2></div>
+        <p>Nada é iniciado automaticamente. Escolha apenas se quiser experimentar uma breve orientação.</p>
       </header>
+      <div class="guided-options">
+        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Respirar: perceba o ar entrando, faça uma pequena pausa e solte devagar. Repita no seu ritmo."><span>01</span><strong>Respirar</strong><small>Retorne por alguns instantes ao ritmo do próprio corpo.</small></button>
+        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Meditar: escolha um ponto diante de você e permita que os pensamentos passem sem precisar segui-los."><span>02</span><strong>Meditar</strong><small>Encontre um pequeno intervalo entre um pensamento e outro.</small></button>
+        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Escutar: note primeiro o som mais distante, depois o mais próximo, e por fim o silêncio entre eles."><span>03</span><strong>Escutar</strong><small>Perceba os sons ao redor sem tentar nomear todos eles.</small></button>
+        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Ler: leve consigo esta pergunta — o que merece mais espaço na sua vida hoje?"><span>04</span><strong>Ler uma reflexão</strong><small>Uma pergunta curta para acompanhar o restante do caminho.</small></button>
+      </div>
+      <div class="guided-response" aria-live="polite"><p data-guided-response>Escolha uma pausa. Você pode sair ou continuar a qualquer momento.</p></div>
+      <div class="guided-links"><a class="guided-link" href="cultura.html">Arte e cultura ↗</a><a class="guided-link" href="atividades.html">Práticas do corpo ↗</a></div>
+    </section>
 
-      <section class="article-block">
-        <h2>A lenda que dá o nome</h2>
-        <p>Potala é o nome da montanha onde, na tradição budista, vive Avalokiteshvara — aquele que escuta o som do mundo. Sua promessa era tirar do inferno as tantas almas sofridas, e ele não descansaria enquanto restasse uma.</p>
-        <p>O instituto herdou menos a mitologia do que o gesto: estender as mãos. É uma tarefa que não termina, e talvez seja por isso que ela sirva como ponto de partida.</p>
-      </section>
-
-      <section class="article-block">
-        <h2>Subsídios para compreender a vida</h2>
-        <p>A casa reúne medicina integrativa, cursos e grupos de estudo, oráculos e exercícios físicos, meditação, cinema, livros, arte e cultura. A lista é longa de propósito: nenhuma dessas coisas, sozinha, dá conta de uma pessoa inteira.</p>
-        <p>Não são respostas. São subsídios — material para que cada um construa a sua compreensão.</p>
-      </section>
-
-      <p class="article-note">Somos todos afins, porque o mesmo propósito nos move: fazer deste mundo um lugar melhor.</p>
-
-      <footer class="article-foot">
-        <p>Rua 24 de Maio, 748 — Centro, Indaiatuba/SP · (19) 3834-6147 · WhatsApp (19) 99776-6131</p>
-        <p><a href="https://www.institutopotala.com" rel="noreferrer">institutopotala.com</a> · contato@institutopotala.com</p>
-        <a class="article-back" href="transcendido.html">Voltar à travessia</a>
-      </footer>
-    </div>
+    <section class="guided-closing" aria-labelledby="inspiration-closing-title">
+      <div data-reveal><p class="guided-kicker">Continue quando quiser</p><h2 id="inspiration-closing-title">O caminho permanece aberto.</h2></div>
+      <div class="guided-closing-copy" data-reveal><p>Não é preciso levar uma resposta. Às vezes, uma pergunta mais clara já muda a forma de seguir.</p></div>
+    </section>
+    <footer class="guided-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>
   </main>
 </body>
 </html>

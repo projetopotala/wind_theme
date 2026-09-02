@@ -3,74 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#edf1ed">
-  <meta name="description" content="Cursos, formações e oficinas do Instituto Potala.">
-  <title>Instituto Potala — Cursos</title>
+  <meta name="theme-color" content="#f4ecdf">
+  <meta name="description" content="Cursos, formações e experiências de aprendizagem do Instituto Potala.">
+  <title>Cursos — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
+  <link rel="preload" href="media/journey-quem-somos.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
-  <script src="secoes.js" defer></script>
+  <link rel="stylesheet" href="css/section-editorial.css">
+  <script type="module" src="secoes.js"></script>
+  <script type="module" src="js/sections/front-demo.js"></script>
 </head>
 <body data-section="cursos" data-entry="right" data-return-section="atendimentos" data-left="transcendido.html#atendimentos">
-  <main class="page-view page-view--article" aria-label="Cursos. Deslize para a esquerda para voltar aos atendimentos.">
-    <div class="article-shell">
-      <header class="article-head">
-        <p class="page-kicker">O conhecimento</p>
-        <h1 class="page-title">Cursos</h1>
-        <p class="page-lead">Cuidar também é aprender: conhecimento e prática se encontram para abrir novas possibilidades.</p>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <main class="editorial-page" id="conteudo" data-section-family="editorial">
+    <section class="editorial-hero" aria-labelledby="courses-title">
+      <div class="editorial-hero-copy" data-reveal>
+        <p class="editorial-kicker">O conhecimento</p>
+        <h1 id="courses-title">Cursos</h1>
+        <p class="editorial-lead">Aprender, no Potala, é transformar conhecimento em experiência — com tempo para estudar, praticar e integrar.</p>
+        <a class="editorial-action" href="#formatos">Conhecer os caminhos <span aria-hidden="true">↓</span></a>
+      </div>
+      <figure class="editorial-hero-visual" data-reveal>
+        <img src="media/journey-quem-somos.webp" alt="Pessoas reunidas em uma paisagem contemplativa que representa estudo e descoberta" width="1600" height="900" fetchpriority="high" decoding="async">
+        <figcaption>Conhecimento que se torna caminho</figcaption>
+      </figure>
+    </section>
+
+    <section class="editorial-chapter" aria-labelledby="courses-opening-title">
+      <p class="editorial-index">01</p>
+      <div data-reveal><p class="editorial-kicker">Aprender por inteiro</p><h2 id="courses-opening-title">Cuidar também é aprender.</h2></div>
+      <div class="editorial-prose" data-reveal>
+        <p>Os cursos aproximam tradições de cuidado, arte, filosofia e práticas integrativas. A proposta não é apenas transmitir uma técnica, mas criar compreensão, autonomia e presença.</p>
+        <p>Cada percurso respeita o ritmo de quem chega: há encontros breves para experimentar e formações extensas para aprofundar uma escolha.</p>
+      </div>
+    </section>
+
+    <section class="editorial-collection" id="formatos" aria-labelledby="courses-formats-title">
+      <header class="editorial-collection-head" data-reveal>
+        <div><p class="editorial-kicker">Formatos de aprendizagem</p><h2 id="courses-formats-title">Um caminho para cada momento.</h2></div>
+        <p>As turmas mudam ao longo do ano. Esta página apresenta as formas de aprender; a programação mostra o que está aberto agora.</p>
       </header>
+      <div class="editorial-grid">
+        <article data-reveal><span>01</span><h3>Cursos livres</h3><p>Encontros acessíveis para conhecer um tema, experimentar uma prática e ampliar repertórios.</p></article>
+        <article data-reveal><span>02</span><h3>Formações profissionais</h3><p>Percursos mais longos, com base conceitual, acompanhamento e prática supervisionada.</p></article>
+        <article data-reveal><span>03</span><h3>Vivências e oficinas</h3><p>Aprendizagem pela experiência: corpo, criação, escuta e convivência em movimento.</p></article>
+        <article data-reveal><span>04</span><h3>Grupos de estudo</h3><p>Espaços contínuos para ler, dialogar e amadurecer conhecimento em comunidade.</p></article>
+        <article data-reveal><span>05</span><h3>Monte seu curso</h3><p>Possibilidade de construir percursos para grupos, equipes e interesses específicos.</p></article>
+        <article data-reveal><span>06</span><h3>Aprender e cuidar</h3><p>Cursos podem se conectar a atendimentos, atividades e conteúdos relacionados.</p></article>
+      </div>
+    </section>
 
-      <section class="article-block">
-        <h2>Formação longa</h2>
-        <p>O <strong>Curso de Aromaterapia</strong> é a formação mais extensa da casa: 200 horas, distribuídas de abril a novembro. Ao lado dele, cursos e grupos de estudo acompanham quem quer aprofundar uma técnica em vez de apenas experimentá-la.</p>
-      </section>
+    <section class="editorial-quote" aria-label="Síntese dos cursos"><blockquote data-reveal>O conhecimento ganha sentido quando encontra a vida.</blockquote></section>
 
-      <section class="article-block">
-        <h2>Áreas de estudo</h2>
-
-        <div class="article-groups">
-          <div class="article-group">
-            <h3>Terapias e cura</h3>
-            <p>ThetaHealing (DNA básico e avançado, digging), Reiki Usui, Egípcio, Karuna e Xamânico Estelar, Magnified Healing, cura energética sistêmica.</p>
-          </div>
-          <div class="article-group">
-            <h3>Medicina natural</h3>
-            <p>Auriculoterapia, acupuntura, fitoterapia, aromaterapia, florais de Bach e de Saint Germain, cromoterapia clínica.</p>
-          </div>
-          <div class="article-group">
-            <h3>Oráculos</h3>
-            <p>Tarô de Marselha (arcanos maiores e menores), oráculo dos cristais, baralho cigano, cafeomancia, cartas xamânicas e do caminho sagrado.</p>
-          </div>
-          <div class="article-group">
-            <h3>Corpo</h3>
-            <p>Massagem relaxante, massagem com pedras quentes, Access Facelift, Barras de Access e Body Talk.</p>
-          </div>
-          <div class="article-group">
-            <h3>Filosofias orientais</h3>
-            <p>Kundalini Yoga, meditação Raja Yoga, astrologia chinesa, I-Ching (fundamentos e aprofundado), Feng Shui tradicional.</p>
-          </div>
-          <div class="article-group">
-            <h3>Arte e criação</h3>
-            <p>Canto, violão popular, violino, desenho, oficina de mandalas intuitivas, henna do oriente e macramê.</p>
-          </div>
-          <div class="article-group">
-            <h3>Técnicas específicas</h3>
-            <p>Mesa psiônica em suas várias linhas, numerologia pitagórica e cabalística, radiestesia básica e clínica, apometria xamânica estelar, método Grabovoi.</p>
-          </div>
-          <div class="article-group">
-            <h3>Workshops e vivências</h3>
-            <p>Encontros mais curtos sobre chacras, aromaterapia, quiromancia, neuroterapia triádica, sound healing e liberação ancestral.</p>
-          </div>
+    <section class="editorial-closing" aria-labelledby="courses-closing-title">
+      <div data-reveal><p class="editorial-kicker">Continue a jornada</p><h2 id="courses-closing-title">Comece pelo que desperta curiosidade.</h2></div>
+      <div class="editorial-closing-copy" data-reveal>
+        <p>Veja as turmas atuais ou conheça os atendimentos que dialogam com esses saberes.</p>
+        <div class="editorial-connections">
+          <a class="editorial-link" href="programacao.html">Ver programação <span aria-hidden="true">↗</span></a>
+          <a class="editorial-link" href="atendimentos.html">Conhecer atendimentos <span aria-hidden="true">↗</span></a>
+          <a class="editorial-link" href="https://www.institutopotala.com/cursos" rel="noreferrer">Cursos no site oficial <span aria-hidden="true">↗</span></a>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <p class="article-note">Datas, cargas horárias e valores mudam a cada temporada. A programação do mês traz o que está aberto.</p>
-
-      <footer class="article-foot">
-        <p>Rua 24 de Maio, 748 — Centro, Indaiatuba/SP · (19) 3834-6147 · WhatsApp (19) 99776-6131</p>
-        <p><a href="https://www.institutopotala.com/cursos" rel="noreferrer">Todos os cursos no site oficial</a> · contato@institutopotala.com</p>
-        <a class="article-back" href="transcendido.html">Voltar à travessia</a>
-      </footer>
-    </div>
+    <footer class="editorial-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>
   </main>
 </body>
 </html>

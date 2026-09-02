@@ -30,10 +30,10 @@ test("Marketplace aparece na navegação e no fallback sem script", async () => 
   assert.match(home, /marketplace\.html/);
 });
 
-test("a página do Marketplace segue o padrão editorial das seções", async () => {
+test("a página do Marketplace segue o novo padrão fotográfico das seções", async () => {
   const page = await readFile("outputs/marketplace.html", "utf8");
   assert.match(page, /<body data-section="marketplace"/);
-  assert.match(page, /page-view--article/);
+  assert.match(page, /data-section-family="photographic"/);
   assert.match(page, /secoes\.css/);
   assert.match(page, /secoes\.js/);
   assert.match(page, /article-back/);

@@ -2,56 +2,54 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#edf1ed">
-  <meta name="description" content="Conheça os profissionais que fazem parte do Instituto Potala.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f2e9dc">
+  <meta name="description" content="Conheça as trajetórias e formas de cuidado dos profissionais do Instituto Potala.">
   <title>Profissionais — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
+  <link rel="preload" href="media/profissionais-encontro.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
-  <script defer src="secoes.js"></script>
+  <link rel="stylesheet" href="css/section-photographic.css">
+  <script type="module" src="secoes.js"></script>
+  <script type="module" src="js/sections/front-demo.js"></script>
 </head>
 <body data-section="profissionais">
-  <main class="page-view page-view--article" id="conteudo">
-    <div class="article-shell">
-      <header class="article-head">
-        <p class="page-kicker">As pessoas</p>
-        <h1 class="page-title">Profissionais</h1>
-        <p class="page-lead">Trajetórias diferentes, reunidas pelo compromisso de escutar e acompanhar.</p>
-      </header>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <main class="photo-page" id="conteudo" data-section-family="photographic">
+    <section class="photo-hero" aria-labelledby="professionals-title">
+      <figure class="photo-hero-visual" data-reveal><img src="media/profissionais-encontro.webp" alt="Três profissionais conversam com atenção em um ambiente humano e acolhedor" width="1600" height="1000" fetchpriority="high" decoding="async"></figure>
+      <div class="photo-hero-copy" data-reveal>
+        <p class="photo-kicker">As pessoas</p>
+        <h1 id="professionals-title">Profissionais</h1>
+        <p class="photo-subtitle">&amp; trajetórias que se encontram</p>
+        <p class="photo-lead">Mais do que uma lista de especialidades, o Potala reúne pessoas com formações, histórias e modos de escutar diferentes.</p>
+        <a class="photo-action" href="#encontro">Conhecer essa comunidade <span aria-hidden="true">↓</span></a>
+      </div>
+    </section>
 
-      <section class="article-block">
-        <h2>Centenas de terapeutas</h2>
-        <p>O Potala não é uma clínica com um quadro fixo: é um instituto que abriga centenas de terapeutas, vindos de diversas cidades. Cada um traz sua formação, sua técnica e seu jeito de receber — e o que os aproxima é o propósito, não o método.</p>
-      </section>
+    <section class="photo-intro" aria-labelledby="professionals-intro-title">
+      <p class="photo-index">01</p>
+      <div data-reveal><p class="photo-kicker">Propósito em comum</p><h2 id="professionals-intro-title">Nenhuma técnica existe sem uma trajetória.</h2></div>
+      <div class="photo-prose" data-reveal><p>Cada profissional chega com sua formação e sua especialidade. O que aproxima essa comunidade é o compromisso de acolher a individualidade, orientar com responsabilidade e continuar aprendendo.</p></div>
+    </section>
 
-      <section class="article-block">
-        <h2>Formações que se encontram na casa</h2>
-        <ul class="article-list">
-          <li>Acupunturistas e praticantes de medicina chinesa</li>
-          <li>Massoterapeutas e terapeutas corporais</li>
-          <li>Reikianos e terapeutas energéticos</li>
-          <li>Psicoterapeutas, psicanalistas e praticantes de psicologia positiva</li>
-          <li>Tarólogos, numerólogos e astrólogos</li>
-          <li>Consteladores sistêmicos e facilitadores de vivências</li>
-          <li>Professores de yoga, pilates, tai chi chuan, dança e artes marciais</li>
-          <li>Homeopatas, fitoterapeutas e terapeutas florais</li>
-        </ul>
-      </section>
+    <section class="photo-list" id="encontro" aria-labelledby="professionals-list-title">
+      <header class="photo-list-head" data-reveal><div><p class="photo-kicker">Como encontrar alguém</p><h2 id="professionals-list-title">Comece pela necessidade, não pelo currículo.</h2></div><p>Perfis futuros poderão reunir trajetória, técnica, conteúdos, cursos e disponibilidade de cada profissional em uma mesma leitura.</p></header>
+      <div class="photo-rows">
+        <article data-reveal><span>01</span><h3>Escuta e vínculo</h3><p>Psicoterapias, aconselhamento e abordagens relacionais para momentos que pedem compreensão e acompanhamento.</p></article>
+        <article data-reveal><span>02</span><h3>Corpo e movimento</h3><p>Profissionais de práticas manuais, movimento consciente, medicina chinesa e cuidado corporal.</p></article>
+        <article data-reveal><span>03</span><h3>Energia e presença</h3><p>Terapeutas de tradições energéticas e contemplativas com diferentes percursos formativos.</p></article>
+        <article data-reveal><span>04</span><h3>Conhecimento compartilhado</h3><p>Muitos profissionais também conduzem cursos, vivências e conteúdos que aprofundam sua área de atuação.</p></article>
+      </div>
+    </section>
 
-      <section class="article-block">
-        <h2>Como encontrar quem atende</h2>
-        <p>Cada técnica no site oficial indica o profissional responsável e a forma de agendar com ele. A programação do mês também lista os terapeutas com horários abertos, presenciais e online.</p>
-        <p>Se a dúvida for por onde começar, a recepção do instituto ajuda a situar as possibilidades antes de qualquer escolha.</p>
-      </section>
+    <section class="photo-dark" aria-labelledby="professionals-choice-title">
+      <div data-reveal><p class="photo-kicker">Escolha acompanhada</p><h2 id="professionals-choice-title">Você não precisa conhecer todas as especialidades.</h2></div>
+      <div class="photo-dark-copy" data-reveal><p>A Recepção ajuda a situar necessidades e possibilidades antes de qualquer decisão. Depois, os atendimentos mostram quais profissionais e abordagens podem fazer sentido.</p><a class="photo-link" href="recepcao.html">Começar pela Recepção ↗</a></div>
+    </section>
 
-      <p class="article-note">Reconhecer a individualidade de cada pessoa começa por não tratar histórias diferentes com o mesmo diagnóstico.</p>
-
-      <footer class="article-foot">
-        <p>Rua 24 de Maio, 748 — Centro, Indaiatuba/SP · (19) 3834-6147 · WhatsApp (19) 99776-6131</p>
-        <p><a href="https://www.institutopotala.com/terapias" rel="noreferrer">Técnicas e profissionais no site oficial</a> · contato@institutopotala.com</p>
-        <a class="article-back" href="transcendido.html">Voltar à travessia</a>
-      </footer>
-    </div>
+    <section class="photo-closing" aria-labelledby="professionals-closing-title"><div data-reveal><p class="photo-kicker">Conexões</p><h2 id="professionals-closing-title">Conheça o trabalho antes de escolher.</h2></div><div class="photo-closing-copy" data-reveal><p>Explore os atendimentos e os cursos relacionados às trajetórias profissionais.</p><div class="photo-connections"><a class="photo-link" href="atendimentos.html">Atendimentos ↗</a><a class="photo-link" href="cursos.html">Cursos ↗</a><a class="photo-link" href="https://www.institutopotala.com/terapias" rel="noreferrer">Site oficial ↗</a></div></div></section>
+    <footer class="photo-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>
   </main>
 </body>
 </html>

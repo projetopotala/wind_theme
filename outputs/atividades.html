@@ -3,62 +3,53 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#edf1ed">
-  <meta name="description" content="Mais de 40 atividades corporais semanais no Instituto Potala.">
-  <title>Instituto Potala — Atividades</title>
+  <meta name="theme-color" content="#f2e9dc">
+  <meta name="description" content="Atividades corporais, expressivas e de convivência no Instituto Potala.">
+  <title>Atividades — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
+  <link rel="preload" href="media/atividades-pratica.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
-  <script src="secoes.js" defer></script>
+  <link rel="stylesheet" href="css/section-photographic.css">
+  <script type="module" src="secoes.js"></script>
+  <script type="module" src="js/sections/front-demo.js"></script>
 </head>
 <body data-section="atividades" data-entry="left" data-return-section="atendimentos" data-right="transcendido.html#atendimentos">
-  <main class="page-view page-view--article" aria-label="Atividades. Deslize para a direita para voltar aos atendimentos.">
-    <div class="article-shell">
-      <header class="article-head">
-        <p class="page-kicker">O movimento</p>
-        <h1 class="page-title">Atividades</h1>
-        <p class="page-lead">Conhecimento também precisa ser vivido no corpo, na criação e na convivência.</p>
-      </header>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <main class="photo-page" id="conteudo" data-section-family="photographic">
+    <section class="photo-hero" aria-labelledby="activities-title">
+      <figure class="photo-hero-visual" data-reveal><img src="media/atividades-pratica.webp" alt="Grupo diverso pratica movimentos conscientes em um jardim acolhedor" width="1600" height="1000" fetchpriority="high" decoding="async"></figure>
+      <div class="photo-hero-copy" data-reveal>
+        <p class="photo-kicker">O movimento</p>
+        <h1 id="activities-title">Atividades</h1>
+        <p class="photo-subtitle">&amp; experiências para viver</p>
+        <p class="photo-lead">O conhecimento também passa pelo corpo, pela expressão e pela convivência. Cada prática é uma forma de estar presente.</p>
+        <a class="photo-action" href="#possibilidades">Conhecer possibilidades <span aria-hidden="true">↓</span></a>
+      </div>
+    </section>
 
-      <section class="article-block">
-        <h2>Mais de 40 atividades corporais</h2>
-        <p>As aulas são semanais e acontecem no salão do instituto. Há quem venha pela prática física, quem venha pela companhia e quem venha porque precisa de uma hora por semana em que o corpo mande no pensamento.</p>
+    <section class="photo-intro" aria-labelledby="activities-intro-title">
+      <p class="photo-index">01</p>
+      <div data-reveal><p class="photo-kicker">Prática e presença</p><h2 id="activities-intro-title">Mover-se também é compreender.</h2></div>
+      <div class="photo-prose" data-reveal><p>Há quem chegue para fortalecer o corpo, quem procure silêncio e quem encontre na turma um espaço de companhia. As atividades acolhem essas diferenças sem separar bem-estar, descoberta e relação.</p></div>
+    </section>
 
-        <div class="article-groups">
-          <div class="article-group">
-            <h3>Yoga</h3>
-            <p>Ashtanga, Kriya, Mantra, Power, Vinyasa, Yin, Laboral, Hatha, Kundalini, Nidra, Raja, Vishranti e Samara.</p>
-          </div>
-          <div class="article-group">
-            <h3>Dança</h3>
-            <p>Dança circular, dança do feminino InFusão, dança terapêutica, cigana, de salão, do ventre, tribal fusion e zouk.</p>
-          </div>
-          <div class="article-group">
-            <h3>Artes marciais</h3>
-            <p>Jiu-jitsu, krav maga, muay thai, kickboxing e kung fu Choy Lee Fut.</p>
-          </div>
-          <div class="article-group">
-            <h3>Práticas orientais</h3>
-            <p>Tai chi chuan, qi gong e dao yin — movimento lento, respiração e atenção.</p>
-          </div>
-          <div class="article-group">
-            <h3>Corpo e consciência</h3>
-            <p>Pilates, alongamento, isostretching, ginástica laboral, percepção em movimento, corpo InFusão e corporificando as emoções.</p>
-          </div>
-          <div class="article-group">
-            <h3>Também na casa</h3>
-            <p>Meditação, xadrez e torneios — o repouso e a concentração fazem parte do mesmo cuidado.</p>
-          </div>
-        </div>
-      </section>
+    <section class="photo-list" id="possibilidades" aria-labelledby="activities-list-title">
+      <header class="photo-list-head" data-reveal><div><p class="photo-kicker">Formas de participar</p><h2 id="activities-list-title">Corpo, Expressão e Convivência.</h2></div><p>As modalidades e os horários variam. Comece por uma família de práticas e descubra o que combina com seu momento.</p></header>
+      <div class="photo-rows">
+        <article data-reveal><span>01</span><h3>Corpo e consciência</h3><p>Yoga, pilates, alongamento e práticas de percepção aproximam movimento, respiração e atenção.</p></article>
+        <article data-reveal><span>02</span><h3>Práticas orientais</h3><p>Tai chi chuan, qi gong e artes marciais trabalham presença, coordenação e continuidade.</p></article>
+        <article data-reveal><span>03</span><h3>Dança e expressão</h3><p>Diferentes linguagens de dança convidam à criação, à escuta do corpo e ao encontro.</p></article>
+        <article data-reveal><span>04</span><h3>Convivência</h3><p>Meditação, xadrez e outras experiências mostram que concentração e troca também fazem parte do cuidado.</p></article>
+      </div>
+    </section>
 
-      <p class="article-note">Horários e valores mensais variam por modalidade e por professor. A programação do mês traz as turmas abertas.</p>
+    <section class="photo-dark" aria-labelledby="activities-first-title">
+      <div data-reveal><p class="photo-kicker">Primeiro movimento</p><h2 id="activities-first-title">Experimente antes de decidir.</h2></div>
+      <div class="photo-dark-copy" data-reveal><p>Consulte as turmas abertas e pergunte sobre uma aula experimental. O mais importante é perceber como a prática encontra você.</p><a class="photo-link" href="https://www.institutopotala.com/atividadescorporais" rel="noreferrer">Ver atividades atuais ↗</a></div>
+    </section>
 
-      <footer class="article-foot">
-        <p>Rua 24 de Maio, 748 — Centro, Indaiatuba/SP · (19) 3834-6147 · WhatsApp (19) 99776-6131</p>
-        <p><a href="https://www.institutopotala.com/atividadescorporais" rel="noreferrer">Todas as atividades no site oficial</a> · contato@institutopotala.com</p>
-        <a class="article-back" href="transcendido.html">Voltar à travessia</a>
-      </footer>
-    </div>
+    <section class="photo-closing" aria-labelledby="activities-closing-title"><div data-reveal><p class="photo-kicker">Outros caminhos</p><h2 id="activities-closing-title">Uma prática pode abrir novas curiosidades.</h2></div><div class="photo-closing-copy" data-reveal><p>Conheça também os cursos e os acontecimentos que ampliam a experiência.</p><div class="photo-connections"><a class="photo-link" href="cursos.html">Cursos ↗</a><a class="photo-link" href="programacao.html">Programação ↗</a></div></div></section>
+    <footer class="photo-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>
   </main>
 </body>
 </html>
