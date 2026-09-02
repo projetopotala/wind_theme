@@ -43,6 +43,7 @@ uniform float uOpacity;
 uniform float uTipFade;
 uniform float uHeadGlow;
 uniform vec3 uGold;
+uniform vec3 uCore;
 varying float vSide;
 varying float vArc;
 void main() {
@@ -106,7 +107,21 @@ void main() {
   float brasa = exp(-eixo * eixo / 5.0) * 0.19
     * exp(-(atras * atras) / (lamina * lamina * 0.42)) * uHeadGlow;
   float alpha = clamp(core * 0.94 + glow + brasa, 0.0, 1.0) * corte * cauda;
-  gl_FragColor = vec4(uGold, alpha * uOpacity);
+
+  /*
+   * A cor não é uma só: o coração é quase branco e o halo é dourado.
+   *
+   * Com uma cor chapada, a fita só podia ser as duas coisas de que já se
+   * reclamou: clara demais e ela lê como fio de arame; dourada demais e ela
+   * lê como fio de metal. Luz de verdade não escolhe — ela satura para o
+   * branco onde é intensa e guarda a cor onde se apaga.
+   *
+   * A mistura usa "core", a mesma função que desenha o núcleo, então a virada
+   * de cor acontece exatamente onde o núcleo termina. Duas rampas separadas
+   * descolariam, e a borda de cor apareceria como um contorno.
+   */
+  vec3 cor = mix(uGold, uCore, core);
+  gl_FragColor = vec4(cor, alpha * uOpacity);
 
   /*
    * Sem esta linha a cor sai errada e nada acusa.
@@ -259,10 +274,15 @@ export function createHomePath(canvas, {
       // A meia-largura da fita em unidades do mundo. O núcleo aceso ocupa cerca
       // de 13% dela (0,93 de 7 no shader); o resto é o halo se apagando.
       uWidth: { value: 0.1 },
-      // Puxado para o branco: o dourado de antes (0xe6bd78) lia como fio de
-      // metal sobre a paisagem sépia. Clareado, volta a ler como luz — a cor
-      // ainda é quente, mas o núcleo aceso agora é quase branco.
-      uGold: { value: new THREE.Color(0xf3e2c2) },
+      // O halo, e é ele que dá o dourado. Chapada em 0xf3e2c2 a fita inteira
+      // lia clara demais; em 0xe6bd78, que veio antes, lia como fio de metal.
+      // Aqui só a queda lateral carrega a cor, e o coração continua claro.
+      uGold: { value: new THREE.Color(0xd6a355) },
+      // O coração. Claro, mas não branco: quem carrega a impressão de cor é
+      // ele, porque é o único trecho com alfa cheio — medido, o halo fica em
+      // 41 de alfa a 4px do eixo e some em 12px. Um coração branco com halo
+      // dourado continuava lendo como fio branco.
+      uCore: { value: new THREE.Color(0xf0d49c) },
     },
     vertexShader: RIBBON_VERTEX,
     fragmentShader: RIBBON_FRAGMENT,

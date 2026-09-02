@@ -110,6 +110,21 @@ test("o shader converte a cor para sRGB na saída", async () => {
    * nenhum: medido, 0xf3e2c2 saía como rgb(229,194,138) até esta linha entrar.
    */
   assert.match(fonte, /#include <colorspace_fragment>/);
+
+  /*
+   * Duas cores, e a virada acontece onde o núcleo acaba.
+   *
+   * Chapada, a fita só podia ser uma das duas coisas de que já se reclamou:
+   * clara demais lia como arame, dourada demais lia como fio de metal. A
+   * mistura reusa "core" de propósito — uma segunda rampa descolaria da
+   * primeira e a borda de cor viraria um contorno visível.
+   *
+   * O coração precisa carregar a cor porque é o único trecho com alfa cheio:
+   * medido, o halo cai a 41 de alfa a 4px do eixo e some em 12px. Um coração
+   * branco com halo dourado continuava lendo como fio branco.
+   */
+  assert.match(fonte, /vec3 cor = mix\(uGold, uCore, core\);/);
+  assert.match(fonte, /gl_FragColor = vec4\(cor, alpha \* uOpacity\);/);
 });
 
 test("a ponta da linha lidera em vez de se apagar", async () => {
