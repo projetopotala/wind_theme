@@ -180,6 +180,31 @@ test("as seções andam aos pares, e a irmã recua em vez de ser empurrada", asy
   assert.match(recuo, /calc\(clamp\([^)]*var\(--region-presence/);
 });
 
+test("a prévia compacta mantém os dois blocos em colunas separadas", async () => {
+  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
+
+  const inicio = css.indexOf("@media (min-width: 560px) and (max-width: 720px)");
+  assert.ok(inicio >= 0, "faltou o modo compacto específico da prévia");
+  const regras = css.slice(inicio);
+
+  assert.match(regras, /\.is-admin-preview \.region-stage \{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)[^;]*minmax\(0,\s*1fr\)/);
+  assert.match(regras, /\.is-admin-preview \.journey-region\[data-side="left"\] \.region-content \{[^}]*grid-column:\s*1/);
+  assert.match(regras, /\.is-admin-preview \.journey-region\[data-side="right"\] \.region-content \{[^}]*grid-column:\s*3/);
+  assert.match(regras, /\.is-admin-preview \.region-title \{[^}]*font-size:/, "a miniatura precisa reduzir a tipografia");
+
+  const inicioEstreito = css.indexOf("@media (max-width: 559px)");
+  assert.ok(inicioEstreito >= 0, "faltou impedir a sobreposição na prévia estreita");
+  const estreito = css.slice(inicioEstreito);
+  assert.match(estreito, /\.is-admin-preview \.region-stage \{[^}]*grid-template-rows:\s*repeat\(2,/);
+  assert.match(estreito, /data-side="left"[^}]*grid-row:\s*1/);
+  assert.match(estreito, /data-side="right"[^}]*grid-row:\s*2/);
+  assert.match(
+    estreito,
+    /\.is-admin-preview \.journey-pair:has\(\.journey-region\.is-expanded\) \.region-stage \{[^}]*grid-template-columns:\s*var\(--journey-line-gutter\)\s+minmax\(0,\s*1fr\)/,
+    "abrir um cartão não pode voltar à grade desktop e espremê-lo no vão",
+  );
+});
+
 test("o menu das seções lista a jornada e é tocável no dedo", async () => {
   const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
   const cenas = await readFile(new URL("../../outputs/js/home/home-scenes.js", import.meta.url), "utf8");

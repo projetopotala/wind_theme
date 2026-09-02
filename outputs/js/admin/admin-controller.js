@@ -3,7 +3,27 @@ import { createLocalContentRepository } from "../home/content-repository.js";
 import { DEFAULT_HOME_BLOCKS } from "../home/journey-data.js";
 
 const SIDES = new Set(["left", "right"]);
+export const ADMIN_PREVIEW_MESSAGE = "potala:admin-preview";
 
+export function previewBlocksForDraft(blocks, draft = {}) {
+  const current = normalizeHomeBlocks(blocks);
+  if (!String(draft.title || "").trim()) return current.filter((block) => block.published);
+
+  const previewDraft = {
+    ...draft,
+    id: draft.id || "admin-preview-draft",
+    slug: draft.slug || draft.id || "admin-preview-draft",
+  };
+  return applyDraft(current, previewDraft).filter((block) => block.published);
+}
+
+export function createPreviewMessage(blocks, focusId = "") {
+  return {
+    type: ADMIN_PREVIEW_MESSAGE,
+    blocks,
+    focusId,
+  };
+}
 /**
  * Move um bloco na ordem da jornada e devolve uma lista NOVA.
  *
@@ -154,8 +174,37 @@ export function createAdminController({
   const lista = root.querySelector("[data-admin-list]");
   const form = root.querySelector("[data-admin-form]");
   const status = root.querySelector("[data-admin-status]");
+  const previewFrame = root.querySelector("[data-admin-preview]");
   let blocks = [];
   let arrastando = null;
+  let previewFocusId = "";
+  let previewFrameId = 0;
+
+  const previewOrigin = globalThis.location?.origin || "*";
+  const schedulePreview = globalThis.requestAnimationFrame
+    ? globalThis.requestAnimationFrame.bind(globalThis)
+    : (callback) => globalThis.setTimeout(callback, 0);
+  const cancelPreview = globalThis.cancelAnimationFrame
+    ? globalThis.cancelAnimationFrame.bind(globalThis)
+    : globalThis.clearTimeout.bind(globalThis);
+
+  function publicarPreview() {
+    previewFrameId = 0;
+    const draft = form ? lerFormulario() : {};
+    const previewBlocks = previewBlocksForDraft(blocks, draft);
+    const focusId = previewBlocks.some((block) => block.id === (draft.id || "admin-preview-draft"))
+      ? draft.id || "admin-preview-draft"
+      : previewFocusId;
+    previewFrame?.contentWindow?.postMessage(
+      createPreviewMessage(previewBlocks, focusId),
+      previewOrigin === "null" ? "*" : previewOrigin,
+    );
+  }
+
+  function agendarPreview() {
+    if (previewFrameId) cancelPreview(previewFrameId);
+    previewFrameId = schedulePreview(publicarPreview);
+  }
 
   const anunciar = (mensagem) => {
     if (status) status.textContent = mensagem;
@@ -167,9 +216,17 @@ export function createAdminController({
   }
 
   async function salvar(proximos, mensagem) {
-    blocks = await repository.replaceAll(proximos);
-    desenhar();
-    anunciar(mensagem);
+    try {
+      blocks = await repository.replaceAll(proximos);
+      desenhar();
+      anunciar(mensagem);
+      agendarPreview();
+      return true;
+    } catch (error) {
+      console.error("Não foi possível salvar o conteúdo editorial.", error);
+      anunciar("Não foi possível salvar. Nenhuma alteração foi publicada.");
+      return false;
+    }
   }
 
   function mostrarErros(erros) {
@@ -213,8 +270,8 @@ export function createAdminController({
       if (primeiro) primeiro.focus();
       return;
     }
-    await salvar(applyDraft(blocks, draft), `Bloco "${draft.title}" salvo.`);
-    preencher(draftFromBlock(null, blocks.length));
+    const saved = await salvar(applyDraft(blocks, draft), `Bloco "${draft.title}" salvo.`);
+    if (saved) preencher(draftFromBlock(null, blocks.length));
   };
 
   const onListClick = async (event) => {
@@ -225,7 +282,11 @@ export function createAdminController({
     if (!bloco) return;
 
     if (action === "up" || action === "down") {
-      await salvar(moveBlock(blocks, id, action === "up" ? -1 : 1), `"${bloco.title}" mudou de lugar.`);
+      const saved = await salvar(
+        moveBlock(blocks, id, action === "up" ? -1 : 1),
+        `"${bloco.title}" mudou de lugar.`,
+      );
+      if (!saved) return;
       /*
        * A lista inteira é redesenhada, então o botão que recebeu o clique deixa
        * de existir e o foco cai no body. Sem devolvê-lo, quem reordena pelo
@@ -247,9 +308,11 @@ export function createAdminController({
     }
 
     if (action === "edit") {
+      previewFocusId = bloco.id;
       preencher(draftFromBlock(bloco));
       form?.querySelector("[name=title]")?.focus();
       anunciar(`Editando "${bloco.title}".`);
+      agendarPreview();
       return;
     }
 
@@ -279,23 +342,38 @@ export function createAdminController({
   };
 
   const onReset = async () => {
-    if (!confirm("Restaurar o conteúdo original? As alterações locais serão perdidas.")) return;
-    blocks = await repository.reset();
-    desenhar();
-    anunciar("Conteúdo original restaurado.");
+    if (!confirm("Restaurar o conteúdo original? As alterações publicadas serão substituídas.")) return;
+    try {
+      blocks = await repository.reset();
+      desenhar();
+      anunciar("Conteúdo original restaurado.");
+      previewFocusId = "";
+      agendarPreview();
+    } catch (error) {
+      console.error("Não foi possível restaurar o conteúdo editorial.", error);
+      anunciar("Não foi possível restaurar. O conteúdo publicado não mudou.");
+    }
   };
 
   const onNew = () => {
+    previewFocusId = "admin-preview-draft";
     preencher(draftFromBlock(null, blocks.length));
     form?.querySelector("[name=title]")?.focus();
     anunciar("Novo bloco em branco.");
+    agendarPreview();
   };
+
+  const onFormInput = () => agendarPreview();
+  const onPreviewLoad = () => agendarPreview();
 
   lista?.addEventListener("click", onListClick);
   lista?.addEventListener("dragstart", onDragStart);
   lista?.addEventListener("dragover", onDragOver);
   lista?.addEventListener("drop", onDrop);
   form?.addEventListener("submit", onSubmit);
+  form?.addEventListener("input", onFormInput);
+  form?.addEventListener("change", onFormInput);
+  previewFrame?.addEventListener("load", onPreviewLoad);
   root.querySelector("[data-admin-reset]")?.addEventListener("click", onReset);
   root.querySelector("[data-admin-new]")?.addEventListener("click", onNew);
 
@@ -303,6 +381,7 @@ export function createAdminController({
     blocks = carregados;
     desenhar();
     preencher(draftFromBlock(null, blocks.length));
+    agendarPreview();
     return blocks;
   });
 
@@ -317,17 +396,10 @@ export function createAdminController({
       lista?.removeEventListener("dragover", onDragOver);
       lista?.removeEventListener("drop", onDrop);
       form?.removeEventListener("submit", onSubmit);
+      form?.removeEventListener("input", onFormInput);
+      form?.removeEventListener("change", onFormInput);
+      previewFrame?.removeEventListener("load", onPreviewLoad);
+      if (previewFrameId) cancelPreview(previewFrameId);
     },
   };
-}
-
-if (typeof document !== "undefined") {
-  const entrada = document.getElementById("admin-entry");
-  const painel = document.getElementById("admin-panel");
-  document.getElementById("admin-open")?.addEventListener("click", () => {
-    entrada?.setAttribute("hidden", "");
-    painel?.removeAttribute("hidden");
-    painel?.querySelector("h2")?.focus();
-    createAdminController({ root: painel });
-  });
 }

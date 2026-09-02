@@ -106,6 +106,37 @@ html.is-crossing .journey-entry-veil {
   pointer-events: none;
 }
 
+.journey-admin-link {
+  position: fixed;
+  z-index: 24;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(255, 238, 200, .26);
+  border-radius: 999px;
+  background: rgba(48, 36, 25, .62);
+  color: #f0d59a;
+  opacity: .66;
+  transition: opacity .25s ease, background .25s ease, transform .25s ease;
+}
+
+.journey-admin-link:hover,
+.journey-admin-link:focus-visible {
+  background: rgba(48, 36, 25, .9);
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.journey-admin-link svg { width: 17px; height: 17px; fill: currentColor; }
+.is-admin-preview .journey-admin-link { display: none; }
+
+@media (pointer: coarse) {
+  .journey-admin-link { width: 44px; height: 44px; }
+}
+
 .journey-scroll-cue span {
   position: absolute;
   top: var(--journey-scroll-position, 0%);
@@ -410,10 +441,44 @@ html.is-crossing .journey-entry-veil {
 }
 
 .journey-region.is-expanded .region-details {
-  max-height: 520px;
+  max-height: 760px;
   padding-bottom: clamp(30px, 4vw, 54px);
   opacity: 1;
   visibility: visible;
+}
+
+.region-media {
+  position: relative;
+  min-height: 82px;
+  margin: 0 0 24px;
+  overflow: hidden;
+  border: 1px solid rgba(231, 202, 143, .2);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(215, 186, 120, .18), rgba(61, 43, 28, .72));
+}
+
+.region-media img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.region-icon {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  display: grid;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 8px;
+  place-items: center;
+  border: 1px solid rgba(255, 241, 207, .35);
+  border-radius: 999px;
+  background: rgba(42, 29, 19, .82);
+  color: var(--journey-gold);
+  font: 600 .72rem/1 system-ui, sans-serif;
+  letter-spacing: .08em;
 }
 
 .region-details p {
@@ -550,6 +615,90 @@ html.is-crossing .journey-entry-veil {
     min-height: 36svh;
     padding: 48px 26px;
   }
+}
+
+/* A prévia vive dentro de um iframe estreito mesmo quando o painel está em um
+   monitor grande. Entre 560 e 720px ela funciona como uma miniatura desktop:
+   preserva os dois lados do trajeto, mas reduz a escala editorial. Sem esta
+   exceção, o breakpoint mobile mandava os dois blocos do par para a mesma
+   célula da grade e eles se sobrepunham. */
+@media (min-width: 560px) and (max-width: 720px) {
+  .is-admin-preview {
+    --journey-line-gutter: clamp(68px, 11vw, 84px);
+    --journey-line-gutter-open: clamp(54px, 8vw, 66px);
+  }
+
+  .is-admin-preview .journey-path { transform: none; }
+
+  .is-admin-preview .region-stage {
+    grid-template-columns: minmax(0, 1fr) var(--journey-line-gutter) minmax(0, 1fr);
+    padding: 24px 14px;
+  }
+
+  .is-admin-preview .journey-region[data-side="left"] .region-content {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+    transform-origin: right center;
+  }
+
+  .is-admin-preview .journey-region[data-side="right"] .region-content {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: start;
+    transform-origin: left center;
+  }
+
+  .is-admin-preview .region-content {
+    width: 100%;
+    max-height: 74svh;
+    border-radius: 20px;
+  }
+
+  .is-admin-preview .region-summary { padding: 20px 18px; }
+  .is-admin-preview .region-category { margin-bottom: 16px; font-size: .56rem; }
+  .is-admin-preview .region-title { font-size: clamp(1.9rem, 5.2vw, 2.7rem); }
+  .is-admin-preview .journey-region[data-title-scale="compact"] .region-title {
+    font-size: clamp(1.7rem, 4.5vw, 2.35rem);
+  }
+  .is-admin-preview .region-description { margin-top: 16px; font-size: .78rem; }
+  .is-admin-preview .region-expand-label { margin-top: 16px; font-size: .58rem; }
+  .is-admin-preview .region-details { padding-right: 18px; padding-left: 18px; }
+}
+
+/* Abaixo disso não há largura legível para duas colunas. A miniatura conserva
+   o par, agora em duas linhas distintas; continua compacta e nunca empilha os
+   cartões na mesma célula. */
+@media (max-width: 559px) {
+  .is-admin-preview .region-stage {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    row-gap: 12px;
+    align-items: stretch;
+  }
+
+  .is-admin-preview .journey-pair:has(.journey-region.is-expanded) .region-stage {
+    grid-template-columns: var(--journey-line-gutter) minmax(0, 1fr);
+  }
+
+  .is-admin-preview .journey-region[data-side="left"] .region-content {
+    grid-row: 1;
+    align-self: end;
+  }
+
+  .is-admin-preview .journey-region[data-side="right"] .region-content {
+    grid-row: 2;
+    align-self: start;
+  }
+
+  .is-admin-preview .region-content { max-height: min(40svh, 330px); }
+  .is-admin-preview .region-summary { padding: 18px 20px; }
+  .is-admin-preview .region-category { margin-bottom: 12px; }
+  .is-admin-preview .region-title { font-size: clamp(2rem, 10vw, 3rem); }
+  .is-admin-preview .journey-region[data-title-scale="compact"] .region-title {
+    font-size: clamp(1.75rem, 8.5vw, 2.6rem);
+  }
+  .is-admin-preview .region-description { margin-top: 14px; }
+  .is-admin-preview .region-expand-label { margin-top: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

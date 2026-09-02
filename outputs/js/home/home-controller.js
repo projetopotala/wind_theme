@@ -1,6 +1,11 @@
 import { consumeHandoff } from "../core/travessia-state.js";
 import { damp, scrollCuePosition, scrollProgressForDocument } from "../core/math.js";
 import { createBlockExpansion } from "./block-expansion.js";
+import {
+  createHomeAdminPreview,
+  readAdminPreviewSnapshot,
+  writeAdminPreviewSnapshot,
+} from "./admin-preview.js";
 import { invitationsFor, nextInvitationIndex } from "./invitations.js";
 import { createLocalContentRepository } from "./content-repository.js";
 import { DEFAULT_HOME_BLOCKS } from "./journey-data.js";
@@ -419,6 +424,7 @@ export function createHomeController({
   return {
     mounted,
     path,
+    goToSection,
     restore() {
       path.resume();
       path.resize();
@@ -461,7 +467,13 @@ export async function mountHomeJourney({
 } = {}) {
   activeController?.destroy();
   const contentRepository = repository || createLocalContentRepository({ defaults: DEFAULT_HOME_BLOCKS });
-  const blocks = await contentRepository.list({ publishedOnly: true });
+  const previewMode = typeof location !== "undefined"
+    && new URLSearchParams(location.search).get("admin-preview") === "1";
+  const previewSnapshot = previewMode
+    ? readAdminPreviewSnapshot(globalThis.sessionStorage)
+    : null;
+  const blocks = previewSnapshot?.blocks
+    ?? await contentRepository.list({ publishedOnly: true });
   const resolvedElements = elements || {
     root: document.getElementById("journey-root"),
     canvas: document.getElementById("journey-road"),
@@ -469,6 +481,33 @@ export async function mountHomeJourney({
   activeController = controllerFactory({ ...resolvedElements, blocks });
 
   if (!lifecycle) return activeController;
+
+  let previewChannel = null;
+  if (previewMode) {
+    document.documentElement.classList.add("is-admin-preview");
+    previewChannel = createHomeAdminPreview({
+      root: resolvedElements.root,
+      initialBlocks: blocks,
+      onSnapshot(payload) {
+        writeAdminPreviewSnapshot(globalThis.sessionStorage, payload);
+      },
+      onStructureChange() {
+        // Uma mudança estrutural (novo bloco, ordem, lado ou publicação) também
+        // altera a curva Three.js. Um único reload reconstrói DOM e caminho;
+        // as próximas teclas voltam a atualizar apenas o bloco, sem novo loop.
+        globalThis.location?.reload?.();
+      },
+      onFocus(id) {
+        activeController?.goToSection?.(id);
+      },
+    });
+    if (previewSnapshot?.focusId) {
+      const schedule = globalThis.requestAnimationFrame
+        ? globalThis.requestAnimationFrame.bind(globalThis)
+        : globalThis.setTimeout.bind(globalThis);
+      schedule(() => activeController?.goToSection?.(previewSnapshot.focusId));
+    }
+  }
 
   const onPageHide = (event) => {
     if (!event.persisted) activeController?.destroy();
@@ -483,6 +522,7 @@ export async function mountHomeJourney({
   };
   const destroy = activeController.destroy.bind(activeController);
   activeController.destroy = () => {
+    previewChannel?.destroy();
     window.removeEventListener("pagehide", onPageHide);
     window.removeEventListener("pageshow", onPageShow);
     destroy();
@@ -491,4 +531,3 @@ export async function mountHomeJourney({
   window.addEventListener("pageshow", onPageShow);
   return activeController;
 }
-

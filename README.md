@@ -94,6 +94,53 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 - `npm test`: build the starter and verify its rendered loading skeleton
 - `npm run db:generate`: generate Drizzle migrations after schema changes
 
+## Portal Potala: conteúdo editorial no Supabase
+
+O portal estático publicado pelo Vercel vive em `outputs/`. A Home lê os blocos
+de `public.home_blocks`; se a leitura remota falhar, usa os blocos empacotados
+em `outputs/js/home/journey-data.js` para não deixar a jornada vazia. Escritas
+nunca usam fallback local.
+
+### Preparar o projeto
+
+1. Execute `npm install` e `npm run vendor:supabase`.
+2. Aplique `supabase/migrations/202609020001_portal_home_content.sql` no SQL
+   Editor do projeto `gotrumwuimpoeggwamut`.
+3. Em Authentication → Users, crie o primeiro usuário com e-mail e senha.
+4. Copie o UUID do usuário e execute no SQL Editor:
+
+```sql
+insert into public.admin_users (user_id, role)
+values ('UUID_COPIADO_DO_AUTH', 'owner')
+on conflict (user_id) do update
+set role = excluded.role, updated_at = now();
+```
+
+O navegador recebe apenas a chave `sb_publishable_...`, que é pública por
+definição. A proteção real está nos grants e nas políticas RLS da migração.
+Nunca coloque `service_role`, `sb_secret_...`, senha do banco ou access token em
+`outputs/`, no Git ou em uma variável exposta ao cliente.
+
+### Administradores
+
+- Para autorizar um usuário existente, insira seu UUID em `admin_users` com o
+  papel `admin` ou `owner`.
+- Para trocar o papel, atualize somente `admin_users.role`.
+- Para revogar o painel sem apagar a conta Auth, remova a linha correspondente
+  de `admin_users`.
+- Cadastro público não faz parte do painel. Novos usuários são criados pelo
+  Dashboard do Supabase nesta entrega.
+
+### Rollback e recuperação
+
+- O repositório anterior de `localStorage` permanece em
+  `outputs/js/home/content-repository.js` e pode voltar a ser injetado sem mudar
+  os componentes visuais.
+- Antes de qualquer remoção futura de tabela, exporte `home_blocks`. Esta
+  migração não contém `drop table`, `truncate` nem outra contração destrutiva.
+- Falha de escrita no painel é exibida como erro e não altera a lista em memória
+  nem anuncia publicação.
+
 ## Learn More
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)

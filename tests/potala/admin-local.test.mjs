@@ -9,24 +9,24 @@ import {
 
 const html = () => readFile(new URL("../../outputs/admin.html", import.meta.url), "utf8");
 
-test("painel declara claramente que a proteção é local", async () => {
+test("painel carrega autenticação real antes do controlador editorial", async () => {
   const markup = await html();
-  assert.match(markup, /Prévia local/i);
-  assert.match(markup, /não representa autenticação real/i);
-  assert.match(markup, /admin-controller\.js/);
+  assert.match(markup, /vendor\/supabase\.js/);
+  assert.match(markup, /admin-entry\.js/);
+  assert.doesNotMatch(markup, /Prévia local|não representa autenticação real/i);
 });
 
-test("o painel não pede senha nem finge autenticar", async () => {
+test("o painel pede senha sem oferecer cadastro público", async () => {
   const markup = await html();
-  /*
-   * Um campo de senha nesta etapa seria pior que inútil: ensina o hábito de
-   * digitar a senha real numa tela que não protege nada, e qualquer pessoa com
-   * o endereço entra do mesmo jeito. A proteção de verdade chega na Entrega 2,
-   * por políticas RLS no Supabase — esconder botão no navegador nunca foi
-   * proteção.
-   */
-  assert.doesNotMatch(markup, /type="password"/i);
-  assert.doesNotMatch(markup, /name="senha"|name="password"/i);
+  assert.match(markup, /type="password"/i);
+  assert.match(markup, /name="password"/i);
+  assert.doesNotMatch(markup, /signUp|criar conta|cadastre-se/i);
+});
+
+test("painel permite definir imagem e ícone do bloco expandido", async () => {
+  const markup = await html();
+  assert.match(markup, /name="image"/);
+  assert.match(markup, /name="icon"/);
 });
 
 test("moveBlock reordena sem perder os lados definidos", () => {

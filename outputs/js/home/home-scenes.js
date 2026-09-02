@@ -99,6 +99,27 @@ function safeHref(value) {
   return "#";
 }
 
+function safeMediaSource(value) {
+  const source = String(value || "").trim();
+  if (/^https:\/\/[^\s"<>]+$/i.test(source)) return escapeHtml(source);
+  if (/^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[a-z0-9][a-z0-9._/-]*\.(?:avif|jpe?g|png|webp)$/i.test(source)) {
+    return escapeHtml(source);
+  }
+  return "";
+}
+
+function renderRegionMedia(region) {
+  const image = safeMediaSource(region.image || region.media);
+  const icon = String(region.icon || "").trim();
+  if (!image && !icon) return "";
+
+  return `
+            <figure class="region-media">
+              ${image ? `<img src="${image}" alt="" loading="lazy" decoding="async">` : ""}
+              ${icon ? `<span class="region-icon" aria-hidden="true">${escapeHtml(icon)}</span>` : ""}
+            </figure>`;
+}
+
 function renderDiscovery(discovery, index) {
   if (!discovery) return "";
   const visualKinds = ["glow", "phrase", "object", "paper"];
@@ -142,6 +163,7 @@ export function renderRegion(region, index, discovery, discoveriesById) {
   const title = String(region.title || "");
   const summary = region.summary ?? region.description ?? "";
   const body = region.body ?? summary;
+  const media = renderRegionMedia(region);
   const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
   const layoutVariant = safeToken(region.layoutVariant, "editorial");
   const titleScale = Array.from(title).length >= 11 ? "compact" : "display";
@@ -167,6 +189,7 @@ export function renderRegion(region, index, discovery, discoveriesById) {
             <span class="region-expand-label" aria-hidden="true">Descobrir <span>＋</span></span>
           </button>
           <div class="region-details" id="${id}-details" aria-hidden="true" inert>
+            ${media}
             <p>${escapeHtml(body)}</p>
             <ul class="region-tags" aria-label="Temas desta região">${renderTags(region.tags)}</ul>
             <a class="region-link" href="${safeHref(region.href)}" tabindex="-1">Conhecer este caminho <span aria-hidden="true">↗</span></a>

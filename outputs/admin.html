@@ -5,28 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#211b15">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Painel editorial local da Travessia Potala.">
-  <title>Potala — Painel editorial (prévia local)</title>
+  <meta name="description" content="Painel editorial protegido da Travessia Potala.">
+  <title>Potala — Painel editorial</title>
   <link rel="stylesheet" href="css/admin.css">
-  <script type="module" src="js/admin/admin-controller.js"></script>
+  <script src="vendor/supabase.js"></script>
+  <script type="module" src="js/admin/admin-entry.js"></script>
 </head>
 <body>
-  <main class="admin">
-    <!-- A entrada não pede senha, e o aviso diz por quê.
-         Um campo de senha aqui seria pior que inútil: ensinaria o hábito de
-         digitar a senha real numa tela que não protege nada, e quem tiver o
-         endereço entra do mesmo jeito. A proteção real chega na Entrega 2, por
-         políticas RLS no Supabase — esconder botão no navegador nunca foi
-         proteção. -->
-    <section class="admin-entry" id="admin-entry" aria-labelledby="admin-entry-title">
+  <main class="admin" id="admin-app" data-auth-state="checking">
+    <section class="admin-entry" data-admin-auth-view aria-labelledby="admin-entry-title">
       <p class="admin-kicker">Instituto Potala</p>
       <h1 id="admin-entry-title">Painel editorial</h1>
-      <p class="admin-warning" role="note">
-        <strong>Prévia local.</strong> Este acesso não representa autenticação real:
-        as alterações ficam apenas neste navegador e qualquer pessoa com o endereço
-        abre esta página. A proteção por conta e permissões entra na próxima etapa.
+      <p class="admin-intro">Entre com a conta autorizada para editar a jornada da Home.</p>
+      <form class="admin-login" data-admin-auth-form hidden>
+        <label for="admin-email">E-mail</label>
+        <input id="admin-email" name="email" type="email" autocomplete="username" required>
+        <label for="admin-password">Senha</label>
+        <input id="admin-password" name="password" type="password"
+          autocomplete="current-password" required>
+        <button class="admin-open" type="submit">Entrar</button>
+        <button class="admin-recovery" type="button" data-admin-recovery>
+          Primeiro acesso ou esqueci a senha
+        </button>
+      </form>
+      <p class="admin-forbidden" data-admin-forbidden hidden>
+        Esta conta existe, mas ainda não foi autorizada como administradora.
       </p>
-      <button class="admin-open" id="admin-open" type="button">Abrir painel local</button>
+      <p class="admin-auth-status" data-admin-auth-status role="status" aria-live="polite">
+        Verificando acesso…
+      </p>
       <p class="admin-entry-links"><a href="transcendido.html">Ver a Home</a></p>
     </section>
 
@@ -37,8 +44,23 @@
           <button type="button" data-admin-new>Novo bloco</button>
           <a class="admin-link" href="transcendido.html">Ver Home</a>
           <button type="button" data-admin-reset>Restaurar conteúdo original</button>
+          <button type="button" data-admin-sign-out>Sair</button>
         </div>
       </header>
+
+      <details class="admin-password-setup" data-admin-password-setup>
+        <summary>Definir ou alterar minha senha</summary>
+        <form data-admin-password-form>
+          <label for="admin-new-password">Nova senha</label>
+          <input id="admin-new-password" name="password" type="password"
+            autocomplete="new-password" minlength="8" required>
+          <label for="admin-confirm-password">Confirmar nova senha</label>
+          <input id="admin-confirm-password" name="confirmation" type="password"
+            autocomplete="new-password" minlength="8" required>
+          <button type="submit">Salvar senha</button>
+        </form>
+        <p data-admin-password-status role="status" aria-live="polite"></p>
+      </details>
 
       <!-- A faixa de status é a única confirmação de que a ação valeu, e vive
            fora da lista de propósito: a lista é redesenhada a cada mudança, e um
@@ -89,6 +111,10 @@
           <input id="admin-image" name="image" type="text" autocomplete="off"
             placeholder="media/journey-cultura.webp">
 
+          <label for="admin-icon">Ícone ou símbolo curto</label>
+          <input id="admin-icon" name="icon" type="text" autocomplete="off"
+            placeholder="Ex.: folha, círculo ou caractere">
+
           <label for="admin-tags">Temas (separados por vírgula)</label>
           <input id="admin-tags" name="tags" type="text" autocomplete="off">
 
@@ -102,6 +128,18 @@
 
           <button class="admin-save" type="submit">Salvar bloco</button>
         </form>
+
+        <aside class="admin-preview" aria-labelledby="admin-preview-title">
+          <header>
+            <div>
+              <p class="admin-kicker">Atualização ao vivo</p>
+              <h3 id="admin-preview-title">Prévia da Home</h3>
+            </div>
+            <span>O rascunho só é publicado ao salvar.</span>
+          </header>
+          <iframe data-admin-preview src="transcendido.html?admin-preview=1"
+            title="Prévia ao vivo da Home do Portal Potala"></iframe>
+        </aside>
       </div>
     </section>
   </main>

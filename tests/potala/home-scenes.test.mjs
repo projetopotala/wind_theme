@@ -72,6 +72,44 @@ test("bloco fechado controla detalhes expansíveis e não possui imagem própria
   assert.doesNotMatch(markup, /<figure|<img/);
 });
 
+test("imagem opcional aparece somente nos detalhes e carrega sob demanda", () => {
+  const markup = homeScenes.renderRegion({
+    id: "cursos",
+    title: "Cursos",
+    category: "Conhecimento",
+    summary: "Aprender também é cuidar.",
+    body: "Formações e vivências.",
+    image: "media/journey-cultura.webp",
+    icon: "C",
+    href: "cursos.html",
+    tags: ["formação"],
+    side: "right",
+  }, 2, null, new Map());
+
+  const summary = markup.match(/<button class="region-summary"[\s\S]*?<\/button>/)?.[0] ?? "";
+  const details = markup.match(/<div class="region-details"[\s\S]*?<\/div>/)?.[0] ?? "";
+  assert.doesNotMatch(summary, /<img|region-icon/);
+  assert.match(details, /<figure class="region-media">/);
+  assert.match(details, /<img src="media\/journey-cultura\.webp" alt="" loading="lazy" decoding="async">/);
+  assert.match(details, /<span class="region-icon" aria-hidden="true">C<\/span>/);
+});
+
+test("fonte de imagem insegura é descartada sem deixar espaço vazio", () => {
+  const markup = homeScenes.renderRegion({
+    id: "seguro",
+    title: "Seguro",
+    category: "Entrada",
+    summary: "Resumo",
+    body: "Texto",
+    image: "javascript:alert(1)",
+    href: "quem-somos.html",
+    tags: [],
+    side: "left",
+  }, 0, null, new Map());
+
+  assert.doesNotMatch(markup, /region-media|<img/);
+});
+
 test("escapa conteúdo editorial antes de inserir no HTML", () => {
   const markup = homeScenes.renderRegion({
     id: "seguro",
