@@ -238,7 +238,20 @@ export function createHomeController({
     const region = root.querySelector(`.journey-region[data-region-id="${CSS.escape(id)}"]`);
     const pair = region?.closest(".journey-pair");
     if (!pair) return;
-    pair.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+    /*
+     * `scrollTo` nesta janela, não `scrollIntoView` no elemento.
+     *
+     * `scrollIntoView` rola TODOS os contêineres ancestrais até o alvo aparecer
+     * — e quando esta página roda dentro do iframe da prévia do painel, o
+     * documento pai é um deles. O efeito era o painel saltar para baixo, até a
+     * prévia, cada vez que um bloco era criado ou editado: a rolagem atravessava
+     * a fronteira do iframe.
+     *
+     * `scrollTo` só move a janela em que é chamado. Na Home o resultado é o
+     * mesmo; dentro da prévia, a rolagem para na borda do iframe.
+     */
+    const alvo = pair.getBoundingClientRect().top + scrollY;
+    scrollTo({ top: alvo, behavior: reducedMotion ? "auto" : "smooth" });
     expansion.open(id);
     // A rolagem que o próprio clique disparou não pode fechar o que ele abriu.
     armAutoClose({ programmatic: true });
