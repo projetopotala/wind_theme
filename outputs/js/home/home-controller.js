@@ -156,7 +156,12 @@ export function createHomeController({
     const stage = section?.closest?.(".region-stage");
     if (!stage) return 0;
     const estilo = getComputedStyle(stage);
-    const [esquerda, vao] = estilo.gridTemplateColumns.split(" ").map(parseFloat);
+    const colunas = estilo.gridTemplateColumns.split(" ").map(parseFloat);
+    /* No telefone a grade tem duas colunas — vão e conteúdo — e o vão não sai
+       do lugar ao abrir. Ler a segunda coluna ali seria medir o conteúdo, e a
+       câmera andaria atrás de um deslocamento que não aconteceu. */
+    if (colunas.length < 3) return 0;
+    const [esquerda, vao] = colunas;
     if (!Number.isFinite(esquerda) || !Number.isFinite(vao)) return 0;
     const caixa = stage.getBoundingClientRect();
     const centroDoVao = caixa.left + parseFloat(estilo.paddingLeft) + esquerda + vao / 2;

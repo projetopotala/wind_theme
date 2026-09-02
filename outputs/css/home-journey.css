@@ -611,7 +611,40 @@ html.is-crossing .journey-entry-veil {
     transform-origin: left center;
   }
 
-  .journey-region.is-expanded .region-content { width: 100%; }
+  /*
+   * No telefone o bloco aberto NÃO reparte a tela em três.
+   *
+   * As regras de abertura do desktop trocam a grade por três colunas — lado
+   * maior, vão, lado menor — e o conteúdo vive na coluna 2. Aqui a coluna 2 é
+   * a única coluna de conteúdo que existe; herdar aquela troca punha o bloco
+   * dentro do VÃO. Medido a 375px: colunas "61.47px 76px 150.52px" e o bloco
+   * com 74px de largura, uma letra por linha, esticado até o rodapé.
+   *
+   * Abrir para o lado só faz sentido quando há dois lados. Com uma coluna, a
+   * abertura é o bloco crescendo no lugar onde já estava.
+   *
+   * O `[data-side]` no seletor não é decoração: sem ele o `:has()` pesa menos
+   * que o das regras do desktop — que trazem `[data-side="left"]` dentro — e a
+   * regra daqui perdia calada, com a grade continuando em três colunas.
+   */
+  .journey-pair:has(.journey-region.is-expanded[data-side]) .region-stage {
+    grid-template-columns: var(--journey-line-gutter) minmax(0, 1fr);
+    padding-inline: 10px 22px;
+  }
+
+  /*
+   * E o bloco aberto também não passa da FAIXA dele.
+   *
+   * O teto de 76svh acima vale para o bloco fechado, que é só o resumo. Aberto,
+   * a faixa disponível é metade do palco menos a folga — perto de 47svh — e o
+   * teto de 76svh a ultrapassa sempre que o texto é longo. O excesso não
+   * empurra nada: desce por cima do bloco de baixo. Preso à faixa, o texto rola
+   * por dentro, que é o que o bloco já faz com `overflow: auto`.
+   */
+  .journey-region.is-expanded .region-content {
+    width: 100%;
+    max-height: 100%;
+  }
 
   .region-summary { padding: 28px 24px; }
   .region-details { padding-right: 24px; padding-left: 24px; }
