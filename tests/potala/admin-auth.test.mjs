@@ -145,3 +145,79 @@ test("HTML do painel pede credenciais reais e não oferece cadastro público", a
   assert.match(html, /data-admin-recovery/);
   assert.doesNotMatch(html, /criar conta|cadastre-se|signUp/i);
 });
+
+/** Elemento mínimo que registra cada troca do atributo `hidden`. */
+function elementoDeTeste(historico, nome) {
+  return {
+    nome,
+    hidden: false,
+    dataset: {},
+    textContent: "",
+    toggleAttribute(atributo, valor) {
+      if (atributo !== "hidden") return;
+      this.hidden = Boolean(valor);
+      historico.push(`${nome}:${this.hidden ? "oculto" : "visivel"}`);
+    },
+    addEventListener() {},
+    removeEventListener() {},
+  };
+}
+
+function painelDeTeste() {
+  const historico = [];
+  const elementos = {
+    "[data-admin-auth-form]": elementoDeTeste(historico, "form"),
+    "[data-admin-auth-view]": elementoDeTeste(historico, "login"),
+    "#admin-panel": elementoDeTeste(historico, "painel"),
+    "[data-admin-auth-status]": elementoDeTeste(historico, "status"),
+    "[data-admin-forbidden]": elementoDeTeste(historico, "negado"),
+    "[data-admin-sign-out]": elementoDeTeste(historico, "sair"),
+    "[data-admin-recovery]": elementoDeTeste(historico, "recuperar"),
+  };
+  return {
+    historico,
+    root: { dataset: {}, querySelector: (seletor) => elementos[seletor] || null },
+  };
+}
+
+test("reconferir a sessão não faz a tela de login piscar", async () => {
+  /*
+   * `onAuthStateChange` dispara por motivos de rotina — renovação de token,
+   * `updateUser`, o cliente Supabase do iframe da prévia. Cada um chamava
+   * `refresh()`, que começava por `showState("checking")`; como "checking" não é
+   * "authorized", o login reaparecia e o painel sumia por um instante. Quem
+   * estava editando um bloco via a tela de login piscar.
+   */
+  const { createAdminAuth } = await import("../../outputs/js/admin/admin-auth.js");
+  const sessao = { user: { id: "u1" } };
+  const { client } = clientFor({ session: sessao, role: "owner" });
+
+  let aoMudar = () => {};
+  client.auth.onAuthStateChange = (callback) => {
+    aoMudar = callback;
+    return { data: { subscription: { unsubscribe() {} } } };
+  };
+
+  const { historico, root } = painelDeTeste();
+  const auth = createAdminAuth({ client, root });
+  await auth.ready;
+
+  assert.equal(root.dataset.authState, "authorized");
+  historico.length = 0;
+
+  // Evento de rotina, com a MESMA sessão: nada na tela pode mudar.
+  aoMudar("TOKEN_REFRESHED", sessao);
+  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  assert.ok(
+    !historico.includes("login:visivel"),
+    `o login reapareceu durante a reconferência: ${historico.join(", ")}`,
+  );
+  assert.ok(
+    !historico.includes("painel:oculto"),
+    `o painel sumiu durante a reconferência: ${historico.join(", ")}`,
+  );
+  assert.equal(root.dataset.authState, "authorized");
+  auth.destroy();
+});

@@ -176,8 +176,22 @@ export function createAdminAuth({ client, root, onAuthorized = () => {} } = {}) 
     return access;
   }
 
-  async function refresh() {
-    showState("checking");
+  /*
+   * Reconferir a sessão NÃO pode mostrar o login de novo.
+   *
+   * `showState("checking")` esconde o painel e revela o login, porque "checking"
+   * não é "authorized". Isso está certo na primeira carga, quando ainda não se
+   * sabe quem é o visitante. Mas `onAuthStateChange` dispara por vários motivos
+   * de rotina — renovação de token, `updateUser`, o cliente Supabase do iframe
+   * da prévia — e cada um chamava `refresh()`. Quem estava editando via a tela
+   * de login aparecer e sumir a cada um desses eventos.
+   *
+   * Com uma sessão já autorizada, a reconferência acontece em silêncio: a tela
+   * só muda se o resultado for diferente, que é o único caso em que mudar
+   * ajuda.
+   */
+  async function refresh({ silencioso = authorizedUserId !== null } = {}) {
+    if (!silencioso) showState("checking");
     try {
       return await applyAccess(await getAdminAccess(client));
     } catch (error) {
