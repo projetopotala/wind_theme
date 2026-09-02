@@ -238,6 +238,24 @@ test("o menu das seções lista a jornada e é tocável no dedo", async () => {
   assert.match(controlador, /setAttribute\("aria-current"/);
 });
 
+test("o menu abre como painel compacto de duas colunas sem rolagem horizontal", async () => {
+  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
+  const painel = css.slice(
+    css.indexOf(".journey-menu {"),
+    css.indexOf("}", css.indexOf(".journey-menu {")),
+  );
+  const lista = css.slice(
+    css.indexOf(".journey-menu ul {"),
+    css.indexOf("}", css.indexOf(".journey-menu ul {")),
+  );
+
+  assert.match(painel, /left:\s*max\(14px,\s*env\(safe-area-inset-left\)\)/);
+  assert.match(painel, /width:\s*min\(480px,\s*calc\(100vw - 28px\)\)/);
+  assert.match(lista, /display:\s*grid/);
+  assert.match(lista, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(lista, /overflow:\s*visible/);
+});
+
 test("o menu nasce recolhido e o ícone o traz e o leva", async () => {
   const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
   const cenas = await readFile(new URL("../../outputs/js/home/home-scenes.js", import.meta.url), "utf8");
@@ -267,7 +285,7 @@ test("o menu nasce recolhido e o ícone o traz e o leva", async () => {
     css.indexOf("}", css.indexOf(".journey-menu {")),
   );
   assert.match(recolhido, /transition:[\s\S]*visibility 0s linear \.42s/);
-  assert.match(recolhido, /transform: translateX\(-50%\) translateY\(14px\)/);
+  assert.match(recolhido, /transform:\s*translateY\(14px\) scale\(\.97\)/);
 
   // E o ícone é o mesmo objeto mudando: as linhas giram, não trocam de ícone.
   assert.match(css, /\[aria-expanded="true"\] \.journey-menu-icon i:first-child \{\s*transform:[^}]*rotate\(45deg\)/);
