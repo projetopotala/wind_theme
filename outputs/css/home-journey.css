@@ -1881,6 +1881,20 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  */
 .journey-pair:has(.journey-region.is-expanded[data-side]) .region-stage {
   /*
+   * O palco assenta de UMA VEZ, sem animar o próprio recuo.
+   *
+   * Ele tem `transition: padding .72s`, e enquanto ela corria o painel ainda
+   * estava crescendo por layout: o retângulo da página medido pelo controlador
+   * não era o definitivo. Medido a 1024×700, com o cartão em (581,177), o recuo
+   * de topo saía 126px onde devia ser 177 — a animação partia de um retângulo
+   * errado por uns cinquenta pixels.
+   *
+   * Agora o layout final existe no instante da medida, e quem cresce é o
+   * recorte, que é o único que deve crescer.
+   */
+  transition: none;
+
+  /*
    * Sem recuo, senão sobra uma faixa de paisagem em volta e o véu vira um
    * retângulo flutuante — o mesmo cartão de antes, com outro nome.
    */
@@ -1904,6 +1918,19 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 }
 
 .journey-region.is-expanded .region-content {
+  /*
+   * O repouso precisa de um `inset()` DECLARADO.
+   *
+   * `clip-path: none` não interpola: sem um valor de mesma forma nas duas
+   * pontas, a animação de crescimento simplesmente não teria de onde nem para
+   * onde ir. `inset(0 …)` recorta na própria borda, então não muda nada do que
+   * se vê — só dá à animação um ponto de chegada.
+   *
+   * Sem raio: o véu termina de ponta a ponta, e um canto arredondado ali seria
+   * cortado pela borda da tela de todo jeito. O arredondamento é um gesto do
+   * percurso, não um estado.
+   */
+  clip-path: inset(0 0 0 0 round 0);
   display: grid;
   grid-column: 1;
   grid-row: 1;
@@ -1996,7 +2023,28 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  */
 @keyframes painel-entra {
   from {
-    transform: translate3d(var(--painel-desloc), 0, 0) scale(.985);
+    /*
+     * O crescimento é RECORTE, e não escala.
+     *
+     * Deslocar 92px e escalar 1,5% perto de uma tela de mil pixels não lê como
+     * crescimento: lê como sumir e aparecer no lugar. O tamanho mudava de uma
+     * vez, porque o painel troca de coluna do grid e grid não interpola.
+     *
+     * `scale()` resolveria o tamanho e estragaria o resto: levar um painel de
+     * página inteira ao tamanho de um cartão esmaga o texto junto. Com
+     * `clip-path` o conteúdo já está no lugar certo desde o primeiro quadro, e o
+     * que se abre é a janela por onde ele aparece — do retângulo exato onde o
+     * cartão estava até a página.
+     *
+     * A direção sai de graça: o cartão da esquerda tem recuo pequeno à esquerda,
+     * e é por lá que o véu se abre.
+     */
+    clip-path: inset(
+      var(--recorte-topo, 0px) var(--recorte-direita, 0px)
+      var(--recorte-baixo, 0px) var(--recorte-esquerda, 0px)
+      round var(--recorte-raio, 0px)
+    );
+    transform: translate3d(var(--painel-desloc), 0, 0);
     background-color: var(--journey-panel-open);
   }
 }
@@ -2004,8 +2052,18 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 /* A saída é o mesmo caminho ao contrário: o painel recolhe para o seu lado e o
    fundo volta a ficar cheio, devolvendo a paisagem antes de o cartão reaparecer. */
 @keyframes painel-sai {
+  /* A opacidade só cede no fim: até lá o que se vê é o véu ENCOLHENDO de volta
+     ao lugar do cartão. Fadiando desde o começo, o encolhimento passaria
+     despercebido — seria de novo um sumiço. */
+  70% { opacity: 1; }
+
   to {
-    transform: translate3d(var(--painel-desloc), 0, 0) scale(.985);
+    clip-path: inset(
+      var(--recorte-topo, 0px) var(--recorte-direita, 0px)
+      var(--recorte-baixo, 0px) var(--recorte-esquerda, 0px)
+      round var(--recorte-raio, 0px)
+    );
+    transform: translate3d(var(--painel-desloc), 0, 0);
     background-color: var(--journey-panel-open);
     opacity: 0;
   }

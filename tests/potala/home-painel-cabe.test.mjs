@@ -5,6 +5,7 @@ import {
   PISO_DO_AJUSTE,
   ajusteQueCabe,
   createBlockExpansion,
+  recorteDoCartao,
 } from "../../outputs/js/home/block-expansion.js";
 
 /*
@@ -217,4 +218,67 @@ test("girar o telefone refaz a conta do bloco que está aberto", () => {
   } finally {
     globalThis.addEventListener = anterior;
   }
+});
+
+/* ------------------------------------------------------------------
+ * O recorte que faz o veu crescer de onde o cartao estava
+ * ------------------------------------------------------------------ */
+
+/*
+ * O painel troca de coluna do grid ao abrir, e grid nao interpola: a mudanca de
+ * TAMANHO e instantanea, so o deslocamento animava. Por isso a abertura lia como
+ * "sumir e aparecer" em vez de crescer.
+ *
+ * A saida e recortar. O veu ja nasce do tamanho da pagina, com o conteudo no
+ * lugar certo, e um `clip-path` o mostra primeiro apenas no retangulo onde o
+ * cartao estava — abrindo dali ate a pagina inteira. Nada e escalado, entao o
+ * texto nao esmaga.
+ *
+ * Esta funcao e a conta: o retangulo do cartao virado em recuos a partir das
+ * bordas do painel, que e a forma que `inset()` pede.
+ */
+
+test("o recorte descreve o cartao como recuos das bordas do painel", () => {
+  /* Um cartao de 300x200 no canto (600,100) dentro de um painel que ocupa
+     1000x700 a partir da origem. */
+  const r = recorteDoCartao(
+    { left: 600, top: 100, right: 900, bottom: 300 },
+    { left: 0, top: 0, right: 1000, bottom: 700 },
+  );
+
+  assert.deepEqual(r, { topo: 100, direita: 100, baixo: 400, esquerda: 600 });
+});
+
+test("o cartao da esquerda vira recuo pela esquerda, e o da direita pela direita", () => {
+  const pagina = { left: 0, top: 0, right: 1000, bottom: 700 };
+  const esquerda = recorteDoCartao({ left: 40, top: 200, right: 340, bottom: 500 }, pagina);
+  const direita = recorteDoCartao({ left: 660, top: 200, right: 960, bottom: 500 }, pagina);
+
+  /* E dai que sai a direcao: o veu se abre a partir do lado onde o cartao
+     estava, sem precisar de nenhuma regra por lado. */
+  assert.ok(esquerda.esquerda < esquerda.direita, "o cartao da esquerda abre pela esquerda");
+  assert.ok(direita.direita < direita.esquerda, "o cartao da direita abre pela direita");
+});
+
+test("recuo negativo e aparado", () => {
+  /* O cartao pode passar da borda do painel durante a travessia, quando a
+     paisagem ainda esta andando. Um `inset()` negativo nao existe: ele seria
+     descartado e o veu apareceria inteiro de uma vez, sem crescer. */
+  const r = recorteDoCartao(
+    { left: -50, top: -20, right: 1200, bottom: 900 },
+    { left: 0, top: 0, right: 1000, bottom: 700 },
+  );
+
+  assert.deepEqual(r, { topo: 0, direita: 0, baixo: 0, esquerda: 0 });
+});
+
+test("sem medida utilizavel o recorte e nulo", () => {
+  /* Antes de a jornada assentar os retangulos medem zero. Recortar por uma
+     medida invalida esconderia o painel inteiro. */
+  assert.equal(recorteDoCartao(null, { left: 0, top: 0, right: 10, bottom: 10 }), null);
+  assert.equal(recorteDoCartao({ left: 0, top: 0, right: 10, bottom: 10 }, null), null);
+  assert.equal(
+    recorteDoCartao({ left: 0, top: 0, right: 0, bottom: 0 }, { left: 0, top: 0, right: 0, bottom: 0 }),
+    null,
+  );
 });

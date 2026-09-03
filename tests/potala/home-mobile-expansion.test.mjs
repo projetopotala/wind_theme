@@ -28,6 +28,12 @@ function compara(a, b) {
 
 const css = await readFile(CSS, "utf8");
 
+/* Sem os comentarios. Eles viajam no CSS e citam o que a regra NAO faz — uma
+   assercao de ausencia bateria na prosa em vez do codigo. */
+function semComentarios(fonte) {
+  return fonte.replace(/\/\*[\s\S]*?\*\//g, "");
+}
+
 /* O corpo de um `@keyframes`, contando chaves — regex nao serve aqui porque o
    bloco tem chaves aninhadas (`from { ... }`). */
 function blocoDeKeyframes(fonte, nome) {
@@ -523,4 +529,61 @@ test("os cartoes voltam a vista em vez de piscar", () => {
   const regra = css.match(/\.journey-pair:has\([^)]*:not\(\.is-expanded\)\[data-travessia="transitioning"\][^)]*\)[^{]*\{([^}]*)\}/);
   assert.ok(regra, "falta pendurar a volta no par que acabou de fechar");
   assert.match(regra[1], /animation:\s*cartao-volta/);
+});
+
+test("a abertura CRESCE do retangulo do cartao, sem escalar o texto", () => {
+  /*
+   * Deslocar 92px e escalar 1,5% perto de uma tela de 1000px nao le como
+   * crescimento: le como sumir e aparecer no lugar. O tamanho mudava de uma vez,
+   * porque o painel troca de coluna do grid e grid nao interpola.
+   *
+   * O crescimento e recortado, e nao escalado. `scale()` levaria um painel de
+   * pagina inteira ao tamanho de um cartao e esmagaria o texto junto; com
+   * `clip-path` o conteudo ja esta no lugar certo desde o primeiro quadro, e o
+   * que se abre e a janela por onde ele aparece.
+   */
+  const entra = blocoDeKeyframes(css, "painel-entra");
+  assert.match(entra, /clip-path:\s*inset\(/, "a entrada precisa crescer por recorte");
+  assert.match(entra, /var\(--recorte-esquerda[,)]/, "o recorte vem medido do cartao");
+  assert.ok(!/scale\(/.test(semComentarios(entra)), "escalar o painel esmagaria o texto");
+
+  const sai = blocoDeKeyframes(css, "painel-sai");
+  assert.match(sai, /clip-path:\s*inset\(/, "a saida encolhe de volta ao mesmo retangulo");
+  assert.ok(!/scale\(/.test(semComentarios(sai)), "escalar o painel esmagaria o texto");
+});
+
+test("o arredondamento e um gesto, nao um estado", () => {
+  /*
+   * O veu termina de ponta a ponta, como antes. O raio existe so enquanto ele
+   * cresce: parte do raio do proprio cartao e abre ate zero. Um raio no estado
+   * final seria cortado pela borda da tela e nao apareceria de todo jeito.
+   */
+  const entra = blocoDeKeyframes(css, "painel-entra");
+  assert.match(entra, /round\s+var\(--recorte-raio[,)]/, "o gesto comeca com o raio do cartao");
+
+  const repouso = css.match(/\.journey-region\.is-expanded\s+\.region-content\s*\{[^}]*clip-path:[^;]*;/);
+  assert.ok(repouso, "o repouso precisa de um clip-path explicito");
+  /* Sem um `inset()` declarado no repouso nao ha de onde nem para onde
+     interpolar: `none` nao se anima. */
+  assert.match(repouso[0], /clip-path:\s*inset\(0/, "o repouso e a pagina inteira, sem raio");
+});
+
+test("com um bloco aberto o palco assenta de imediato, sem transicao", () => {
+  /*
+   * O palco anima o proprio recuo — `transition: padding .72s`. Enquanto essa
+   * transicao corre, o painel ainda esta CRESCENDO por layout, e o retangulo da
+   * pagina medido pelo controlador nao e o definitivo.
+   *
+   * Medido a 1024x700: o cartao estava em (581,177) e o recuo de topo calculado
+   * saiu 126px onde deveria ser 177 — a animacao partia de um retangulo errado
+   * por uns 50px.
+   *
+   * Com o palco assentando de uma vez, o layout final existe no instante da
+   * medida e quem cresce e o recorte, que e o unico que deve crescer.
+   */
+  const palcos = css.match(/\.journey-pair:has\(\.journey-region\.is-expanded\[data-side\]\)\s+\.region-stage\s*\{[^}]*\}/g) ?? [];
+  assert.ok(
+    palcos.some((regra) => /transition:\s*none/.test(regra)),
+    "o palco aberto nao pode animar o proprio recuo por baixo do recorte",
+  );
 });

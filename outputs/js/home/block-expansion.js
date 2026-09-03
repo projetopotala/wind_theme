@@ -54,6 +54,39 @@ export function ajusteQueCabe(medir, { piso = PISO_DO_AJUSTE, passos = 4 } = {})
   return piso;
 }
 
+/*
+ * O retângulo do cartão, dito em recuos a partir das bordas do painel.
+ *
+ * O painel troca de coluna do grid ao abrir, e grid não interpola: a mudança de
+ * TAMANHO é instantânea, só o deslocamento animava. Era por isso que a abertura
+ * lia como "sumir e aparecer" em vez de crescer.
+ *
+ * A saída é recortar. O véu já nasce do tamanho da página, com o conteúdo no
+ * lugar certo, e um `clip-path` o mostra primeiro apenas onde o cartão estava —
+ * abrindo dali até a página inteira. Nada é escalado, então o texto não esmaga,
+ * que é o que `scale()` faria com um painel encolhido ao tamanho de um cartão.
+ *
+ * A direção sai de graça: o cartão da esquerda tem recuo pequeno à esquerda, e
+ * é por lá que o véu se abre. Nenhuma regra por lado é necessária.
+ */
+export function recorteDoCartao(cartao, pagina) {
+  if (!cartao || !pagina) return null;
+  const largura = pagina.right - pagina.left;
+  const altura = pagina.bottom - pagina.top;
+  if (!(largura > 0) || !(altura > 0)) return null;
+
+  /* Recuo negativo não existe em `inset()`: a declaração inteira seria
+     descartada e o véu apareceria de uma vez, sem crescer. O cartão pode
+     mesmo passar da borda enquanto a paisagem ainda anda. */
+  const apara = (valor) => Math.max(0, Math.round(valor));
+  return {
+    topo: apara(cartao.top - pagina.top),
+    direita: apara(pagina.right - cartao.right),
+    baixo: apara(pagina.bottom - cartao.bottom),
+    esquerda: apara(cartao.left - pagina.left),
+  };
+}
+
 function setFocusable(details, enabled) {
   details.querySelectorAll?.(FOCUSABLE_SELECTOR).forEach((element) => {
     if (enabled) {
@@ -157,6 +190,36 @@ function ajustePadrao(entry, aberto) {
  * Agora a semântica vira na hora — quem pediu para sair já saiu — e o visual
  * espera o fim da linha do tempo.
  */
+/*
+ * Escreve no painel o retângulo de onde ele cresce — e de onde ele encolhe.
+ *
+ * As duas animações leem as mesmas variáveis: `painel-entra` parte deste
+ * recorte e abre até a página; `painel-sai` faz o contrário. Por isso elas
+ * ficam no elemento até a saída terminar, e não são apagadas ao assentar.
+ *
+ * O raio vem do próprio cartão. Ele encolhe até zero conforme o véu se abre, o
+ * que dá o arredondamento durante o gesto sem deixar canto arredondado nenhum
+ * no estado final, que é página cheia de ponta a ponta.
+ */
+function escreverRecorte(painel, cartao, raio) {
+  if (!painel?.style) return;
+  const recorte = recorteDoCartao(cartao, painel.getBoundingClientRect());
+  if (!recorte) return;
+
+  painel.style.setProperty("--recorte-topo", `${recorte.topo}px`);
+  painel.style.setProperty("--recorte-direita", `${recorte.direita}px`);
+  painel.style.setProperty("--recorte-baixo", `${recorte.baixo}px`);
+  painel.style.setProperty("--recorte-esquerda", `${recorte.esquerda}px`);
+  painel.style.setProperty("--recorte-raio", raio || "0px");
+}
+
+function limparRecorte(painel) {
+  if (!painel?.style) return;
+  for (const nome of ["topo", "direita", "baixo", "esquerda", "raio"]) {
+    painel.style.removeProperty(`--recorte-${nome}`);
+  }
+}
+
 function setExpanded(entry, expanded, { visual = true } = {}) {
   if (visual) entry.section.classList[expanded ? "add" : "remove"]("is-expanded");
   const fechar = entry.section.querySelector?.("[data-region-close]");
@@ -241,6 +304,9 @@ export function createBlockExpansion(root, {
     if (!saindo) return;
     saindo.section.classList.remove("is-expanded");
     delete saindo.section.dataset.travessia;
+    /* O recorte só some agora: a saída inteira o usou para saber para onde
+       encolher. */
+    limparRecorte(saindo.section.querySelector?.(".region-content"));
     saindo = null;
   }
 
@@ -395,6 +461,20 @@ export function createBlockExpansion(root, {
      * pedido, e recusá-lo por dois segundos faria a jornada parecer travada.
      */
     if (travessia.travado && activeId === id) return false;
+
+    /*
+     * O cartão é medido AGORA, enquanto ainda é cartão.
+     *
+     * Depois de `setExpanded` ele já é a página, e o retângulo de onde a
+     * animação deve partir deixou de existir no DOM. Não há como recuperá-lo
+     * sem desfazer o estado.
+     */
+    const painelDoBloco = next.section.querySelector?.(".region-content");
+    const cartao = painelDoBloco?.getBoundingClientRect?.();
+    const raioDoCartao = painelDoBloco
+      ? documento?.defaultView?.getComputedStyle?.(painelDoBloco)?.borderRadius
+      : null;
+
     travessia.interromper();
     cancelar(fimDaTravessia);
     /* Antes de tudo: o painel que ainda estava saindo sai agora. Os relógios que
@@ -432,6 +512,15 @@ export function createBlockExpansion(root, {
      * pronto, sem revelação nenhuma.
      */
     void next.section.offsetWidth;
+
+    /*
+     * Aqui o painel já é a página e o layout está calculado — é o único
+     * instante em que os dois retângulos existem para serem comparados. As
+     * variáveis PRECISAM estar escritas antes de `revealed`, porque é ele que
+     * dispara a animação e ela lê os valores ao começar.
+     */
+    escreverRecorte(painelDoBloco, cartao, raioDoCartao);
+
     encenar(next, "revealed");
     cancelar(fimDaTravessia);
     fimDaTravessia = agendar(() => travessia.concluir("revealed"), duracao);
