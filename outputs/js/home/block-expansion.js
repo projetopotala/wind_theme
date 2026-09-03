@@ -146,8 +146,19 @@ function ajustePadrao(entry, aberto) {
   else painel.style.setProperty("zoom", String(fator));
 }
 
-function setExpanded(entry, expanded) {
-  entry.section.classList[expanded ? "add" : "remove"]("is-expanded");
+/*
+ * `visual` separa o que se VÊ do que se ANUNCIA.
+ *
+ * `is-expanded` é o que faz o painel ser a página; aria, inert e foco são o que
+ * o leitor de tela e o teclado enxergam. Ao fechar, os dois andavam juntos e a
+ * saída não tinha o que animar: o painel voltava a ser cartão de um quadro para
+ * o outro, o véu sumia junto e a paisagem reaparecia com um estalo.
+ *
+ * Agora a semântica vira na hora — quem pediu para sair já saiu — e o visual
+ * espera o fim da linha do tempo.
+ */
+function setExpanded(entry, expanded, { visual = true } = {}) {
+  if (visual) entry.section.classList[expanded ? "add" : "remove"]("is-expanded");
   const fechar = entry.section.querySelector?.("[data-region-close]");
   /* Fora do bloco aberto, o × não é alcançável pelo Tab: um botão de fechar
      num cartão fechado não fecha coisa nenhuma. */
@@ -214,6 +225,24 @@ export function createBlockExpansion(root, {
   let activeId = null;
   let fimDaTravessia = 0;
   let segundaMedida = 0;
+  /*
+   * O bloco cujo painel ainda está na tela por causa da animação de saída.
+   *
+   * Ele depende de um relógio para ser retirado — e `open` CANCELA esse
+   * relógio, porque é o mesmo que solta a trava da travessia. Sem esta
+   * referência, fechar um bloco e abrir outro dentro dos dois segundos deixava
+   * o primeiro com `is-expanded` para sempre: dois painéis de página inteira
+   * empilhados, e nada mais para retirar o de baixo.
+   */
+  let saindo = null;
+  let rastroDaSaida = 0;
+
+  function encerrarSaida() {
+    if (!saindo) return;
+    saindo.section.classList.remove("is-expanded");
+    delete saindo.section.dataset.travessia;
+    saindo = null;
+  }
 
   const documento = root.ownerDocument || globalThis.document;
   const corpo = documento?.body;
@@ -291,7 +320,10 @@ export function createBlockExpansion(root, {
     const current = byId.get(activeId);
     activeId = null;
     if (!current) return false;
-    setExpanded(current, false);
+    /* Com encenação, a classe fica até o fim da animação: é ela que dá corpo ao
+       que está saindo. Sem encenação — troca de bloco, desmontagem — não há
+       animação para esperar, e segurá-la deixaria um painel órfão na tela. */
+    setExpanded(current, false, { visual: !encena });
     /* O aperto pertence ao estado aberto. Deixado para tras, o cartao fechado
        apareceria menor que os vizinhos sem motivo nenhum. */
     cancelar(segundaMedida);
@@ -311,11 +343,28 @@ export function createBlockExpansion(root, {
       /* A volta usa a MESMA linha do tempo, no sentido inverso: o estado vai
          para `transitioning` e só chega em `initial` no fim. */
       encenar(current, "transitioning");
+      saindo = current;
       cancelar(fimDaTravessia);
       fimDaTravessia = agendar(() => {
         travessia.concluir("initial");
-        delete current.section.dataset.travessia;
         if (corpo) corpo.dataset.travessiaAtiva = "false";
+
+        /*
+         * A entrega tem DOIS tempos, e o segundo existe por causa de um piscar.
+         *
+         * A saída fecha em opacidade zero — é isso que esconde a troca de um
+         * painel de página inteira por um cartão pequeno. Retirando a classe e o
+         * estado no mesmo instante, porém, capturado a 60fps, a opacidade
+         * saltava de 0,000 para 1,000 num quadro: os dois cartões do par
+         * apareciam do nada, a irmã inclusive, que volta junto.
+         *
+         * Primeiro tempo: o painel devolve o lugar ao cartão. O estado FICA, e é
+         * ele que dá ao par a volta à vista. Segundo tempo, um rastro depois: o
+         * estado sai.
+         */
+        saindo?.section.classList.remove("is-expanded");
+        cancelar(rastroDaSaida);
+        rastroDaSaida = agendar(encerrarSaida, Math.round(duracao * 0.3));
       }, duracao);
     } else {
       /* O atributo do corpo volta em QUALQUER caminho de fechamento. Ele é o
@@ -348,6 +397,10 @@ export function createBlockExpansion(root, {
     if (travessia.travado && activeId === id) return false;
     travessia.interromper();
     cancelar(fimDaTravessia);
+    /* Antes de tudo: o painel que ainda estava saindo sai agora. Os relógios que
+       o retirariam acabaram de ser cancelados — ou são cancelados aqui. */
+    cancelar(rastroDaSaida);
+    encerrarSaida();
     close({ encena: false });
     medirCamera(next.section.dataset?.side);
     escalonar(next);
@@ -506,6 +559,8 @@ export function createBlockExpansion(root, {
       close({ encena: false });
       cancelar(fimDaTravessia);
       cancelar(segundaMedida);
+      cancelar(rastroDaSaida);
+      encerrarSaida();
       if (corpo) corpo.dataset.travessiaAtiva = "false";
     },
     get activeId() {

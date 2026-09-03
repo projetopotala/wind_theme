@@ -1140,6 +1140,15 @@ html.is-crossing .journey-entry-veil {
   --travessia-fundo: 0px;
   --travessia-frente: 0px;
   --travessia-interface: 0px;
+  /*
+   * O quanto o painel recua para o próprio lado antes de assentar.
+   *
+   * Distância de PERCURSO, não de repouso: ela existe no primeiro quadro e
+   * termina em zero. Um passo que sobrevivesse ao fim deixaria uma faixa de
+   * paisagem descoberta numa das bordas, que foi o que aposentou o passo de
+   * câmera permanente do painel.
+   */
+  --painel-entrada: clamp(48px, 9vw, 140px);
 }
 
 /*
@@ -1153,6 +1162,15 @@ html.is-crossing .journey-entry-veil {
   transition:
     opacity var(--travessia-total) var(--travessia-curva),
     transform var(--travessia-total) var(--travessia-curva),
+    /*
+     * O fundo PRECISA estar nesta lista.
+     *
+     * Ela não acrescenta transições à `.region-content`: substitui a lista
+     * inteira, e o `background` que estava lá se perdia. Medido na prévia, aos
+     * 186ms de uma travessia de 2s o fundo já era o véu, chapado — o cartão
+     * opaco nunca ficava mais transparente, ele trocava de cor num quadro.
+     */
+    background-color var(--travessia-total) var(--travessia-curva),
     box-shadow 240ms ease;
 }
 
@@ -1287,6 +1305,19 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
   .journey-region[data-travessia] .region-content,
   .journey-region[data-travessia] .region-details > *,
   .journey-region[data-travessia] .region-title {
+    transform: none;
+  }
+
+  /*
+   * A entrada e a saída do painel são desligadas.
+   *
+   * Não basta zerar `transform`: as duas são ANIMAÇÃO, e uma animação vence
+   * qualquer declaração comum na cascata — a regra acima perderia calada, e
+   * quem pediu menos movimento receberia o painel deslizando assim mesmo. O
+   * bloco simplesmente aparece.
+   */
+  .journey-region.is-expanded[data-travessia] .region-content {
+    animation: none;
     transform: none;
   }
 
@@ -1927,7 +1958,109 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  * descobrindo uma faixa de paisagem numa das bordas. A trava era por media
  * query, para telefone e tela baixa; agora vale sempre, e sai de dentro delas.
  */
-.journey-region.is-expanded[data-travessia="transitioning"] .region-content,
-.journey-region.is-expanded[data-travessia="revealed"] .region-content {
+/* ============================================================
+ * A ENTRADA E A SAÍDA DO PAINEL
+ *
+ * São ANIMAÇÃO, e não transição, e a medição é que decidiu isso.
+ *
+ * A tentativa óbvia era dar ao estado `transitioning` a posição deslocada e
+ * deixar a transição levar até `revealed`. Não funciona: o MESMO atributo que
+ * marca a partida — `data-travessia` — é o que liga a lista de transições.
+ * Quando ele aparece, o navegador não PARTE do deslocamento; ele começa a
+ * transicionar em direção a ele, saindo de onde o cartão estava. Um quadro
+ * depois o estado vira `revealed`, o alvo passa a ser zero, e a interpolação
+ * inverte de onde estava — que é praticamente o ponto de partida. Capturado a
+ * 60fps por 2,4s: 346 quadros, deslocamento zero em todos.
+ *
+ * `@keyframes` não tem esse problema. Uma animação sempre começa no próprio
+ * `from`, qualquer que fosse o valor anterior.
+ *
+ * Qual das duas toca sai do estado, e a assimetria é de propósito. Ao ABRIR, o
+ * controlador escreve `transitioning`, força um cálculo de layout e escreve
+ * `revealed` na mesma tarefa: nenhum quadro é pintado no meio, então
+ * `transitioning` só chega a ser VISTO quando o bloco está fechando. Por isso a
+ * entrada pendura em `revealed` e a saída em `transitioning`.
+ * ============================================================ */
+
+/* O sentido é o do próprio lado: o bloco da direita entra e sai pela direita, o
+   da esquerda pela esquerda. Mesmo princípio que já rege a paisagem — "a cena
+   abre do lado de quem chamou". */
+.journey-region[data-side="right"] { --painel-desloc: var(--painel-entrada); }
+.journey-region[data-side="left"] { --painel-desloc: calc(var(--painel-entrada) * -1); }
+
+/*
+ * Só `from`. O `to` é o estilo do próprio elemento — deslocamento zero e o véu.
+ *
+ * Declarar o `to` seria reintroduzir um passo permanente, que é o que deixava
+ * uma faixa de paisagem descoberta numa das bordas.
+ */
+@keyframes painel-entra {
+  from {
+    transform: translate3d(var(--painel-desloc), 0, 0) scale(.985);
+    background-color: var(--journey-panel-open);
+  }
+}
+
+/* A saída é o mesmo caminho ao contrário: o painel recolhe para o seu lado e o
+   fundo volta a ficar cheio, devolvendo a paisagem antes de o cartão reaparecer. */
+@keyframes painel-sai {
+  to {
+    transform: translate3d(var(--painel-desloc), 0, 0) scale(.985);
+    background-color: var(--journey-panel-open);
+    opacity: 0;
+  }
+}
+
+/*
+ * O repouso do painel é ZERO — e isto não é redundante com a animação.
+ *
+ * `painel-entra` declara só o `from`; o `to` implícito é o estilo do próprio
+ * elemento, e sem esta regra esse estilo ainda seria o passo de câmera de
+ * `.journey-region[data-travessia] .region-content`. A animação terminaria
+ * parando NELE, e o painel assentaria deslocado — a faixa de paisagem
+ * descoberta na borda, de volta pela porta dos fundos.
+ */
+.journey-region.is-expanded[data-travessia] .region-content {
   transform: none;
+}
+
+.journey-region.is-expanded[data-travessia="revealed"] .region-content {
+  animation: painel-entra var(--travessia-total) var(--travessia-curva) both;
+}
+
+.journey-region.is-expanded[data-travessia="transitioning"] .region-content {
+  animation: painel-sai var(--travessia-total) var(--travessia-curva) both;
+}
+
+/*
+ * A VOLTA DOS CARTÕES, para eles não piscarem de volta.
+ *
+ * A saída fecha em opacidade zero, e é isso que esconde a troca de um painel de
+ * página inteira por um cartão pequeno. Só que, com a classe e o estado saindo
+ * no mesmo instante, o que se via era um piscar: capturado a 60fps, aos 1110ms
+ * a opacidade saltava de 0,000 para 1,000 num quadro, e os dois cartões do par
+ * apareciam do nada — a irmã inclusive, que volta junto.
+ *
+ * O controlador passou a entregar em dois tempos. Este é o segundo: o painel já
+ * devolveu o lugar ao cartão, o estado ficou mais um instante, e é ele que
+ * segura esta volta.
+ *
+ * Vale para o PAR inteiro de propósito. A irmã também estava fora de cena, e
+ * trazer só quem fechou deixaria ela aparecendo com o mesmo estalo de antes.
+ */
+@keyframes cartao-volta {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--painel-desloc, 0), 0, 0) scale(.96);
+  }
+}
+
+.journey-pair:has(.journey-region:not(.is-expanded)[data-travessia="transitioning"]) .region-content {
+  animation: cartao-volta calc(var(--travessia-total) * .3) var(--travessia-curva) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-pair:has(.journey-region:not(.is-expanded)[data-travessia="transitioning"]) .region-content {
+    animation: none;
+  }
 }

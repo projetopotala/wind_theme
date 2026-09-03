@@ -372,3 +372,118 @@ test("destroy devolve a paisagem e o trajeto ao normal na hora", () => {
   assert.equal(corpo.dataset.travessiaAtiva, "false");
   assert.equal(root.sections[0].dataset.travessia, undefined);
 });
+
+test("fechar mantém o painel na tela até a animação terminar", () => {
+  /*
+   * A saída precisa de alguma coisa para animar.
+   *
+   * `setExpanded(false)` tirava `is-expanded` no mesmo instante em que o
+   * fechamento começava — e é essa classe que faz o painel ser a página. O
+   * navegador nunca chegava a desenhar um quadro com o painel inteiro E o
+   * estado de saída: ele voltava a ser cartão de um quadro para o outro, e só
+   * então a animação corria, sobre um cartão. O véu sumia junto, e a paisagem
+   * reaparecia com um estalo.
+   *
+   * O que a classe governa é só o VISUAL. A semântica — aria, inert, foco —
+   * vira na hora, porque quem usa leitor de tela ou teclado já saiu do painel
+   * no momento em que pediu para sair.
+   */
+  const relogios = [];
+  const root = createRoot(["quem-somos"]);
+  const expansion = createBlockExpansion(root, {
+    agendar: (retorno) => { relogios.push(retorno); return relogios.length; },
+    cancelar: () => {},
+  });
+
+  expansion.open("quem-somos");
+  expansion.close();
+
+  const secao = root.sections[0];
+  assert.equal(secao.classList.contains("is-expanded"), true, "sem o painel na tela não há o que animar");
+  assert.equal(secao.summary.getAttribute("aria-expanded"), "false", "a semântica não espera a animação");
+  assert.equal(secao.details.getAttribute("aria-hidden"), "true");
+
+  relogios.forEach((retorno) => retorno());
+  assert.equal(secao.classList.contains("is-expanded"), false, "no fim da linha do tempo o painel sai");
+});
+
+test("fechar sem encenação some com o painel na hora", () => {
+  /*
+   * Trocar de bloco fecha o anterior POR DENTRO, sem linha do tempo, e desmontar
+   * também. Nesses caminhos não há animação para esperar: segurar o visual
+   * deixaria dois painéis abertos ao mesmo tempo, ou um painel órfão na tela
+   * depois de o controlador deixar de existir.
+   */
+  const root = createRoot(["quem-somos", "atendimentos"]);
+  const expansion = createBlockExpansion(root, { agendar: () => 0, cancelar: () => {} });
+
+  expansion.open("quem-somos");
+  expansion.open("atendimentos");
+  assert.equal(root.sections[0].classList.contains("is-expanded"), false, "o bloco anterior não pode ficar aberto");
+
+  expansion.destroy();
+  assert.equal(root.sections[1].classList.contains("is-expanded"), false, "desmontar não deixa painel na tela");
+});
+
+test("abrir outro bloco no meio de um fechamento não deixa o painel anterior preso", () => {
+  /*
+   * O visual do bloco que sai depende de um relógio para ser retirado — e
+   * `open` CANCELA esse relógio, porque ele também é o que solta a trava da
+   * travessia. Sem cuidado, quem fechasse um bloco e abrisse outro dentro dos
+   * dois segundos deixaria o primeiro com `is-expanded` para sempre: dois
+   * painéis de página inteira empilhados, e nada mais para retirar o de baixo.
+   */
+  const relogios = [];
+  const root = createRoot(["quem-somos", "atendimentos"]);
+  const expansion = createBlockExpansion(root, {
+    agendar: (retorno) => { relogios.push(retorno); return relogios.length; },
+    cancelar: () => {},
+  });
+
+  expansion.open("quem-somos");
+  expansion.close();
+  expansion.open("atendimentos");
+
+  assert.equal(
+    root.sections[0].classList.contains("is-expanded"),
+    false,
+    "o painel que estava saindo tem de sair antes de outro entrar",
+  );
+  assert.equal(root.sections[1].classList.contains("is-expanded"), true);
+});
+
+test("o cartão volta à vista antes de o estado da travessia sumir", () => {
+  /*
+   * A saída fecha em opacidade zero — é isso que esconde a troca de um painel de
+   * página inteira por um cartão pequeno. Só que, retirando `is-expanded` e
+   * `data-travessia` no mesmo instante, o que se via era um PISCAR: capturado a
+   * 60fps, aos 1110ms a opacidade saltava de 0,000 para 1,000 num quadro, e os
+   * dois cartões do par apareciam do nada — inclusive a irmã, que volta junto.
+   *
+   * A entrega passa a ter dois tempos. Primeiro o painel devolve o lugar ao
+   * cartão; o estado fica mais um instante, e é ele que dá ao cartão uma volta
+   * à vista. Só depois o estado sai.
+   */
+  const relogios = [];
+  const root = createRoot(["quem-somos"]);
+  const expansion = createBlockExpansion(root, {
+    agendar: (retorno) => { relogios.push(retorno); return relogios.length; },
+    cancelar: () => {},
+  });
+
+  expansion.open("quem-somos");
+  expansion.close();
+
+  const secao = root.sections[0];
+  relogios.splice(0).forEach((retorno) => retorno());
+
+  assert.equal(secao.classList.contains("is-expanded"), false, "o painel já devolveu o lugar");
+  assert.equal(
+    secao.dataset.travessia,
+    "transitioning",
+    "o estado precisa sobreviver ao painel: é ele que traz o cartão de volta à vista",
+  );
+
+  relogios.splice(0).forEach((retorno) => retorno());
+  assert.equal(secao.dataset.travessia, undefined, "no fim não sobra estado nenhum");
+});

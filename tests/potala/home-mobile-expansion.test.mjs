@@ -28,6 +28,23 @@ function compara(a, b) {
 
 const css = await readFile(CSS, "utf8");
 
+/* O corpo de um `@keyframes`, contando chaves — regex nao serve aqui porque o
+   bloco tem chaves aninhadas (`from { ... }`). */
+function blocoDeKeyframes(fonte, nome) {
+  const inicio = fonte.indexOf(`@keyframes ${nome}`);
+  assert.notEqual(inicio, -1, `falta a animacao ${nome}`);
+  let profundidade = 0;
+  for (let i = fonte.indexOf("{", inicio); i < fonte.length; i += 1) {
+    if (fonte[i] === "{") profundidade += 1;
+    if (fonte[i] === "}") {
+      profundidade -= 1;
+      if (profundidade === 0) return fonte.slice(inicio, i + 1);
+    }
+  }
+  throw new Error(`@keyframes sem fechamento: ${nome}`);
+}
+
+
 /* O bloco do telefone: a partir da abertura da media query até a chave que a
    fecha, contando as chaves internas para não parar na primeira regra. */
 function blocoDaMediaQuery(fonte, condicao) {
@@ -380,4 +397,130 @@ test("o veu e da pagina, mas a coluna de leitura nao", () => {
    * em -63px, fora de alcance para sempre.
    */
   assert.match(painel[0], /align-content:\s*safe\s+center/, "centrar sem `safe` corta o topo do texto");
+});
+
+/* ------------------------------------------------------------------
+ * A animacao de abrir e fechar
+ * ------------------------------------------------------------------ */
+
+test("o fundo entra na lista de transicao, senao ele salta", () => {
+  /*
+   * A regra de `[data-travessia]` nao ACRESCENTA transicoes: ela substitui a
+   * lista inteira da `.region-content`, e o `background` que estava la se
+   * perdia. Medido na previa: aos 186ms de uma travessia de 2s o fundo ja era o
+   * veu, chapado — o cartao opaco nunca chegava a ficar mais transparente, ele
+   * trocava de cor num quadro.
+   */
+  const regra = css.match(/\.journey-region\[data-travessia\]\s+\.region-content\s*\{([^}]*)\}/);
+  assert.ok(regra, "falta a lista de transicoes da travessia");
+  assert.match(regra[1], /background-color\s+var\(--travessia-total\)/, "sem isto o fundo troca de cor num quadro");
+  assert.match(regra[1], /transform\s+var\(--travessia-total\)/);
+  assert.match(regra[1], /opacity\s+var\(--travessia-total\)/);
+});
+
+test("a entrada e a saida sao ANIMACAO, nao transicao", () => {
+  /*
+   * A tentativa obvia — dar ao estado `transitioning` a posicao deslocada e
+   * deixar a transicao levar ate `revealed` — nao funciona aqui, e a medicao
+   * mostrou por que.
+   *
+   * O MESMO atributo que marca a partida (`data-travessia`) e o que liga a
+   * lista de transicoes. Quando ele aparece, o navegador nao PARTE do
+   * deslocamento: ele comeca a transicionar em direcao a ele, a partir de onde o
+   * cartao estava. Um quadro depois o estado vira `revealed` e o alvo passa a
+   * ser zero — entao a interpolacao inverte de onde estava, que e praticamente o
+   * ponto de partida. Capturado a 60fps por 2,4s: 346 quadros, deslocamento 0 em
+   * todos eles.
+   *
+   * `@keyframes` nao tem esse problema: uma animacao sempre comeca no proprio
+   * `from`, qualquer que fosse o valor anterior.
+   */
+  assert.match(css, /@keyframes\s+painel-entra\s*\{/, "falta a animacao de entrada");
+  assert.match(css, /@keyframes\s+painel-sai\s*\{/, "falta a animacao de saida");
+
+  /*
+   * Qual das duas toca sai do estado, e a assimetria e de proposito.
+   *
+   * Ao ABRIR, o controlador escreve `transitioning`, forca um calculo de layout
+   * e escreve `revealed` na mesma tarefa — nenhum quadro e pintado no meio,
+   * entao `transitioning` so e VISTO quando o bloco esta fechando. Por isso a
+   * entrada pendura em `revealed` e a saida em `transitioning`.
+   */
+  const entrada = css.match(/\.journey-region\.is-expanded\[data-travessia="revealed"\]\s+\.region-content\s*\{([^}]*)\}/);
+  const saida = css.match(/\.journey-region\.is-expanded\[data-travessia="transitioning"\]\s+\.region-content\s*\{([^}]*)\}/);
+
+  assert.ok(entrada, "falta pendurar a entrada no estado assentado");
+  assert.ok(saida, "falta pendurar a saida no estado de transicao");
+  assert.match(entrada[1], /animation:\s*painel-entra/);
+  assert.match(saida[1], /animation:\s*painel-sai/);
+});
+
+test("o deslocamento aponta para o lado onde o card estava", () => {
+  /* O bloco da direita entra e sai pela direita; o da esquerda, pela esquerda.
+     E o mesmo principio que ja rege a paisagem: a cena abre do lado de quem
+     chamou. */
+  const direita = css.match(/\.journey-region\[data-side="right"\]\s*\{([^}]*)\}/);
+  const esquerda = css.match(/\.journey-region\[data-side="left"\]\s*\{([^}]*)\}/);
+
+  assert.ok(direita && esquerda, "falta o sentido do deslocamento por lado");
+  assert.match(direita[1], /--painel-desloc:\s*var\(--painel-entrada\)/, "a direita sai para a direita");
+  assert.match(esquerda[1], /--painel-desloc:\s*calc\(var\(--painel-entrada\)\s*\*\s*-1\)/, "a esquerda sai para a esquerda");
+});
+
+test("a animacao parte do cartao opaco e chega no veu", () => {
+  /* "Ficando mais transparente" e isto: o fundo sai do tom cheio do cartao e
+     chega no veu translucido. Sem esta parte, o bloco so desliza. */
+  const entra = blocoDeKeyframes(css, "painel-entra");
+    assert.match(entra, /background-color:\s*var\(--journey-panel-open\)/, "a entrada comeca no fundo do cartao");
+  assert.match(entra, /translate3d\(var\(--painel-desloc\)/, "a entrada comeca deslocada");
+});
+
+test("assentado, o painel para no lugar e nao sobra paisagem em borda nenhuma", () => {
+  /*
+   * O deslocamento vale so no PERCURSO. Um passo que sobrevivesse ao fim da
+   * animacao deixaria uma faixa de paisagem descoberta numa das bordas — foi
+   * exatamente por isso que o passo de camera permanente teve de sair.
+   *
+   * Como a entrada e uma animacao que so define `from`, o `to` e o proprio
+   * estilo do elemento: zero deslocamento, sem precisar declarar.
+   */
+  const entra = blocoDeKeyframes(css, "painel-entra");
+  assert.ok(!entra.includes("to {"), "declarar o `to` e o que reintroduziria um passo permanente");
+});
+
+test("movimento reduzido continua sem deslocamento nenhum", () => {
+  /* Quem pediu menos movimento nao recebe o painel deslizando: as animacoes sao
+     desligadas, e o bloco simplesmente aparece. */
+  const blocos = [];
+  for (let i = css.indexOf("@media (prefers-reduced-motion: reduce)"); i !== -1;
+       i = css.indexOf("@media (prefers-reduced-motion: reduce)", i + 1)) {
+    blocos.push(blocoDaMediaQuery(css.slice(i), "@media (prefers-reduced-motion: reduce)").texto);
+  }
+  assert.ok(
+    blocos.some((bloco) => /\.journey-region\.is-expanded\[data-travessia\][^{]*\{[^}]*animation:\s*none/s.test(bloco)),
+    "falta desligar a entrada e a saida no movimento reduzido",
+  );
+});
+
+test("os cartoes voltam a vista em vez de piscar", () => {
+  /*
+   * Capturado a 60fps no fechamento: aos 1110ms a opacidade saltava de 0,000
+   * para 1,000 num quadro. O painel fechava em zero — que e o que esconde a
+   * troca de uma pagina inteira por um cartao pequeno — e os dois cartoes do
+   * par apareciam do nada, a irma inclusive, que volta junto.
+   *
+   * O controlador passou a entregar em dois tempos: o painel devolve o lugar ao
+   * cartao, o estado `transitioning` fica mais um instante, e e ele que segura
+   * esta animacao de volta.
+   */
+  assert.match(css, /@keyframes\s+cartao-volta\s*\{/, "falta a volta dos cartoes");
+
+  const volta = blocoDeKeyframes(css, "cartao-volta");
+  assert.match(volta, /opacity:\s*0/, "a volta comeca invisivel, que e onde a saida terminou");
+
+  /* Vale para o PAR inteiro: a irma tambem estava fora de cena e voltaria
+     piscando junto. */
+  const regra = css.match(/\.journey-pair:has\([^)]*:not\(\.is-expanded\)\[data-travessia="transitioning"\][^)]*\)[^{]*\{([^}]*)\}/);
+  assert.ok(regra, "falta pendurar a volta no par que acabou de fechar");
+  assert.match(regra[1], /animation:\s*cartao-volta/);
 });
