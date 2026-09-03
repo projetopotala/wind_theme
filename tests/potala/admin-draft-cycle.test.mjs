@@ -1,0 +1,209 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { createAdminController } from "../../outputs/js/admin/admin-controller.js";
+
+/*
+ * Um repositório falso que conta o que foi chamado e pode falhar sob comando.
+ * É o que permite provar a volta atrás sem uma rede de verdade.
+ */
+function repositorioFalso({ falharSalvar = false, falharPublicar = false } = {}) {
+  const chamadas = [];
+  let publicados = [
+    { id: "a", slug: "a", title: "Original", summary: "r", side: "left", position: 0, published: true, tags: [] },
+  ];
+  let rascunhos = [];
+  return {
+    chamadas,
+    get publicados() { return publicados; },
+    async list() { return publicados.map((bloco) => ({ ...bloco })); },
+    async listDrafts() { return rascunhos.map((bloco) => ({ ...bloco })); },
+    async saveDraft(bloco) {
+      chamadas.push(["saveDraft", bloco.id]);
+      if (falharSalvar) throw new Error("rede caiu");
+      rascunhos = [...rascunhos.filter((item) => item.id !== bloco.id), { ...bloco }];
+      return bloco;
+    },
+    async discardDraft(id) {
+      chamadas.push(["discardDraft", id]);
+      rascunhos = rascunhos.filter((item) => item.id !== id);
+    },
+    async publishDrafts() {
+      chamadas.push(["publishDrafts"]);
+      if (falharPublicar) throw new Error("portal_admin_required");
+      publicados = [...rascunhos];
+      rascunhos = [];
+      return publicados.map((bloco) => ({ ...bloco }));
+    },
+    async replaceAll(blocos) {
+      chamadas.push(["replaceAll"]);
+      publicados = blocos.map((bloco) => ({ ...bloco }));
+      return publicados.map((bloco) => ({ ...bloco }));
+    },
+    async reset() { return publicados; },
+  };
+}
+
+function campo(nome, valor = "", tipo = "text") {
+  if (tipo === "checkbox") return { name: nome, type: tipo, value: "on", checked: valor === true };
+  return { name: nome, type: tipo, value: valor, checked: false, setAttribute() {}, focus() {} };
+}
+
+function montar() {
+  const ouvintes = new Map();
+  const elementos = [
+    campo("id", "a"),
+    campo("title", "Editado"),
+    campo("summary", "Um resumo"),
+    campo("side", "left"),
+  ];
+  elementos.image = campo("image");
+  elementos.title = elementos[1];
+  elementos.summary = elementos[2];
+  elementos.side = elementos[3];
+
+  const alvo = (chave, extra = {}) => ({
+    innerHTML: "",
+    textContent: "",
+    disabled: false,
+    hidden: false,
+    style: {},
+    src: "",
+    value: "",
+    dataset: {},
+    addEventListener(tipo, fn) { ouvintes.set(`${chave}:${tipo}`, fn); },
+    removeEventListener(tipo) { ouvintes.delete(`${chave}:${tipo}`); },
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    setAttribute() {},
+    ...extra,
+  });
+
+  const form = alvo("form", { elements: elementos });
+  const nos = {
+    "[data-admin-list]": alvo("lista"),
+    "[data-admin-counts]": alvo("counts"),
+    "[data-admin-form]": form,
+    "[data-admin-status]": alvo("status"),
+    "[data-admin-preview]": alvo("preview"),
+    "[data-admin-preview-frame]": alvo("frame", { clientWidth: 460 }),
+    "[data-admin-search]": alvo("search"),
+    "[data-admin-tabs]": alvo("tabs"),
+    "[data-admin-publish]": alvo("publish"),
+    "[data-admin-saved-at]": alvo("saved"),
+    "[data-admin-save-draft]": alvo("savedraft"),
+    "[data-admin-media-grid]": alvo("grid"),
+    "[data-admin-image-pick]": alvo("pick"),
+  };
+
+  /*
+   * Preencher DEPOIS de `pronto`, e não antes.
+   *
+   * Ao carregar, o painel limpa o formulário para um bloco novo — que é o
+   * comportamento certo. Um teste que preenchesse antes veria os próprios
+   * valores apagados e culparia a validação por isso.
+   */
+  function preencherFormulario(valores) {
+    for (const [nome, valor] of Object.entries(valores)) {
+      const controle = elementos.find((item) => item.name === nome);
+      if (controle) controle.value = valor;
+    }
+  }
+
+  return {
+    ouvintes,
+    nos,
+    preencherFormulario,
+    root: { querySelector: (seletor) => nos[seletor] ?? null },
+  };
+}
+
+const RASCUNHO = { id: "a", title: "Editado", summary: "Um resumo", side: "left" };
+
+test("salvar rascunho grava no rascunho e nunca na lista publicada", async () => {
+  const repo = repositorioFalso();
+  const { root, ouvintes, preencherFormulario } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+  preencherFormulario(RASCUNHO);
+
+  await ouvintes.get("savedraft:click")();
+
+  assert.deepEqual(repo.chamadas, [["saveDraft", "a"]]);
+  assert.equal(repo.publicados[0].title, "Original", "a Home não pode mudar ao salvar rascunho");
+});
+
+/*
+ * A asserção que justifica o otimismo.
+ *
+ * A lista muda antes da resposta do servidor. Se a gravação falhar e o estado
+ * novo ficar, o painel passa a mostrar um rascunho que não existe — e ninguém
+ * descobre até recarregar a página.
+ */
+test("gravação que falha desfaz a mudança e diz o motivo", async () => {
+  const repo = repositorioFalso({ falharSalvar: true });
+  const { root, ouvintes, nos, preencherFormulario } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+  preencherFormulario(RASCUNHO);
+
+  await ouvintes.get("savedraft:click")();
+
+  assert.match(nos["[data-admin-status]"].textContent, /Não foi possível guardar/);
+  assert.match(nos["[data-admin-status]"].textContent, /Nada foi alterado/);
+  /*
+   * A mensagem sozinha não prova nada: ela pode estar dizendo "nada foi
+   * alterado" com o rascunho fantasma ainda na lista. O botão de publicar é a
+   * prova observável — sem rascunho, ele volta a ficar desabilitado.
+   */
+  assert.equal(
+    nos["[data-admin-publish]"].disabled,
+    true,
+    "o rascunho que não foi gravado não pode continuar contando como pendência",
+  );
+});
+
+test("publicar chama a RPC e limpa os rascunhos", async () => {
+  const repo = repositorioFalso();
+  const { root, ouvintes, nos, preencherFormulario } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+  preencherFormulario(RASCUNHO);
+
+  await ouvintes.get("savedraft:click")();
+  await ouvintes.get("publish:click")();
+
+  assert.ok(repo.chamadas.some(([nome]) => nome === "publishDrafts"));
+  assert.match(nos["[data-admin-status]"].textContent, /publicadas/);
+});
+
+test("publicar que falha não deixa o painel achar que publicou", async () => {
+  const repo = repositorioFalso({ falharPublicar: true });
+  const { root, ouvintes, nos, preencherFormulario } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+  preencherFormulario(RASCUNHO);
+
+  await ouvintes.get("savedraft:click")();
+  await ouvintes.get("publish:click")();
+
+  assert.match(nos["[data-admin-status]"].textContent, /Não foi possível publicar/);
+  assert.equal(repo.publicados[0].title, "Original");
+});
+
+/* Um botão que aceita o clique e não faz nada ensina o editor a desconfiar do
+   painel. Sem pendência, ele fica desabilitado. */
+test("publicar fica desabilitado quando não há pendência", async () => {
+  const repo = repositorioFalso();
+  const { root, ouvintes, nos, preencherFormulario } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+
+  assert.equal(nos["[data-admin-publish]"].disabled, true);
+
+  preencherFormulario(RASCUNHO);
+  await ouvintes.get("savedraft:click")();
+
+  assert.equal(nos["[data-admin-publish]"].disabled, false);
+  assert.match(nos["[data-admin-publish]"].textContent, /\(1\)/);
+});

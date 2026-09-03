@@ -1,6 +1,11 @@
 import { normalizeHomeBlock, normalizeHomeBlocks } from "../home/content-model.js";
 import { createLocalContentRepository } from "../home/content-repository.js";
 import { DEFAULT_HOME_BLOCKS } from "../home/journey-data.js";
+import { mergeBlocks, pendingCount } from "./admin-draft.js";
+import { countEntries, filterEntries } from "./admin-filters.js";
+import { createBlocksList } from "./admin-blocks-list.js";
+import { createMediaPicker } from "./admin-media-picker.js";
+import { createAdminPreview } from "./admin-preview.js";
 
 const SIDES = new Set(["left", "right"]);
 export const ADMIN_PREVIEW_MESSAGE = "potala:admin-preview";
@@ -176,9 +181,18 @@ export function createAdminController({
   const status = root.querySelector("[data-admin-status]");
   const previewFrame = root.querySelector("[data-admin-preview]");
   let blocks = [];
+  let drafts = [];
+  let busca = "";
+  let aba = "todos";
+  let ativoId = "";
   let arrastando = null;
   let previewFocusId = "";
   let previewFrameId = 0;
+
+  const buscaCampo = root.querySelector("[data-admin-search]");
+  const abasFiltro = root.querySelector("[data-admin-tabs]");
+  const botaoPublicar = root.querySelector("[data-admin-publish]");
+  const salvoEm = root.querySelector("[data-admin-saved-at]");
 
   const previewOrigin = globalThis.location?.origin || "*";
   const schedulePreview = globalThis.requestAnimationFrame
@@ -210,9 +224,36 @@ export function createAdminController({
     if (status) status.textContent = mensagem;
   };
 
+  function entradas() {
+    return mergeBlocks({ published: blocks, drafts });
+  }
+
+  /*
+   * A contagem de pendências governa o botao de publicar.
+   *
+   * Ele fica desabilitado quando nao ha nada a publicar porque um botao que
+   * aceita o clique e nao faz nada ensina o editor a desconfiar do painel.
+   */
+  function atualizarPublicar(todas) {
+    if (!botaoPublicar) return;
+    const pendentes = pendingCount(todas);
+    botaoPublicar.disabled = pendentes === 0;
+    botaoPublicar.textContent = pendentes
+      ? `Publicar alterações (${pendentes})`
+      : "Publicar alterações";
+  }
+
   function desenhar() {
-    if (!lista) return;
-    lista.innerHTML = blocks.map((block, index) => renderBlockRow(block, index, blocks.length)).join("");
+    const todas = entradas();
+    listaUI?.render(filterEntries(todas, { query: busca, tab: aba }), {
+      activeId: ativoId,
+      counts: countEntries(todas),
+    });
+    atualizarPublicar(todas);
+  }
+
+  function marcarSalvo() {
+    if (salvoEm) salvoEm.textContent = "Salvo há poucos segundos";
   }
 
   async function salvar(proximos, mensagem) {
@@ -363,9 +404,116 @@ export function createAdminController({
     agendarPreview();
   };
 
+  /*
+   * Salvar rascunho é otimista, e a volta atrás é o que o torna honesto.
+   *
+   * A lista e a prévia mudam antes da resposta do servidor, porque esperar a
+   * ida e volta a cada tecla deixaria o painel lento. Se a gravação falhar, o
+   * estado anterior volta e a faixa de status diz o motivo — um painel que
+   * mostra a mudança e perde a gravação em silêncio é pior que um lento.
+   */
+  const onSaveDraft = async (draft) => {
+    const erros = validateBlockDraft(draft);
+    mostrarErros(erros);
+    if (Object.keys(erros).length) {
+      anunciar("O rascunho não foi salvo: corrija os campos marcados.");
+      return;
+    }
+
+    const anteriores = drafts.map((item) => ({ ...item }));
+    const [normalizado] = applyDraft([], draft);
+    drafts = [...drafts.filter((item) => item.id !== normalizado.id), normalizado];
+    ativoId = normalizado.id;
+    desenhar();
+    agendarPreview();
+
+    try {
+      await repository.saveDraft(draft);
+      marcarSalvo();
+      anunciar(`Rascunho de "${draft.title}" guardado. A Home não mudou.`);
+    } catch (error) {
+      console.error("Não foi possível guardar o rascunho.", error);
+      drafts = anteriores;
+      desenhar();
+      agendarPreview();
+      anunciar("Não foi possível guardar o rascunho. Nada foi alterado.");
+    }
+  };
+
+  const onPublish = async () => {
+    if (!drafts.length) return;
+    const anteriores = { blocos: blocks, rascunhos: drafts };
+    try {
+      blocks = await repository.publishDrafts();
+      drafts = [];
+      desenhar();
+      agendarPreview();
+      anunciar("Alterações publicadas.");
+    } catch (error) {
+      console.error("Não foi possível publicar.", error);
+      blocks = anteriores.blocos;
+      drafts = anteriores.rascunhos;
+      desenhar();
+      anunciar("Não foi possível publicar. Nada foi alterado.");
+    }
+  };
+
+  const onDiscardDraft = async (id) => {
+    const anteriores = drafts.map((item) => ({ ...item }));
+    drafts = drafts.filter((item) => item.id !== id);
+    desenhar();
+    agendarPreview();
+    try {
+      await repository.discardDraft(id);
+      anunciar("Rascunho descartado. O bloco voltou ao que está no ar.");
+    } catch (error) {
+      console.error("Não foi possível descartar o rascunho.", error);
+      drafts = anteriores;
+      desenhar();
+      anunciar("Não foi possível descartar o rascunho.");
+    }
+  };
+
+  const onBusca = (evento) => {
+    busca = evento?.target?.value ?? "";
+    desenhar();
+  };
+
+  const onAba = (evento) => {
+    const botao = evento.target?.closest?.("[data-tab]");
+    if (!botao) return;
+    aba = botao.dataset.tab;
+    for (const item of abasFiltro?.querySelectorAll("[data-tab]") || []) {
+      item.setAttribute("aria-selected", item.dataset.tab === aba ? "true" : "false");
+    }
+    desenhar();
+  };
+
   const onFormInput = () => agendarPreview();
   const onPreviewLoad = () => agendarPreview();
 
+  const listaUI = createBlocksList({
+    root,
+    onAction: (acao, id) => {
+      if (acao === "discard") return onDiscardDraft(id);
+      return onListClick({ target: { closest: () => ({ dataset: { action: acao, id } }) } });
+    },
+  });
+  const seletorImagem = createMediaPicker({
+    root,
+    fetchManifest: () => fetch("media/manifest.json").then((resposta) => resposta.json()),
+    onPick: (caminho) => {
+      const campo = form?.elements?.image;
+      if (campo) campo.value = caminho;
+      agendarPreview();
+    },
+  });
+  const previaUI = createAdminPreview({ root, onPublish: () => agendarPreview() });
+
+  buscaCampo?.addEventListener("input", onBusca);
+  abasFiltro?.addEventListener("click", onAba);
+  botaoPublicar?.addEventListener("click", onPublish);
+  root.querySelector("[data-admin-save-draft]")?.addEventListener("click", () => onSaveDraft(lerFormulario()));
   lista?.addEventListener("click", onListClick);
   lista?.addEventListener("dragstart", onDragStart);
   lista?.addEventListener("dragover", onDragOver);
@@ -377,8 +525,12 @@ export function createAdminController({
   root.querySelector("[data-admin-reset]")?.addEventListener("click", onReset);
   root.querySelector("[data-admin-new]")?.addEventListener("click", onNew);
 
-  const pronto = repository.list().then((carregados) => {
+  const pronto = Promise.all([
+    repository.list(),
+    repository.listDrafts ? repository.listDrafts() : Promise.resolve([]),
+  ]).then(([carregados, rascunhos]) => {
     blocks = carregados;
+    drafts = rascunhos;
     desenhar();
     preencher(draftFromBlock(null, blocks.length));
     agendarPreview();
@@ -399,6 +551,12 @@ export function createAdminController({
       form?.removeEventListener("input", onFormInput);
       form?.removeEventListener("change", onFormInput);
       previewFrame?.removeEventListener("load", onPreviewLoad);
+      buscaCampo?.removeEventListener("input", onBusca);
+      abasFiltro?.removeEventListener("click", onAba);
+      botaoPublicar?.removeEventListener("click", onPublish);
+      listaUI?.destroy();
+      seletorImagem?.destroy();
+      previaUI?.destroy();
       if (previewFrameId) cancelPreview(previewFrameId);
     },
   };
