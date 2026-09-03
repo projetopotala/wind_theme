@@ -164,6 +164,13 @@ function cliqueEm({ summary = null, dentroDoBloco = false } = {}) {
   };
 }
 
+/*
+ * Relógio imediato: fecha a linha do tempo da travessia sem esperar dois
+ * segundos de verdade. Os testes abaixo se interessam pelo estado final, e não
+ * pela animação — sem isto, cada um deles levaria dois segundos de relógio.
+ */
+const agora = { agendar: (retorno) => { retorno(); return 0; }, cancelar: () => {} };
+
 test("o segundo clique leva ao destino em vez de fechar", () => {
   const root = createRoot(["quem-somos"]);
   const secao = root.sections[0];
@@ -172,7 +179,7 @@ test("o segundo clique leva ao destino em vez de fechar", () => {
     : null);
 
   const destinos = [];
-  const expansion = createBlockExpansion(root, { navigate: (href) => destinos.push(href) });
+  const expansion = createBlockExpansion(root, { navigate: (href) => destinos.push(href), ...agora });
 
   /*
    * A regra aprovada era não redirecionar ao primeiro toque: quem só quer ler
@@ -197,7 +204,7 @@ test("o endereço sai do link visível, e não de uma segunda fonte", () => {
   secao.details.querySelector = () => null;
 
   const destinos = [];
-  const expansion = createBlockExpansion(root, { navigate: (href) => destinos.push(href) });
+  const expansion = createBlockExpansion(root, { navigate: (href) => destinos.push(href), ...agora });
   root.emit("click", cliqueEm({ summary: secao.summary }));
   root.emit("click", cliqueEm({ summary: secao.summary }));
 
@@ -265,4 +272,103 @@ test("clique vindo de quem abre blocos por fora não fecha o que acabou de abrir
   });
 
   assert.equal(expansion.activeId, "quem-somos");
+});
+
+/*
+ * A trava vale para TODO clique, inclusive o que navega.
+ *
+ * Sem isso, um segundo toque no meio da travessia corta a cena e leva a pessoa
+ * para outra página antes de ela ter visto o conteúdo que a animação estava
+ * revelando — o oposto da escolha informada que o segundo clique existe para
+ * ser.
+ *
+ * Este é o único teste de navegação que NÃO usa o relógio imediato: ele precisa
+ * da travessia em curso para ter o que provar.
+ */
+test("o segundo clique não navega enquanto a travessia corre", () => {
+  const root = createRoot(["quem-somos"]);
+  const secao = root.sections[0];
+  secao.details.querySelector = (seletor) => (seletor === ".region-link"
+    ? { getAttribute: () => "quem-somos.html" }
+    : null);
+
+  const destinos = [];
+  createBlockExpansion(root, { navigate: (href) => destinos.push(href) });
+
+  root.emit("click", cliqueEm({ summary: secao.summary }));
+  root.emit("click", cliqueEm({ summary: secao.summary }));
+
+  assert.deepEqual(destinos, [], "a navegação precisa esperar a travessia terminar");
+});
+
+/*
+ * Fechar no meio da travessia não pode ser recusado.
+ *
+ * A trava existe para impedir uma segunda linha do tempo, não para impedir a
+ * saída. Medido no navegador antes da correção: Escape durante a animação
+ * deixava a paisagem estendida para sempre e o trajeto luminoso sumido — o
+ * estado do corpo nunca voltava, e nada na tela explicava o que houve.
+ */
+test("Escape no meio da travessia encena a volta, em vez de estalar", () => {
+  const root = createRoot(["quem-somos"]);
+  const corpo = { dataset: {} };
+  root.ownerDocument = { body: corpo, addEventListener() {}, removeEventListener() {} };
+
+  /*
+   * Relógio que NUNCA dispara: a travessia fica em curso, que é a única
+   * situação em que este defeito existe. Com o relógio imediato a animação já
+   * teria acabado, a trava estaria solta, e o teste não teria o que provar.
+   */
+  const pendente = { agendar: () => 0, cancelar: () => {} };
+  const expansion = createBlockExpansion(root, { keyboardTarget: root, ...pendente });
+  expansion.open("quem-somos");
+  root.emit("keydown", { key: "Escape", preventDefault() {} });
+
+  assert.equal(expansion.activeId, null);
+  assert.equal(
+    root.sections[0].dataset.travessia,
+    "transitioning",
+    "a volta precisa ser encenada, e não estalar direto para o estado final",
+  );
+});
+
+/*
+ * E terminada a volta, nada pode ficar preso.
+ *
+ * O atributo do corpo é o que governa a paisagem e o trajeto luminoso: se ele
+ * não voltar a `false`, a cena fica estendida e a linha central some para
+ * sempre, sem nada na tela explicando o motivo.
+ */
+test("terminada a volta, a paisagem e o trajeto voltam ao normal", () => {
+  const root = createRoot(["quem-somos"]);
+  const corpo = { dataset: {} };
+  root.ownerDocument = { body: corpo, addEventListener() {}, removeEventListener() {} };
+
+  const expansion = createBlockExpansion(root, { keyboardTarget: root, ...agora });
+  expansion.open("quem-somos");
+  root.emit("keydown", { key: "Escape", preventDefault() {} });
+
+  assert.equal(root.sections[0].dataset.travessia, undefined);
+  assert.equal(corpo.dataset.travessiaAtiva, "false");
+});
+
+/*
+ * Desmontar não pode deixar a cena estendida.
+ *
+ * `close()` encena a volta e agenda a limpeza, mas o relógio dispararia depois
+ * de o controlador já não existir — e até lá a paisagem fica deslocada e o
+ * trajeto luminoso sumido, sem ninguém para desfazer.
+ */
+test("destroy devolve a paisagem e o trajeto ao normal na hora", () => {
+  const root = createRoot(["quem-somos"]);
+  const corpo = { dataset: {} };
+  root.ownerDocument = { body: corpo, addEventListener() {}, removeEventListener() {} };
+
+  const pendente = { agendar: () => 0, cancelar: () => {} };
+  const expansion = createBlockExpansion(root, { keyboardTarget: root, ...pendente });
+  expansion.open("quem-somos");
+  expansion.destroy();
+
+  assert.equal(corpo.dataset.travessiaAtiva, "false");
+  assert.equal(root.sections[0].dataset.travessia, undefined);
 });

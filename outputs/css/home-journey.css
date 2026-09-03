@@ -26,11 +26,47 @@ html {
 body[data-story-page="true"] {
   position: relative;
   min-height: 100%;
+  /* A cor de base continua aqui: é ela que aparece nos milissegundos entre o
+     primeiro pixel e a paisagem carregar. */
+  background: #6c5740;
+  color: var(--journey-ivory);
+  /* A câmera desloca a paisagem para fora do viewport. Sem esta linha, o
+     deslocamento vira barra de rolagem horizontal na página inteira. */
+  overflow-x: clip;
+}
+
+/*
+ * A paisagem, como elemento e não como fundo do body.
+ *
+ * `background-attachment: fixed` não anima, e a travessia precisa deslocá-la.
+ * Em repouso ela pinta exatamente o que o body pintava — mesma imagem, mesmo
+ * enquadramento, mesmo degradê — então a página em descanso não muda.
+ *
+ * É UMA camada, e ela nunca é substituída. O deslocamento acontece dentro
+ * dela; não há segunda imagem entrando por baixo, que é o que faria a cena
+ * ler como duas paisagens coladas.
+ */
+.journey-landscape {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
   background:
     linear-gradient(rgba(67, 51, 36, .15), rgba(48, 35, 24, .3)),
-    url("../media/home-travessia.webp") center / cover fixed no-repeat,
+    url("../media/home-travessia.webp") center / cover no-repeat,
     #6c5740;
-  color: var(--journey-ivory);
+  pointer-events: none;
+  /*
+   * Um pouco mais larga que a tela, e centrada pela margem negativa.
+   *
+   * É essa sobra que a câmera atravessa. Sem ela, deslocar a paisagem
+   * mostraria a borda da imagem — e a borda denuncia que a cena acabou, que é
+   * a ilusão que a travessia existe para manter.
+   */
+  width: calc(100% + var(--travessia-sobra, 680px));
+  margin-left: calc(var(--travessia-sobra, 680px) / -2);
+  /* Em repouso a paisagem não está deslocada: a variável guarda a distância a
+     PERCORRER, e não uma posição inicial. */
+  transform: translate3d(0, 0, 0);
 }
 
 body[data-story-page="true"]::before {
@@ -1043,4 +1079,169 @@ html.is-crossing .journey-entry-veil {
   .journey-invite,
   .journey-invite-text { transition-duration: .01ms !important; }
   .journey-invite.is-swapping .journey-invite-text { transform: none; }
+}
+
+/* ============================================================
+ * A TRAVESSIA
+ *
+ * A câmera atravessa a paisagem até encontrar o conteúdo. Uma linha do tempo
+ * só: todos os tempos abaixo são fatias da mesma `--travessia-total`, e mudar
+ * essa variável move a sequência inteira sem nada descolar.
+ *
+ * Os números vêm de js/home/travessia.js, que é onde eles são conferidos. As
+ * variáveis daqui são escritas por aquele módulo na montagem — o CSS não
+ * duplica a conta, só a recebe.
+ * ============================================================ */
+
+:root {
+  --travessia-total: 2000ms;
+  --travessia-curva: cubic-bezier(.65, 0, .35, 1);
+  --travessia-sobra: 680px;
+  --travessia-camera: 0px;
+  --travessia-fundo: 0px;
+  --travessia-frente: 0px;
+  --travessia-interface: 0px;
+}
+
+/*
+ * A confirmação do clique.
+ *
+ * Um halo curto na cor do portal, antes de a cena começar a andar. Ele existe
+ * para responder ao dedo imediatamente: sem ele, os primeiros 300ms da
+ * travessia parecem o site ignorando o clique.
+ */
+.journey-region[data-travessia] .region-content {
+  transition:
+    opacity var(--travessia-total) var(--travessia-curva),
+    transform var(--travessia-total) var(--travessia-curva),
+    box-shadow 240ms ease;
+}
+
+.journey-region[data-travessia="transitioning"] .region-summary,
+.journey-region[data-travessia="revealed"] .region-summary {
+  box-shadow: 0 0 0 2px var(--journey-gold), 0 0 32px rgba(216, 178, 106, .45);
+}
+
+/*
+ * A saída dos cards.
+ *
+ * Eles acompanham o deslocamento da cena para a esquerda e somem por
+ * translação, não por um `display: none` no meio do caminho. Sumir de repente
+ * é o corte que a direção pediu para não existir.
+ */
+.journey-pair:has(.journey-region[data-travessia="transitioning"]) .journey-region:not([data-travessia]) .region-content,
+.journey-pair:has(.journey-region[data-travessia="revealed"]) .journey-region:not([data-travessia]) .region-content {
+  opacity: 0;
+  transform: translate3d(calc(var(--travessia-interface) * -1), 0, 0);
+  transition:
+    opacity calc(var(--travessia-total) * .5) var(--travessia-curva),
+    transform calc(var(--travessia-total) * .62) var(--travessia-curva);
+  pointer-events: none;
+}
+
+/*
+ * A câmera. O fundo anda menos que o resto — é a profundidade.
+ *
+ * SEM atraso, nos dois sentidos. A batida de confirmação existia para o clique
+ * ter resposta antes de a cena andar, mas o halo já dá essa resposta no mesmo
+ * instante: o atraso na paisagem só era sentido como o site demorando a
+ * reagir, ao abrir e ao fechar.
+ */
+.journey-landscape {
+  transition: transform calc(var(--travessia-total) * .62) var(--travessia-curva);
+}
+
+body[data-travessia-ativa="true"] .journey-landscape {
+  transform: translate3d(calc(var(--travessia-fundo) * -1), 0, 0);
+}
+
+/* O bloco que abriu caminha um pouco para a esquerda e cede o palco. */
+.journey-region[data-travessia="transitioning"] .region-content,
+.journey-region[data-travessia="revealed"] .region-content {
+  transform: translate3d(calc(var(--travessia-camera) * -1), 0, 0);
+}
+
+/*
+ * A revelação.
+ *
+ * Opacidade e um movimento curto de baixo para cima. Os atrasos são fatias da
+ * linha do tempo, e não números soltos: o título entra enquanto a câmera ainda
+ * desacelera, e por isso a chegada parece um movimento só em vez de duas
+ * etapas coladas.
+ */
+.journey-region[data-travessia] .region-details > *,
+.journey-region[data-travessia] .region-title {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition:
+    opacity calc(var(--travessia-total) * .3) var(--travessia-curva),
+    transform calc(var(--travessia-total) * .3) var(--travessia-curva);
+}
+
+.journey-region[data-travessia="revealed"] .region-title,
+.journey-region[data-travessia="revealed"] .region-details > * {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.journey-region[data-travessia="revealed"] .region-title {
+  transition-delay: calc(var(--travessia-total) * .55);
+}
+
+/* O stagger das categorias. O atraso de cada uma é escrito pelo JS em
+   `--travessia-passo`, que sai da mesma conta conferida no teste. */
+.journey-region[data-travessia="revealed"] .region-details > * {
+  transition-delay: var(--travessia-passo, calc(var(--travessia-total) * .7));
+}
+
+/*
+ * O trajeto luminoso sai de cena enquanto a paisagem está estendida.
+ *
+ * A linha é desenhada por uma câmera própria, no centro da tela. Quando a
+ * paisagem desliza e o bloco toma o quadro, ela deixa de ter relação com o que
+ * está sendo mostrado: fica um risco vertical atravessando o conteúdo, e o
+ * olho lê como um artefato, não como o trajeto da jornada.
+ *
+ * Ela volta quando a paisagem volta, no mesmo tempo — sai e entra junto com o
+ * movimento, e não depois dele.
+ */
+.journey-path,
+.journey-scroll-cue {
+  transition: opacity calc(var(--travessia-total) * .45) var(--travessia-curva);
+}
+
+body[data-travessia-ativa="true"] .journey-path,
+body[data-travessia-ativa="true"] .journey-scroll-cue {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/*
+ * Movimento reduzido: a continuidade fica, o panorama sai.
+ *
+ * Quem pediu menos movimento não deve receber uma câmera atravessando a tela
+ * por dois segundos. O conteúdo aparece, curto e direto, e a paisagem não anda.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root { --travessia-total: 220ms; }
+
+  .journey-landscape,
+  body[data-travessia-ativa="true"] .journey-landscape {
+    transform: none;
+    transition: none;
+  }
+
+  .journey-region[data-travessia] .region-content,
+  .journey-region[data-travessia] .region-details > *,
+  .journey-region[data-travessia] .region-title {
+    transform: none;
+  }
+
+  .journey-region[data-travessia="revealed"] .region-title,
+  .journey-region[data-travessia="revealed"] .region-details > * {
+    transition-delay: 0ms;
+  }
+
+  .journey-path,
+  .journey-scroll-cue { transition: none; }
 }

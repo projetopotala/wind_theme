@@ -1,3 +1,12 @@
+import {
+  DURACAO,
+  DURACAO_REDUZIDA,
+  atrasoDaCategoria,
+  createTravessiaState,
+  deslocamentoDaCamada,
+  deslocamentoDaCamera,
+} from "./travessia.js";
+
 const FOCUSABLE_SELECTOR = "a[href], button, input, select, textarea, [tabindex]";
 
 function setFocusable(details, enabled) {
@@ -54,6 +63,13 @@ export function createBlockExpansion(root, {
   /* Avisado sempre que a expansão muda, para quem precisa acompanhar por fora —
      hoje o trajeto, que anda junto com o vão quando a página abre para o lado. */
   onChange = () => {},
+  /*
+   * Os relógios entram por parâmetro para o teste poder fechar a linha do tempo
+   * sem esperar dois segundos de verdade. É o mesmo caminho que a prévia do
+   * painel já usa com `schedulePreview`.
+   */
+  agendar = (retorno, atraso) => globalThis.setTimeout(retorno, atraso),
+  cancelar = (id) => globalThis.clearTimeout(id),
 } = {}) {
   if (!root) throw new TypeError("root é obrigatório para controlar os blocos");
 
@@ -67,15 +83,98 @@ export function createBlockExpansion(root, {
     .filter(({ id, summary, details }) => id && summary && details);
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   let activeId = null;
+  let fimDaTravessia = 0;
+
+  const documento = root.ownerDocument || globalThis.document;
+  const corpo = documento?.body;
+  const reduzido = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+  const duracao = reduzido ? DURACAO_REDUZIDA : DURACAO;
+  const travessia = createTravessiaState();
+
+  /*
+   * As distâncias são medidas na largura de agora, e recalculadas ao
+   * redimensionar. Fixá-las na montagem faria a câmera de um monitor continuar
+   * valendo depois de a janela virar meia tela.
+   */
+  function medirCamera() {
+    if (!corpo?.style) return;
+    const base = reduzido ? 0 : deslocamentoDaCamera({ viewportWidth: globalThis.innerWidth || 1440 });
+    corpo.style.setProperty("--travessia-camera", `${base}px`);
+    corpo.style.setProperty("--travessia-fundo", `${deslocamentoDaCamada("fundo", base)}px`);
+    corpo.style.setProperty("--travessia-frente", `${deslocamentoDaCamada("frente", base)}px`);
+    corpo.style.setProperty("--travessia-interface", `${deslocamentoDaCamada("interface", base)}px`);
+    corpo.style.setProperty("--travessia-total", `${duracao}ms`);
+  }
+
+  /*
+   * O stagger é escrito em cada elemento revelado.
+   *
+   * O CSS sozinho não sabe quantas categorias existem, e um passo fixo empurra
+   * a última para depois do fim da linha do tempo quando são muitas. O atraso
+   * vem da mesma conta conferida no teste.
+   */
+  function escalonar(entry) {
+    const itens = [...(entry.details.querySelectorAll?.(":scope > *") || [])];
+    itens.forEach((item, indice) => {
+      item.style?.setProperty?.(
+        "--travessia-passo",
+        `${atrasoDaCategoria(indice, itens.length, duracao)}ms`,
+      );
+    });
+  }
+
+  function encenar(entry, estado) {
+    entry.section.dataset.travessia = estado;
+    if (corpo) corpo.dataset.travessiaAtiva = estado === "initial" ? "false" : "true";
+  }
+
+  medirCamera();
+  globalThis.addEventListener?.("resize", medirCamera);
 
   entries.forEach((entry) => setExpanded(entry, false));
 
-  function close({ restoreFocus = false } = {}) {
+  /*
+   * `encena` separa o fechamento do visitante do fechamento interno.
+   *
+   * Trocar de bloco fecha o anterior por dentro, e rodar a volta inteira ali
+   * travaria a máquina no exato instante em que o bloco novo precisa abrir —
+   * a troca simplesmente não acontecia.
+   */
+  function close({ restoreFocus = false, encena = true } = {}) {
     if (!activeId) return false;
     const current = byId.get(activeId);
     activeId = null;
     if (!current) return false;
     setExpanded(current, false);
+
+    /*
+     * Fechar durante a travessia interrompe, e não é recusado.
+     *
+     * A trava existe para impedir uma segunda linha do tempo, não para impedir
+     * a saída. Recusando, o Escape no meio da animação deixava a paisagem
+     * estendida PARA SEMPRE e o trajeto sumido: o estado do corpo nunca voltava
+     * a `false`, e nada na tela dava a entender o que tinha acontecido.
+     */
+    if (encena) travessia.interromper();
+
+    if (encena && travessia.fechar()) {
+      /* A volta usa a MESMA linha do tempo, no sentido inverso: o estado vai
+         para `transitioning` e só chega em `initial` no fim. */
+      encenar(current, "transitioning");
+      cancelar(fimDaTravessia);
+      fimDaTravessia = agendar(() => {
+        travessia.concluir("initial");
+        delete current.section.dataset.travessia;
+        if (corpo) corpo.dataset.travessiaAtiva = "false";
+      }, duracao);
+    } else {
+      /* O atributo do corpo volta em QUALQUER caminho de fechamento. Ele é o
+         que governa a paisagem e o trajeto; esquecê-lo aqui prende os dois no
+         estado estendido. */
+      delete current.section.dataset.travessia;
+      if (corpo) corpo.dataset.travessiaAtiva = "false";
+    }
+
     if (restoreFocus) current.summary.focus?.();
     onChange(null);
     return true;
@@ -85,9 +184,55 @@ export function createBlockExpansion(root, {
     const next = byId.get(id);
     if (!next) return false;
     if (activeId === id) return true;
-    close();
+    /*
+     * A trava recusa o clique repetido.
+     *
+     * Sem ela, um segundo clique no meio do caminho dispara uma segunda linha
+     * do tempo por cima da primeira e a cena fica a meio caminho de dois
+     * lugares diferentes.
+     */
+    /*
+     * A trava recusa o clique repetido no MESMO bloco. Trocar de bloco é outro
+     * pedido, e recusá-lo por dois segundos faria a jornada parecer travada.
+     */
+    if (travessia.travado && activeId === id) return false;
+    travessia.interromper();
+    cancelar(fimDaTravessia);
+    close({ encena: false });
+    medirCamera();
+    escalonar(next);
     setExpanded(next, true);
+    travessia.abrir();
+    encenar(next, "transitioning");
     activeId = id;
+
+    /*
+     * Dois relógios diferentes, e é essa separação que faz a sequência ler como
+     * uma coisa só.
+     *
+     * O ESTADO VISUAL vira `revealed` imediatamente, porque são os atrasos do
+     * CSS que escalonam título e categorias — esperar o fim da duração para
+     * marcar `revealed` faria tudo aparecer de uma vez, depois de a paisagem já
+     * ter parado.
+     *
+     * A TRAVA só cai no fim da duração inteira. É ela que recusa o clique
+     * repetido, e soltá-la junto com o estado visual deixaria alguém disparar
+     * uma segunda linha do tempo com a primeira ainda correndo.
+     *
+     * A virada NÃO usa requestAnimationFrame. Numa aba em segundo plano o rAF é
+     * estrangulado, e quem trocasse de aba no meio da travessia voltaria para um
+     * bloco permanentemente invisível, esperando um quadro que nunca chega.
+     *
+     * Ler `offsetWidth` força o navegador a calcular o estilo de
+     * `transitioning` agora. Sem essa leitura, os dois estados cairiam no mesmo
+     * quadro e a transição não teria de onde partir: o conteúdo apareceria
+     * pronto, sem revelação nenhuma.
+     */
+    void next.section.offsetWidth;
+    encenar(next, "revealed");
+    cancelar(fimDaTravessia);
+    fimDaTravessia = agendar(() => travessia.concluir("revealed"), duracao);
+
     onChange(next);
     return true;
   }
@@ -134,6 +279,16 @@ export function createBlockExpansion(root, {
      * usado aqui — para não haver duas verdades sobre para onde o bloco leva.
      */
     if (activeId === entry.id) {
+      /*
+       * Durante a travessia, nem navegar.
+       *
+       * A trava vale para TODO clique, e não só para o que reabre: sem esta
+       * linha, um segundo toque no meio da animação cortava a cena e levava a
+       * pessoa para outra página antes de ela ter visto o conteúdo que a
+       * travessia estava revelando — o oposto da escolha informada que o
+       * segundo clique existe para ser.
+       */
+      if (travessia.travado) return;
       navigate(entry.details.querySelector?.(".region-link")?.getAttribute?.("href"));
       return;
     }
@@ -156,7 +311,18 @@ export function createBlockExpansion(root, {
     destroy() {
       root.removeEventListener("click", onClick);
       keyboardTarget.removeEventListener("keydown", onKeydown);
-      close();
+      globalThis.removeEventListener?.("resize", medirCamera);
+      /*
+       * Desmontar não pode deixar a cena estendida.
+       *
+       * `close()` encena a volta e agenda a limpeza, mas o relógio dispararia
+       * depois de este controlador já não existir — e até lá a paisagem fica
+       * deslocada e o trajeto luminoso sumido, sem ninguém para desfazer.
+       * Aqui a volta é imediata, porque não há mais animação para assistir.
+       */
+      close({ encena: false });
+      cancelar(fimDaTravessia);
+      if (corpo) corpo.dataset.travessiaAtiva = "false";
     },
     get activeId() {
       return activeId;
