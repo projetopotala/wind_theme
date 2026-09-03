@@ -55,35 +55,37 @@ export function ajusteQueCabe(medir, { piso = PISO_DO_AJUSTE, passos = 4 } = {})
 }
 
 /*
- * O retângulo do cartão, dito em recuos a partir das bordas do painel.
+ * A ampliação que faz o painel crescer A PARTIR do cartão.
  *
  * O painel troca de coluna do grid ao abrir, e grid não interpola: a mudança de
- * TAMANHO é instantânea, só o deslocamento animava. Era por isso que a abertura
- * lia como "sumir e aparecer" em vez de crescer.
+ * tamanho é instantânea. Para o olho ver o bloco AMPLIANDO, o painel começa
+ * reduzido ao tamanho do cartão, na posição do cartão, e cresce até o seu
+ * tamanho de página.
  *
- * A saída é recortar. O véu já nasce do tamanho da página, com o conteúdo no
- * lugar certo, e um `clip-path` o mostra primeiro apenas onde o cartão estava —
- * abrindo dali até a página inteira. Nada é escalado, então o texto não esmaga,
- * que é o que `scale()` faria com um painel encolhido ao tamanho de um cartão.
+ * A escala é UNIFORME, e isso importa. Encaixar o painel na caixa do cartão nas
+ * duas direções exigiria fatores diferentes em X e Y, e o texto sairia
+ * espremido — letras estreitas e altas durante todo o percurso. Com um fator só,
+ * o que se vê é uma miniatura fiel da página crescendo: tudo pequeno, nada
+ * deformado.
  *
- * A direção sai de graça: o cartão da esquerda tem recuo pequeno à esquerda, e
- * é por lá que o véu se abre. Nenhuma regra por lado é necessária.
+ * O fator vem da LARGURA porque é ela que governa a quebra de linha: casando a
+ * largura, o texto da miniatura quebra igual ao do fim, e o crescimento não
+ * reflui as linhas no meio do caminho.
  */
-export function recorteDoCartao(cartao, pagina) {
+export function ampliacaoDoCartao(cartao, pagina, raioDoCartao = 0) {
   if (!cartao || !pagina) return null;
-  const largura = pagina.right - pagina.left;
-  const altura = pagina.bottom - pagina.top;
-  if (!(largura > 0) || !(altura > 0)) return null;
+  const larguraDaPagina = pagina.right - pagina.left;
+  const larguraDoCartao = cartao.right - cartao.left;
+  if (!(larguraDaPagina > 0) || !(larguraDoCartao > 0)) return null;
 
-  /* Recuo negativo não existe em `inset()`: a declaração inteira seria
-     descartada e o véu apareceria de uma vez, sem crescer. O cartão pode
-     mesmo passar da borda enquanto a paisagem ainda anda. */
-  const apara = (valor) => Math.max(0, Math.round(valor));
+  const escala = larguraDoCartao / larguraDaPagina;
   return {
-    topo: apara(cartao.top - pagina.top),
-    direita: apara(pagina.right - cartao.right),
-    baixo: apara(pagina.bottom - cartao.bottom),
-    esquerda: apara(cartao.left - pagina.left),
+    escala,
+    x: cartao.left - pagina.left,
+    y: cartao.top - pagina.top,
+    /* O raio é escalado junto com o resto. Para o canto APARECER com o raio do
+       cartão no primeiro quadro, ele entra dividido pela escala. */
+    raio: (Number(raioDoCartao) || 0) / escala,
   };
 }
 
@@ -191,60 +193,60 @@ function ajustePadrao(entry, aberto) {
  * espera o fim da linha do tempo.
  */
 /*
- * Escreve no painel o retângulo de onde ele cresce — e de onde ele encolhe.
+ * Escreve no painel de onde ele cresce — e para onde ele encolhe.
  *
- * As duas animações leem as mesmas variáveis: `painel-entra` parte deste
- * recorte e abre até a página; `painel-sai` faz o contrário. Por isso elas
- * ficam no elemento até a saída terminar, e não são apagadas ao assentar.
- *
- * O raio vem do próprio cartão. Ele encolhe até zero conforme o véu se abre, o
- * que dá o arredondamento durante o gesto sem deixar canto arredondado nenhum
- * no estado final, que é página cheia de ponta a ponta.
+ * Uma animação só lê estas variáveis: a entrada parte daqui e a saída é ela
+ * invertida. Por isso elas ficam no elemento até a saída terminar.
  */
-function escreverRecorte(painel, cartao, raio) {
+function escreverAmpliacao(painel, cartao, pagina, raio) {
   if (!painel?.style) return;
-  const recorte = recorteDoCartao(cartao, painel.getBoundingClientRect());
-  if (!recorte) return;
+  const a = ampliacaoDoCartao(cartao, pagina, parseFloat(raio) || 0);
+  if (!a) return;
 
-  painel.style.setProperty("--recorte-topo", `${recorte.topo}px`);
-  painel.style.setProperty("--recorte-direita", `${recorte.direita}px`);
-  painel.style.setProperty("--recorte-baixo", `${recorte.baixo}px`);
-  painel.style.setProperty("--recorte-esquerda", `${recorte.esquerda}px`);
-  painel.style.setProperty("--recorte-raio", raio || "0px");
+  painel.style.setProperty("--zoom-escala", String(a.escala));
+  painel.style.setProperty("--zoom-x", `${Math.round(a.x)}px`);
+  painel.style.setProperty("--zoom-y", `${Math.round(a.y)}px`);
+  painel.style.setProperty("--zoom-raio", `${Math.round(a.raio)}px`);
 }
 
 /*
- * Mede onde o cartão está — ou onde ele VAI estar — e escreve o recorte.
+ * Mede onde o cartão está — ou onde ele VAI estar — e escreve a ampliação.
  *
  * O truque é tirar `is-expanded` por um cálculo de layout e devolvê-la. Dentro
  * de uma mesma tarefa nada é pintado, então ninguém vê o bloco piscar de volta
  * ao tamanho de cartão; o navegador só é obrigado a responder onde ele ficaria.
  *
- * É o único jeito de a SAÍDA acertar. O recorte guarda coordenadas de tela, e
- * elas não sobrevivem a nada que mova o bloco entre abrir e fechar — rolagem, o
- * palco grudando em outra posição, a janela mudando de tamanho. Medido na
- * prévia: o recorte da abertura dizia topo 177px e o cartão ia reaparecer em
- * 210px; o véu encolhia para 33px acima do lugar certo.
+ * É o único jeito de a SAÍDA acertar. As medidas são coordenadas de tela, e não
+ * sobrevivem a nada que mova o bloco entre abrir e fechar — rolagem, o palco
+ * grudando em outra posição, a janela mudando de tamanho.
+ *
+ * `data-medindo` entra e `data-travessia` FICA. Apagar o estado da travessia
+ * parecia limpar a medida e fazia o contrário: é ele que mantém o palco
+ * congelado, e sem ele o palco volta a animar o próprio recuo — a medida pega o
+ * palco ainda no recuo do estado aberto. A marca anula só o passo de câmera,
+ * pelo CSS, sem mexer no que o palco precisa.
  */
-function medirRecortePadrao(entry) {
+function medirAmpliacaoPadrao(entry) {
   const secao = entry.section;
   const painel = secao.querySelector?.(".region-content");
   if (!painel?.getBoundingClientRect) return;
 
   /*
-   * `data-medindo` entra, e `data-travessia` FICA.
+   * A PÁGINA é lida ANTES da troca, e isso não é preciosismo.
    *
-   * Apagar o estado da travessia parecia limpar a medida e fazia o contrário:
-   * é ele que mantém o palco congelado, e sem ele o palco volta a animar o
-   * próprio recuo — a medida pega o palco ainda no recuo do estado aberto.
-   * Medido a 1024×700, a abertura passou a partir de (581,183) 428×334 onde o
-   * cartão está em (581,177) 358×346: setenta pixels mais larga, que é
-   * exatamente o passo de câmera.
+   * Ela era lida depois de repor `is-expanded`, e ali o painel ainda não tinha
+   * voltado a ser página: a caixa devolvida era a do cartão. As duas medidas
+   * saíam iguais, a escala dava 1 e o deslocamento zero — o painel "ampliava"
+   * de si mesmo para si mesmo, ou seja, não animava e depois saltava. Medido no
+   * fechamento: `escala=1 x=0px y=0px`.
    *
-   * A marca resolve o outro lado — ela anula o passo de câmera pelo CSS — sem
-   * mexer no que o palco precisa. Vive por um cálculo de layout e sai antes de
-   * qualquer coisa ser pintada.
+   * Tirar a classe tem efeito imediato na leitura seguinte; repô-la não tem. Em
+   * vez de brigar com isso, a página é capturada enquanto ela ainda é o que se
+   * vê — o que vale tanto na entrada quanto na saída, já que nos dois casos o
+   * painel chega aqui ocupando a tela.
    */
+  const pagina = painel.getBoundingClientRect();
+
   const expandido = secao.classList?.contains?.("is-expanded");
   if (expandido) secao.classList.remove("is-expanded");
   if (secao.dataset) secao.dataset.medindo = "";
@@ -257,13 +259,13 @@ function medirRecortePadrao(entry) {
   if (secao.dataset) delete secao.dataset.medindo;
   void secao.offsetWidth;
 
-  escreverRecorte(painel, cartao, raio);
+  escreverAmpliacao(painel, cartao, pagina, raio);
 }
 
-function limparRecorte(painel) {
+function limparAmpliacao(painel) {
   if (!painel?.style) return;
-  for (const nome of ["topo", "direita", "baixo", "esquerda", "raio"]) {
-    painel.style.removeProperty(`--recorte-${nome}`);
+  for (const nome of ["escala", "x", "y", "raio"]) {
+    painel.style.removeProperty(`--zoom-${nome}`);
   }
 }
 
@@ -322,7 +324,7 @@ export function createBlockExpansion(root, {
   ajustarPainel = ajustePadrao,
   /* Injetável pelo mesmo motivo de `ajustarPainel`: sem navegador não há
      retângulo nenhum para medir, e o teste observa quando a medida é pedida. */
-  medirRecorte = medirRecortePadrao,
+  medirRecorte = medirAmpliacaoPadrao,
 } = {}) {
   if (!root) throw new TypeError("root é obrigatório para controlar os blocos");
 
@@ -354,9 +356,9 @@ export function createBlockExpansion(root, {
     if (!saindo) return;
     saindo.section.classList.remove("is-expanded");
     delete saindo.section.dataset.travessia;
-    /* O recorte só some agora: a saída inteira o usou para saber para onde
+    /* A ampliação só some agora: a saída inteira a usou para saber para onde
        encolher. */
-    limparRecorte(saindo.section.querySelector?.(".region-content"));
+    limparAmpliacao(saindo.section.querySelector?.(".region-content"));
     saindo = null;
   }
 
@@ -459,15 +461,20 @@ export function createBlockExpansion(root, {
       /* A volta usa a MESMA linha do tempo, no sentido inverso: o estado vai
          para `transitioning` e só chega em `initial` no fim. */
       /*
-       * A saída tem a SUA medida. Reaproveitar a da abertura fazia o véu
-       * encolher para onde o cartão estava quando abriu, e não para onde ele
-       * vai reaparecer — que é outro lugar assim que a página rola.
+       * A saída REAPROVEITA a medida da abertura, e isso é uma decisão.
        *
-       * Vem antes de `encenar`, porque é `transitioning` que dispara a animação
-       * de saída e ela lê os valores ao começar.
+       * Medir de novo aqui parecia mais correto e se mostrou frágil: o painel é
+       * página, e para ver onde o cartão fica é preciso tirar `is-expanded` e
+       * repô-la. Tirar tem efeito na leitura seguinte; repor não tem. A caixa da
+       * página saía com o tamanho do cartão, escala e deslocamento davam 1 e
+       * zero, e o painel "encolhia" de si para si — ou seja, não animava e
+       * depois saltava.
+       *
+       * Reaproveitar é seguro porque o cartão mal tem como se mexer enquanto o
+       * bloco está aberto: rolar mais que 18% da tela fecha o bloco
+       * (`shouldCloseOnScroll`), e o palco fica congelado durante toda a
+       * travessia. O que sobra é ruído de poucos pixels.
        */
-      medirRecorte(current, "saida");
-
       encenar(current, "transitioning");
       saindo = current;
       cancelar(fimDaTravessia);

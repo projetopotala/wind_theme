@@ -441,9 +441,8 @@ test("a entrada e a saida sao ANIMACAO, nao transicao", () => {
    * `@keyframes` nao tem esse problema: uma animacao sempre comeca no proprio
    * `from`, qualquer que fosse o valor anterior.
    */
-  assert.match(css, /@keyframes\s+painel-entra\s*\{/, "falta a animacao do painel");
-  /* Uma descricao so do movimento: a saida e esta mesma, invertida. */
-  assert.ok(!css.includes("@keyframes painel-sai"), "uma segunda descricao do movimento so pode divergir da primeira");
+  assert.match(css, /@keyframes\s+painel-entra\s*\{/, "falta a animacao de entrada");
+  assert.match(css, /@keyframes\s+painel-sai\s*\{/, "falta a animacao de saida");
 
   /*
    * Qual das duas toca sai do estado, e a assimetria e de proposito.
@@ -459,7 +458,7 @@ test("a entrada e a saida sao ANIMACAO, nao transicao", () => {
   assert.ok(entrada, "falta pendurar a entrada no estado assentado");
   assert.ok(saida, "falta pendurar a saida no estado de transicao");
   assert.match(entrada[1], /animation:\s*painel-entra/);
-  assert.match(saida[1], /animation:\s*painel-entra[^;]*reverse/, "a saida e a entrada ao contrario");
+  assert.match(saida[1], /animation:\s*painel-sai/, "a saida tem nome proprio");
 });
 
 test("a direcao vem do recorte medido, e nao de uma variavel por lado", () => {
@@ -484,7 +483,7 @@ test("a animacao parte do cartao opaco e chega no veu", () => {
      chega no veu translucido. Sem esta parte, o bloco so desliza. */
   const entra = blocoDeKeyframes(css, "painel-entra");
     assert.match(entra, /background-color:\s*var\(--journey-panel-open\)/, "a entrada comeca no fundo do cartao");
-  assert.match(entra, /clip-path:\s*inset\(/, "a entrada comeca recortada no retangulo do cartao");
+  assert.match(entra, /scale\(var\(--zoom-escala/, "a entrada comeca reduzida ao tamanho do cartao");
 });
 
 test("assentado, o painel para no lugar e nao sobra paisagem em borda nenhuma", () => {
@@ -537,40 +536,53 @@ test("os cartoes voltam a vista em vez de piscar", () => {
   assert.match(regra[1], /animation:\s*cartao-volta/);
 });
 
-test("a abertura CRESCE do retangulo do cartao, sem escalar o texto", () => {
+test("a abertura AMPLIA a partir do cartao, com escala uniforme", () => {
   /*
-   * Deslocar 92px e escalar 1,5% perto de uma tela de 1000px nao le como
-   * crescimento: le como sumir e aparecer no lugar. O tamanho mudava de uma vez,
-   * porque o painel troca de coluna do grid e grid nao interpola.
+   * O painel troca de coluna do grid ao abrir, e grid nao interpola: a mudanca
+   * de tamanho e instantanea. Para o olho ver o bloco ampliando, o painel comeca
+   * reduzido ao tamanho do cartao, na posicao do cartao, e cresce dali.
    *
-   * O crescimento e recortado, e nao escalado. `scale()` levaria um painel de
-   * pagina inteira ao tamanho de um cartao e esmagaria o texto junto; com
-   * `clip-path` o conteudo ja esta no lugar certo desde o primeiro quadro, e o
-   * que se abre e a janela por onde ele aparece.
+   * A escala e UNIFORME, com um `scale()` de um argumento so. Encaixar a caixa
+   * do cartao nas duas direcoes pediria fatores diferentes em X e Y, e o texto
+   * sairia espremido durante todo o percurso — letras estreitas e altas.
    */
-  const entra = blocoDeKeyframes(css, "painel-entra");
-  assert.match(entra, /clip-path:\s*inset\(/, "a entrada precisa crescer por recorte");
-  assert.match(entra, /var\(--recorte-esquerda[,)]/, "o recorte vem medido do cartao");
-  assert.ok(!/scale\(/.test(semComentarios(entra)), "escalar o painel esmagaria o texto");
+  const entra = semComentarios(blocoDeKeyframes(css, "painel-entra"));
 
-  /* A saida encolhe de volta pelo mesmo caminho, porque e esta animacao
-     invertida — nao ha um segundo recorte a conferir. */
+  assert.match(entra, /scale\(var\(--zoom-escala[,)]/, "falta a reducao ao tamanho do cartao");
+  assert.match(entra, /translate3d\(var\(--zoom-x[,)]/, "falta pousar o painel na posicao do cartao");
+  /* Os `var()` viram um simbolo antes da conferencia: a virgula do valor de
+     reserva contaria como um segundo fator e daria falso positivo. */
+  const semVar = entra.replace(/var\([^()]*\)/g, "V");
+  assert.ok(
+    !/scale\(\s*V\s*,/.test(semVar) && !/scale[XY]\(/.test(semVar),
+    "um `scale()` de dois fatores espremeria o texto",
+  );
+
+  /*
+   * `transform-origin: 0 0` e o que da sentido ao translate: sem ela, a mesma
+   * conta pousaria o painel em outro lugar, porque a origem padrao e o centro.
+   */
+  /* Ha mais de uma regra com este seletor — a do movimento reduzido vem antes.
+     Interessa existir a que fixa a origem. */
+  const repousos = css.match(/\.journey-region\.is-expanded\[data-travessia\]\s+\.region-content\s*\{[^}]*\}/g) ?? [];
+  assert.ok(
+    repousos.some((regra) => /transform-origin:\s*0 0/.test(regra)),
+    "sem origem no canto, o translate pousaria o painel em outro lugar",
+  );
 });
 
 test("o arredondamento e um gesto, nao um estado", () => {
   /*
-   * O veu termina de ponta a ponta, como antes. O raio existe so enquanto ele
-   * cresce: parte do raio do proprio cartao e abre ate zero. Um raio no estado
-   * final seria cortado pela borda da tela e nao apareceria de todo jeito.
+   * O veu termina de ponta a ponta e sem canto: um raio no estado final seria
+   * cortado pela borda da tela de todo jeito. Ele existe so enquanto o painel
+   * cresce, partindo do raio do proprio cartao.
+   *
+   * E entra DESFEITA A ESCALA. O `border-radius` encolhe junto com o resto, e um
+   * raio cru apareceria proporcionalmente menor que o do cartao — o canto
+   * comecaria mais duro do que o do cartao que ele deveria estar imitando.
    */
-  const entra = blocoDeKeyframes(css, "painel-entra");
-  assert.match(entra, /round\s+var\(--recorte-raio[,)]/, "o gesto comeca com o raio do cartao");
-
-  const repouso = css.match(/\.journey-region\.is-expanded\s+\.region-content\s*\{[^}]*clip-path:[^;]*;/);
-  assert.ok(repouso, "o repouso precisa de um clip-path explicito");
-  /* Sem um `inset()` declarado no repouso nao ha de onde nem para onde
-     interpolar: `none` nao se anima. */
-  assert.match(repouso[0], /clip-path:\s*inset\(0/, "o repouso e a pagina inteira, sem raio");
+  const entra = semComentarios(blocoDeKeyframes(css, "painel-entra"));
+  assert.match(entra, /border-radius:\s*var\(--zoom-raio[,)]/, "o gesto comeca com o raio do cartao");
 });
 
 test("com um bloco aberto o palco assenta de imediato, sem transicao", () => {
@@ -637,23 +649,29 @@ test("o palco fica parado durante toda a travessia, e nao so com o bloco aberto"
   assert.match(regra[1], /transition:\s*none/);
 });
 
-test("a saida e a abertura invertida, e nao uma animacao propria", () => {
+test("a saida espelha a entrada pelas variaveis, e nao por `reverse`", () => {
   /*
-   * Duas animacoes separadas podem discordar — e discordavam. A saida tinha a
-   * sua propria curva de opacidade e o seu proprio caminho, entao fechar nao
-   * desfazia exatamente o que abrir tinha feito.
+   * `reverse` na mesma animacao parecia a resposta obvia: uma descricao so, sem
+   * como divergir. Mas o navegador identifica a animacao pelo NOME — trocar so a
+   * direcao nao cria uma nova, ele CONTINUA a que ja existia. Medido: 80ms
+   * depois do clique de fechar, a animacao ja estava em t=1000 de 1000ms,
+   * herdado da abertura que tinha terminado. Ela nascia concluida, e o painel
+   * saltava para o tamanho do cartao em vez de encolher ate ele.
    *
-   * `reverse` na MESMA animacao e a garantia: o fechamento percorre os mesmos
-   * valores no sentido contrario, do veu de pagina inteira de volta ao retangulo
-   * do cartao, encolhendo. Nao ha o que sair de sincronia porque nao ha uma
-   * segunda descricao do movimento.
+   * O espelho vem das VARIAVEIS: as duas leem os mesmos `--zoom-*`, entao nao ha
+   * dois conjuntos de numeros para sair de sincronia — so dois sentidos.
    */
-  const saida = css.match(/\.journey-region\.is-expanded\[data-travessia="transitioning"\]\s+\.region-content\s*\{([^}]*)\}/);
-  assert.ok(saida, "falta a regra da saida");
-  assert.match(saida[1], /animation:\s*painel-entra/, "a saida usa a animacao da abertura");
-  assert.match(saida[1], /reverse/, "a saida e a abertura ao contrario");
+  const entra = semComentarios(blocoDeKeyframes(css, "painel-entra"));
+  const sai = semComentarios(blocoDeKeyframes(css, "painel-sai"));
 
-  assert.ok(!css.includes("@keyframes painel-sai"), "uma segunda descricao do movimento so pode divergir da primeira");
+  for (const nome of ["--zoom-x", "--zoom-y", "--zoom-escala", "--zoom-raio"]) {
+    assert.ok(entra.includes(nome), `a entrada precisa de ${nome}`);
+    assert.ok(sai.includes(nome), `a saida precisa do mesmo ${nome}`);
+  }
+
+  /* E os sentidos sao opostos: a entrada declara so o `from`, a saida so o `to`. */
+  assert.ok(entra.includes("from {"), "a entrada parte do cartao");
+  assert.ok(sai.includes("to {"), "a saida chega no cartao");
 });
 
 test("so a irma precisa de uma volta a vista", () => {

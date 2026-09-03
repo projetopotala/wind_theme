@@ -1954,19 +1954,6 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 }
 
 .journey-region.is-expanded .region-content {
-  /*
-   * O repouso precisa de um `inset()` DECLARADO.
-   *
-   * `clip-path: none` não interpola: sem um valor de mesma forma nas duas
-   * pontas, a animação de crescimento simplesmente não teria de onde nem para
-   * onde ir. `inset(0 …)` recorta na própria borda, então não muda nada do que
-   * se vê — só dá à animação um ponto de chegada.
-   *
-   * Sem raio: o véu termina de ponta a ponta, e um canto arredondado ali seria
-   * cortado pela borda da tela de todo jeito. O arredondamento é um gesto do
-   * percurso, não um estado.
-   */
-  clip-path: inset(0 0 0 0 round 0);
   display: grid;
   grid-column: 1;
   grid-row: 1;
@@ -2066,29 +2053,27 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 @keyframes painel-entra {
   from {
     /*
-     * O crescimento é RECORTE, e não escala.
+     * O painel AMPLIA a partir do cartão: começa reduzido ao tamanho dele, na
+     * posição dele, e cresce até o tamanho de página.
      *
-     * Deslocar 92px e escalar 1,5% perto de uma tela de mil pixels não lê como
-     * crescimento: lê como sumir e aparecer no lugar. O tamanho mudava de uma
-     * vez, porque o painel troca de coluna do grid e grid não interpola.
+     * A escala é UNIFORME. Encaixar a caixa do cartão nas duas direções pediria
+     * fatores diferentes em X e Y, e o texto sairia espremido durante todo o
+     * percurso — letras estreitas e altas. Com um fator só, o que se vê é uma
+     * miniatura fiel da página crescendo.
      *
-     * `scale()` resolveria o tamanho e estragaria o resto: levar um painel de
-     * página inteira ao tamanho de um cartão esmaga o texto junto. Com
-     * `clip-path` o conteúdo já está no lugar certo desde o primeiro quadro, e o
-     * que se abre é a janela por onde ele aparece — do retângulo exato onde o
-     * cartão estava até a página.
-     *
-     * A direção sai de graça: o cartão da esquerda tem recuo pequeno à esquerda,
-     * e é por lá que o véu se abre.
+     * `transform-origin: 0 0` é o que faz o translate significar "o canto
+     * superior esquerdo do painel pousa no do cartão". Com a origem no centro,
+     * a mesma conta cairia em outro lugar.
      */
-    clip-path: inset(
-      var(--recorte-topo, 0px) var(--recorte-direita, 0px)
-      var(--recorte-baixo, 0px) var(--recorte-esquerda, 0px)
-      round var(--recorte-raio, 0px)
-    );
+    transform: translate3d(var(--zoom-x, 0px), var(--zoom-y, 0px), 0) scale(var(--zoom-escala, 1));
+
+    /* O raio entra desfeita a escala, para o canto APARECER com o raio do
+       cartão em vez de um proporcionalmente menor. */
+    border-radius: var(--zoom-raio, 0px);
     background-color: var(--journey-panel-open);
   }
 }
+
 
 /* A saída é o mesmo caminho ao contrário: o painel recolhe para o seu lado e o
    fundo volta a ficar cheio, devolvendo a paisagem antes de o cartão reaparecer. */
@@ -2105,6 +2090,10 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  */
 .journey-region.is-expanded[data-travessia] .region-content {
   transform: none;
+  /* A ampliação parte do canto do cartão, e é a origem que dá esse sentido ao
+     translate. No repouso do cartão a origem aponta para o centro do palco,
+     porque ali o bloco cresce para dentro da cena. */
+  transform-origin: 0 0;
 }
 
 .journey-region.is-expanded[data-travessia="revealed"] .region-content {
@@ -2112,23 +2101,29 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 }
 
 /*
- * A saída é a abertura AO CONTRÁRIO — a mesma animação, com `reverse`.
+ * A saída tem NOME PRÓPRIO, e não é `reverse` da entrada.
  *
- * Havia aqui um `painel-sai` próprio, com a sua curva de opacidade e o seu
- * caminho. Duas descrições do mesmo movimento podem discordar, e discordavam:
- * fechar não desfazia exatamente o que abrir tinha feito.
+ * `reverse` na mesma animação parecia a resposta óbvia: uma descrição só, sem
+ * como divergir. Mas o navegador identifica a animação pelo NOME — trocar só a
+ * direção não cria uma nova, ele CONTINUA a que já existia. Medido: 80ms depois
+ * do clique de fechar, a animação já estava em `t=1000` de 1000ms, herdado da
+ * abertura que tinha terminado. Ela nascia concluída, e o painel saltava para o
+ * tamanho do cartão em vez de encolher até ele.
  *
- * Com `reverse` não há uma segunda descrição para sair de sincronia. O véu
- * percorre os mesmos valores no sentido inverso — da página de volta ao
- * retângulo do cartão, encolhendo, com o fundo voltando ao tom cheio e o raio
- * do cartão se refazendo.
- *
- * E a chegada fica limpa de graça: no último quadro o painel já tem a forma, o
- * raio e a cor do cartão. Trocar para o cartão ali é trocar o conteúdo dentro
- * de uma caixa que não mudou.
+ * O espelho continua garantido, e por um caminho melhor: as duas leem as MESMAS
+ * variáveis. Não há dois conjuntos de números para sair de sincronia, só dois
+ * sentidos de percurso.
  */
+@keyframes painel-sai {
+  to {
+    transform: translate3d(var(--zoom-x, 0px), var(--zoom-y, 0px), 0) scale(var(--zoom-escala, 1));
+    border-radius: var(--zoom-raio, 0px);
+    background-color: var(--journey-panel-open);
+  }
+}
+
 .journey-region.is-expanded[data-travessia="transitioning"] .region-content {
-  animation: painel-entra var(--travessia-total) var(--travessia-curva) reverse both;
+  animation: painel-sai var(--travessia-total) var(--travessia-curva) both;
 }
 
 /*
@@ -2198,4 +2193,13 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  */
 .journey-region[data-medindo] .region-content {
   transform: none;
+  /*
+   * A animação sai junto, e por um motivo que só a medição revela: enquanto ela
+   * preenche, `getComputedStyle` devolve o valor ANIMADO, não o do cartão. O
+   * raio lido vinha do próprio `--zoom-raio` que a medida estava tentando
+   * calcular — na primeira abertura ele valia 0, e a conta se realimentava com o
+   * próprio zero.
+   */
+  animation: none;
+  border-radius: var(--journey-card-raio, clamp(22px, 2.4vw, 32px));
 }

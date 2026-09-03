@@ -5,7 +5,7 @@ import {
   PISO_DO_AJUSTE,
   ajusteQueCabe,
   createBlockExpansion,
-  recorteDoCartao,
+  ampliacaoDoCartao,
 } from "../../outputs/js/home/block-expansion.js";
 
 /*
@@ -221,64 +221,72 @@ test("girar o telefone refaz a conta do bloco que está aberto", () => {
 });
 
 /* ------------------------------------------------------------------
- * O recorte que faz o veu crescer de onde o cartao estava
+ * A ampliacao que faz o painel crescer A PARTIR do cartao
  * ------------------------------------------------------------------ */
 
 /*
  * O painel troca de coluna do grid ao abrir, e grid nao interpola: a mudanca de
- * TAMANHO e instantanea, so o deslocamento animava. Por isso a abertura lia como
- * "sumir e aparecer" em vez de crescer.
+ * tamanho e instantanea. Para o olho ver o bloco AMPLIANDO, o painel comeca
+ * reduzido ao tamanho do cartao, na posicao do cartao, e cresce ate o seu
+ * tamanho de pagina.
  *
- * A saida e recortar. O veu ja nasce do tamanho da pagina, com o conteudo no
- * lugar certo, e um `clip-path` o mostra primeiro apenas no retangulo onde o
- * cartao estava — abrindo dali ate a pagina inteira. Nada e escalado, entao o
- * texto nao esmaga.
+ * A escala e UNIFORME, e isso importa. Encaixar o painel na caixa do cartao nas
+ * duas direcoes exigiria fatores diferentes em X e Y, e o texto sairia
+ * espremido — letras estreitas e altas durante todo o percurso. Com um fator so,
+ * o que se ve e uma miniatura fiel da pagina crescendo: tudo pequeno, nada
+ * deformado.
  *
- * Esta funcao e a conta: o retangulo do cartao virado em recuos a partir das
- * bordas do painel, que e a forma que `inset()` pede.
+ * O fator vem da LARGURA porque e ela que governa a quebra de linha: casando a
+ * largura, o texto da miniatura quebra igual ao texto do fim.
  */
 
-test("o recorte descreve o cartao como recuos das bordas do painel", () => {
-  /* Um cartao de 300x200 no canto (600,100) dentro de um painel que ocupa
-     1000x700 a partir da origem. */
-  const r = recorteDoCartao(
+test("a ampliacao encaixa a largura do cartao e mantem a proporcao", () => {
+  const a = ampliacaoDoCartao(
     { left: 600, top: 100, right: 900, bottom: 300 },
     { left: 0, top: 0, right: 1000, bottom: 700 },
   );
 
-  assert.deepEqual(r, { topo: 100, direita: 100, baixo: 400, esquerda: 600 });
+  assert.equal(a.escala, 0.3, "300 de cartao em 1000 de pagina");
+  assert.equal(a.x, 600, "o canto esquerdo do painel pousa no do cartao");
+  assert.equal(a.y, 100, "e o de cima tambem");
 });
 
-test("o cartao da esquerda vira recuo pela esquerda, e o da direita pela direita", () => {
-  const pagina = { left: 0, top: 0, right: 1000, bottom: 700 };
-  const esquerda = recorteDoCartao({ left: 40, top: 200, right: 340, bottom: 500 }, pagina);
-  const direita = recorteDoCartao({ left: 660, top: 200, right: 960, bottom: 500 }, pagina);
-
-  /* E dai que sai a direcao: o veu se abre a partir do lado onde o cartao
-     estava, sem precisar de nenhuma regra por lado. */
-  assert.ok(esquerda.esquerda < esquerda.direita, "o cartao da esquerda abre pela esquerda");
-  assert.ok(direita.direita < direita.esquerda, "o cartao da direita abre pela direita");
-});
-
-test("recuo negativo e aparado", () => {
-  /* O cartao pode passar da borda do painel durante a travessia, quando a
-     paisagem ainda esta andando. Um `inset()` negativo nao existe: ele seria
-     descartado e o veu apareceria inteiro de uma vez, sem crescer. */
-  const r = recorteDoCartao(
-    { left: -50, top: -20, right: 1200, bottom: 900 },
+test("a ampliacao e a mesma nos dois eixos", () => {
+  /* Um cartao mais baixo que a proporcao da pagina nao achata o painel: a
+     miniatura fica mais curta que o cartao, e tudo bem. Espremer o texto para
+     preencher a caixa seria pior que sobrar um vao por um instante. */
+  const a = ampliacaoDoCartao(
+    { left: 0, top: 0, right: 500, bottom: 100 },
     { left: 0, top: 0, right: 1000, bottom: 700 },
   );
 
-  assert.deepEqual(r, { topo: 0, direita: 0, baixo: 0, esquerda: 0 });
+  assert.equal(a.escala, 0.5);
 });
 
-test("sem medida utilizavel o recorte e nulo", () => {
-  /* Antes de a jornada assentar os retangulos medem zero. Recortar por uma
-     medida invalida esconderia o painel inteiro. */
-  assert.equal(recorteDoCartao(null, { left: 0, top: 0, right: 10, bottom: 10 }), null);
-  assert.equal(recorteDoCartao({ left: 0, top: 0, right: 10, bottom: 10 }, null), null);
+test("o raio inicial e o do cartao desfeita a escala", () => {
+  /*
+   * O `border-radius` e escalado junto com o resto. Para o canto APARECER com o
+   * raio do cartao no primeiro quadro, ele precisa entrar dividido pela escala —
+   * senao a miniatura mostra um canto proporcionalmente menor e o arredondado
+   * se perde.
+   */
+  const a = ampliacaoDoCartao(
+    { left: 0, top: 0, right: 250, bottom: 200 },
+    { left: 0, top: 0, right: 1000, bottom: 700 },
+    24,
+  );
+
+  assert.equal(a.escala, 0.25);
+  assert.equal(a.raio, 96, "24px vistos a 25% pedem 96px desenhados");
+});
+
+test("sem medida utilizavel nao ha ampliacao", () => {
+  /* Antes de a jornada assentar os retangulos medem zero. Escalar por zero
+     sumiria com o painel. */
+  assert.equal(ampliacaoDoCartao(null, { left: 0, top: 0, right: 10, bottom: 10 }), null);
+  assert.equal(ampliacaoDoCartao({ left: 0, top: 0, right: 10, bottom: 10 }, null), null);
   assert.equal(
-    recorteDoCartao({ left: 0, top: 0, right: 0, bottom: 0 }, { left: 0, top: 0, right: 0, bottom: 0 }),
+    ampliacaoDoCartao({ left: 0, top: 0, right: 0, bottom: 0 }, { left: 0, top: 0, right: 0, bottom: 0 }),
     null,
   );
 });

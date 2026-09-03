@@ -488,36 +488,32 @@ test("o cartão volta à vista antes de o estado da travessia sumir", () => {
   assert.equal(secao.dataset.travessia, undefined, "no fim não sobra estado nenhum");
 });
 
-test("fechar remede o lugar do cartão em vez de reaproveitar o da abertura", () => {
+test("fechar reaproveita a medida da abertura em vez de refazê-la", () => {
   /*
-   * O recorte guarda o retângulo do cartão em coordenadas de TELA. Ele vale no
-   * instante em que foi medido e não sobrevive a nada que mova o bloco: rolagem
-   * da página, o palco grudando em outra posição, a janela mudando de tamanho.
+   * Medir de novo na saída parecia mais correto e se mostrou frágil. O painel é
+   * página nesse instante, e para ver onde o cartão fica é preciso tirar
+   * `is-expanded` e repô-la — tirar tem efeito na leitura seguinte, repor não
+   * tem. A caixa da página saía com o tamanho do cartão, escala e deslocamento
+   * davam 1 e zero, e o painel "encolhia" de si para si: não animava, e depois
+   * saltava.
    *
-   * Medido na prévia: o recorte guardado dizia topo 177px e, na hora de fechar,
-   * o cartão ia reaparecer em 210px. O véu encolhia para 33px acima do lugar
-   * certo — perto o bastante para parecer proposital e errado o bastante para
-   * o cartão dar um pulo ao voltar.
-   *
-   * Medir de novo na saída custa um cálculo de layout e acerta sempre.
+   * Reaproveitar é seguro porque o cartão mal tem como se mexer enquanto o
+   * bloco está aberto — rolar mais que 18% da tela já fecha o bloco, e o palco
+   * fica congelado durante toda a travessia.
    */
   const pedidos = [];
   const root = createRoot(["quem-somos"]);
   const expansion = createBlockExpansion(root, {
     agendar: () => 0,
     cancelar: () => {},
-    medirRecorte: (entrada, fase) => pedidos.push({ id: entrada.id, fase }),
+    medirRecorte: (entrada, fase) => pedidos.push(fase),
   });
 
   expansion.open("quem-somos");
-  assert.deepEqual(pedidos, [{ id: "quem-somos", fase: "entrada" }]);
-
   expansion.close();
-  assert.deepEqual(
-    pedidos.at(-1),
-    { id: "quem-somos", fase: "saida" },
-    "a saída precisa da sua própria medida",
-  );
+
+  assert.deepEqual(pedidos, ["entrada"], "a saída anda com o que a entrada mediu");
 
   expansion.destroy();
 });
+
