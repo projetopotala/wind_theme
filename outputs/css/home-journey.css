@@ -1142,10 +1142,24 @@ html.is-crossing .journey-entry-veil {
     box-shadow 240ms ease;
 }
 
-.journey-region[data-travessia="transitioning"] .region-summary,
-.journey-region[data-travessia="revealed"] .region-summary {
-  box-shadow: 0 0 0 2px var(--journey-gold), 0 0 32px rgba(216, 178, 106, .45);
-}
+/*
+ * O HALO DO RESUMO SAIU.
+ *
+ * Ele nasceu como confirmação do clique — `0 0 0 2px` de ouro mais um brilho
+ * de 32px — e a intenção era um flash. Só que ele estava preso a
+ * `transitioning` E `revealed`, e `revealed` dura enquanto o bloco estiver
+ * aberto: o que era para ser um piscar virou uma moldura permanente em volta
+ * da categoria, do título e da descrição. Ela partia o painel em duas caixas e
+ * fazia o resumo ler como um cartão colado dentro do bloco, em vez do
+ * cabeçalho dele.
+ *
+ * Tirar só o anel não resolveu: sem fundo e sem raio de canto, o brilho
+ * sozinho continuava desenhando o mesmo retângulo, agora borrado.
+ *
+ * O clique não fica sem resposta. O bloco começa a abrir no mesmo quadro, a
+ * cena anda e o conteúdo entra escalonado — a confirmação passou a ser o
+ * movimento, que é mais difícil de ignorar que uma borda.
+ */
 
 /*
  * A saída dos cards.
