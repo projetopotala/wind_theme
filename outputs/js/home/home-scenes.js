@@ -247,17 +247,21 @@ export function renderRegion(region, index, discovery, discoveriesById) {
             <span class="region-expand-label" aria-hidden="true">Descobrir <span>＋</span></span>
           </button>
           <div class="region-details" id="${id}-details" aria-hidden="true" inert>
-            <span class="region-divider" aria-hidden="true"></span>
-            <p class="region-lead-label">Encontre o que faz sentido para você</p>
-            ${renderRestrictedMarkdown(body)}
-            <ul class="region-tags" aria-label="Temas desta região">${renderTags(region.tags)}</ul>
-            ${renderRelated(region, discoveriesById, discovery)}
-            ${media}
-            <div class="region-actions">
-              <a class="region-link" href="${safeHref(region.href)}" tabindex="-1"${
-                region.metaDescription ? ` aria-description="${escapeHtml(region.metaDescription)}"` : ""
-              }>Explorar ${escapeHtml(title.toLowerCase())} <span aria-hidden="true">→</span></a>
-            </div>
+            <section class="region-details-main">
+              <span class="region-divider" aria-hidden="true"></span>
+              <p class="region-lead-label">Encontre o que faz sentido para você</p>
+              ${renderRestrictedMarkdown(body)}
+              <ul class="region-tags" aria-label="Temas desta região">${renderTags(region.tags)}</ul>
+            </section>
+            <aside class="region-details-aside">
+              ${renderRelated(region, discoveriesById, discovery)}
+              ${media}
+              <div class="region-actions">
+                <a class="region-link" href="${safeHref(region.href)}" tabindex="-1"${
+                  region.metaDescription ? ` aria-description="${escapeHtml(region.metaDescription)}"` : ""
+                }>Explorar ${escapeHtml(title.toLowerCase())} <span aria-hidden="true">→</span></a>
+              </div>
+            </aside>
           </div>
         </article>
     </div>

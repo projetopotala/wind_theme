@@ -297,7 +297,15 @@ html.is-crossing .journey-entry-veil {
   align-items: center;
   width: 100%;
   height: 100svh;
-  min-height: 560px;
+  /*
+   * O piso existe para o palco nao ficar espremido numa janela de desktop
+   * encolhida — mas ele nao pode passar da tela. Sem o `min()`, um telefone
+   * DEITADO (360px de altura) recebia um palco de 560 e o `sticky` passava a
+   * carregar 200px que ninguem consegue ver. O bloco aberto fechava a conta
+   * contra essa caixa fantasma e assentava com o fim do texto abaixo da borda,
+   * sem barra de rolagem para denunciar que havia mais.
+   */
+  min-height: min(560px, 100svh);
   padding: clamp(36px, 5vw, 84px);
 }
 
@@ -699,21 +707,27 @@ html.is-crossing .journey-entry-veil {
    */
   .journey-pair:has(.journey-region.is-expanded[data-side]) .region-stage {
     grid-template-columns: var(--journey-line-gutter) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     padding-inline: 10px 22px;
   }
 
   /*
-   * E o bloco aberto também não passa da FAIXA dele.
+   * O bloco aberto recebe o palco inteiro.
    *
-   * O teto de 76svh acima vale para o bloco fechado, que é só o resumo. Aberto,
-   * a faixa disponível é metade do palco menos a folga — perto de 47svh — e o
-   * teto de 76svh a ultrapassa sempre que o texto é longo. O excesso não
-   * empurra nada: desce por cima do bloco de baixo. Preso à faixa, o texto rola
-   * por dentro, que é o que o bloco já faz com `overflow: auto`.
+   * Manter a irmã visível dividia a tela em duas faixas de 50svh. Qualquer
+   * detalhe adicional transformava o painel numa segunda página com barra de
+   * rolagem. Ela volta assim que o painel fecha, portanto nenhum destino some
+   * da jornada.
    */
+  .journey-pair:has(.journey-region.is-expanded) .journey-region:not(.is-expanded) .region-content {
+    display: none;
+  }
+
   .journey-region.is-expanded .region-content {
+    grid-row: 1;
     width: 100%;
     max-height: 100%;
+    overflow-y: auto;
   }
 
   .region-summary { padding: 28px 24px; }
@@ -1441,4 +1455,333 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
   .region-related-item { grid-template-columns: 34px minmax(0, 1fr) 14px; min-height: 58px; }
   .region-related-mark { width: 34px; height: 34px; }
   .region-actions .region-link { width: 100%; justify-content: center; }
+}
+
+/* ============================================================
+ * O BLOCO ABERTO CABE SEM ROLAR
+ *
+ * Medido a 1440×900: o painel pedia 1020px e tinha 702 — 320 a mais, em todos
+ * os blocos. Rolar dentro de um painel que já é a tela inteira é o pior dos
+ * dois mundos: a pessoa não vê que há mais conteúdo, e quando rola a página o
+ * bloco se fecha sozinho.
+ *
+ * A conta foi fechada de dois lados: o teto sobe até quase a tela, e o estado
+ * aberto abre mão do que só servia ao estado fechado.
+ * ============================================================ */
+
+/*
+ * O teto e a CAIXA DO PALCO, e a rolagem e o ultimo recurso.
+ *
+ * `overflow: visible` parecia a resposta obvia para "sem rolagem": sem janela,
+ * sem barra. Mas quando o painel nao cabia — medido a 320x568, todos os dez
+ * blocos passavam de 59 a 147px — ele nao rolava nem avisava: desenhava por
+ * cima do que vinha depois, e o fim do texto simplesmente sumia.
+ *
+ * Quem faz o painel caber e o ajuste medido em `block-expansion.js`, que
+ * encolhe o bloco inteiro ate ele servir. Estas duas linhas sao o que sobra
+ * para o caso que nem o aperto fecha: rolar por dentro e ruim, invadir a
+ * jornada e pior.
+ */
+.journey-region.is-expanded .region-content {
+  max-height: 100%;
+  overflow-y: auto;
+  padding: clamp(22px, 2.6vw, 40px);
+}
+
+/*
+ * "Descobrir +" some com o bloco aberto.
+ *
+ * Ele convida para uma ação que já aconteceu, e ocupa a altura de uma linha
+ * mais a folga dela. Some sem deixar buraco porque sai do fluxo.
+ */
+.journey-region.is-expanded .region-expand-label { display: none; }
+
+/*
+ * Com o bloco aberto, o recuo é do PAINEL, não de cada parte dentro dele.
+ *
+ * Fechado, o resumo é o cartão inteiro e precisa do próprio recuo. Aberto, ele
+ * vira o cabeçalho de um painel que já tem recuo — e os dois se somavam: 58px
+ * do resumo dentro de 37px do painel, 116px de altura gastos duas vezes.
+ */
+.journey-region.is-expanded .region-summary { padding: 0; }
+.journey-region.is-expanded .region-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1.16fr) minmax(220px, .84fr);
+  gap: clamp(18px, 2vw, 30px);
+  align-items: start;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+}
+
+.region-details-main,
+.region-details-aside { min-width: 0; }
+
+.region-details-aside {
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+/* O título cede altura, não presença: ele continua sendo a maior coisa do
+   painel, com as linhas mais próximas e o corpo um passo menor. */
+.journey-region.is-expanded .region-title {
+  font-size: clamp(2.1rem, 3.4vw, 3.2rem);
+  line-height: .96;
+}
+
+.journey-region.is-expanded .region-category { margin-bottom: 14px; }
+.journey-region.is-expanded .region-description { margin-bottom: 0; }
+.journey-region.is-expanded .region-divider { margin: 16px 0; }
+.journey-region.is-expanded .region-details p { margin-bottom: 12px; line-height: 1.5; }
+.journey-region.is-expanded .region-tags { margin-bottom: 0; }
+.journey-region.is-expanded .region-related { gap: 6px; margin-bottom: 16px; }
+.journey-region.is-expanded .region-related-item { min-height: 56px; padding: 8px 12px; }
+.journey-region.is-expanded .region-media { margin-bottom: 0; }
+.journey-region.is-expanded .region-media img { aspect-ratio: 16 / 7; }
+.journey-region.is-expanded .region-actions { margin-bottom: 0; }
+
+@media (max-width: 720px) {
+  .journey-region.is-expanded .region-content {
+    max-height: 100%;
+    overflow-y: auto;
+    padding: 16px 18px;
+  }
+
+  .journey-region.is-expanded .region-title { font-size: clamp(1.9rem, 9vw, 2.6rem); }
+  .journey-region.is-expanded .region-category { margin-bottom: 8px; font-size: .56rem; }
+  .journey-region.is-expanded .region-description { margin-top: 8px; font-size: .78rem; line-height: 1.38; }
+  .journey-region.is-expanded .region-details {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .journey-region.is-expanded .region-divider { margin: 8px 0; }
+  .journey-region.is-expanded .region-lead-label { margin-bottom: 6px; font-size: .58rem; }
+  .journey-region.is-expanded .region-details p { margin-bottom: 8px; font-size: .78rem; line-height: 1.4; }
+  .journey-region.is-expanded .region-chip { min-height: 28px; padding: 4px 8px; font-size: .64rem; }
+  .journey-region.is-expanded .region-details-aside { gap: 7px; padding-top: 4px; }
+  .journey-region.is-expanded .region-related { gap: 4px; margin-bottom: 6px; }
+  .journey-region.is-expanded .region-related-item {
+    grid-template-columns: 28px minmax(0, 1fr) 10px;
+    gap: 7px;
+    min-height: 44px;
+    padding: 5px 8px;
+  }
+  .journey-region.is-expanded .region-related-mark { width: 28px; height: 28px; font-size: .72rem; }
+  .journey-region.is-expanded .region-related-text strong { font-size: .76rem; }
+  .journey-region.is-expanded .region-related-text small {
+    overflow: visible;
+    font-size: .66rem;
+    line-height: 1.25;
+    text-overflow: clip;
+    white-space: normal;
+  }
+  .journey-region.is-expanded .region-media img { max-height: 76px; }
+  .journey-region.is-expanded .region-actions .region-link {
+    min-height: 40px;
+    margin-top: 2px;
+    padding: 9px 14px;
+    font-size: .63rem;
+  }
+}
+
+/* Em telas muito baixas, preservar todos os textos exige reduzir o ritmo
+   interno alguns pixels. Nada é ocultado: tipografia, recuos e alvos apenas
+   cedem o suficiente para o painel continuar inteiro dentro do quadro. */
+@media (max-width: 720px) and (max-height: 680px) {
+  /*
+   * O AR DO PALCO cede antes do texto do bloco.
+   *
+   * Eram 32px em cima e 32 embaixo — 64 de 568 gastos com folga em volta de um
+   * painel que já não cabia. O recuo é a primeira coisa a ceder porque é a
+   * única que ninguém veio ler.
+   */
+  .journey-pair:has(.journey-region.is-expanded) .region-stage { padding-block: 14px; }
+
+  .journey-region.is-expanded .region-content { padding: 12px 14px; }
+  .journey-region.is-expanded .region-title { font-size: clamp(1.7rem, 8vw, 2.15rem); }
+  .journey-region.is-expanded .region-description { margin-top: 5px; font-size: .73rem; line-height: 1.3; }
+  .journey-region.is-expanded .region-divider { margin: 5px 0; }
+  .journey-region.is-expanded .region-lead-label { margin-bottom: 4px; font-size: .54rem; }
+  .journey-region.is-expanded .region-details p { margin-bottom: 5px; font-size: .73rem; line-height: 1.3; }
+  .journey-region.is-expanded .region-chip { min-height: 25px; padding: 3px 7px; font-size: .6rem; }
+  .journey-region.is-expanded .region-related-item { min-height: 39px; padding-block: 3px; }
+  .journey-region.is-expanded .region-actions .region-link { min-height: 36px; padding-block: 7px; }
+}
+
+/* ============================================================
+ * TELEFONES ESTREITOS: A LARGURA É QUE ESTUFAVA O PAINEL
+ *
+ * A 320px o painel aberto tinha 216px de largura — a calha do trajeto levava
+ * 72 e os recuos laterais 32. Nessa faixa três etiquetas curtas ("ACOLHIMENTO",
+ * "ESCUTA", "PRIMEIRO CONTATO") empilhavam em três linhas de 30px, e cada
+ * relacionado quebrava em quatro. O bloco não era alto por ter muito texto: era
+ * alto por ter pouca largura.
+ *
+ * Devolver ~40px de largura tirou mais altura do que qualquer corte de
+ * tipografia teria tirado, e sem custar um ponto de tamanho de fonte.
+ * ============================================================ */
+
+@media (max-width: 400px) {
+  /*
+   * A calha do trajeto encolhe SÓ com o painel aberto.
+   *
+   * Fechada, ela é onde a estrada passa entre os dois blocos, e estreitá-la o
+   * tempo todo apertaria o desenho da jornada por causa de um estado que nem
+   * está em cena.
+   */
+  .journey-pair:has(.journey-region.is-expanded[data-side]) .region-stage {
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding-inline: 6px 12px;
+  }
+
+  /* Com mais largura, as etiquetas voltam a caber lado a lado. O tamanho cede
+     pouco; é a largura recuperada acima que faz o trabalho. */
+  .journey-region.is-expanded .region-tags { gap: 4px; }
+  .journey-region.is-expanded .region-chip {
+    min-height: 24px;
+    padding: 3px 7px;
+    font-size: .58rem;
+  }
+
+  .journey-region.is-expanded .region-related { gap: 3px; }
+  .journey-region.is-expanded .region-related-item {
+    grid-template-columns: 24px minmax(0, 1fr) 8px;
+    gap: 6px;
+    min-height: 0;
+    padding: 4px 7px;
+  }
+  .journey-region.is-expanded .region-related-mark {
+    width: 24px;
+    height: 24px;
+    font-size: .66rem;
+  }
+  .journey-region.is-expanded .region-related-text strong { font-size: .73rem; line-height: 1.18; }
+  .journey-region.is-expanded .region-related-text small { font-size: .63rem; line-height: 1.2; }
+}
+
+/*
+ * NO TELEFONE, O PAINEL ABERTO NÃO CAMINHA COM A CÂMERA.
+ *
+ * "O bloco que abriu caminha um pouco para a esquerda e cede o palco" vale no
+ * monitor, onde há palco de sobra ao lado. No telefone o painel já ocupa quase
+ * toda a largura, e o passo da câmera — 70px numa tela de 320 — só tem para
+ * onde ir: para fora. Medido no HEAD, antes de qualquer mudança daqui, ele
+ * cortava 48px do lado direito de todo bloco `left`: o começo de cada linha de
+ * texto ficava atrás da borda da tela, e ninguém tinha como trazê-lo de volta.
+ *
+ * Precisa vir DEPOIS da regra que aplica o passo — a media query não acrescenta
+ * peso nenhum à especificidade, e escrita antes ela simplesmente perdia.
+ *
+ * A travessia não se perde: a paisagem continua cruzando e o bloco irmão
+ * continua saindo por translação. O que para de andar é a única peça que
+ * alguém está lendo.
+ */
+@media (max-width: 720px) {
+  .journey-region[data-travessia="transitioning"] .region-content,
+  .journey-region[data-travessia="revealed"] .region-content {
+    transform: none;
+  }
+}
+
+/* ============================================================
+ * TELA BAIXA: LARGURA NÃO DIZ ALTURA
+ *
+ * Todas as media queries acima perguntam pela largura. Um telefone DEITADO
+ * responde "740px" e recebe o layout de monitor — título de display, palco em
+ * duas colunas, recuos generosos — com os 360px de altura de um telefone.
+ * Medido a 740×360: o painel aberto pedia 665px numa caixa útil de 286. Nem o
+ * aperto no piso fechava aquilo, e o texto ficava cortado.
+ *
+ * Este bloco pergunta pela ALTURA. Serve ao telefone deitado e, pelo mesmo
+ * motivo, a um laptop com a janela encolhida — o mesmo problema, sem telefone
+ * nenhum envolvido.
+ *
+ * A troca é sempre a mesma: numa tela baixa sobra LARGURA. O palco entrega a
+ * largura inteira ao painel, e a largura recuperada devolve altura, porque cada
+ * linha de texto passa a caber em menos linhas. Nada é escondido.
+ * ============================================================ */
+
+@media (max-height: 560px) {
+  .journey-pair:has(.journey-region.is-expanded[data-side]) .region-stage {
+    grid-template-columns: var(--journey-line-gutter-open) minmax(0, 1fr);
+    padding-block: 12px;
+  }
+
+  /*
+   * A irmã sai de cena enquanto o painel está aberto.
+   *
+   * Numa tela baixa ela custa metade da largura para mostrar um resumo que
+   * ninguém está lendo. Ela volta inteira assim que o painel fecha, então
+   * nenhum destino da jornada se perde.
+   */
+  .journey-pair:has(.journey-region.is-expanded) .journey-region:not(.is-expanded) .region-content {
+    display: none;
+  }
+
+  /*
+   * O painel aberto vai para a COLUNA 2 — a única de conteúdo que sobrou.
+   *
+   * Os painéis carregam a coluna fixada pelo lado: o bloco `left` na 1, o
+   * `right` na 3. Com a grade reduzida a duas colunas, o `left` caía DENTRO da
+   * calha: medido a 740×360, colunas "77.7px 642.3px" e o painel com 78px de
+   * largura, uma palavra por linha e o resto transbordando. Abrir para um lado
+   * só faz sentido quando há dois lados.
+   */
+  .journey-region[data-side] .region-content { grid-column: 2; }
+
+  .journey-region.is-expanded .region-content {
+    width: 100%;
+    max-width: none;
+    padding: 14px 18px;
+  }
+
+  /*
+   * E o painel não caminha com a câmera, pelo mesmo motivo do telefone em pé:
+   * ele já ocupa a largura toda, e o passo só tem para onde ir — para fora.
+   * Medido aqui, cortava 55 a 65px do lado esquerdo de todo bloco `right`.
+   */
+  .journey-region[data-travessia="transitioning"] .region-content,
+  .journey-region[data-travessia="revealed"] .region-content {
+    transform: none;
+  }
+
+  /* O título cede altura, não presença: continua sendo a maior coisa do painel,
+     com as linhas mais próximas. */
+  .journey-region.is-expanded .region-title { font-size: clamp(1.5rem, 3.4vw, 2rem); line-height: .98; }
+  .journey-region.is-expanded .region-category { margin-bottom: 6px; font-size: .56rem; }
+  .journey-region.is-expanded .region-description { margin-top: 6px; font-size: .78rem; line-height: 1.34; }
+  .journey-region.is-expanded .region-divider { margin: 8px 0; }
+  .journey-region.is-expanded .region-lead-label { margin-bottom: 5px; font-size: .58rem; }
+  .journey-region.is-expanded .region-details { gap: 14px; }
+  .journey-region.is-expanded .region-details p { margin-bottom: 6px; font-size: .78rem; line-height: 1.38; }
+  .journey-region.is-expanded .region-chip { min-height: 24px; padding: 3px 7px; font-size: .58rem; }
+  .journey-region.is-expanded .region-related { gap: 4px; margin-bottom: 8px; }
+  .journey-region.is-expanded .region-related-item {
+    grid-template-columns: 24px minmax(0, 1fr) 8px;
+    min-height: 0;
+    padding: 4px 8px;
+  }
+  .journey-region.is-expanded .region-related-mark { width: 24px; height: 24px; font-size: .66rem; }
+  .journey-region.is-expanded .region-related-text strong { font-size: .74rem; line-height: 1.2; }
+
+  /*
+   * Aqui o resumo do relacionado DESTRUNCA, ao contrário do que se esperaria de
+   * um regime "compacto". Numa tela baixa ele ganhou a largura inteira do
+   * palco: cortar por reticências agora esconderia texto que tem onde caber.
+   */
+  .journey-region.is-expanded .region-related-text small {
+    overflow: visible;
+    font-size: .64rem;
+    line-height: 1.22;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .journey-region.is-expanded .region-media img { max-height: 70px; }
+  .journey-region.is-expanded .region-actions .region-link {
+    min-height: 36px;
+    padding: 8px 14px;
+    font-size: .64rem;
+  }
 }

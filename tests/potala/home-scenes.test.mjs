@@ -94,6 +94,39 @@ test("imagem opcional aparece somente nos detalhes e carrega sob demanda", () =>
   assert.match(details, /<span class="region-icon" aria-hidden="true">C<\/span>/);
 });
 
+test("detalhes separam leitura e apoios para o painel aberto caber inteiro", () => {
+  const descobertas = new Map([
+    ["recepcao", {
+      id: "recepcao",
+      category: "Recepção",
+      title: "Comece com uma conversa",
+      description: "Um primeiro contato.",
+      href: "recepcao.html",
+    }],
+  ]);
+  const markup = homeScenes.renderRegion({
+    id: "atendimentos",
+    title: "Atendimentos",
+    category: "O cuidado",
+    summary: "Cada pessoa chega com uma história.",
+    body: "Escuta e orientação para escolher caminhos possíveis.",
+    image: "media/journey-cultura.webp",
+    href: "atendimentos.html",
+    tags: ["acolhimento"],
+    relatedContent: ["recepcao"],
+    side: "left",
+  }, 2, null, descobertas);
+
+  const principal = markup.match(/<section class="region-details-main">[\s\S]*?<\/section>/)?.[0] ?? "";
+  const apoio = markup.match(/<aside class="region-details-aside">[\s\S]*?<\/aside>/)?.[0] ?? "";
+
+  assert.match(principal, /Escuta e orientação/);
+  assert.match(principal, /class="region-tags"/);
+  assert.match(apoio, /class="region-related"/);
+  assert.match(apoio, /class="region-media"/);
+  assert.match(apoio, /class="region-actions"/);
+});
+
 test("fonte de imagem insegura é descartada sem deixar espaço vazio", () => {
   const markup = homeScenes.renderRegion({
     id: "seguro",

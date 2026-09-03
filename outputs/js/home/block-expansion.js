@@ -10,6 +10,50 @@ import {
 
 const FOCUSABLE_SELECTOR = "a[href], button, input, select, textarea, [tabindex]";
 
+/*
+ * O quanto o painel aberto pode encolher antes de o texto deixar de ser texto.
+ *
+ * No telefone o corpo do painel é 0,73rem — perto de 11,7px. A 0,8 ele chega a
+ * 9,4px, que é o limite do que ainda se lê com o telefone na mão. Mais fundo
+ * que isto trocaria "ver tudo" por "não conseguir ler nada", que não é o pedido.
+ */
+export const PISO_DO_AJUSTE = 0.8;
+
+/*
+ * O menor aperto que faz o painel caber na caixa que ele tem.
+ *
+ * `medir` devolve `{ disponivel, natural }` para um dado fator, e entra por
+ * parâmetro por dois motivos: o teste não precisa de um navegador, e a conta
+ * PRECISA ser medida em vez de deduzida. `zoom` reflui o texto, então encolher
+ * 5% costuma tirar mais de 5% da altura — uma linha inteira desaparece. Uma
+ * razão pura erraria para baixo e apertaria o painel além do necessário.
+ *
+ * A primeira estimativa vem da razão, que é sempre um limite seguro; dali em
+ * diante os passos SOBEM de volta procurando o maior fator que ainda serve.
+ */
+export function ajusteQueCabe(medir, { piso = PISO_DO_AJUSTE, passos = 4 } = {}) {
+  const inicial = medir(1);
+  if (!(inicial?.disponivel > 0) || !(inicial?.natural > 0)) return 1;
+  if (inicial.natural <= inicial.disponivel) return 1;
+
+  const estimado = Math.max(piso, inicial.disponivel / inicial.natural);
+  if (estimado >= 1) return 1;
+
+  /* Do maior para o menor: o primeiro que couber é o resposta, e o piso fecha a
+     lista para que a busca sempre termine com um valor aplicável. */
+  const candidatos = [];
+  for (let i = 1; i <= passos; i += 1) {
+    candidatos.push(estimado + ((1 - estimado) * (passos - i)) / passos);
+  }
+
+  for (const fator of candidatos) {
+    const { disponivel, natural } = medir(fator);
+    if (natural <= disponivel + 0.5) return fator;
+  }
+
+  return piso;
+}
+
 function setFocusable(details, enabled) {
   details.querySelectorAll?.(FOCUSABLE_SELECTOR).forEach((element) => {
     if (enabled) {
@@ -29,6 +73,71 @@ function setFocusable(details, enabled) {
     }
     element.setAttribute("tabindex", "-1");
   });
+}
+
+/*
+ * A altura que o painel tem de verdade: o palco E a janela, o que for menor.
+ *
+ * O palco entra na conta porque é ele que carrega os recuos, e porque é
+ * `sticky` — enquanto o par está em cena, é a caixa em que o painel vive.
+ *
+ * A janela entra porque o palco nem sempre cabe nela. Ele tem um piso de altura
+ * de 560px, pensado para monitores; num telefone DEITADO, com 360px de altura,
+ * o palco passa 200px da tela. Medido a 740×360: o painel fechava a conta
+ * contra a caixa de 486 do palco, dava por resolvido, e assentava com 442px de
+ * altura numa tela de 360 — o fim do texto ficava abaixo da borda, sem barra de
+ * rolagem nenhuma para denunciar que havia mais.
+ */
+function caixaDoPalco(painel) {
+  const palco = painel?.closest?.(".region-stage");
+  if (!palco) return 0;
+  const janela = painel.ownerDocument?.defaultView;
+  const estilo = janela?.getComputedStyle?.(palco);
+  if (!estilo) return 0;
+  const recuo = parseFloat(estilo.paddingTop || 0) + parseFloat(estilo.paddingBottom || 0);
+  const visivel = janela.innerHeight || palco.clientHeight;
+  return Math.min(palco.clientHeight, visivel) - recuo;
+}
+
+/*
+ * O aperto é `zoom`, e não `transform: scale()`.
+ *
+ * `scale` desenha o painel menor mas mantém a caixa do tamanho antigo: o
+ * transbordo continua lá, invisível, empurrando o que vem depois, e os alvos de
+ * toque param de coincidir com o que se vê. `zoom` reflui de verdade — o texto
+ * quebra de novo, a caixa encolhe junto e o dedo acerta onde mira. Ele também
+ * ganha MAIS que a proporção pedida, porque um aperto pequeno costuma eliminar
+ * uma linha inteira; é por isso que a busca mede a cada passo.
+ */
+function ajustePadrao(entry, aberto) {
+  const painel = entry.section.querySelector?.(".region-content");
+  if (!painel?.style) return;
+
+  if (!aberto) {
+    painel.style.removeProperty("zoom");
+    return;
+  }
+
+  /*
+   * O teto sai do caminho enquanto se mede, e volta no fim.
+   *
+   * O CSS limita o painel aberto à caixa do palco, como rede para o caso que
+   * nem o aperto fecha. Só que, com o teto valendo, a caixa medida PARA no
+   * limite: o painel que pedia 651px reportava 504 e a conta concluía que já
+   * cabia, deixando o texto cortado dentro de uma barra de rolagem. Medir com o
+   * teto suspenso é a única forma de saber a altura que o conteúdo realmente
+   * quer ter.
+   */
+  painel.style.setProperty("max-height", "none");
+  const fator = ajusteQueCabe((tentativa) => {
+    if (tentativa === 1) painel.style.removeProperty("zoom");
+    else painel.style.setProperty("zoom", String(tentativa));
+    return { disponivel: caixaDoPalco(painel), natural: painel.getBoundingClientRect().height };
+  });
+  painel.style.removeProperty("max-height");
+
+  if (fator >= 1) painel.style.removeProperty("zoom");
+  else painel.style.setProperty("zoom", String(fator));
 }
 
 function setExpanded(entry, expanded) {
@@ -75,6 +184,15 @@ export function createBlockExpansion(root, {
    */
   agendar = (retorno, atraso) => globalThis.setTimeout(retorno, atraso),
   cancelar = (id) => globalThis.clearTimeout(id),
+  /*
+   * O ajuste que faz o painel aberto caber sem rolar.
+   *
+   * Entra por parâmetro porque é a única parte da expansão que precisa MEDIR:
+   * sem um navegador de verdade, `getBoundingClientRect` devolve zero e a conta
+   * não existe. O teste troca a medida por um espião e observa quando ela é
+   * pedida; o padrão abaixo é o que roda na página.
+   */
+  ajustarPainel = ajustePadrao,
 } = {}) {
   if (!root) throw new TypeError("root é obrigatório para controlar os blocos");
 
@@ -89,6 +207,7 @@ export function createBlockExpansion(root, {
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   let activeId = null;
   let fimDaTravessia = 0;
+  let segundaMedida = 0;
 
   const documento = root.ownerDocument || globalThis.document;
   const corpo = documento?.body;
@@ -136,8 +255,21 @@ export function createBlockExpansion(root, {
     if (corpo) corpo.dataset.travessiaAtiva = estado === "initial" ? "false" : "true";
   }
 
+  /*
+   * Redimensionar refaz a câmera E a conta do painel.
+   *
+   * Deitar o telefone corta a altura pela metade sem tocar em nada do DOM: um
+   * painel que cabia em pé passa a transbordar por cima do que vem depois, e
+   * nada mais reabriria o bloco para o aperto ser recalculado.
+   */
+  function aoRedimensionar() {
+    medirCamera(byId.get(activeId)?.section?.dataset?.side);
+    const aberto = byId.get(activeId);
+    if (aberto) ajustarPainel(aberto, true);
+  }
+
   medirCamera();
-  globalThis.addEventListener?.("resize", medirCamera);
+  globalThis.addEventListener?.("resize", aoRedimensionar);
 
   entries.forEach((entry) => setExpanded(entry, false));
 
@@ -154,6 +286,10 @@ export function createBlockExpansion(root, {
     activeId = null;
     if (!current) return false;
     setExpanded(current, false);
+    /* O aperto pertence ao estado aberto. Deixado para tras, o cartao fechado
+       apareceria menor que os vizinhos sem motivo nenhum. */
+    cancelar(segundaMedida);
+    ajustarPainel(current, false);
 
     /*
      * Fechar durante a travessia interrompe, e não é recusado.
@@ -241,6 +377,31 @@ export function createBlockExpansion(root, {
     cancelar(fimDaTravessia);
     fimDaTravessia = agendar(() => travessia.concluir("revealed"), duracao);
 
+    /*
+     * O painel só é medido no FIM da travessia, e não ao abrir.
+     *
+     * A caixa que ele vai ocupar não existe ainda no instante do clique: quem
+     * dá espaço ao painel aberto são regras penduradas em
+     * `:has(.journey-region.is-expanded)` — a calha do trajeto que estreita, o
+     * recuo do palco que cede — e essas medidas ANIMAM junto com a travessia.
+     * Cronometrado na prévia a 320×568, a caixa do palco vai de 504px no clique
+     * a 517 em 60ms e só chega aos 540 finais quando a cena para. Apertar no
+     * clique calculava 0,8 para uma caixa que nunca existiria, e o bloco
+     * assentava com 150px de sobra — encolhido à toa.
+     *
+     * Enquanto a cena corre, quem segura o painel é o teto do CSS. Isso não
+     * custa nada ao olho: é exatamente o tempo em que o conteúdo ainda está
+     * aparecendo, escalonado, e não há o que ler cortado.
+     *
+     * `agendar` em vez de requestAnimationFrame pelo mesmo motivo já anotado
+     * acima: numa aba em segundo plano o rAF é estrangulado, e o painel voltaria
+     * do descanso sem aperto nenhum.
+     */
+    cancelar(segundaMedida);
+    segundaMedida = agendar(() => {
+      if (activeId === next.id) ajustarPainel(next, true);
+    }, duracao);
+
     onChange(next);
     return true;
   }
@@ -327,7 +488,7 @@ export function createBlockExpansion(root, {
     destroy() {
       root.removeEventListener("click", onClick);
       keyboardTarget.removeEventListener("keydown", onKeydown);
-      globalThis.removeEventListener?.("resize", medirCamera);
+      globalThis.removeEventListener?.("resize", aoRedimensionar);
       /*
        * Desmontar não pode deixar a cena estendida.
        *
@@ -338,6 +499,7 @@ export function createBlockExpansion(root, {
        */
       close({ encena: false });
       cancelar(fimDaTravessia);
+      cancelar(segundaMedida);
       if (corpo) corpo.dataset.travessiaAtiva = "false";
     },
     get activeId() {
