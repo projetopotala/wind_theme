@@ -10,10 +10,18 @@ import {
   deslocamentoDaCamada,
   deslocamentoDaCamera,
   faseEmMs,
+  sentidoDaCamera,
 } from "../../outputs/js/home/travessia.js";
 
-test("a duração fica na faixa que a direção pediu", () => {
-  assert.ok(DURACAO >= 1800 && DURACAO <= 2400, `duração fora da faixa: ${DURACAO}`);
+/*
+ * A faixa de 1800 a 2400 veio da referência, e na tela ela leu como atraso —
+ * o cliente disse duas vezes. Num site que se visita, dois segundos entre o
+ * clique e o conteúdo é tempo de espera, não de apreciação. O teto ficou onde
+ * a espera ainda não vira dúvida; o piso segura o movimento no legível.
+ */
+test("a duração é curta o bastante para não parecer espera", () => {
+  assert.ok(DURACAO >= 700, `curta demais para ler como movimento: ${DURACAO}`);
+  assert.ok(DURACAO <= 1300, `longa o bastante para parecer atraso: ${DURACAO}`);
 });
 
 test("as fases cobrem a linha do tempo do começo ao fim", () => {
@@ -203,4 +211,23 @@ test("fechar duas vezes seguidas não reinicia a volta", () => {
   assert.equal(maquina.fechar(), true);
   maquina.interromper();
   assert.equal(maquina.fechar(), false, "já estamos indo para initial");
+});
+
+/*
+ * A cena abre do lado de quem chamou.
+ *
+ * Com um sentido fixo, metade dos blocos abria para o lado contrário ao seu e o
+ * movimento contradizia o clique: apertar o bloco da esquerda e ver a paisagem
+ * correr para a direita lê como o site tendo entendido outra coisa.
+ */
+test("o bloco da esquerda estende a paisagem para a esquerda", () => {
+  assert.equal(sentidoDaCamera("left"), 1);
+  assert.equal(sentidoDaCamera("right"), -1);
+});
+
+/* Sem lado declarado, o padrão acompanha o bloco da esquerda — que é o primeiro
+   da jornada. Um zero aqui deixaria a paisagem parada sem ninguém notar. */
+test("lado ausente não paralisa a câmera", () => {
+  assert.equal(sentidoDaCamera(undefined), 1);
+  assert.equal(sentidoDaCamera(""), 1);
 });

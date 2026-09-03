@@ -1098,6 +1098,9 @@ html.is-crossing .journey-entry-veil {
   --travessia-curva: cubic-bezier(.65, 0, .35, 1);
   --travessia-sobra: 680px;
   --travessia-camera: 0px;
+  /* +1 estende para a esquerda, -1 para a direita. Escrito pelo JS a partir do
+     lado do bloco que abriu. */
+  --travessia-sentido: 1;
   --travessia-fundo: 0px;
   --travessia-frente: 0px;
   --travessia-interface: 0px;
@@ -1132,7 +1135,7 @@ html.is-crossing .journey-entry-veil {
 .journey-pair:has(.journey-region[data-travessia="transitioning"]) .journey-region:not([data-travessia]) .region-content,
 .journey-pair:has(.journey-region[data-travessia="revealed"]) .journey-region:not([data-travessia]) .region-content {
   opacity: 0;
-  transform: translate3d(calc(var(--travessia-interface) * -1), 0, 0);
+  transform: translate3d(calc(var(--travessia-interface) * var(--travessia-sentido)), 0, 0);
   transition:
     opacity calc(var(--travessia-total) * .5) var(--travessia-curva),
     transform calc(var(--travessia-total) * .62) var(--travessia-curva);
@@ -1152,13 +1155,13 @@ html.is-crossing .journey-entry-veil {
 }
 
 body[data-travessia-ativa="true"] .journey-landscape {
-  transform: translate3d(calc(var(--travessia-fundo) * -1), 0, 0);
+  transform: translate3d(calc(var(--travessia-fundo) * var(--travessia-sentido)), 0, 0);
 }
 
 /* O bloco que abriu caminha um pouco para a esquerda e cede o palco. */
 .journey-region[data-travessia="transitioning"] .region-content,
 .journey-region[data-travessia="revealed"] .region-content {
-  transform: translate3d(calc(var(--travessia-camera) * -1), 0, 0);
+  transform: translate3d(calc(var(--travessia-camera) * var(--travessia-sentido)), 0, 0);
 }
 
 /*

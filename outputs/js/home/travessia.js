@@ -11,8 +11,16 @@
  * como um salto na tela que ninguém sabe reproduzir.
  */
 
-/** Duração total, em milissegundos. A referência pede entre 1800 e 2400. */
-export const DURACAO = 2000;
+/*
+ * Duração total, em milissegundos.
+ *
+ * A referência pedia entre 1800 e 2400, e 2000 foi o primeiro valor. Na tela o
+ * cliente leu isso como atraso — duas vezes. Num site que se visita, uma
+ * travessia de dois segundos entre um clique e o conteúdo é tempo em que a
+ * pessoa fica esperando, não apreciando. 1100ms mantém o movimento legível e
+ * devolve a resposta antes de a espera virar dúvida.
+ */
+export const DURACAO = 1100;
 export const DURACAO_REDUZIDA = 220;
 
 /*
@@ -77,6 +85,21 @@ export function atrasoDaCategoria(indice, total, duracaoTotal = DURACAO) {
 export function deslocamentoDaCamera({ viewportWidth = 1440, maximo = 340 } = {}) {
   const largura = Math.max(1, Number(viewportWidth) || 1);
   return Math.round(Math.min(maximo, largura * 0.22));
+}
+
+/**
+ * Para que lado a paisagem se estende, dado o lado do bloco.
+ *
+ * O bloco da esquerda estende a paisagem para a ESQUERDA, e o da direita para a
+ * direita: a cena abre do lado de quem chamou. Com um sentido fixo, metade dos
+ * blocos abria para o lado contrário ao seu e o movimento contradizia o clique.
+ *
+ * O sinal é positivo para a esquerda porque deslocar a imagem para a direita é
+ * o que revela a porção esquerda dela — a câmera anda para o lado oposto ao da
+ * translação.
+ */
+export function sentidoDaCamera(lado) {
+  return lado === "right" ? -1 : 1;
 }
 
 /**

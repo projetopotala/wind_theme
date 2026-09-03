@@ -5,6 +5,7 @@ import {
   createTravessiaState,
   deslocamentoDaCamada,
   deslocamentoDaCamera,
+  sentidoDaCamera,
 } from "./travessia.js";
 
 const FOCUSABLE_SELECTOR = "a[href], button, input, select, textarea, [tabindex]";
@@ -96,9 +97,12 @@ export function createBlockExpansion(root, {
    * redimensionar. Fixá-las na montagem faria a câmera de um monitor continuar
    * valendo depois de a janela virar meia tela.
    */
-  function medirCamera() {
+  function medirCamera(lado) {
     if (!corpo?.style) return;
     const base = reduzido ? 0 : deslocamentoDaCamera({ viewportWidth: globalThis.innerWidth || 1440 });
+    /* O bloco da esquerda estende a paisagem para a esquerda, e o da direita
+       para a direita: a cena abre do lado de quem chamou. */
+    corpo.style.setProperty("--travessia-sentido", String(sentidoDaCamera(lado)));
     corpo.style.setProperty("--travessia-camera", `${base}px`);
     corpo.style.setProperty("--travessia-fundo", `${deslocamentoDaCamada("fundo", base)}px`);
     corpo.style.setProperty("--travessia-frente", `${deslocamentoDaCamada("frente", base)}px`);
@@ -199,7 +203,7 @@ export function createBlockExpansion(root, {
     travessia.interromper();
     cancelar(fimDaTravessia);
     close({ encena: false });
-    medirCamera();
+    medirCamera(next.section.dataset?.side);
     escalonar(next);
     setExpanded(next, true);
     travessia.abrir();
