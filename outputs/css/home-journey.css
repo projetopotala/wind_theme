@@ -306,8 +306,8 @@ html.is-crossing .journey-entry-veil {
   width: min(35vw, 500px);
   max-height: min(78svh, 720px);
   overflow: auto;
-  border: 1px solid rgba(231, 202, 143, .28);
-  border-radius: clamp(22px, 3vw, 42px);
+  border: 1px solid rgba(231, 202, 143, .2);
+  border-radius: clamp(22px, 2.4vw, 32px);
   background: var(--journey-panel);
   box-shadow: 0 24px 80px rgba(29, 20, 13, .28);
   color: var(--journey-ivory);
@@ -1336,12 +1336,28 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 }
 
 .region-chip {
-  padding: 8px 14px;
-  border: 1px solid rgba(231, 202, 143, .26);
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid rgba(231, 202, 143, .24);
   border-radius: 999px;
-  color: rgba(247, 237, 218, .82);
+  color: rgba(247, 237, 218, .84);
+  background: rgba(28, 21, 14, .4);
   font-size: .78rem;
   letter-spacing: .04em;
+}
+
+/* O ponto dourado antes do rótulo, como na referência. Ele é decorativo e
+   fica fora da árvore de acessibilidade: quem ouve a tela já recebe o tema. */
+.region-chip::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--journey-gold);
+  content: "";
+  opacity: .8;
 }
 
 .region-related {

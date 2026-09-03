@@ -133,6 +133,29 @@ export function shouldCloseOnScroll({
   return Math.abs(Number(scrollTop) - Number(openedAt)) > limiar;
 }
 
+/*
+ * As relações vêm dos dados da jornada, não do que está gravado.
+ *
+ * O conteúdo editável vive no banco, e o banco não tem coluna para relações —
+ * uma Home lendo de lá recebia todo bloco com a lista vazia, e a seção de
+ * caminhos do painel não aparecia em nenhum deles. Medido: dez blocos, zero
+ * listas.
+ *
+ * Casadas por id na hora de montar, elas independem da origem do bloco: banco,
+ * armazenamento local ou os próprios padrões.
+ */
+export function comRelacoes(blocks = []) {
+  const porId = new Map(DEFAULT_HOME_BLOCKS.map((bloco) => [bloco.id, bloco]));
+  return blocks.map((bloco) => {
+    const padrao = porId.get(bloco.id);
+    if (!padrao) return bloco;
+    return {
+      ...bloco,
+      relatedContent: bloco.relatedContent?.length ? bloco.relatedContent : padrao.relatedContent,
+    };
+  });
+}
+
 export function createHomeController({
   root,
   canvas,
@@ -150,7 +173,7 @@ export function createHomeController({
    * onde tirar título, descrição ou endereço, e simplesmente não apareciam — sem
    * erro, sem espaço vazio, sem nada que indicasse a ausência.
    */
-  const mounted = mountJourney(root, { regions: blocks, discoveries: JOURNEY_DISCOVERIES });
+  const mounted = mountJourney(root, { regions: comRelacoes(blocks), discoveries: JOURNEY_DISCOVERIES });
   const path = pathFactory(canvas, { blocks, reducedMotion });
   /**
    * Quanto o vão do trajeto saiu do centro da tela, em pixels.

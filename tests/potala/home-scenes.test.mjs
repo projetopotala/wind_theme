@@ -290,3 +290,63 @@ test("relação para um bloco usa o resumo dele", () => {
   );
   assert.match(markup, /<small>O cuidado<\/small>/);
 });
+
+/*
+ * Os caminhos laterais entram na MESMA lista dos relacionados.
+ *
+ * Antes eram desenhados soltos sobre a paisagem, fora de qualquer painel e sem
+ * uma linha de estilo — nunca tinham chegado à tela, porque o mapa de
+ * descobertas nascia vazio. Ligado o mapa, viraram texto cru boiando ao lado do
+ * bloco. Trazê-los para dentro resolve as duas coisas: some o texto solto e
+ * nenhum conteúdo se perde.
+ */
+test("os caminhos laterais entram na lista, sem flutuar na paisagem", () => {
+  const mapa = homeScenes.buildLookup([], [
+    { id: "a", title: "Primeiro", description: "d", href: "a.html" },
+    { id: "b", title: "Segundo", description: "d", href: "b.html" },
+  ]);
+  const markup = homeScenes.renderRegion(
+    { id: "x", title: "X", summary: "r", side: "left", relatedContent: ["a"], lateral: { left: ["b"], right: [] } },
+    0,
+    null,
+    mapa,
+  );
+
+  assert.doesNotMatch(markup, /lateral-world/, "nada pode ser desenhado fora do painel");
+  assert.match(markup, /Primeiro/);
+  assert.match(markup, /Segundo/);
+});
+
+/* Um id repetido entre relacionados e laterais não pode virar duas linhas
+   iguais: a lista passaria a parecer um erro de dado. */
+test("id repetido entre relacionados e laterais aparece uma vez só", () => {
+  const mapa = homeScenes.buildLookup([], [{ id: "a", title: "Único", description: "d", href: "a.html" }]);
+  const markup = homeScenes.renderRegion(
+    { id: "x", title: "X", summary: "r", side: "left", relatedContent: ["a"], lateral: { left: ["a"], right: ["a"] } },
+    0,
+    null,
+    mapa,
+  );
+  assert.equal((markup.match(/region-related-item/g) || []).length, 1);
+});
+
+/*
+ * A descoberta em destaque também entra na lista.
+ *
+ * Ela era desenhada como um cartão solto na paisagem, e esse cartão nunca teve
+ * uma linha de estilo — apareceu como texto cru sobre a imagem assim que o mapa
+ * de descobertas foi ligado. Dentro do painel ela tem lugar e forma.
+ */
+test("a descoberta em destaque entra na lista, não flutua ao lado", () => {
+  const destaque = { id: "acao-social", title: "Cuidado que circula", description: "d", href: "a.html" };
+  const markup = homeScenes.renderRegion(
+    { id: "x", title: "X", summary: "r", side: "left" },
+    0,
+    destaque,
+    homeScenes.buildLookup([], [destaque]),
+  );
+
+  assert.doesNotMatch(markup, /journey-discovery/, "nada de cartão solto na paisagem");
+  assert.match(markup, /Cuidado que circula/);
+  assert.match(markup, /region-related-item/);
+});

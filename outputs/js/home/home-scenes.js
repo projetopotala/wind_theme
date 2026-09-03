@@ -91,9 +91,33 @@ function renderTags(tags = []) {
  * destino de verdade, com endereço próprio. Inventar itens aqui daria à
  * referência uma fidelidade que o conteúdo não sustenta.
  */
-function renderRelated(region, discoveriesById) {
-  const ids = Array.isArray(region.relatedContent) ? region.relatedContent : [];
-  const itens = ids.map((id) => discoveriesById?.get?.(id)).filter(Boolean).slice(0, 3);
+function renderRelated(region, discoveriesById, destaque) {
+  /*
+   * Relacionados E laterais, na mesma lista.
+   *
+   * Os laterais eram desenhados soltos sobre a paisagem, fora de qualquer
+   * painel — e sem uma linha de estilo, porque nunca tinham chegado à tela: o
+   * mapa de descobertas nascia vazio e eles não apareciam. Ligado o mapa, eles
+   * surgiram como texto cru boiando ao lado do bloco.
+   *
+   * Trazê-los para cá resolve as duas coisas de uma vez: some o texto solto e
+   * nada de conteúdo se perde.
+   */
+  const ids = [
+    ...(Array.isArray(region.relatedContent) ? region.relatedContent : []),
+    ...(region.lateral?.left || []),
+    ...(region.lateral?.right || []),
+    /* A descoberta em destaque também. Ela era desenhada como um cartão solto
+       na paisagem, e esse cartão nunca teve estilo — apareceu como texto cru
+       assim que o mapa de descobertas foi ligado. */
+    ...(destaque?.id ? [destaque.id] : []),
+  ];
+  const vistos = new Set();
+  const itens = ids
+    .filter((id) => !vistos.has(id) && vistos.add(id))
+    .map((id) => discoveriesById?.get?.(id))
+    .filter(Boolean)
+    .slice(0, 3);
   if (!itens.length) return "";
 
   const linhas = itens.map((item) => `
@@ -158,37 +182,6 @@ function renderRegionMedia(region) {
             </figure>`;
 }
 
-function renderDiscovery(discovery, index) {
-  if (!discovery) return "";
-  const visualKinds = ["glow", "phrase", "object", "paper"];
-  const kind = visualKinds[index % visualKinds.length];
-  return `
-    <a class="journey-discovery discovery--${kind}" href="${discovery.href}"
-      aria-label="${discovery.category}: ${discovery.title}">
-      <span class="discovery-light" aria-hidden="true"></span>
-      <span class="discovery-copy">
-        <small>${discovery.category}</small>
-        <strong>${discovery.title}</strong>
-        <span>${discovery.description}</span>
-      </span>
-    </a>
-  `;
-}
-
-function renderLateralSide(ids, discoveriesById, side) {
-  const items = ids.map((id) => discoveriesById.get(id)).filter(Boolean);
-  return `
-    <aside class="lateral-reveal lateral-reveal--${side}" data-lateral-side="${side}" aria-hidden="true">
-      ${items.map((item) => `
-        <a href="${item.href}" tabindex="-1">
-          <small>${item.category}</small>
-          <strong>${item.title}</strong>
-        </a>
-      `).join("")}
-    </aside>
-  `;
-}
-
 /**
  * O mapa que resolve um id de relação em algo exibível.
  *
@@ -227,12 +220,7 @@ export function renderRegion(region, index, discovery, discoveriesById) {
   const layoutVariant = safeToken(region.layoutVariant, "editorial");
   const titleScale = Array.from(title).length >= 11 ? "compact" : "display";
   const { regionHeight } = journeyRhythmForIndex(index);
-  const lateral = region.lateral && discoveriesById ? `
-    <div class="lateral-world" aria-label="Caminhos relacionados">
-      ${renderLateralSide(region.lateral.left, discoveriesById, "left")}
-      ${renderLateralSide(region.lateral.right, discoveriesById, "right")}
-    </div>
-  ` : "";
+
 
   return `
     <div class="journey-region region--${layoutVariant}" id="${id}"
@@ -263,7 +251,7 @@ export function renderRegion(region, index, discovery, discoveriesById) {
             <p class="region-lead-label">Encontre o que faz sentido para você</p>
             ${renderRestrictedMarkdown(body)}
             <ul class="region-tags" aria-label="Temas desta região">${renderTags(region.tags)}</ul>
-            ${renderRelated(region, discoveriesById)}
+            ${renderRelated(region, discoveriesById, discovery)}
             ${media}
             <div class="region-actions">
               <a class="region-link" href="${safeHref(region.href)}" tabindex="-1"${
@@ -272,8 +260,6 @@ export function renderRegion(region, index, discovery, discoveriesById) {
             </div>
           </div>
         </article>
-        ${renderDiscovery(discovery, index)}
-        ${lateral}
     </div>
   `;
 }
