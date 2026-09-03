@@ -70,8 +70,45 @@ const featuredDiscoveries = [
   "sono-reflexao",
 ];
 
+/*
+ * Os temas do bloco, como pastilhas.
+ *
+ * São rótulos, não filtros. A referência mostra a primeira pastilha acesa, como
+ * se estivesse selecionada — desenhar isso aqui prometeria um filtro que não
+ * existe, e um controle que aceita o clique sem fazer nada é pior que a
+ * ausência dele. Ficam calmas e legíveis, sem estado.
+ */
 function renderTags(tags = []) {
-  return tags.map((tag) => `<li>${escapeHtml(tag)}</li>`).join("");
+  return tags
+    .map((tag) => `<li class="region-chip">${escapeHtml(tag)}</li>`)
+    .join("");
+}
+
+/*
+ * Os caminhos relacionados, um por linha.
+ *
+ * Saem de `relatedContent`, resolvido no mapa das descobertas: cada linha é um
+ * destino de verdade, com endereço próprio. Inventar itens aqui daria à
+ * referência uma fidelidade que o conteúdo não sustenta.
+ */
+function renderRelated(region, discoveriesById) {
+  const ids = Array.isArray(region.relatedContent) ? region.relatedContent : [];
+  const itens = ids.map((id) => discoveriesById?.get?.(id)).filter(Boolean).slice(0, 3);
+  if (!itens.length) return "";
+
+  const linhas = itens.map((item) => `
+    <li>
+      <a class="region-related-item" href="${safeHref(item.href)}" tabindex="-1">
+        <span class="region-related-mark" aria-hidden="true">${escapeHtml((item.category || item.title || "•").slice(0, 1))}</span>
+        <span class="region-related-text">
+          <strong>${escapeHtml(item.title)}</strong>
+          <small>${escapeHtml(item.description ?? item.summary ?? "")}</small>
+        </span>
+        <span class="region-related-go" aria-hidden="true">›</span>
+      </a>
+    </li>`).join("");
+
+  return `<ul class="region-related" aria-label="Caminhos a partir daqui">${linhas}</ul>`;
 }
 
 function escapeHtml(value = "") {
@@ -152,6 +189,27 @@ function renderLateralSide(ids, discoveriesById, side) {
   `;
 }
 
+/**
+ * O mapa que resolve um id de relação em algo exibível.
+ *
+ * Conhece descobertas E blocos, porque as relações apontam para os dois:
+ * "recepcao" leva a uma descoberta, "atendimentos" a outro bloco da jornada.
+ * Um mapa só de descobertas deixava metade das linhas sem resolver, e elas
+ * simplesmente não apareciam — sem erro e sem espaço vazio.
+ *
+ * As descobertas entram por último para vencerem em caso de id repetido: são
+ * elas que trazem a descrição curta escrita para esta lista.
+ *
+ * Exportada para ser conferida sem DOM: montada dentro de `mountJourney`, esta
+ * regra só podia ser testada com uma página inteira em pé.
+ */
+export function buildLookup(regions = [], discoveries = []) {
+  return new Map([
+    ...regions.map((item) => [item.id, item]),
+    ...discoveries.map((item) => [item.id, item]),
+  ]);
+}
+
 export function renderRegion(region, index, discovery, discoveriesById) {
   const side = region.side === "left" || region.side === "right"
     ? region.side
@@ -183,19 +241,35 @@ export function renderRegion(region, index, discovery, discoveriesById) {
       data-title-scale="${titleScale}"
       style="--region-index:${index};--region-height:${regionHeight}svh">
         <article class="region-content" aria-labelledby="${id}-title">
+          <!--
+            O × é um botão de verdade, e não um enfeite no canto.
+            Fechar por Escape já existia, mas Escape não existe no toque: sem
+            este botão, quem abrisse um bloco no telefone só sairia tocando
+            fora dele, o que ninguém adivinha.
+          -->
+          <button class="region-close" type="button" data-region-close tabindex="-1"
+            aria-label="Fechar ${escapeHtml(title)}"><span aria-hidden="true">×</span></button>
           <button class="region-summary" type="button" aria-expanded="false" aria-controls="${id}-details">
-            <span class="region-category"><span>${String(index + 1).padStart(2, "0")}</span>${escapeHtml(region.category)}</span>
+            <span class="region-category">
+              <span>${String(index + 1).padStart(2, "0")}</span>${escapeHtml(region.category)}
+              <span class="region-rule" aria-hidden="true"></span>
+            </span>
             <span class="region-title" id="${id}-title">${escapeHtml(title)}</span>
             <span class="region-description">${escapeHtml(summary)}</span>
             <span class="region-expand-label" aria-hidden="true">Descobrir <span>＋</span></span>
           </button>
           <div class="region-details" id="${id}-details" aria-hidden="true" inert>
-            ${media}
+            <span class="region-divider" aria-hidden="true"></span>
+            <p class="region-lead-label">Encontre o que faz sentido para você</p>
             ${renderRestrictedMarkdown(body)}
             <ul class="region-tags" aria-label="Temas desta região">${renderTags(region.tags)}</ul>
-            <a class="region-link" href="${safeHref(region.href)}" tabindex="-1"${
-              region.metaDescription ? ` aria-description="${escapeHtml(region.metaDescription)}"` : ""
-            }>Conhecer este caminho <span aria-hidden="true">↗</span></a>
+            ${renderRelated(region, discoveriesById)}
+            ${media}
+            <div class="region-actions">
+              <a class="region-link" href="${safeHref(region.href)}" tabindex="-1"${
+                region.metaDescription ? ` aria-description="${escapeHtml(region.metaDescription)}"` : ""
+              }>Explorar ${escapeHtml(title.toLowerCase())} <span aria-hidden="true">→</span></a>
+            </div>
           </div>
         </article>
         ${renderDiscovery(discovery, index)}
@@ -280,7 +354,7 @@ export function renderJourneyMenu(regions = []) {
 
 export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
   if (!root) throw new TypeError("root é obrigatório para montar a jornada");
-  const discoveriesById = new Map(discoveries.map((item) => [item.id, item]));
+  const discoveriesById = buildLookup(regions, discoveries);
   const blocos = regions.map((region, index) => renderRegion(
     region,
     index,

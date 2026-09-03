@@ -204,3 +204,89 @@ test("a descrição acessível só aparece quando preenchida", async () => {
   assert.match(com, /aria-description="Leva à página de atendimentos"/);
   assert.doesNotMatch(sem, /aria-description/);
 });
+
+/*
+ * A lista de caminhos sai de `relatedContent`, resolvida no mapa das
+ * descobertas — cada linha é um destino de verdade, com endereço próprio.
+ * Inventar itens aqui daria à referência uma fidelidade que o conteúdo não
+ * sustenta.
+ */
+test("os caminhos relacionados viram linhas com destino", () => {
+  const descobertas = new Map([
+    ["recepcao", { id: "recepcao", category: "Recepção", title: "Comece com uma conversa", description: "Um primeiro contato.", href: "recepcao.html" }],
+  ]);
+  const markup = homeScenes.renderRegion(
+    { id: "atendimentos", title: "Atendimentos", summary: "r", side: "left", relatedContent: ["recepcao", "inexistente"] },
+    2,
+    null,
+    descobertas,
+  );
+
+  assert.match(markup, /class="region-related"/);
+  assert.match(markup, /Comece com uma conversa/);
+  assert.match(markup, /href="recepcao\.html"/);
+  /* Um id sem descoberta correspondente não pode virar linha vazia. */
+  assert.equal((markup.match(/region-related-item/g) || []).length, 1);
+});
+
+test("sem caminhos relacionados, a lista não aparece", () => {
+  const markup = homeScenes.renderRegion(
+    { id: "a", title: "A", summary: "r", side: "left" },
+    0,
+    null,
+    new Map(),
+  );
+  assert.doesNotMatch(markup, /region-related/);
+});
+
+/* Fechar por Escape já existia, mas Escape não existe no toque: sem o botão,
+   quem abre um bloco no telefone só sai tocando fora dele. */
+test("o painel tem um botão de fechar com nome acessível", () => {
+  const markup = homeScenes.renderRegion(
+    { id: "a", title: "Atendimentos", summary: "r", side: "left" },
+    0,
+    null,
+    new Map(),
+  );
+  assert.match(markup, /data-region-close/);
+  assert.match(markup, /aria-label="Fechar Atendimentos"/);
+});
+
+/*
+ * As relações apontam para descobertas E para outros blocos.
+ *
+ * "recepcao" leva a uma descoberta; "atendimentos" leva a outro bloco da
+ * jornada. Um mapa só de descobertas deixava metade das linhas sem resolver, e
+ * elas não apareciam — sem erro e sem espaço vazio.
+ */
+test("o mapa de relações conhece blocos e descobertas", () => {
+  const mapa = homeScenes.buildLookup(
+    [{ id: "atendimentos", title: "Atendimentos", summary: "O cuidado" }],
+    [{ id: "recepcao", title: "Comece com uma conversa", description: "Um primeiro contato." }],
+  );
+
+  assert.equal(mapa.get("atendimentos").title, "Atendimentos");
+  assert.equal(mapa.get("recepcao").title, "Comece com uma conversa");
+});
+
+/* Id repetido: a descoberta vence, porque é ela que traz a descrição curta
+   escrita para esta lista. */
+test("descoberta vence o bloco de mesmo id", () => {
+  const mapa = homeScenes.buildLookup(
+    [{ id: "recepcao", title: "Bloco" }],
+    [{ id: "recepcao", title: "Descoberta" }],
+  );
+  assert.equal(mapa.get("recepcao").title, "Descoberta");
+});
+
+/* Um bloco tem `summary` onde a descoberta tem `description`. Sem a alternativa,
+   a linha de um bloco relacionado sairia com o texto de apoio em branco. */
+test("relação para um bloco usa o resumo dele", () => {
+  const markup = homeScenes.renderRegion(
+    { id: "recepcao", title: "Recepção", summary: "r", side: "left", relatedContent: ["atendimentos"] },
+    1,
+    null,
+    homeScenes.buildLookup([{ id: "atendimentos", title: "Atendimentos", summary: "O cuidado", href: "atendimentos.html" }], []),
+  );
+  assert.match(markup, /<small>O cuidado<\/small>/);
+});

@@ -74,3 +74,32 @@ test("cada região leva a uma página local própria", async () => {
   }
 });
 
+
+/*
+ * Os blocos editáveis nascem com as relações da jornada.
+ *
+ * Elas vivem em JOURNEY_REGIONS, e DEFAULT_HOME_BLOCKS nascia sem elas: a lista
+ * de caminhos do painel do bloco ficava vazia sem erro, sem espaço em branco e
+ * sem nada que indicasse a falta.
+ */
+test("os blocos padrão carregam os caminhos relacionados", async () => {
+  const { DEFAULT_HOME_BLOCKS, JOURNEY_DISCOVERIES } = await import("../../outputs/js/home/journey-data.js");
+  const comRelacoes = DEFAULT_HOME_BLOCKS.filter((bloco) => bloco.relatedContent.length);
+  assert.ok(comRelacoes.length >= 5, `só ${comRelacoes.length} blocos têm caminhos`);
+
+  /*
+   * E cada id apontado precisa existir — entre as descobertas OU entre os
+   * próprios blocos. As relações usam os dois: "recepcao" leva a uma
+   * descoberta, "atendimentos" a outro bloco. Um id órfão vira uma linha que
+   * nunca aparece, e ninguém descobre por quê.
+   */
+  const conhecidos = new Set([
+    ...JOURNEY_DISCOVERIES.map((item) => item.id),
+    ...DEFAULT_HOME_BLOCKS.map((item) => item.id),
+  ]);
+  for (const bloco of DEFAULT_HOME_BLOCKS) {
+    for (const id of bloco.relatedContent) {
+      assert.ok(conhecidos.has(id), `${bloco.id} aponta para "${id}", que não existe`);
+    }
+  }
+});

@@ -78,3 +78,15 @@ test("com movimento reduzido, o trajeto some sem transição", () => {
   const reduzido = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
   assert.match(reduzido, /\.journey-path,\s*\.journey-scroll-cue\s*\{\s*transition:\s*none;?\s*\}/);
 });
+
+/*
+ * A barra de rolagem horizontal é do elemento RAIZ.
+ *
+ * Cortar só no body deixa o html rolando do mesmo jeito. Medido durante a
+ * travessia: o bloco irmão sai para 1915px numa janela de 1425, e a página
+ * inteira ganhava rolagem lateral — o critério que a direção listou como
+ * inegociável.
+ */
+test("o corte horizontal está na raiz, não só no corpo", () => {
+  assert.match(regra("html"), /overflow-x:\s*clip/);
+});

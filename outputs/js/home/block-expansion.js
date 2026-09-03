@@ -33,6 +33,10 @@ function setFocusable(details, enabled) {
 
 function setExpanded(entry, expanded) {
   entry.section.classList[expanded ? "add" : "remove"]("is-expanded");
+  const fechar = entry.section.querySelector?.("[data-region-close]");
+  /* Fora do bloco aberto, o × não é alcançável pelo Tab: um botão de fechar
+     num cartão fechado não fecha coisa nenhuma. */
+  if (fechar) fechar.setAttribute("tabindex", expanded ? "0" : "-1");
   entry.summary.setAttribute("aria-expanded", String(expanded));
   entry.details.setAttribute("aria-hidden", String(!expanded));
   entry.details.inert = !expanded;
@@ -242,6 +246,14 @@ export function createBlockExpansion(root, {
   }
 
   function onClick(event) {
+    /* O × fecha, e precisa ser lido ANTES do resumo: ele vive dentro do mesmo
+       cartão, e sem esta ordem o clique nele contaria como clique no bloco. */
+    if (event.target?.closest?.("[data-region-close]")) {
+      event.preventDefault?.();
+      close({ restoreFocus: true });
+      return;
+    }
+
     const summary = event.target?.closest?.(".region-summary");
 
     /*

@@ -21,6 +21,14 @@
 html {
   scroll-behavior: auto;
   background: #5c4936;
+  /*
+   * O corte precisa estar AQUI, e não só no body.
+   *
+   * A barra de rolagem horizontal é do elemento raiz: cortar no body deixa o
+   * html rolando do mesmo jeito. Medido durante a travessia — o bloco irmão sai
+   * para 1915px numa janela de 1425 e a página inteira ganhava rolagem lateral.
+   */
+  overflow-x: clip;
 }
 
 body[data-story-page="true"] {
@@ -1247,4 +1255,174 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 
   .journey-path,
   .journey-scroll-cue { transition: none; }
+}
+
+/* ============================================================
+ * O PAINEL DO BLOCO
+ *
+ * A composição da referência, montada sobre o conteúdo que os blocos já têm:
+ * numeração e categoria com a régua, título, chamada, temas como pastilhas,
+ * caminhos relacionados em linhas e o par de ações no fim.
+ * ============================================================ */
+
+/* A régua que sai da categoria e some no ar. Ela é o que dá ao cabeçalho a
+   largura da referência sem precisar de uma borda atravessando o painel. */
+.region-rule {
+  flex: 1;
+  height: 1px;
+  min-width: 24px;
+  margin-left: 12px;
+  background: linear-gradient(90deg, rgba(216, 178, 106, .5), transparent);
+}
+
+.region-category { display: flex; align-items: center; }
+
+.region-close {
+  position: absolute;
+  z-index: 3;
+  top: clamp(16px, 2vw, 26px);
+  right: clamp(16px, 2vw, 26px);
+  display: grid;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(231, 202, 143, .3);
+  border-radius: 50%;
+  color: var(--journey-ivory);
+  background: rgba(28, 21, 14, .55);
+  font-size: 1.1rem;
+  cursor: pointer;
+  opacity: 0;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* O × só existe com o bloco aberto: num cartão fechado ele não fecharia nada. */
+.journey-region.is-expanded .region-close {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.region-divider {
+  display: block;
+  width: 64px;
+  height: 1px;
+  margin: clamp(18px, 2.4vw, 30px) 0;
+  background: rgba(216, 178, 106, .55);
+}
+
+.region-lead-label {
+  margin: 0 0 10px;
+  color: var(--journey-gold);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+/*
+ * Os temas, como pastilhas.
+ *
+ * São rótulos e não filtros, então nenhuma aparece "selecionada": desenhar uma
+ * acesa prometeria um controle que não existe, e um controle que aceita o
+ * clique sem fazer nada é pior que a ausência dele.
+ */
+.region-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 clamp(16px, 2vw, 24px);
+  padding: 0;
+  list-style: none;
+}
+
+.region-chip {
+  padding: 8px 14px;
+  border: 1px solid rgba(231, 202, 143, .26);
+  border-radius: 999px;
+  color: rgba(247, 237, 218, .82);
+  font-size: .78rem;
+  letter-spacing: .04em;
+}
+
+.region-related {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 clamp(18px, 2.4vw, 28px);
+  padding: 0;
+  list-style: none;
+}
+
+.region-related-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 16px;
+  gap: 12px;
+  align-items: center;
+  min-height: 64px;
+  padding: 10px 14px;
+  border: 1px solid rgba(231, 202, 143, .18);
+  border-radius: 14px;
+  color: inherit;
+  background: rgba(28, 21, 14, .45);
+  text-decoration: none;
+}
+
+.region-related-mark {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(231, 202, 143, .22);
+  border-radius: 50%;
+  color: var(--journey-gold);
+  font-size: .9rem;
+  place-items: center;
+}
+
+.region-related-text { min-width: 0; }
+.region-related-text strong { display: block; font-size: .95rem; font-weight: 600; }
+.region-related-text small {
+  display: block;
+  overflow: hidden;
+  color: rgba(247, 237, 218, .6);
+  font-size: .78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.region-related-go { color: rgba(247, 237, 218, .5); text-align: right; }
+
+.region-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  align-items: center;
+  margin-bottom: clamp(14px, 2vw, 22px);
+}
+
+.region-actions .region-link {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 52px;
+  padding: 14px 24px;
+  border: 0;
+  border-radius: 12px;
+  color: #241c10;
+  background: var(--journey-gold);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .region-close,
+  .region-related-item { transition: border-color .2s ease, background .2s ease, opacity .2s ease; }
+}
+
+.region-related-item:hover,
+.region-related-item:focus-visible { border-color: rgba(231, 202, 143, .45); }
+.region-close:hover { border-color: var(--journey-gold); }
+
+@media (max-width: 720px) {
+  .region-related-item { grid-template-columns: 34px minmax(0, 1fr) 14px; min-height: 58px; }
+  .region-related-mark { width: 34px; height: 34px; }
+  .region-actions .region-link { width: 100%; justify-content: center; }
 }

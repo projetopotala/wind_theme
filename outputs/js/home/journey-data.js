@@ -205,6 +205,10 @@ export const DEFAULT_HOME_BLOCKS = normalizeHomeBlocks(JOURNEY_REGIONS.map((regi
   side: position % 2 === 0 ? "left" : "right",
   position,
   published: true,
+  /* As relações vivem em JOURNEY_REGIONS, e os blocos editáveis nasciam sem
+     elas: a lista de caminhos do painel do bloco ficava vazia sem erro, sem
+     espaço em branco e sem nada que indicasse a falta. */
+  relatedContent: region.relatedContent,
 })));
 
 export const JOURNEY_DISCOVERIES = [

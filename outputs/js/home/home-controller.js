@@ -8,7 +8,7 @@ import {
 } from "./admin-preview.js";
 import { invitationsFor, nextInvitationIndex } from "./invitations.js";
 import { createLocalContentRepository } from "./content-repository.js";
-import { DEFAULT_HOME_BLOCKS } from "./journey-data.js";
+import { DEFAULT_HOME_BLOCKS, JOURNEY_DISCOVERIES } from "./journey-data.js";
 import { createHomePath } from "./home-path-three.js";
 import { mountJourney } from "./home-scenes.js";
 
@@ -142,7 +142,15 @@ export function createHomeController({
   if (!root || !canvas) throw new TypeError("root e canvas são obrigatórios");
 
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const mounted = mountJourney(root, { regions: blocks, discoveries: [] });
+  /*
+   * As descobertas precisam CHEGAR aqui.
+   *
+   * A lista estava fixa em vazia, e com ela o mapa de descobertas nascia vazio:
+   * os caminhos laterais e a lista de "caminhos a partir daqui" nunca tinham de
+   * onde tirar título, descrição ou endereço, e simplesmente não apareciam — sem
+   * erro, sem espaço vazio, sem nada que indicasse a ausência.
+   */
+  const mounted = mountJourney(root, { regions: blocks, discoveries: JOURNEY_DISCOVERIES });
   const path = pathFactory(canvas, { blocks, reducedMotion });
   /**
    * Quanto o vão do trajeto saiu do centro da tela, em pixels.

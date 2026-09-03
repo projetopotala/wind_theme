@@ -49,6 +49,12 @@ export function normalizeHomeBlock(input = {}, index = 0) {
     titleScale: input.titleScale === "compact" ? "compact" : "normal",
     allowPanel: input.allowPanel !== false,
     metaDescription: cleanString(input.metaDescription),
+    /* Os caminhos relacionados do bloco, por id. O painel ainda não os edita e
+       o banco ainda não tem coluna para eles; o que existe hoje vem dos dados
+       da jornada, e um bloco sem eles simplesmente não mostra a lista. */
+    relatedContent: Array.isArray(input.relatedContent)
+      ? input.relatedContent.map(cleanString).filter(Boolean)
+      : [],
     updatedAt: cleanString(input.updatedAt),
   };
 }
