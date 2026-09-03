@@ -461,16 +461,21 @@ test("a entrada e a saida sao ANIMACAO, nao transicao", () => {
   assert.match(saida[1], /animation:\s*painel-sai/);
 });
 
-test("o deslocamento aponta para o lado onde o card estava", () => {
-  /* O bloco da direita entra e sai pela direita; o da esquerda, pela esquerda.
-     E o mesmo principio que ja rege a paisagem: a cena abre do lado de quem
-     chamou. */
-  const direita = css.match(/\.journey-region\[data-side="right"\]\s*\{([^}]*)\}/);
-  const esquerda = css.match(/\.journey-region\[data-side="left"\]\s*\{([^}]*)\}/);
-
-  assert.ok(direita && esquerda, "falta o sentido do deslocamento por lado");
-  assert.match(direita[1], /--painel-desloc:\s*var\(--painel-entrada\)/, "a direita sai para a direita");
-  assert.match(esquerda[1], /--painel-desloc:\s*calc\(var\(--painel-entrada\)\s*\*\s*-1\)/, "a esquerda sai para a esquerda");
+test("a direcao vem do recorte medido, e nao de uma variavel por lado", () => {
+  /*
+   * Havia um `--painel-desloc` por lado, aplicado como `translate3d`. Ele era
+   * redundante — o recorte ja abre pelo lado onde o cartao estava, porque o
+   * recuo daquele lado e o menor — e era NOCIVO: o recorte e medido nas
+   * coordenadas do painel SEM transformacao, entao o translate se somava a ele e
+   * levava o retangulo inicial junto.
+   *
+   * A direcao correta e uma consequencia da medida, e nao uma declaracao a
+   * parte que pode discordar dela.
+   */
+  assert.ok(
+    !semComentarios(css).includes("--painel-desloc"),
+    "a variavel de deslocamento desalinha o recorte e nao tem mais funcao",
+  );
 });
 
 test("a animacao parte do cartao opaco e chega no veu", () => {
@@ -478,7 +483,7 @@ test("a animacao parte do cartao opaco e chega no veu", () => {
      chega no veu translucido. Sem esta parte, o bloco so desliza. */
   const entra = blocoDeKeyframes(css, "painel-entra");
     assert.match(entra, /background-color:\s*var\(--journey-panel-open\)/, "a entrada comeca no fundo do cartao");
-  assert.match(entra, /translate3d\(var\(--painel-desloc\)/, "a entrada comeca deslocada");
+  assert.match(entra, /clip-path:\s*inset\(/, "a entrada comeca recortada no retangulo do cartao");
 });
 
 test("assentado, o painel para no lugar e nao sobra paisagem em borda nenhuma", () => {
@@ -586,4 +591,27 @@ test("com um bloco aberto o palco assenta de imediato, sem transicao", () => {
     palcos.some((regra) => /transition:\s*none/.test(regra)),
     "o palco aberto nao pode animar o proprio recuo por baixo do recorte",
   );
+});
+
+test("o recorte nao pode dividir o quadro com um deslocamento", () => {
+  /*
+   * O recorte e medido nas coordenadas do PAINEL SEM TRANSFORMACAO: o retangulo
+   * do cartao virado em recuos a partir das bordas do painel. Qualquer
+   * `translate` no mesmo keyframe se soma a isso e leva o recorte junto.
+   *
+   * Medido a 1024x700: o cartao ocupava x de 581 a 939, e o recorte partia certo
+   * — mas o `translate3d(92px)` que sobrou da versao anterior empurrava tudo
+   * para x de 673 a 1031. A animacao crescia do lugar errado por exatamente os
+   * 92px do deslocamento.
+   *
+   * O deslocamento tambem ficou redundante: e o proprio recorte que da a
+   * direcao, abrindo pelo lado onde o cartao estava.
+   */
+  for (const nome of ["painel-entra", "painel-sai"]) {
+    const bloco = semComentarios(blocoDeKeyframes(css, nome));
+    assert.ok(
+      !/translate3d\(var\(--painel-desloc/.test(bloco),
+      `${nome} nao pode deslocar: o recorte ja carrega a posicao e a direcao`,
+    );
+  }
 });

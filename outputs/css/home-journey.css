@@ -1140,15 +1140,6 @@ html.is-crossing .journey-entry-veil {
   --travessia-fundo: 0px;
   --travessia-frente: 0px;
   --travessia-interface: 0px;
-  /*
-   * O quanto o painel recua para o próprio lado antes de assentar.
-   *
-   * Distância de PERCURSO, não de repouso: ela existe no primeiro quadro e
-   * termina em zero. Um passo que sobrevivesse ao fim deixaria uma faixa de
-   * paisagem descoberta numa das bordas, que foi o que aposentou o passo de
-   * câmera permanente do painel.
-   */
-  --painel-entrada: clamp(48px, 9vw, 140px);
 }
 
 /*
@@ -2009,11 +2000,17 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  * entrada pendura em `revealed` e a saída em `transitioning`.
  * ============================================================ */
 
-/* O sentido é o do próprio lado: o bloco da direita entra e sai pela direita, o
-   da esquerda pela esquerda. Mesmo princípio que já rege a paisagem — "a cena
-   abre do lado de quem chamou". */
-.journey-region[data-side="right"] { --painel-desloc: var(--painel-entrada); }
-.journey-region[data-side="left"] { --painel-desloc: calc(var(--painel-entrada) * -1); }
+/*
+ * A direção não precisa ser declarada — e declará-la estragava a posição.
+ *
+ * Havia aqui um `--painel-desloc` por lado, aplicado como `translate3d` nos
+ * keyframes. Ele fazia duas coisas erradas de uma vez. Era redundante, porque o
+ * recorte já abre pelo lado onde o cartão estava. E era NOCIVO, porque o
+ * recorte é medido nas coordenadas do painel SEM transformação: o translate se
+ * somava a ele e levava o retângulo inicial junto. Medido a 1024×700, o cartão
+ * ocupava x de 581 a 939 e a animação começava em 673 a 1031 — errada por
+ * exatamente os 92px do deslocamento.
+ */
 
 /*
  * Só `from`. O `to` é o estilo do próprio elemento — deslocamento zero e o véu.
@@ -2044,7 +2041,6 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
       var(--recorte-baixo, 0px) var(--recorte-esquerda, 0px)
       round var(--recorte-raio, 0px)
     );
-    transform: translate3d(var(--painel-desloc), 0, 0);
     background-color: var(--journey-panel-open);
   }
 }
@@ -2063,7 +2059,6 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
       var(--recorte-baixo, 0px) var(--recorte-esquerda, 0px)
       round var(--recorte-raio, 0px)
     );
-    transform: translate3d(var(--painel-desloc), 0, 0);
     background-color: var(--journey-panel-open);
     opacity: 0;
   }
@@ -2109,7 +2104,10 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 @keyframes cartao-volta {
   from {
     opacity: 0;
-    transform: translate3d(var(--painel-desloc, 0), 0, 0) scale(.96);
+    /* Sem deslocamento: o cartão volta EXATAMENTE para onde estava, que é de
+       onde o véu tinha crescido. Um passo aqui, ainda que curto, faria a volta
+       aterrissar num lugar que o olho não esperava. */
+    transform: scale(.96);
   }
 }
 
