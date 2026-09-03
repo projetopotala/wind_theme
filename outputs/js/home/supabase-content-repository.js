@@ -84,9 +84,56 @@ export function createSupabaseContentRepository({ client, defaults = [] } = {}) 
     return rowsToBlocks(data || []);
   }
 
+  /*
+   * As quatro operações de rascunho.
+   *
+   * Todas nomeiam "home_block_drafts" explicitamente. Um erro de tabela aqui
+   * gravaria texto inacabado direto no site, e nada na tela do editor diria
+   * que isso aconteceu.
+   */
+  async function listDrafts() {
+    const { data, error } = await client
+      .from("home_block_drafts")
+      .select(HOME_BLOCK_COLUMNS)
+      .order("position", { ascending: true });
+    throwIfError("listDrafts", error);
+    return rowsToBlocks(data || []);
+  }
+
+  async function saveDraft(block) {
+    const linha = homeBlockToDatabase(block, Number(block?.position) || 0);
+    if (!linha) {
+      throw new SupabaseContentError("saveDraft", {
+        message: "Um bloco sem titulo nao pode ser gravado.",
+      });
+    }
+    const { data, error } = await client
+      .from("home_block_drafts")
+      .upsert(linha)
+      .select()
+      .single();
+    throwIfError("saveDraft", error);
+    return homeBlockFromDatabase(data || linha, linha.position);
+  }
+
+  async function discardDraft(id) {
+    const { error } = await client.from("home_block_drafts").delete().eq("id", id);
+    throwIfError("discardDraft", error);
+  }
+
+  async function publishDrafts() {
+    const { data, error } = await client.rpc("publish_home_block_drafts");
+    throwIfError("publishDrafts", error);
+    return rowsToBlocks(data || []);
+  }
+
   return {
     list,
     replaceAll,
+    listDrafts,
+    saveDraft,
+    discardDraft,
+    publishDrafts,
     reset() {
       return replaceAll(normalizedDefaults);
     },
