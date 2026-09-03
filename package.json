@@ -21,7 +21,8 @@
     "vendor:supabase": "node scripts/vendor-supabase.mjs",
     "validate:portal": "node scripts/validate-portal-assets.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .worktrees --ignore-pattern outputs/vendor",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "build:media-manifest": "node scripts/build-media-manifest.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",

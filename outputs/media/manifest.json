@@ -1,0 +1,239 @@
+{
+  "geradoEm": "2026-09-03T05:02:16.646Z",
+  "imagens": [
+    {
+      "arquivo": "atendimentos-acolhimento.webp",
+      "largura": 1440,
+      "altura": 1800,
+      "bytes": 197002
+    },
+    {
+      "arquivo": "atendimentos-vidraca-1.webp",
+      "largura": 520,
+      "altura": 340,
+      "bytes": 26384
+    },
+    {
+      "arquivo": "atendimentos-vidraca-2.webp",
+      "largura": 520,
+      "altura": 340,
+      "bytes": 13008
+    },
+    {
+      "arquivo": "atendimentos-vidraca-3.webp",
+      "largura": 520,
+      "altura": 660,
+      "bytes": 33604
+    },
+    {
+      "arquivo": "atendimentos-vidraca-4.webp",
+      "largura": 520,
+      "altura": 660,
+      "bytes": 34480
+    },
+    {
+      "arquivo": "atividades-pratica.webp",
+      "largura": 1600,
+      "altura": 1000,
+      "bytes": 157690
+    },
+    {
+      "arquivo": "chegada-canopy.webp",
+      "largura": 1080,
+      "altura": 720,
+      "bytes": 22664
+    },
+    {
+      "arquivo": "chegada-depth-mobile.webp",
+      "largura": 1440,
+      "altura": 2160,
+      "bytes": 305988
+    },
+    {
+      "arquivo": "chegada-depth.webp",
+      "largura": 1350,
+      "altura": 900,
+      "bytes": 24016
+    },
+    {
+      "arquivo": "chegada-landscape-mobile.webp",
+      "largura": 1440,
+      "altura": 2160,
+      "bytes": 692440
+    },
+    {
+      "arquivo": "chegada-landscape.webp",
+      "largura": 1024,
+      "altura": 576,
+      "bytes": 118574
+    },
+    {
+      "arquivo": "chegada-mobile.webp",
+      "largura": 744,
+      "altura": 992,
+      "bytes": 102064
+    },
+    {
+      "arquivo": "chegada-v2-canopy-mask.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 200520
+    },
+    {
+      "arquivo": "chegada-v2-canopy-overlay.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 111742
+    },
+    {
+      "arquivo": "chegada-v2-depth.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 504054
+    },
+    {
+      "arquivo": "chegada-v2-master.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 481416
+    },
+    {
+      "arquivo": "chegada-v2-mist-mask.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 153624
+    },
+    {
+      "arquivo": "chegada-v2-sky-mask.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 47990
+    },
+    {
+      "arquivo": "chegada-v2-water-mask.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 46952
+    },
+    {
+      "arquivo": "chegada-v2-waterfall-mask.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 113424
+    },
+    {
+      "arquivo": "chegada-water.webp",
+      "largura": 1080,
+      "altura": 720,
+      "bytes": 27894
+    },
+    {
+      "arquivo": "chegada.png",
+      "largura": 1586,
+      "altura": 992,
+      "bytes": 2525945
+    },
+    {
+      "arquivo": "chegada.webp",
+      "largura": 1586,
+      "altura": 992,
+      "bytes": 244482
+    },
+    {
+      "arquivo": "grama-borda.webp",
+      "largura": 512,
+      "altura": 512,
+      "bytes": 90552
+    },
+    {
+      "arquivo": "home-travessia-mobile.webp",
+      "largura": 1080,
+      "altura": 1440,
+      "bytes": 111296
+    },
+    {
+      "arquivo": "home-travessia.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 210612
+    },
+    {
+      "arquivo": "journey-cuidado.webp",
+      "largura": 1920,
+      "altura": 1080,
+      "bytes": 143814
+    },
+    {
+      "arquivo": "journey-cultura.webp",
+      "largura": 1920,
+      "altura": 1080,
+      "bytes": 131862
+    },
+    {
+      "arquivo": "journey-inspiracao.webp",
+      "largura": 1920,
+      "altura": 1080,
+      "bytes": 70802
+    },
+    {
+      "arquivo": "journey-quem-somos.webp",
+      "largura": 1920,
+      "altura": 1080,
+      "bytes": 156354
+    },
+    {
+      "arquivo": "marketplace-contexto.webp",
+      "largura": 1600,
+      "altura": 1000,
+      "bytes": 111098
+    },
+    {
+      "arquivo": "medieval-road-stones.webp",
+      "largura": 512,
+      "altura": 512,
+      "bytes": 73734
+    },
+    {
+      "arquivo": "palacio-depth.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 351236
+    },
+    {
+      "arquivo": "palacio-light-mask.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 18452
+    },
+    {
+      "arquivo": "palacio-master.webp",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 328756
+    },
+    {
+      "arquivo": "profissionais-encontro.webp",
+      "largura": 1600,
+      "altura": 1000,
+      "bytes": 148446
+    },
+    {
+      "arquivo": "quem-somos-acolhimento.webp",
+      "largura": 1664,
+      "altura": 936,
+      "bytes": 175142
+    },
+    {
+      "arquivo": "recepcao-acolhimento.webp",
+      "largura": 1280,
+      "altura": 1600,
+      "bytes": 154228
+    },
+    {
+      "arquivo": "saude-integrativa-escuta.webp",
+      "largura": 1600,
+      "altura": 1000,
+      "bytes": 112846
+    }
+  ]
+}
