@@ -21,6 +21,16 @@
 
 * { box-sizing: border-box; }
 
+/*
+ * O atributo `hidden` precisa vencer qualquer `display` declarado aqui.
+ *
+ * O navegador aplica `display: none` a `[hidden]` na folha dele, que perde para
+ * qualquer regra de autor — e `.admin-entry` declara `display: grid`. Sem esta
+ * linha, esconder a tela de login não a esconde: ela e o painel ficam
+ * empilhados na mesma página.
+ */
+[hidden] { display: none !important; }
+
 html { background: var(--admin-ground); }
 
 body {
@@ -279,7 +289,7 @@ button {
 .admin-counts { margin: 0 0 12px; color: var(--admin-muted); font-size: .8rem; }
 
 .admin-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
-.admin-tabs button { flex: 1; min-height: 40px; padding: 8px; border: 0; background: transparent; color: var(--admin-muted); font-size: .84rem; }
+.admin-tabs button { flex: 1; min-height: 44px; padding: 8px; border: 0; background: transparent; color: var(--admin-muted); font-size: .84rem; }
 .admin-tabs button[aria-selected="true"] { color: var(--admin-gold); border-bottom: 2px solid var(--admin-gold); border-radius: 0; }
 
 .admin-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
@@ -322,19 +332,21 @@ button {
 .admin-form h3 { margin: 4px 0 12px; font-size: 1.5rem; font-weight: 500; }
 
 .admin-form-tabs { display: flex; gap: 18px; margin-bottom: 4px; border-bottom: 1px solid var(--admin-line); }
-.admin-form-tabs button { min-height: 40px; padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: var(--admin-muted); }
+.admin-form-tabs button { min-height: 44px; padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: var(--admin-muted); }
 .admin-form-tabs button[aria-selected="true"] { color: var(--admin-gold); border-bottom: 2px solid var(--admin-gold); }
 
 .admin-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 
 .admin-toolbar { display: flex; gap: 4px; margin-bottom: 6px; }
-.admin-toolbar button { min-height: 36px; min-width: 44px; padding: 4px 8px; font-size: .84rem; }
+.admin-toolbar button { min-height: 44px; min-width: 44px; padding: 4px 8px; font-size: .84rem; }
 
 .admin-image-field { display: grid; gap: 8px; justify-items: start; }
 .admin-image-field img { width: 100%; max-height: 120px; border-radius: 10px; object-fit: cover; }
 .admin-image-field small { color: var(--admin-muted); font-size: .72rem; }
 
-.admin-check { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0 0; font-weight: 400; }
+/* O alvo de toque do checkbox é o rótulo inteiro, não o quadradinho de 13px
+   que o sistema desenha. */
+.admin-check { display: flex; gap: 10px; align-items: flex-start; min-height: 44px; margin: 10px 0 0; padding: 6px 0; font-weight: 400; }
 .admin-check input { width: auto; min-height: auto; margin-top: 3px; }
 .admin-check strong { display: block; font-size: .85rem; }
 .admin-check small { color: var(--admin-muted); font-size: .74rem; }

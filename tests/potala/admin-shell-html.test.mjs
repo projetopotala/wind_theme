@@ -72,3 +72,16 @@ test("a prévia tem um caminho para quando não carrega", () => {
   assert.match(html, /data-admin-preview-error/);
   assert.match(html, /data-admin-preview-reload/);
 });
+
+/*
+ * O `hidden` da tela de login tem de vencer o `display` declarado para ela.
+ *
+ * O navegador aplica `display: none` a `[hidden]` na folha dele, que perde para
+ * qualquer regra de autor — e `.admin-entry` declara `display: grid`. Medido no
+ * navegador antes desta regra: o atributo estava posto e o `display` computado
+ * seguia "grid", com o login e o painel empilhados na mesma página.
+ */
+test("esconder um bloco realmente o esconde", async () => {
+  const css = await readFile(new URL("../../outputs/css/admin.css", import.meta.url), "utf8");
+  assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/);
+});
