@@ -174,3 +174,33 @@ test("regiões laterais não exibem a instrução Explore os arredores", () => {
 
   assert.doesNotMatch(markup, /Explore os arredores|Explore caminhos relacionados|lateral-hint/i);
 });
+
+/*
+ * O texto do bloco passa pelo Markdown restrito, e a prova de que isso é
+ * seguro é a mesma de sempre: HTML colado continua escapado.
+ */
+test("o texto do bloco vira Markdown restrito, nunca HTML cru", async () => {
+  const { renderRegion } = homeScenes;
+  const html = renderRegion(
+    { id: "a", title: "Atendimentos", summary: "r", body: "**forte**\n\n<script>alert(1)</script>", side: "left" },
+    0,
+  );
+
+  assert.match(html, /<strong>forte<\/strong>/);
+  assert.doesNotMatch(html, /<script>/);
+  assert.match(html, /&lt;script&gt;/);
+});
+
+/* A descrição acessível só entra quando existe: um aria-description vazio
+   faz o leitor de tela anunciar um silêncio no lugar de nada. */
+test("a descrição acessível só aparece quando preenchida", async () => {
+  const { renderRegion } = homeScenes;
+  const com = renderRegion(
+    { id: "a", title: "A", summary: "r", side: "left", metaDescription: "Leva à página de atendimentos" },
+    0,
+  );
+  const sem = renderRegion({ id: "a", title: "A", summary: "r", side: "left" }, 0);
+
+  assert.match(com, /aria-description="Leva à página de atendimentos"/);
+  assert.doesNotMatch(sem, /aria-description/);
+});

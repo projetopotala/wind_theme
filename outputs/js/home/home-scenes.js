@@ -1,4 +1,5 @@
 import { invitationsFor } from "./invitations.js";
+import { renderRestrictedMarkdown } from "../shared/markdown.js";
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
 const smoothstep = (value) => {
   const t = clamp(value);
@@ -190,9 +191,11 @@ export function renderRegion(region, index, discovery, discoveriesById) {
           </button>
           <div class="region-details" id="${id}-details" aria-hidden="true" inert>
             ${media}
-            <p>${escapeHtml(body)}</p>
+            ${renderRestrictedMarkdown(body)}
             <ul class="region-tags" aria-label="Temas desta região">${renderTags(region.tags)}</ul>
-            <a class="region-link" href="${safeHref(region.href)}" tabindex="-1">Conhecer este caminho <span aria-hidden="true">↗</span></a>
+            <a class="region-link" href="${safeHref(region.href)}" tabindex="-1"${
+              region.metaDescription ? ` aria-description="${escapeHtml(region.metaDescription)}"` : ""
+            }>Conhecer este caminho <span aria-hidden="true">↗</span></a>
           </div>
         </article>
         ${renderDiscovery(discovery, index)}
