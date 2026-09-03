@@ -6,6 +6,7 @@ import { countEntries, filterEntries } from "./admin-filters.js";
 import { createBlocksList } from "./admin-blocks-list.js";
 import { createMediaPicker } from "./admin-media-picker.js";
 import { createAdminPreview } from "./admin-preview.js";
+import { createAdminEditor } from "./admin-editor.js";
 
 const SIDES = new Set(["left", "right"]);
 export const ADMIN_PREVIEW_MESSAGE = "potala:admin-preview";
@@ -186,6 +187,7 @@ export function createAdminController({
   let aba = "todos";
   let ativoId = "";
   let arrastando = null;
+  let semRascunhos = false;
   let previewFocusId = "";
   let previewFrameId = 0;
 
@@ -289,6 +291,7 @@ export function createAdminController({
       else controle.value = valor == null ? "" : valor;
     }
     mostrarErros({});
+    editorUI?.refresh();
   }
 
   function lerFormulario() {
@@ -509,11 +512,22 @@ export function createAdminController({
     },
   });
   const previaUI = createAdminPreview({ root, onPublish: () => agendarPreview() });
+  /*
+   * O editor precisa ser MONTADO, não só existir.
+   *
+   * Sem esta linha as abas Aparência e SEO ficavam desenhadas e mortas: o
+   * clique não trocava `aria-selected` nem revelava o painel, e os campos de
+   * ícone, escala e destino não tinham como ser alcançados.
+   */
+  const editorUI = createAdminEditor({
+    root,
+    onChange: () => agendarPreview(),
+    onSaveDraft,
+  });
 
   buscaCampo?.addEventListener("input", onBusca);
   abasFiltro?.addEventListener("click", onAba);
   botaoPublicar?.addEventListener("click", onPublish);
-  root.querySelector("[data-admin-save-draft]")?.addEventListener("click", () => onSaveDraft(lerFormulario()));
   lista?.addEventListener("click", onListClick);
   lista?.addEventListener("dragstart", onDragStart);
   lista?.addEventListener("dragover", onDragOver);
@@ -525,13 +539,28 @@ export function createAdminController({
   root.querySelector("[data-admin-reset]")?.addEventListener("click", onReset);
   root.querySelector("[data-admin-new]")?.addEventListener("click", onNew);
 
-  const pronto = Promise.all([
-    repository.list(),
-    repository.listDrafts ? repository.listDrafts() : Promise.resolve([]),
-  ]).then(([carregados, rascunhos]) => {
+  /*
+   * A lista de rascunhos pode falhar sozinha, e falhar sozinha é o caso comum:
+   * basta a migração da tabela de rascunhos ainda não ter sido aplicada ao
+   * banco. Sem esta tolerância, a promessa rejeitava, `desenhar` nunca rodava e
+   * o painel abria VAZIO — sem sinal de erro e sem os blocos publicados, que
+   * estavam lá o tempo todo.
+   */
+  const rascunhosIniciais = repository.listDrafts
+    ? repository.listDrafts().catch((error) => {
+      console.error("Não foi possível ler os rascunhos.", error);
+      semRascunhos = true;
+      return [];
+    })
+    : Promise.resolve([]);
+
+  const pronto = Promise.all([repository.list(), rascunhosIniciais]).then(([carregados, rascunhos]) => {
     blocks = carregados;
     drafts = rascunhos;
     desenhar();
+    if (semRascunhos) {
+      anunciar("Os rascunhos não estão disponíveis. Você está vendo o que já está publicado.");
+    }
     preencher(draftFromBlock(null, blocks.length));
     agendarPreview();
     return blocks;
@@ -555,6 +584,7 @@ export function createAdminController({
       abasFiltro?.removeEventListener("click", onAba);
       botaoPublicar?.removeEventListener("click", onPublish);
       listaUI?.destroy();
+      editorUI?.destroy();
       seletorImagem?.destroy();
       previaUI?.destroy();
       if (previewFrameId) cancelPreview(previewFrameId);

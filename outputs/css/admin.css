@@ -269,7 +269,7 @@ button {
 .admin-columns {
   display: grid;
   grid-area: columns;
-  grid-template-columns: minmax(0, 320px) minmax(0, 1fr) minmax(0, 460px);
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr) minmax(0, 460px);
   gap: 16px;
   align-items: start;
   padding: 12px 24px 24px;
@@ -295,9 +295,10 @@ button {
 .admin-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 
 .admin-list li {
+  position: relative;
   display: grid;
-  grid-template-columns: 16px 64px minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: 18px 52px minmax(0, 1fr) auto auto;
+  gap: 6px;
   align-items: center;
   padding: 10px;
   border: 1px solid transparent;
@@ -305,10 +306,81 @@ button {
   background: var(--admin-panel-soft);
 }
 
+.admin-row-main { display: grid; gap: 2px; min-width: 0; }
+/*
+ * O título pode ocupar duas linhas em vez de virar reticências.
+ *
+ * Com o corte por reticências, a coluna estreita reduzia "Atendimentos" a
+ * "Ate…" e a lista deixava de ser lista: quatro blocos, quatro abreviações
+ * iguais. Duas linhas custam altura e devolvem o nome.
+ */
+.admin-row-title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-weight: 600;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.admin-row-category { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-row-thumb { width: 52px; height: 44px; border-radius: 8px; background: var(--admin-ground); }
+.admin-list img { width: 52px; height: 44px; }
+
+/* Só um texto para quem lê a tela. O rótulo visível é o símbolo ao lado. */
+.admin-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+ * Subir e descer ficam SEMPRE à vista, e o resto vai para o menu.
+ *
+ * As ações empilhadas na linha engoliam o bloco inteiro — miniatura, título e
+ * badge sumiam atrás de cinco botões. Guardar tudo no menu resolveria o
+ * tamanho, mas esconderia o único caminho de reordenar sem mouse atrás de mais
+ * um clique. As duas setas ficam, o resto se recolhe.
+ */
+.admin-row-move { display: flex; gap: 2px; }
+.admin-row-move button { min-width: 30px; min-height: 44px; padding: 2px; }
+.admin-row-move button[disabled] { opacity: .3; }
+
+.admin-row-menu summary {
+  display: grid;
+  width: 28px;
+  min-height: 44px;
+  border-radius: 8px;
+  color: var(--admin-muted);
+  cursor: pointer;
+  list-style: none;
+  place-items: center;
+}
+
+.admin-row-menu summary::-webkit-details-marker { display: none; }
+
+.admin-row-actions {
+  position: absolute;
+  z-index: 2;
+  right: 10px;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--admin-line);
+  border-radius: 10px;
+  background: var(--admin-panel);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
+}
+
+.admin-row-actions button { min-height: 40px; padding: 6px 12px; font-size: .82rem; text-align: left; }
+
 .admin-list li[aria-current="true"] { border-color: var(--admin-gold); }
 .admin-list img { width: 64px; height: 48px; border-radius: 8px; object-fit: cover; }
 .admin-list .admin-row-index { color: var(--admin-muted); font-size: .74rem; }
-.admin-list .admin-row-title { font-weight: 600; }
+
 .admin-list .admin-row-category { color: var(--admin-muted); font-size: .76rem; }
 
 .admin-badge {
@@ -323,7 +395,7 @@ button {
 .admin-badge[data-state="rascunho"] { background: var(--admin-gold-soft); color: var(--admin-gold); }
 .admin-badge[data-state="pendente"] { background: rgba(216, 178, 106, .22); color: var(--admin-gold); }
 
-.admin-drag { cursor: grab; color: var(--admin-muted); background: transparent; border: 0; min-height: 32px; padding: 0; }
+.admin-drag { min-width: 18px; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--admin-muted); cursor: grab; }
 .admin-new { width: 100%; margin-top: 10px; }
 
 /* ---------- editor ---------- */

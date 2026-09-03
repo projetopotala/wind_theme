@@ -46,14 +46,21 @@ export function renderEntryRow(entry, index, total) {
         <span class="admin-badge" data-state="${escapar(entry.state)}">${ROTULO[entry.state] || "Rascunho"}</span>
         ${entry.state === "pendente" ? '<span class="admin-badge" data-state="pendente">alterações por publicar</span>' : ""}
       </span>
-      <span class="admin-row-actions">
-        <button type="button" data-action="edit" data-id="${id}">Editar</button>
-        <button type="button" data-action="up" data-id="${id}" ${index === 0 ? "disabled" : ""}>Mover acima</button>
-        <button type="button" data-action="down" data-id="${id}" ${index === total - 1 ? "disabled" : ""}>Mover abaixo</button>
-        <button type="button" data-action="duplicate" data-id="${id}">Duplicar</button>
-        ${entry.hasDraft ? `<button type="button" data-action="discard" data-id="${id}">Descartar rascunho</button>` : ""}
-        <button type="button" data-action="delete" data-id="${id}">Apagar</button>
+      <span class="admin-row-move">
+        <button type="button" data-action="up" data-id="${id}" ${index === 0 ? "disabled" : ""}
+          title="Mover acima"><span class="admin-sr">Mover acima</span><span aria-hidden="true">↑</span></button>
+        <button type="button" data-action="down" data-id="${id}" ${index === total - 1 ? "disabled" : ""}
+          title="Mover abaixo"><span class="admin-sr">Mover abaixo</span><span aria-hidden="true">↓</span></button>
       </span>
+      <details class="admin-row-menu">
+        <summary title="Mais ações"><span class="admin-sr">Mais ações para ${escapar(bloco.title)}</span><span aria-hidden="true">⋮</span></summary>
+        <span class="admin-row-actions">
+          <button type="button" data-action="edit" data-id="${id}">Editar</button>
+          <button type="button" data-action="duplicate" data-id="${id}">Duplicar</button>
+          ${entry.hasDraft ? `<button type="button" data-action="discard" data-id="${id}">Descartar rascunho</button>` : ""}
+          <button type="button" data-action="delete" data-id="${id}">Apagar</button>
+        </span>
+      </details>
     </li>`;
 }
 

@@ -101,8 +101,31 @@ test("metade do zoom mostra o dobro da página, sem mexer no que ela acredita", 
   const metade = frameGeometry({ device: "desktop", zoom: 0.5, available: 1000 });
 
   assert.equal(metade.width, cheio.width);
-  assert.equal(metade.scale, 0.5);
+  assert.equal(metade.scale, cheio.scale / 2);
   assert.equal(metade.visible, cheio.visible * 2);
+});
+
+/*
+ * 100% quer dizer "cabe na coluna", e não "um pixel para cada pixel".
+ *
+ * Na leitura literal, 1280px de página numa coluna de 460 mostravam o canto
+ * superior esquerdo e mais nada — foi exatamente o que apareceu na tela: a
+ * prévia cortada.
+ */
+test("a 100% a largura do dispositivo cabe inteira na coluna", () => {
+  const desktop = frameGeometry({ device: "desktop", zoom: 1, available: 460 });
+  assert.equal(desktop.visible, 1280, "a largura visível é a do dispositivo");
+  assert.equal(Math.round(desktop.width * desktop.scale), 460, "e ela ocupa a coluna toda");
+
+  const mobile = frameGeometry({ device: "mobile", zoom: 1, available: 460 });
+  assert.equal(Math.round(mobile.width * mobile.scale), 460);
+});
+
+/* Escalar o iframe encolhe a altura junto. Sem compensar, sobra uma faixa
+   morta embaixo da prévia com o mesmo tamanho do que foi encolhido. */
+test("a altura do iframe compensa a escala", () => {
+  const geometria = frameGeometry({ device: "desktop", zoom: 1, available: 460, height: 320 });
+  assert.equal(Math.round(geometria.frameHeight * geometria.scale), 320);
 });
 
 /* 390px tem de continuar 390px em qualquer coluna: alargar para preencher o

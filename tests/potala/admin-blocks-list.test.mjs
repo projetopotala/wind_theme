@@ -127,3 +127,28 @@ test("a alça de arrastar não dispara ação", () => {
 
   assert.deepEqual(chamadas, []);
 });
+
+/*
+ * As ações empilhadas na linha engoliam o bloco: miniatura, título e badge
+ * sumiam atrás de cinco botões. Guardar TUDO no menu resolveria o tamanho, mas
+ * esconderia atrás de mais um clique o único caminho de reordenar sem mouse.
+ */
+test("subir e descer ficam fora do menu; o resto vai para dentro", () => {
+  const html = renderEntryRow(entrada({ hasDraft: true }), 1, 3);
+  const menu = html.slice(html.indexOf("<details"));
+  const fora = html.slice(0, html.indexOf("<details"));
+
+  assert.match(fora, /data-action="up"/);
+  assert.match(fora, /data-action="down"/);
+  assert.match(menu, /data-action="duplicate"/);
+  assert.match(menu, /data-action="delete"/);
+  assert.match(menu, /data-action="discard"/);
+});
+
+/* Um botão cujo rótulo visível é só uma seta precisa dizer o que faz para quem
+   lê a tela — "↑" sozinho não é nome de nada. */
+test("as setas de reordenar têm nome acessível", () => {
+  const html = renderEntryRow(entrada(), 1, 3);
+  assert.match(html, /<span class="admin-sr">Mover acima<\/span>/);
+  assert.match(html, /<span class="admin-sr">Mover abaixo<\/span>/);
+});

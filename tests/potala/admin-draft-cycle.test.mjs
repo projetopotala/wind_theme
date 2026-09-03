@@ -7,7 +7,7 @@ import { createAdminController } from "../../outputs/js/admin/admin-controller.j
  * Um repositório falso que conta o que foi chamado e pode falhar sob comando.
  * É o que permite provar a volta atrás sem uma rede de verdade.
  */
-function repositorioFalso({ falharSalvar = false, falharPublicar = false } = {}) {
+function repositorioFalso({ falharSalvar = false, falharPublicar = false, falharRascunhos = false } = {}) {
   const chamadas = [];
   let publicados = [
     { id: "a", slug: "a", title: "Original", summary: "r", side: "left", position: 0, published: true, tags: [] },
@@ -17,7 +17,10 @@ function repositorioFalso({ falharSalvar = false, falharPublicar = false } = {})
     chamadas,
     get publicados() { return publicados; },
     async list() { return publicados.map((bloco) => ({ ...bloco })); },
-    async listDrafts() { return rascunhos.map((bloco) => ({ ...bloco })); },
+    async listDrafts() {
+      if (falharRascunhos) throw new Error("relation public.home_block_drafts does not exist");
+      return rascunhos.map((bloco) => ({ ...bloco }));
+    },
     async saveDraft(bloco) {
       chamadas.push(["saveDraft", bloco.id]);
       if (falharSalvar) throw new Error("rede caiu");
@@ -94,6 +97,11 @@ function montar() {
     "[data-admin-save-draft]": alvo("savedraft"),
     "[data-admin-media-grid]": alvo("grid"),
     "[data-admin-image-pick]": alvo("pick"),
+    "[data-admin-form-tabs]": alvo("formtabs"),
+    "[data-admin-summary-counter]": alvo("counter"),
+    "[data-admin-checklist]": alvo("checklist"),
+    "[data-admin-form-title]": alvo("formtitle"),
+    "[data-admin-breadcrumb-title]": alvo("crumb"),
   };
 
   /*
@@ -206,4 +214,31 @@ test("publicar fica desabilitado quando não há pendência", async () => {
 
   assert.equal(nos["[data-admin-publish]"].disabled, false);
   assert.match(nos["[data-admin-publish]"].textContent, /\(1\)/);
+});
+
+/*
+ * O caso comum de falha, e o mais cruel: basta a migração da tabela de
+ * rascunhos ainda não ter sido aplicada ao banco. Sem tolerância, a promessa
+ * rejeitava, o desenho nunca acontecia e o painel abria VAZIO — sem sinal de
+ * erro e sem os blocos publicados, que estavam lá o tempo todo.
+ */
+test("rascunhos indisponíveis não apagam os blocos publicados", async () => {
+  const repo = repositorioFalso({ falharRascunhos: true });
+  const { root, nos } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+
+  assert.match(nos["[data-admin-counts]"].textContent, /1 blocos/);
+  assert.match(nos["[data-admin-list]"].innerHTML, /Original/);
+  assert.match(nos["[data-admin-status]"].textContent, /rascunhos não estão disponíveis/i);
+});
+
+/* As abas do editor precisam estar MONTADAS, não só desenhadas. Sem o módulo
+   ligado, Aparência e SEO ficam visíveis e mortas ao clique. */
+test("o editor é montado junto com o painel", async () => {
+  const repo = repositorioFalso();
+  const { root, ouvintes } = montar();
+  await createAdminController({ root, repository: repo }).pronto;
+
+  assert.ok(ouvintes.has("formtabs:click"), "as abas do editor não foram ligadas");
 });

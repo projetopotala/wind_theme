@@ -24,10 +24,27 @@ const PASSO = 0.25;
  * página pensa — só faz caber mais dela na coluna, que é o que "50%" quer dizer.
  * `visible` põe isso em número: quanto de página cabe no espaço disponível.
  */
-export function frameGeometry({ device = "desktop", zoom = 1, available = 460 } = {}) {
+export function frameGeometry({ device = "desktop", zoom = 1, available = 460, height = 320 } = {}) {
   const width = LARGURAS[device] ?? LARGURAS.desktop;
-  const scale = clampZoom(zoom);
-  return { width, scale, cssWidth: width * scale, visible: available / scale };
+  const fator = clampZoom(zoom);
+  /*
+   * 100% quer dizer "a largura do dispositivo cabe na coluna", e não "um pixel
+   * da página para cada pixel da tela".
+   *
+   * Na leitura literal, 1280px de página numa coluna de 460 mostrava o canto
+   * superior esquerdo e mais nada — foi o que apareceu na tela: a prévia
+   * cortada. Numa coluna de prévia, o que se quer ver é a página inteira.
+   */
+  const scale = (available / width) * fator;
+  return {
+    width,
+    scale,
+    /* O iframe também precisa ser mais ALTO na mesma proporção, senão a escala
+       encolhe a altura e sobra uma faixa morta embaixo. */
+    frameHeight: height / scale,
+    cssWidth: available * fator,
+    visible: width / fator,
+  };
 }
 
 export function clampZoom(valor) {
@@ -60,8 +77,10 @@ export function createAdminPreview({ root, onPublish } = {}) {
   function aplicar() {
     if (!frame) return;
     const largura = caixa?.clientWidth || 460;
-    const geometria = frameGeometry({ device, zoom, available: largura });
+    const altura = caixa?.clientHeight || 320;
+    const geometria = frameGeometry({ device, zoom, available: largura, height: altura });
     frame.style.width = `${geometria.width}px`;
+    frame.style.height = `${Math.round(geometria.frameHeight)}px`;
     frame.style.transform = `scale(${geometria.scale})`;
     if (zoomValor) zoomValor.textContent = `${Math.round(zoom * 100)}%`;
     for (const botao of dispositivos?.querySelectorAll("[data-device]") || []) {
