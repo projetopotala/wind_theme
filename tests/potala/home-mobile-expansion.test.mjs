@@ -441,8 +441,9 @@ test("a entrada e a saida sao ANIMACAO, nao transicao", () => {
    * `@keyframes` nao tem esse problema: uma animacao sempre comeca no proprio
    * `from`, qualquer que fosse o valor anterior.
    */
-  assert.match(css, /@keyframes\s+painel-entra\s*\{/, "falta a animacao de entrada");
-  assert.match(css, /@keyframes\s+painel-sai\s*\{/, "falta a animacao de saida");
+  assert.match(css, /@keyframes\s+painel-entra\s*\{/, "falta a animacao do painel");
+  /* Uma descricao so do movimento: a saida e esta mesma, invertida. */
+  assert.ok(!css.includes("@keyframes painel-sai"), "uma segunda descricao do movimento so pode divergir da primeira");
 
   /*
    * Qual das duas toca sai do estado, e a assimetria e de proposito.
@@ -458,7 +459,7 @@ test("a entrada e a saida sao ANIMACAO, nao transicao", () => {
   assert.ok(entrada, "falta pendurar a entrada no estado assentado");
   assert.ok(saida, "falta pendurar a saida no estado de transicao");
   assert.match(entrada[1], /animation:\s*painel-entra/);
-  assert.match(saida[1], /animation:\s*painel-sai/);
+  assert.match(saida[1], /animation:\s*painel-entra[^;]*reverse/, "a saida e a entrada ao contrario");
 });
 
 test("a direcao vem do recorte medido, e nao de uma variavel por lado", () => {
@@ -552,9 +553,8 @@ test("a abertura CRESCE do retangulo do cartao, sem escalar o texto", () => {
   assert.match(entra, /var\(--recorte-esquerda[,)]/, "o recorte vem medido do cartao");
   assert.ok(!/scale\(/.test(semComentarios(entra)), "escalar o painel esmagaria o texto");
 
-  const sai = blocoDeKeyframes(css, "painel-sai");
-  assert.match(sai, /clip-path:\s*inset\(/, "a saida encolhe de volta ao mesmo retangulo");
-  assert.ok(!/scale\(/.test(semComentarios(sai)), "escalar o painel esmagaria o texto");
+  /* A saida encolhe de volta pelo mesmo caminho, porque e esta animacao
+     invertida — nao ha um segundo recorte a conferir. */
 });
 
 test("o arredondamento e um gesto, nao um estado", () => {
@@ -607,7 +607,7 @@ test("o recorte nao pode dividir o quadro com um deslocamento", () => {
    * O deslocamento tambem ficou redundante: e o proprio recorte que da a
    * direcao, abrindo pelo lado onde o cartao estava.
    */
-  for (const nome of ["painel-entra", "painel-sai"]) {
+  for (const nome of ["painel-entra"]) {
     const bloco = semComentarios(blocoDeKeyframes(css, nome));
     assert.ok(
       !/translate3d\(var\(--painel-desloc/.test(bloco),
@@ -635,4 +635,86 @@ test("o palco fica parado durante toda a travessia, e nao so com o bloco aberto"
   const regra = css.match(/\.journey-pair:has\(\.journey-region\[data-travessia\]\)\s+\.region-stage\s*\{([^}]*)\}/);
   assert.ok(regra, "falta congelar o palco durante a travessia inteira");
   assert.match(regra[1], /transition:\s*none/);
+});
+
+test("a saida e a abertura invertida, e nao uma animacao propria", () => {
+  /*
+   * Duas animacoes separadas podem discordar — e discordavam. A saida tinha a
+   * sua propria curva de opacidade e o seu proprio caminho, entao fechar nao
+   * desfazia exatamente o que abrir tinha feito.
+   *
+   * `reverse` na MESMA animacao e a garantia: o fechamento percorre os mesmos
+   * valores no sentido contrario, do veu de pagina inteira de volta ao retangulo
+   * do cartao, encolhendo. Nao ha o que sair de sincronia porque nao ha uma
+   * segunda descricao do movimento.
+   */
+  const saida = css.match(/\.journey-region\.is-expanded\[data-travessia="transitioning"\]\s+\.region-content\s*\{([^}]*)\}/);
+  assert.ok(saida, "falta a regra da saida");
+  assert.match(saida[1], /animation:\s*painel-entra/, "a saida usa a animacao da abertura");
+  assert.match(saida[1], /reverse/, "a saida e a abertura ao contrario");
+
+  assert.ok(!css.includes("@keyframes painel-sai"), "uma segunda descricao do movimento so pode divergir da primeira");
+});
+
+test("so a irma precisa de uma volta a vista", () => {
+  /*
+   * O bloco que fecha e o MESMO elemento que era o veu: quando a classe sai, ele
+   * ja esta com a forma, o raio e a cor do cartao, porque e ai que a saida
+   * invertida terminou. Nao ha travessia para cobrir — dar-lhe um fade seria
+   * apagar o que acabou de assentar e trazer de volta.
+   *
+   * A irma e outra historia: estava fora de cena e voltaria com um estalo.
+   */
+  const seletor = '.journey-pair:has(.journey-region:not(.is-expanded)[data-travessia="transitioning"]) '
+    + '.journey-region:not([data-travessia]) .region-content';
+  const corpo = css.split(seletor)[1] ?? "";
+  assert.ok(css.includes(seletor), "a volta precisa deixar de fora quem acabou de fechar");
+  assert.match(corpo.slice(0, corpo.indexOf("}")), /animation:\s*cartao-volta/);
+});
+
+test("o lapis do admin sai de cena enquanto o bloco esta aberto", () => {
+  /*
+   * Nao e so arrumacao: os dois ocupam o MESMO canto. Medido na previa, com um
+   * bloco aberto, a flecha de voltar fica em (16,16) 44x44 e o lapis em (16,16)
+   * 40x40 — e como ele e `position: fixed` com z-index 24, ficava por cima.
+   * `document.elementFromPoint` no centro da flecha devolvia o icone do lapis:
+   * o botao de sair do painel estava intercetado, e clicar nele levava para o
+   * admin.
+   *
+   * Com o painel ocupando a pagina inteira, editar tambem nao e o gesto do
+   * momento — quem abriu um bloco esta lendo. O lapis volta assim que o bloco
+   * encolhe.
+   */
+  const regra = css.match(/body:has\(\.journey-region\.is-expanded\)\s+\.journey-admin-link\s*\{([^}]*)\}/);
+  assert.ok(regra, "falta tirar o lapis de cena com o bloco aberto");
+  assert.match(regra[1], /opacity:\s*0/, "o lapis nao pode ficar visivel sobre o painel");
+  assert.match(regra[1], /pointer-events:\s*none/, "invisivel e insuficiente: ele ainda intercetaria a flecha");
+});
+
+test("a medida do recorte neutraliza o passo de camera sem apagar a travessia", () => {
+  /*
+   * Para saber onde o cartao esta — ou vai estar — o controlador tira o estado
+   * de pagina por um calculo de layout. Duas armadilhas se cruzam ai.
+   *
+   * Se `[data-travessia]` FICAR, vale o passo de camera que desloca o bloco
+   * fechado, e o retangulo medido vem de um cartao no meio de um movimento.
+   *
+   * Se `[data-travessia]` SAIR, o palco deixa de estar congelado e volta a
+   * animar o proprio recuo: a medida pega o palco ainda com o recuo do estado
+   * aberto. Medido a 1024x700, foi o que aconteceu — a abertura passou a partir
+   * de (581,183) 428x334 onde o cartao esta em (581,177) 358x346, 70px mais
+   * larga, que e exatamente o passo de camera.
+   *
+   * A saida e uma marca so para medir: a travessia continua, entao o palco
+   * continua parado, e o passo de camera e anulado por esta regra.
+   */
+  const regra = css.match(/\.journey-region\[data-medindo\]\s+\.region-content\s*\{([^}]*)\}/);
+  assert.ok(regra, "falta neutralizar o passo de camera durante a medida");
+  assert.match(regra[1], /transform:\s*none/);
+
+  /* Precisa vir DEPOIS da regra que aplica o passo: peso igual, e quem chega
+     depois vence. */
+  const aplica = css.search(/\.journey-region\[data-travessia="transitioning"\]\s+\.region-content[^{]*\{[^}]*transform:\s*translate3d/);
+  const anula = css.search(/\.journey-region\[data-medindo\]\s+\.region-content/);
+  assert.ok(anula > aplica, "a anulacao precisa vir depois do passo que ela anula");
 });

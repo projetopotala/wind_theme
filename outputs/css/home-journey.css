@@ -181,6 +181,12 @@ html.is-crossing .journey-entry-veil {
   transition: opacity .25s ease, background .25s ease, transform .25s ease;
 }
 
+/* A ida e a volta acompanham a travessia; sem isto o lápis pisca no meio do
+   gesto, aparecendo antes de o painel terminar de encolher. */
+.journey-admin-link {
+  transition: opacity calc(var(--travessia-total, 2000ms) * .45) var(--travessia-curva, ease);
+}
+
 .journey-admin-link:hover,
 .journey-admin-link:focus-visible {
   background: rgba(48, 36, 25, .9);
@@ -190,6 +196,26 @@ html.is-crossing .journey-entry-veil {
 
 .journey-admin-link svg { width: 17px; height: 17px; fill: currentColor; }
 .is-admin-preview .journey-admin-link { display: none; }
+
+/*
+ * O LÁPIS SAI DE CENA ENQUANTO UM BLOCO ESTÁ ABERTO.
+ *
+ * Não é arrumação: os dois ocupam o mesmo canto. Medido na prévia, com um bloco
+ * aberto, a flecha de voltar fica em (16,16) com 44×44 e o lápis em (16,16) com
+ * 40×40 — e como ele é `position: fixed` com z-index 24, ficava por cima.
+ * `elementFromPoint` no centro da flecha devolvia o ícone do lápis: o botão de
+ * sair do painel estava intercetado, e clicar nele levava para o admin.
+ *
+ * `pointer-events` não é redundante com a opacidade. Um elemento invisível
+ * continua recebendo clique, e era justamente o clique que estava sendo roubado.
+ *
+ * Some com a mesma curva da travessia, para não piscar no meio do gesto, e volta
+ * assim que o bloco encolhe.
+ */
+body:has(.journey-region.is-expanded) .journey-admin-link {
+  opacity: 0;
+  pointer-events: none;
+}
 
 @media (pointer: coarse) {
   .journey-admin-link { width: 44px; height: 44px; }
@@ -2066,22 +2092,7 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 
 /* A saída é o mesmo caminho ao contrário: o painel recolhe para o seu lado e o
    fundo volta a ficar cheio, devolvendo a paisagem antes de o cartão reaparecer. */
-@keyframes painel-sai {
-  /* A opacidade só cede no fim: até lá o que se vê é o véu ENCOLHENDO de volta
-     ao lugar do cartão. Fadiando desde o começo, o encolhimento passaria
-     despercebido — seria de novo um sumiço. */
-  70% { opacity: 1; }
 
-  to {
-    clip-path: inset(
-      var(--recorte-topo, 0px) var(--recorte-direita, 0px)
-      var(--recorte-baixo, 0px) var(--recorte-esquerda, 0px)
-      round var(--recorte-raio, 0px)
-    );
-    background-color: var(--journey-panel-open);
-    opacity: 0;
-  }
-}
 
 /*
  * O repouso do painel é ZERO — e isto não é redundante com a animação.
@@ -2100,8 +2111,24 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
   animation: painel-entra var(--travessia-total) var(--travessia-curva) both;
 }
 
+/*
+ * A saída é a abertura AO CONTRÁRIO — a mesma animação, com `reverse`.
+ *
+ * Havia aqui um `painel-sai` próprio, com a sua curva de opacidade e o seu
+ * caminho. Duas descrições do mesmo movimento podem discordar, e discordavam:
+ * fechar não desfazia exatamente o que abrir tinha feito.
+ *
+ * Com `reverse` não há uma segunda descrição para sair de sincronia. O véu
+ * percorre os mesmos valores no sentido inverso — da página de volta ao
+ * retângulo do cartão, encolhendo, com o fundo voltando ao tom cheio e o raio
+ * do cartão se refazendo.
+ *
+ * E a chegada fica limpa de graça: no último quadro o painel já tem a forma, o
+ * raio e a cor do cartão. Trocar para o cartão ali é trocar o conteúdo dentro
+ * de uma caixa que não mudou.
+ */
 .journey-region.is-expanded[data-travessia="transitioning"] .region-content {
-  animation: painel-sai var(--travessia-total) var(--travessia-curva) both;
+  animation: painel-entra var(--travessia-total) var(--travessia-curva) reverse both;
 }
 
 /*
@@ -2130,12 +2157,45 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
   }
 }
 
-.journey-pair:has(.journey-region:not(.is-expanded)[data-travessia="transitioning"]) .region-content {
+/*
+ * `:not([data-travessia])` deixa de fora quem acabou de fechar.
+ *
+ * Aquele bloco é o MESMO elemento que era o véu: quando a classe sai, ele já
+ * está com a forma, o raio e a cor do cartão, porque é aí que a saída invertida
+ * terminou. Dar-lhe um fade seria apagar o que acabou de assentar para trazer
+ * de volta.
+ *
+ * A irmã é outra história — estava fora de cena e voltaria com um estalo.
+ */
+.journey-pair:has(.journey-region:not(.is-expanded)[data-travessia="transitioning"]) .journey-region:not([data-travessia]) .region-content {
   animation: cartao-volta calc(var(--travessia-total) * .3) var(--travessia-curva) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .journey-pair:has(.journey-region:not(.is-expanded)[data-travessia="transitioning"]) .region-content {
+  .journey-pair:has(.journey-region:not(.is-expanded)[data-travessia="transitioning"]) .journey-region:not([data-travessia]) .region-content {
     animation: none;
   }
+}
+
+/*
+ * A MARCA DE MEDIDA.
+ *
+ * Para saber onde o cartão está — ou onde vai estar — o controlador tira o
+ * estado de página por um cálculo de layout. Duas armadilhas se cruzam aí.
+ *
+ * Se `[data-travessia]` ficar, vale o passo de câmera que desloca o bloco
+ * fechado, e o retângulo medido vem de um cartão no meio de um movimento.
+ *
+ * Se `[data-travessia]` sair, o palco deixa de estar congelado e volta a animar
+ * o próprio recuo — a medida pega o palco ainda com o recuo do estado aberto.
+ * Medido a 1024×700, foi o que aconteceu: a abertura passou a partir de
+ * (581,183) 428×334 onde o cartão está em (581,177) 358×346. Setenta pixels
+ * mais larga, que é exatamente o passo de câmera.
+ *
+ * A saída é uma marca só para medir. A travessia continua — o palco segue
+ * parado — e o passo de câmera é anulado aqui. Ela vive por um cálculo de
+ * layout e some antes de qualquer coisa ser pintada.
+ */
+.journey-region[data-medindo] .region-content {
+  transform: none;
 }

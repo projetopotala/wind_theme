@@ -231,14 +231,30 @@ function medirRecortePadrao(entry) {
   const painel = secao.querySelector?.(".region-content");
   if (!painel?.getBoundingClientRect) return;
 
+  /*
+   * `data-medindo` entra, e `data-travessia` FICA.
+   *
+   * Apagar o estado da travessia parecia limpar a medida e fazia o contrário:
+   * é ele que mantém o palco congelado, e sem ele o palco volta a animar o
+   * próprio recuo — a medida pega o palco ainda no recuo do estado aberto.
+   * Medido a 1024×700, a abertura passou a partir de (581,183) 428×334 onde o
+   * cartão está em (581,177) 358×346: setenta pixels mais larga, que é
+   * exatamente o passo de câmera.
+   *
+   * A marca resolve o outro lado — ela anula o passo de câmera pelo CSS — sem
+   * mexer no que o palco precisa. Vive por um cálculo de layout e sai antes de
+   * qualquer coisa ser pintada.
+   */
   const expandido = secao.classList?.contains?.("is-expanded");
   if (expandido) secao.classList.remove("is-expanded");
+  if (secao.dataset) secao.dataset.medindo = "";
   void secao.offsetWidth;
 
   const cartao = painel.getBoundingClientRect();
   const raio = painel.ownerDocument?.defaultView?.getComputedStyle?.(painel)?.borderRadius;
 
   if (expandido) secao.classList.add("is-expanded");
+  if (secao.dataset) delete secao.dataset.medindo;
   void secao.offsetWidth;
 
   escreverRecorte(painel, cartao, raio);
