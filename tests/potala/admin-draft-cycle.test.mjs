@@ -242,3 +242,18 @@ test("o editor é montado junto com o painel", async () => {
 
   assert.ok(ouvintes.has("formtabs:click"), "as abas do editor não foram ligadas");
 });
+
+/*
+ * A leitura do publicado também depende de rede, e falhar mudo é o pior
+ * resultado possível: sem lista, sem contadores e sem explicação, a tela fica
+ * indistinguível de um portal que não tem bloco nenhum.
+ */
+test("falha ao ler os blocos publicados vira aviso, não tela muda", async () => {
+  const repo = repositorioFalso();
+  repo.list = async () => { throw new Error("column home_blocks.title_scale does not exist"); };
+  const { root, nos } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+
+  assert.match(nos["[data-admin-status]"].textContent, /Não foi possível carregar os blocos/i);
+});

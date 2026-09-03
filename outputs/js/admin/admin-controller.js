@@ -188,6 +188,7 @@ export function createAdminController({
   let ativoId = "";
   let arrastando = null;
   let semRascunhos = false;
+  let falhouLeitura = false;
   let previewFocusId = "";
   let previewFrameId = 0;
 
@@ -554,11 +555,24 @@ export function createAdminController({
     })
     : Promise.resolve([]);
 
-  const pronto = Promise.all([repository.list(), rascunhosIniciais]).then(([carregados, rascunhos]) => {
+  /*
+   * A leitura do publicado também precisa de rede: se ela falhar, o painel não
+   * pode abrir mudo. Antes, a promessa rejeitava e a tela ficava sem lista, sem
+   * contadores e sem explicação — indistinguível de um portal sem blocos.
+   */
+  const publicadosIniciais = repository.list().catch((error) => {
+    console.error("Não foi possível ler os blocos publicados.", error);
+    falhouLeitura = true;
+    return [];
+  });
+
+  const pronto = Promise.all([publicadosIniciais, rascunhosIniciais]).then(([carregados, rascunhos]) => {
     blocks = carregados;
     drafts = rascunhos;
     desenhar();
-    if (semRascunhos) {
+    if (falhouLeitura) {
+      anunciar("Não foi possível carregar os blocos. Verifique a conexão e recarregue a página.");
+    } else if (semRascunhos) {
       anunciar("Os rascunhos não estão disponíveis. Você está vendo o que já está publicado.");
     }
     preencher(draftFromBlock(null, blocks.length));

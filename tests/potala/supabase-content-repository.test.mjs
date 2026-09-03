@@ -52,7 +52,15 @@ test("list filtra publicação no servidor e mapeia snake_case", async () => {
   assert.equal(blocks[0].updatedAt, databaseRow.updated_at);
   assert.deepEqual(calls.eq, [["published", true]]);
   assert.deepEqual(calls.order, [["position", { ascending: true }]]);
-  assert.match(calls.select[0], /updated_at/);
+  /*
+   * A seleção pede TUDO de propósito.
+   *
+   * Uma lista explícita de colunas quebra contra um banco que ainda não recebeu
+   * a última migração: pedir uma coluna que não existe faz o Postgres recusar o
+   * SELECT inteiro, e o painel abre sem nenhum bloco — inclusive os que estão
+   * lá desde sempre. Foi exatamente o que aconteceu ao acrescentar title_scale.
+   */
+  assert.equal(calls.select[0], "*");
 });
 
 test("replaceAll envia uma única RPC atômica e devolve blocos normalizados", async () => {

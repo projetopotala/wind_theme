@@ -1,10 +1,18 @@
 import { normalizeHomeBlock, normalizeHomeBlocks } from "./content-model.js";
 
-const HOME_BLOCK_COLUMNS = [
-  "id", "slug", "category", "title", "summary", "body", "image", "icon",
-  "tags", "href", "side", "position", "published",
-  "title_scale", "allow_panel", "meta_description", "updated_at",
-].join(",");
+/*
+ * Todas as colunas, e não uma lista explícita.
+ *
+ * A lista explícita quebra contra um banco que ainda não recebeu a migração:
+ * pedir `title_scale` onde a coluna não existe faz o Postgres recusar o SELECT
+ * INTEIRO, e o painel abre sem nenhum bloco — inclusive os que estão lá desde
+ * sempre. Com `*`, uma coluna que ainda não chegou simplesmente não vem, e
+ * `normalizeHomeBlock` põe o padrão dela.
+ *
+ * A tabela é conteúdo público de ponta a ponta — `anon` já tem select nela —
+ * então não há coluna que a lista explícita estivesse protegendo.
+ */
+const HOME_BLOCK_COLUMNS = "*";
 
 export class SupabaseContentError extends Error {
   constructor(operation, cause = {}) {

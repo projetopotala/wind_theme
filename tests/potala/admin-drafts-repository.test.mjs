@@ -140,3 +140,41 @@ test("local: descartar rascunho devolve o bloco ao que está no ar", async () =>
   assert.deepEqual(await repo.listDrafts(), []);
   assert.deepEqual((await repo.list()).map((bloco) => bloco.title), ["Original"]);
 });
+
+/*
+ * Uma linha vinda de um banco que ainda não recebeu a migração — sem
+ * title_scale, allow_panel nem meta_description — tem de virar um bloco válido.
+ * É o estado real do banco enquanto a migração não roda, e nele o painel
+ * precisa continuar mostrando o que está publicado.
+ */
+test("linha sem as colunas novas ainda vira bloco, com os padrões", async () => {
+  const linhaAntiga = {
+    id: "quem-somos",
+    slug: "quem-somos",
+    category: "A entrada",
+    title: "Quem somos",
+    summary: "Um resumo",
+    body: "Um corpo",
+    image: "",
+    icon: "",
+    tags: [],
+    href: "quem-somos.html",
+    side: "left",
+    position: 0,
+    published: true,
+    updated_at: "2026-09-01T00:00:00.000Z",
+  };
+  const client = {
+    from: () => ({
+      select: () => ({ order: () => Promise.resolve({ data: [linhaAntiga], error: null }) }),
+    }),
+    rpc: async () => ({ data: [], error: null }),
+  };
+
+  const [bloco] = await createSupabaseContentRepository({ client }).list();
+
+  assert.equal(bloco.title, "Quem somos");
+  assert.equal(bloco.titleScale, "normal");
+  assert.equal(bloco.allowPanel, true);
+  assert.equal(bloco.metaDescription, "");
+});
