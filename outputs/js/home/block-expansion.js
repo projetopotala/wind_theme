@@ -213,6 +213,37 @@ function escreverRecorte(painel, cartao, raio) {
   painel.style.setProperty("--recorte-raio", raio || "0px");
 }
 
+/*
+ * Mede onde o cartão está — ou onde ele VAI estar — e escreve o recorte.
+ *
+ * O truque é tirar `is-expanded` por um cálculo de layout e devolvê-la. Dentro
+ * de uma mesma tarefa nada é pintado, então ninguém vê o bloco piscar de volta
+ * ao tamanho de cartão; o navegador só é obrigado a responder onde ele ficaria.
+ *
+ * É o único jeito de a SAÍDA acertar. O recorte guarda coordenadas de tela, e
+ * elas não sobrevivem a nada que mova o bloco entre abrir e fechar — rolagem, o
+ * palco grudando em outra posição, a janela mudando de tamanho. Medido na
+ * prévia: o recorte da abertura dizia topo 177px e o cartão ia reaparecer em
+ * 210px; o véu encolhia para 33px acima do lugar certo.
+ */
+function medirRecortePadrao(entry) {
+  const secao = entry.section;
+  const painel = secao.querySelector?.(".region-content");
+  if (!painel?.getBoundingClientRect) return;
+
+  const expandido = secao.classList?.contains?.("is-expanded");
+  if (expandido) secao.classList.remove("is-expanded");
+  void secao.offsetWidth;
+
+  const cartao = painel.getBoundingClientRect();
+  const raio = painel.ownerDocument?.defaultView?.getComputedStyle?.(painel)?.borderRadius;
+
+  if (expandido) secao.classList.add("is-expanded");
+  void secao.offsetWidth;
+
+  escreverRecorte(painel, cartao, raio);
+}
+
 function limparRecorte(painel) {
   if (!painel?.style) return;
   for (const nome of ["topo", "direita", "baixo", "esquerda", "raio"]) {
@@ -273,6 +304,9 @@ export function createBlockExpansion(root, {
    * pedida; o padrão abaixo é o que roda na página.
    */
   ajustarPainel = ajustePadrao,
+  /* Injetável pelo mesmo motivo de `ajustarPainel`: sem navegador não há
+     retângulo nenhum para medir, e o teste observa quando a medida é pedida. */
+  medirRecorte = medirRecortePadrao,
 } = {}) {
   if (!root) throw new TypeError("root é obrigatório para controlar os blocos");
 
@@ -408,6 +442,16 @@ export function createBlockExpansion(root, {
     if (encena && travessia.fechar()) {
       /* A volta usa a MESMA linha do tempo, no sentido inverso: o estado vai
          para `transitioning` e só chega em `initial` no fim. */
+      /*
+       * A saída tem a SUA medida. Reaproveitar a da abertura fazia o véu
+       * encolher para onde o cartão estava quando abriu, e não para onde ele
+       * vai reaparecer — que é outro lugar assim que a página rola.
+       *
+       * Vem antes de `encenar`, porque é `transitioning` que dispara a animação
+       * de saída e ela lê os valores ao começar.
+       */
+      medirRecorte(current, "saida");
+
       encenar(current, "transitioning");
       saindo = current;
       cancelar(fimDaTravessia);
@@ -462,19 +506,6 @@ export function createBlockExpansion(root, {
      */
     if (travessia.travado && activeId === id) return false;
 
-    /*
-     * O cartão é medido AGORA, enquanto ainda é cartão.
-     *
-     * Depois de `setExpanded` ele já é a página, e o retângulo de onde a
-     * animação deve partir deixou de existir no DOM. Não há como recuperá-lo
-     * sem desfazer o estado.
-     */
-    const painelDoBloco = next.section.querySelector?.(".region-content");
-    const cartao = painelDoBloco?.getBoundingClientRect?.();
-    const raioDoCartao = painelDoBloco
-      ? documento?.defaultView?.getComputedStyle?.(painelDoBloco)?.borderRadius
-      : null;
-
     travessia.interromper();
     cancelar(fimDaTravessia);
     /* Antes de tudo: o painel que ainda estava saindo sai agora. Os relógios que
@@ -514,12 +545,11 @@ export function createBlockExpansion(root, {
     void next.section.offsetWidth;
 
     /*
-     * Aqui o painel já é a página e o layout está calculado — é o único
-     * instante em que os dois retângulos existem para serem comparados. As
-     * variáveis PRECISAM estar escritas antes de `revealed`, porque é ele que
-     * dispara a animação e ela lê os valores ao começar.
+     * A medida vem AGORA, com o painel já em página inteira e o layout
+     * calculado, e PRECISA estar escrita antes de `revealed` — é ele que dispara
+     * a animação, e ela lê os valores ao começar.
      */
-    escreverRecorte(painelDoBloco, cartao, raioDoCartao);
+    medirRecorte(next, "entrada");
 
     encenar(next, "revealed");
     cancelar(fimDaTravessia);

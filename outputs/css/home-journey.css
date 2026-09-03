@@ -1870,6 +1870,25 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  * janela de 1440 — encostado na borda esquerda, com a paisagem inteira à
  * direita dele. É a mesma armadilha já anotada na versão do telefone.
  */
+/*
+ * O palco fica PARADO durante a travessia inteira — abertura e fechamento.
+ *
+ * Congelá-lo só com o bloco aberto resolvia metade. Assim que a classe sai, no
+ * fim da animação de saída, a regra deixa de valer, a transição de `padding`
+ * volta e o palco relaxa por mais 0,72s DEPOIS de o véu já ter ido embora.
+ *
+ * O estrago é na medida. `medirRecorte` tira a classe por um cálculo de layout
+ * para saber onde o cartão vai reaparecer, e nesse instante o palco ainda
+ * carrega o recuo do estado aberto. Medido a 320×568: a saída terminava em
+ * (72,257) e o cartão assentava em (82,208) — o véu encolhia para um lugar que
+ * o cartão ia deixar.
+ *
+ * `[data-travessia]` cobre o gesto do começo ao fim e some só quando acabou.
+ */
+.journey-pair:has(.journey-region[data-travessia]) .region-stage {
+  transition: none;
+}
+
 .journey-pair:has(.journey-region.is-expanded[data-side]) .region-stage {
   /*
    * O palco assenta de UMA VEZ, sem animar o próprio recuo.

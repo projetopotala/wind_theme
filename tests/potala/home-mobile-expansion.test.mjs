@@ -615,3 +615,24 @@ test("o recorte nao pode dividir o quadro com um deslocamento", () => {
     );
   }
 });
+
+test("o palco fica parado durante toda a travessia, e nao so com o bloco aberto", () => {
+  /*
+   * Congelar o palco so em `:has(.is-expanded)` resolvia metade. Assim que a
+   * classe sai — no fim da animacao de saida — a regra deixa de valer, a
+   * transicao de `padding` volta e o palco relaxa por mais 0,72s DEPOIS de o
+   * veu ja ter ido embora.
+   *
+   * O estrago e na medida: `medirRecorte` tira a classe por um calculo de
+   * layout para saber onde o cartao vai reaparecer, e nesse instante o palco
+   * ainda esta com o recuo do estado aberto. Medido a 320x568: a saida terminava
+   * em (72,257) e o cartao assentava em (82,208) — o veu encolhia para um lugar
+   * que o cartao ia deixar.
+   *
+   * `[data-travessia]` cobre o gesto inteiro, abertura e fechamento, e some so
+   * quando tudo acabou.
+   */
+  const regra = css.match(/\.journey-pair:has\(\.journey-region\[data-travessia\]\)\s+\.region-stage\s*\{([^}]*)\}/);
+  assert.ok(regra, "falta congelar o palco durante a travessia inteira");
+  assert.match(regra[1], /transition:\s*none/);
+});
