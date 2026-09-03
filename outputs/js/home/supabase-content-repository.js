@@ -2,7 +2,8 @@ import { normalizeHomeBlock, normalizeHomeBlocks } from "./content-model.js";
 
 const HOME_BLOCK_COLUMNS = [
   "id", "slug", "category", "title", "summary", "body", "image", "icon",
-  "tags", "href", "side", "position", "published", "updated_at",
+  "tags", "href", "side", "position", "published",
+  "title_scale", "allow_panel", "meta_description", "updated_at",
 ].join(",");
 
 export class SupabaseContentError extends Error {
@@ -20,7 +21,13 @@ function throwIfError(operation, error) {
 }
 
 export function homeBlockFromDatabase(row = {}, index = 0) {
-  return normalizeHomeBlock({ ...row, updatedAt: row.updated_at }, index);
+  return normalizeHomeBlock({
+    ...row,
+    updatedAt: row.updated_at,
+    titleScale: row.title_scale,
+    allowPanel: row.allow_panel,
+    metaDescription: row.meta_description,
+  }, index);
 }
 
 export function homeBlockToDatabase(block = {}, index = 0) {
@@ -40,6 +47,9 @@ export function homeBlockToDatabase(block = {}, index = 0) {
     side: normalized.side,
     position: normalized.position,
     published: normalized.published,
+    title_scale: normalized.titleScale,
+    allow_panel: normalized.allowPanel,
+    meta_description: normalized.metaDescription,
     updated_at: normalized.updatedAt || new Date().toISOString(),
   };
 }

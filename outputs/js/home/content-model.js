@@ -44,6 +44,11 @@ export function normalizeHomeBlock(input = {}, index = 0) {
     side,
     position,
     published: input.published !== false,
+    /* Só o que o CSS da Home entende. Um valor inventado no banco viraria um
+       data-attribute desconhecido, e o titulo perderia escala sem aviso. */
+    titleScale: input.titleScale === "compact" ? "compact" : "normal",
+    allowPanel: input.allowPanel !== false,
+    metaDescription: cleanString(input.metaDescription),
     updatedAt: cleanString(input.updatedAt),
   };
 }

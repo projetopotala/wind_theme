@@ -42,3 +42,28 @@ test("gera slug estável e mantém o bloco publicado por padrão", () => {
   assert.equal(block.side, "left");
 });
 
+
+test("os campos novos do editor têm padrão seguro", () => {
+  const bloco = normalizeHomeBlock({ title: "Atendimentos" }, 0);
+  assert.equal(bloco.titleScale, "normal");
+  assert.equal(bloco.allowPanel, true);
+  assert.equal(bloco.metaDescription, "");
+
+  const compacto = normalizeHomeBlock(
+    { title: "A", titleScale: "compact", allowPanel: false, metaDescription: " Um texto " },
+    0,
+  );
+  assert.equal(compacto.titleScale, "compact");
+  assert.equal(compacto.allowPanel, false);
+  assert.equal(compacto.metaDescription, "Um texto");
+});
+
+/*
+ * Um valor inventado no banco não pode virar um data-attribute que o CSS não
+ * conhece — o título simplesmente perderia escala, e ninguém liga o defeito à
+ * linha errada no banco.
+ */
+test("escala de título fora da lista volta ao padrão", () => {
+  assert.equal(normalizeHomeBlock({ title: "A", titleScale: "gigante" }, 0).titleScale, "normal");
+  assert.equal(normalizeHomeBlock({ title: "A", titleScale: null }, 0).titleScale, "normal");
+});
