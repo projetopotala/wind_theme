@@ -142,7 +142,7 @@ begin
     updated_at timestamptz not null
   ) on commit drop;
 
-  delete from pg_temp.portal_home_blocks_input;
+  delete from pg_temp.portal_home_blocks_input where true;
 
   insert into pg_temp.portal_home_blocks_input (
     id, slug, category, title, summary, body, image, icon,

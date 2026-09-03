@@ -37,3 +37,14 @@ test("escrita em lote exige administrador e ocorre em uma RPC", async () => {
   assert.match(sql, /insert into public\.home_blocks/i);
   assert.match(sql, /on conflict \(id\) do update/i);
 });
+
+test("limpeza temporária da RPC é aceita pela proteção safe-update da API", async () => {
+  const sql = await readFile(migrationUrl, "utf8");
+
+  assert.doesNotMatch(
+    sql,
+    /delete\s+from\s+pg_temp\.portal_home_blocks_input\s*;/i,
+    "DELETE sem WHERE é bloqueado nas conexões do painel",
+  );
+  assert.match(sql, /delete\s+from\s+pg_temp\.portal_home_blocks_input\s+where\s+true\s*;/i);
+});
