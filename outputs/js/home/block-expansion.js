@@ -119,22 +119,28 @@ function ajustePadrao(entry, aberto) {
   }
 
   /*
-   * O teto sai do caminho enquanto se mede, e volta no fim.
+   * Mede-se o CONTEÚDO, não a caixa.
    *
-   * O CSS limita o painel aberto à caixa do palco, como rede para o caso que
-   * nem o aperto fecha. Só que, com o teto valendo, a caixa medida PARA no
-   * limite: o painel que pedia 651px reportava 504 e a conta concluía que já
-   * cabia, deixando o texto cortado dentro de uma barra de rolagem. Medir com o
-   * teto suspenso é a única forma de saber a altura que o conteúdo realmente
-   * quer ter.
+   * Desde que o bloco aberto virou a página, o painel tem `height: 100%`: a
+   * caixa dele é sempre exatamente a da tela, caiba o texto ou não. Medir por
+   * `getBoundingClientRect` passou a devolver sempre "cabe", e o ajuste nunca
+   * disparava — o texto simplesmente sobrava para dentro de uma barra de
+   * rolagem. `scrollHeight` conta a altura que o conteúdo pediu, que é a
+   * pergunta de verdade.
+   *
+   * Isso depende do `align-content: safe center` no CSS: centrado sem `safe`, o
+   * transbordo vai metade para cima da borda, e `scrollHeight` não conta o que
+   * ficou acima — a conta sairia curta pela metade do erro.
+   *
+   * `scrollHeight` vem em pixels do layout do painel, que o `zoom` escala: por
+   * isso multiplica pelo fator, para comparar com a caixa do palco, que não é
+   * escalada.
    */
-  painel.style.setProperty("max-height", "none");
   const fator = ajusteQueCabe((tentativa) => {
     if (tentativa === 1) painel.style.removeProperty("zoom");
     else painel.style.setProperty("zoom", String(tentativa));
-    return { disponivel: caixaDoPalco(painel), natural: painel.getBoundingClientRect().height };
+    return { disponivel: caixaDoPalco(painel), natural: painel.scrollHeight * tentativa };
   });
-  painel.style.removeProperty("max-height");
 
   if (fator >= 1) painel.style.removeProperty("zoom");
   else painel.style.setProperty("zoom", String(fator));

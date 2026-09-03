@@ -266,3 +266,118 @@ test("tela baixa e larga tem regime proprio, porque largura nao diz altura", () 
     "o resumo do relacionado nao pode voltar a ser truncado",
   );
 });
+
+/* ------------------------------------------------------------------
+ * O bloco ampliado toma a pagina
+ * ------------------------------------------------------------------ */
+
+test("o bloco ampliado perde o cartao e vira a pagina", () => {
+  /*
+   * Fechado, o bloco e um cartao: borda, canto arredondado, sombra e um fundo
+   * opaco que o descola da paisagem. Aberto, ele deixa de ser um objeto POUSADO
+   * sobre a jornada e passa a ser a propria pagina — a moldura sobrando ali so
+   * lembrava que havia um recorte, e o fundo opaco apagava a paisagem inteira
+   * sem que ela tivesse saido de cena.
+   */
+  const regra = css.match(/\.journey-region\.is-expanded\s+\.region-content\s*\{[^}]*border-radius:\s*0[^}]*\}/);
+  assert.ok(regra, "falta desmontar o cartao no estado aberto");
+  assert.match(regra[0], /border(?:-color)?:\s*(?:none|0|transparent)/, "a borda do cartao precisa sair");
+  assert.match(regra[0], /box-shadow:\s*none/, "a sombra que descola o cartao precisa sair");
+});
+
+test("no lugar do fundo do cartao entra um veu, e a paisagem continua atras", () => {
+  /*
+   * O fundo do cartao e opaco (`--journey-panel`, alfa 1). Esticado para a
+   * pagina inteira ele apagaria a paisagem, e o bloco aberto viraria uma tela
+   * chapada — o oposto de "a jornada continua ali, so recuada".
+   *
+   * O veu e o mesmo tom com alfa: escurece o quanto o texto precisa e deixa a
+   * montanha aparecer por tras.
+   */
+  const veu = css.match(/--journey-veu:\s*rgba\(([^)]*)\)/);
+  assert.ok(veu, "falta a cor do veu");
+
+  const alfa = Number(veu[1].split(",").pop().trim());
+  assert.ok(alfa > 0 && alfa < 1, `o veu precisa ser translucido, veio alfa ${alfa}`);
+  /* Fundo demais e cartao esticado; de menos e texto ilegivel sobre a foto. */
+  assert.ok(alfa >= 0.7, `alfa ${alfa} deixa o texto competindo com a paisagem`);
+
+  const regra = css.match(/\.journey-region\.is-expanded\s+\.region-content\s*\{[^}]*background:[^;]*--journey-veu[^}]*\}/);
+  assert.ok(regra, "o painel aberto precisa usar o veu como fundo");
+});
+
+test("com um bloco aberto o palco entrega a pagina inteira, sem recuo e sem a irma", () => {
+  /*
+   * Para o painel chegar as BORDAS, o recuo tem de sair do palco — se ficar,
+   * sobra uma faixa de paisagem em volta e o veu vira um retangulo flutuante, o
+   * mesmo cartao de antes com outro nome. O recuo passa a ser interno ao painel,
+   * que ja tem o seu.
+   *
+   * E a irma sai de cena em qualquer largura. Ate aqui isso so valia no telefone
+   * e em tela baixa; no monitor ela ficava ao lado, apagada. Debaixo de um veu
+   * que cobre a pagina ela seria exatamente "o card atras".
+   */
+  /* Ha mais de uma regra do palco aberto no arquivo; interessa a que zera o
+     recuo, e nao a primeira que casar. */
+  /* `[data-side]` entra no seletor por PESO: sem ele a regra perde para as do
+     desktop, que trazem `[data-side="left"|"right"]` dentro do `:has()`. */
+  const palcos = css.match(/\.journey-pair:has\(\.journey-region\.is-expanded\[data-side\]\)\s+\.region-stage\s*\{[^}]*\}/g) ?? [];
+  assert.ok(
+    palcos.some((regra) => /padding:\s*0/.test(regra)),
+    "o recuo do palco precisa sair para o veu alcancar as bordas",
+  );
+
+  /* A irma tem mais de uma regra: a antiga, que so a apagava ao lado, e a que a
+     tira de cena. Interessa existir a segunda. */
+  const irmas = css.match(/\.journey-pair:has\(\.journey-region\.is-expanded\)\s+\.journey-region:not\(\.is-expanded\)\s+\.region-content\s*\{[^}]*\}/g) ?? [];
+  assert.ok(
+    irmas.some((regra) => /display:\s*none/.test(regra)),
+    "a irma nao pode ficar debaixo do veu",
+  );
+});
+
+test("o painel que ocupa a pagina nao caminha com a camera em largura nenhuma", () => {
+  /*
+   * O passo da camera existia para o bloco "ceder o palco" ao abrir. Ocupando a
+   * pagina inteira nao ha palco para ceder, e o passo so teria como levar o veu
+   * para fora da tela, descobrindo uma faixa da paisagem numa das bordas.
+   *
+   * Ate aqui a trava era por media query — telefone e tela baixa. Agora vale
+   * sempre, e por isso sai de dentro delas.
+   */
+  const aplica = css.search(/\.journey-region\[data-travessia="transitioning"\]\s+\.region-content[^{]*\{[^}]*transform:\s*translate3d/);
+  assert.notEqual(aplica, -1, "sumiu a regra que faz o bloco caminhar com a camera");
+
+  const segura = css.search(/\.journey-region\.is-expanded\[data-travessia[^\]]*\][^{]*\{[^}]*transform:\s*none/);
+  assert.notEqual(segura, -1, "falta segurar o painel que ocupa a pagina");
+  assert.ok(segura > aplica, "a regra que segura precisa vir depois da que move");
+});
+
+test("o veu e da pagina, mas a coluna de leitura nao", () => {
+  /*
+   * Cobrir a pagina e do FUNDO; esticar o texto junto e outra coisa. Medido a
+   * 1440x900, com o painel finalmente ocupando os 1425px, as linhas passaram a
+   * atravessar a tela inteira — comprimento em que o olho perde a volta da
+   * linha — e todo o conteudo ficou empilhado no canto superior esquerdo, com
+   * dois tercos de veu vazio embaixo.
+   *
+   * O veu continua indo de borda a borda. O que se prende a uma medida legivel
+   * e o texto dentro dele, centrado no quadro.
+   */
+  const medida = css.match(/\.journey-region\.is-expanded\s+\.region-summary,\s*\.journey-region\.is-expanded\s+\.region-details\s*\{([^}]*)\}/);
+  assert.ok(medida, "falta prender o texto do painel a uma medida de leitura");
+  assert.match(medida[1], /max-width|width:\s*min\(/, "a coluna de leitura precisa de um teto de largura");
+  assert.match(medida[1], /margin-inline:\s*auto/, "a coluna precisa ficar centrada no veu");
+
+  /* `[;{]` antes de `height` para nao casar com o `max-height: 100%` de outra
+     regra — "height: 100%" e substring dele. */
+  const painel = css.match(/\.journey-region\.is-expanded\s+\.region-content\s*\{[^}]*[;{]\s*height:\s*100%[^}]*\}/);
+  assert.ok(painel, "falta a regra do painel que ocupa a pagina");
+  /*
+   * `safe` e obrigatorio, nao enfeite. Centrar conteudo MAIOR que a caixa joga
+   * metade do transbordo para cima da borda de cima, e aquilo nao se alcanca
+   * rolando: medido a 320x568 com um texto longo, as primeiras linhas ficavam
+   * em -63px, fora de alcance para sempre.
+   */
+  assert.match(painel[0], /align-content:\s*safe\s+center/, "centrar sem `safe` corta o topo do texto");
+});

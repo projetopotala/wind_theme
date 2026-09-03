@@ -14,6 +14,20 @@
    * em superfície grande em movimento é caro em toda máquina. */
   --journey-panel: rgba(43, 32, 22, 1);
   --journey-panel-open: rgba(38, 28, 19, 1);
+  /*
+   * O veu do bloco ampliado. Mesmo tom do painel, com alfa.
+   *
+   * Opaco, esticado para a pagina inteira, ele apagaria a paisagem e o bloco
+   * aberto viraria uma tela chapada. Com alfa, a montanha continua atras — a
+   * jornada nao sai de cena, so recua.
+   *
+   * O alfa foi comparado na previa. A .86 a paisagem virava textura escura e a
+   * promessa de "ela continua ali" nao se cumpria; a .74 ela aparece bem, mas o
+   * topo do texto cai justamente sobre o CEU, que e a parte clara da imagem.
+   * .8 e o ponto em que a montanha se le e o cabecalho continua com folga de
+   * contraste.
+   */
+  --journey-veu: rgba(30, 22, 15, .8);
   --journey-line-gutter: clamp(104px, 15vw, 210px);
   --journey-line-gutter-open: clamp(76px, 10.5vw, 148px);
 }
@@ -1305,11 +1319,18 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 
 .region-category { display: flex; align-items: center; }
 
+/*
+ * A flecha fica à ESQUERDA, onde se procura um "voltar".
+ *
+ * Como × ela morava à direita, que é onde se procura um "fechar" — os dois
+ * gestos têm cantos diferentes por convenção, e trocar o glifo sem trocar o
+ * canto deixaria uma flecha de voltar no lugar de um botão de fechar.
+ */
 .region-close {
   position: absolute;
   z-index: 3;
   top: clamp(16px, 2vw, 26px);
-  right: clamp(16px, 2vw, 26px);
+  left: clamp(16px, 2vw, 26px);
   display: grid;
   width: 44px;
   height: 44px;
@@ -1798,4 +1819,115 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
     padding: 8px 14px;
     font-size: .64rem;
   }
+}
+
+/* ============================================================
+ * O BLOCO AMPLIADO É A PÁGINA, NÃO UM CARTÃO EM CIMA DELA
+ *
+ * Fechado, o bloco é um cartão: borda, canto arredondado, sombra e um fundo
+ * opaco que o descola da paisagem. Isso é o que o faz ler como um objeto
+ * pousado sobre a jornada — que é o que ele é, ali.
+ *
+ * Aberto, ele deixa de ser objeto e passa a ser a página. A moldura sobrando
+ * só lembrava que havia um recorte, e o fundo opaco apagava a paisagem inteira
+ * sem que ela tivesse saído de cena. No lugar dela entra um véu: escurece o
+ * quanto o texto precisa e deixa a montanha aparecer por trás.
+ *
+ * Vale em QUALQUER largura. Até aqui, tirar a irmã e dar o palco inteiro ao
+ * bloco eram exceções do telefone e da tela baixa; agora são a regra, e o que
+ * era exceção virou o caso comum.
+ * ============================================================ */
+
+/*
+ * O `[data-side]` no seletor não é decoração — é peso.
+ *
+ * As regras de abertura do desktop trazem `[data-side="left"]` e
+ * `[data-side="right"]` dentro do `:has()`, e um `:has()` pesa como o que
+ * carrega. Escrita sem ele, esta regra perdia calada: o palco continuava em
+ * três colunas e o painel, obediente ao `width: 100%`, ficava com 370px numa
+ * janela de 1440 — encostado na borda esquerda, com a paisagem inteira à
+ * direita dele. É a mesma armadilha já anotada na versão do telefone.
+ */
+.journey-pair:has(.journey-region.is-expanded[data-side]) .region-stage {
+  /*
+   * Sem recuo, senão sobra uma faixa de paisagem em volta e o véu vira um
+   * retângulo flutuante — o mesmo cartão de antes, com outro nome.
+   */
+  padding: 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/*
+ * A irmã sai de cena.
+ *
+ * No monitor ela ficava ao lado, apagada, e clicar nela devolvia o espaço para
+ * o lado dela. Debaixo de um véu que cobre a página ela seria exatamente "o
+ * card atrás": um retângulo mais claro por baixo do texto, sem função. Ela
+ * volta inteira quando o painel fecha, então nenhum destino se perde — o que
+ * se perdeu foi o atalho de trocar de bloco por ela, e a saída agora é a
+ * flecha, o Escape ou o clique fora.
+ */
+.journey-pair:has(.journey-region.is-expanded) .journey-region:not(.is-expanded) .region-content {
+  display: none;
+}
+
+.journey-region.is-expanded .region-content {
+  display: grid;
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: stretch;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: var(--journey-veu);
+  box-shadow: none;
+  /*
+   * Vertical: o conteúdo fica no MEIO do véu, não pendurado no topo.
+   *
+   * Com o painel ocupando 900px de altura e o texto pedindo uns 300, ele ficava
+   * encostado na borda de cima com dois terços de véu vazio embaixo — o que
+   * lia como uma página que não terminou de carregar.
+   *
+   * `safe` não é enfeite. Centrar conteúdo MAIOR que a caixa empurra metade do
+   * transbordo para CIMA da borda de cima, e aquilo não se alcança rolando:
+   * medido a 320×568 com um texto longo, as primeiras linhas ficavam em -63px,
+   * fora de alcance para sempre. Com `safe`, assim que o conteúdo passa da
+   * caixa o alinhamento volta para o topo e nada se perde. De quebra, é o que
+   * faz `scrollHeight` voltar a contar a altura real — a conta do ajuste em
+   * block-expansion.js depende disso.
+   */
+  align-content: safe center;
+}
+
+/*
+ * O VÉU é da página; a COLUNA DE LEITURA não.
+ *
+ * Cobrir a página de borda a borda é papel do fundo. Esticar o texto junto é
+ * outra coisa: medido a 1440×900, com o painel enfim ocupando os 1425px, as
+ * linhas passaram a atravessar a tela inteira — comprimento em que o olho perde
+ * a volta da linha e relê a mesma frase.
+ *
+ * O véu continua indo de ponta a ponta. Quem se prende a uma medida é o texto
+ * dentro dele.
+ */
+.journey-region.is-expanded .region-summary,
+.journey-region.is-expanded .region-details {
+  width: min(1120px, 100%);
+  margin-inline: auto;
+}
+
+/*
+ * E o painel não caminha com a câmera — em largura nenhuma.
+ *
+ * O passo existia para o bloco "ceder o palco" ao abrir. Ocupando a página não
+ * há palco para ceder, e o passo só teria como levar o véu para fora da tela,
+ * descobrindo uma faixa de paisagem numa das bordas. A trava era por media
+ * query, para telefone e tela baixa; agora vale sempre, e sai de dentro delas.
+ */
+.journey-region.is-expanded[data-travessia="transitioning"] .region-content,
+.journey-region.is-expanded[data-travessia="revealed"] .region-content {
+  transform: none;
 }

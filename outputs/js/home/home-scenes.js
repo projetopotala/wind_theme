@@ -230,13 +230,20 @@ export function renderRegion(region, index, discovery, discoveriesById) {
       style="--region-index:${index};--region-height:${regionHeight}svh">
         <article class="region-content" aria-labelledby="${id}-title">
           <!--
-            O × é um botão de verdade, e não um enfeite no canto.
-            Fechar por Escape já existia, mas Escape não existe no toque: sem
+            A flecha é um botão de verdade, e não um enfeite no canto.
+            Voltar por Escape já existia, mas Escape não existe no toque: sem
             este botão, quem abrisse um bloco no telefone só sairia tocando
             fora dele, o que ninguém adivinha.
+
+            Era um × até o bloco aberto passar a ocupar a página. Um × fecha uma
+            janela que está POR CIMA de alguma coisa, e enquanto o bloco era um
+            cartão sobre a paisagem era isso mesmo. Ocupando a página não há
+            janela para fechar: há um lugar de onde se veio. A flecha diz para
+            onde leva, e o rótulo diz o destino em vez da operação — quem ouve o
+            botão precisa saber para onde vai, e "Fechar" não conta isso.
           -->
           <button class="region-close" type="button" data-region-close tabindex="-1"
-            aria-label="Fechar ${escapeHtml(title)}"><span aria-hidden="true">×</span></button>
+            aria-label="Voltar para a jornada"><span aria-hidden="true">←</span></button>
           <button class="region-summary" type="button" aria-expanded="false" aria-controls="${id}-details">
             <span class="region-category">
               <span>${String(index + 1).padStart(2, "0")}</span>${escapeHtml(region.category)}

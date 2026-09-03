@@ -274,7 +274,7 @@ test("sem caminhos relacionados, a lista não aparece", () => {
 
 /* Fechar por Escape já existia, mas Escape não existe no toque: sem o botão,
    quem abre um bloco no telefone só sai tocando fora dele. */
-test("o painel tem um botão de fechar com nome acessível", () => {
+test("o painel tem uma flecha de voltar com nome acessível", () => {
   const markup = homeScenes.renderRegion(
     { id: "a", title: "Atendimentos", summary: "r", side: "left" },
     0,
@@ -282,7 +282,24 @@ test("o painel tem um botão de fechar com nome acessível", () => {
     new Map(),
   );
   assert.match(markup, /data-region-close/);
-  assert.match(markup, /aria-label="Fechar Atendimentos"/);
+
+  /*
+   * O × virou flecha quando o bloco aberto passou a ocupar a página.
+   *
+   * Um × fecha uma janela que está POR CIMA de alguma coisa — e enquanto o
+   * bloco era um cartão sobre a paisagem, era isso mesmo. Ocupando a página,
+   * não há janela para fechar: há um lugar de onde se voltou. A flecha diz para
+   * onde leva; o × só dizia que aquilo acabava.
+   */
+  /* A asserção olha o BOTÃO, e não o markup inteiro: o comentário que explica a
+     troca cita o glifo antigo, e ele viaja junto no HTML. */
+  const botao = markup.match(/<button class="region-close"[\s\S]*?<\/button>/)?.[0] ?? "";
+  assert.match(botao, /←/, "a saída do painel é uma flecha de voltar");
+  assert.doesNotMatch(botao, /×/, "o × não sobrevive ao painel que é a página");
+
+  /* E o nome acessível diz o destino, não a operação: quem ouve o botão precisa
+     saber para onde vai, e "Fechar" não conta isso. */
+  assert.match(markup, /aria-label="Voltar para a jornada"/);
 });
 
 /*
