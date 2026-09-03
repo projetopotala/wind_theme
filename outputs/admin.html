@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#211b15">
+  <meta name="theme-color" content="#12100e">
   <meta name="robots" content="noindex, nofollow">
   <meta name="description" content="Painel editorial protegido da Travessia Potala.">
-  <title>Potala — Painel editorial</title>
+  <title>Potala — Editor da jornada</title>
   <link rel="stylesheet" href="css/admin.css">
   <script src="vendor/supabase.js"></script>
   <script type="module" src="js/admin/admin-entry.js"></script>
@@ -38,29 +38,66 @@
     </section>
 
     <section class="admin-panel" id="admin-panel" aria-labelledby="admin-panel-title" hidden>
-      <header class="admin-head">
-        <h2 id="admin-panel-title" tabindex="-1">Blocos da jornada</h2>
-        <div class="admin-head-actions">
-          <button type="button" data-admin-new>Novo bloco</button>
-          <a class="admin-link" href="transcendido.html">Ver Home</a>
-          <button type="button" data-admin-reset>Restaurar conteúdo original</button>
-          <button type="button" data-admin-sign-out>Sair</button>
-        </div>
-      </header>
+      <!--
+        As seis seções sem implementação aparecem porque o mockup as mostra, e
+        são inertes porque não existem. Apenas esmaecidas, elas continuariam
+        clicáveis e alcançáveis pelo Tab, e quem seguisse uma cairia numa tela
+        vazia sem entender por quê.
+      -->
+      <nav class="admin-nav" data-admin-nav aria-label="Seções do painel">
+        <p class="admin-brand">
+          <span class="admin-brand-mark" aria-hidden="true">▲</span>
+          <span>Potala <small>Instituto</small></span>
+        </p>
+        <ul>
+          <li><button type="button" data-section="visao" aria-disabled="true">Visão geral <small>em breve</small></button></li>
+          <li><button type="button" data-section="jornada" aria-current="page">Jornada</button></li>
+          <li><button type="button" data-section="paginas" aria-disabled="true">Páginas <small>em breve</small></button></li>
+          <li><button type="button" data-section="midia" aria-disabled="true">Mídia <small>em breve</small></button></li>
+          <li><button type="button" data-section="programacao" aria-disabled="true">Programação <small>em breve</small></button></li>
+          <li><button type="button" data-section="profissionais" aria-disabled="true">Profissionais <small>em breve</small></button></li>
+          <li><button type="button" data-section="config" aria-disabled="true">Configurações <small>em breve</small></button></li>
+        </ul>
 
-      <details class="admin-password-setup" data-admin-password-setup>
-        <summary>Definir ou alterar minha senha</summary>
-        <form data-admin-password-form>
-          <label for="admin-new-password">Nova senha</label>
-          <input id="admin-new-password" name="password" type="password"
-            autocomplete="new-password" minlength="8" required>
-          <label for="admin-confirm-password">Confirmar nova senha</label>
-          <input id="admin-confirm-password" name="confirmation" type="password"
-            autocomplete="new-password" minlength="8" required>
-          <button type="submit">Salvar senha</button>
-        </form>
-        <p data-admin-password-status role="status" aria-live="polite"></p>
-      </details>
+        <div class="admin-user" data-admin-user>
+          <button type="button" data-admin-user-toggle aria-expanded="false">
+            <span class="admin-avatar" data-admin-avatar aria-hidden="true">··</span>
+            <span>
+              <strong data-admin-user-name>Editor</strong>
+              <small data-admin-user-role>Administradora</small>
+            </span>
+          </button>
+          <div class="admin-user-menu" data-admin-user-menu hidden>
+            <details class="admin-password-setup" data-admin-password-setup>
+              <summary>Definir ou alterar minha senha</summary>
+              <form data-admin-password-form>
+                <label for="admin-new-password">Nova senha</label>
+                <input id="admin-new-password" name="password" type="password"
+                  autocomplete="new-password" minlength="8" required>
+                <label for="admin-confirm-password">Confirmar nova senha</label>
+                <input id="admin-confirm-password" name="confirmation" type="password"
+                  autocomplete="new-password" minlength="8" required>
+                <button type="submit">Salvar senha</button>
+              </form>
+              <p data-admin-password-status role="status" aria-live="polite"></p>
+            </details>
+            <button type="button" data-admin-reset>Restaurar conteúdo original</button>
+            <button type="button" data-admin-sign-out>Sair</button>
+          </div>
+        </div>
+      </nav>
+
+      <header class="admin-head">
+        <div class="admin-head-title">
+          <h2 id="admin-panel-title" tabindex="-1">Editor da jornada</h2>
+          <p>Organize, edite e publique a experiência do portal</p>
+        </div>
+        <input class="admin-search" type="search" data-admin-search
+          placeholder="Buscar bloco" aria-label="Buscar bloco">
+        <a class="admin-link" href="transcendido.html" target="_blank" rel="noopener">Visualizar site</a>
+        <button class="admin-publish" type="button" data-admin-publish disabled>Publicar alterações</button>
+        <p class="admin-saved-at" data-admin-saved-at role="status" aria-live="polite"></p>
+      </header>
 
       <!-- A faixa de status é a única confirmação de que a ação valeu, e vive
            fora da lista de propósito: a lista é redesenhada a cada mudança, e um
@@ -69,76 +106,155 @@
 
       <div class="admin-columns">
         <div class="admin-list-wrap">
+          <p class="admin-counts" data-admin-counts></p>
+          <div class="admin-tabs" data-admin-tabs role="tablist" aria-label="Filtrar blocos">
+            <button type="button" role="tab" data-tab="todos" aria-selected="true">Todos</button>
+            <button type="button" role="tab" data-tab="publicados" aria-selected="false">Publicados</button>
+            <button type="button" role="tab" data-tab="rascunhos" aria-selected="false">Rascunhos</button>
+          </div>
           <p class="admin-hint">
             Arraste para reordenar, ou use “Mover acima” e “Mover abaixo” — os dois
             caminhos fazem a mesma coisa.
           </p>
           <ol class="admin-list" data-admin-list aria-label="Ordem dos blocos na Home"></ol>
+          <button class="admin-new" type="button" data-admin-new>Novo bloco</button>
         </div>
 
         <form class="admin-form" data-admin-form novalidate>
-          <h3>Conteúdo do bloco</h3>
+          <p class="admin-breadcrumb">Jornada / <span data-admin-breadcrumb-title></span></p>
+          <h3 data-admin-form-title>Conteúdo do bloco</h3>
 
-          <label for="admin-title">Título</label>
-          <input id="admin-title" name="title" type="text" autocomplete="off"
-            aria-describedby="erro-title">
-          <p class="admin-error" id="erro-title" data-error-for="title"></p>
+          <div class="admin-form-tabs" data-admin-form-tabs role="tablist" aria-label="Seções do bloco">
+            <button type="button" role="tab" data-panel="conteudo" aria-selected="true">Conteúdo</button>
+            <button type="button" role="tab" data-panel="aparencia" aria-selected="false">Aparência</button>
+            <button type="button" role="tab" data-panel="seo" aria-selected="false">SEO</button>
+          </div>
 
-          <label for="admin-category">Categoria</label>
-          <input id="admin-category" name="category" type="text" autocomplete="off">
+          <div role="tabpanel" data-panel="conteudo">
+            <div class="admin-pair">
+              <div>
+                <label for="admin-category">Categoria</label>
+                <input id="admin-category" name="category" type="text" autocomplete="off">
+              </div>
+              <div>
+                <label for="admin-side">Posição na trilha</label>
+                <select id="admin-side" name="side" aria-describedby="erro-side">
+                  <option value="left">Esquerda</option>
+                  <option value="right">Direita</option>
+                </select>
+                <p class="admin-error" id="erro-side" data-error-for="side"></p>
+              </div>
+            </div>
 
-          <label for="admin-summary">Resumo (bloco fechado)</label>
-          <textarea id="admin-summary" name="summary" rows="3"
-            aria-describedby="erro-summary"></textarea>
-          <p class="admin-error" id="erro-summary" data-error-for="summary"></p>
+            <label for="admin-title">Título</label>
+            <input id="admin-title" name="title" type="text" autocomplete="off"
+              aria-describedby="erro-title">
+            <p class="admin-error" id="erro-title" data-error-for="title"></p>
 
-          <label for="admin-body">Texto completo (bloco aberto)</label>
-          <textarea id="admin-body" name="body" rows="5"></textarea>
+            <label for="admin-summary">Resumo do card</label>
+            <textarea id="admin-summary" name="summary" rows="3" maxlength="160"
+              aria-describedby="erro-summary contador-summary"></textarea>
+            <p class="admin-counter" id="contador-summary" data-admin-summary-counter></p>
+            <p class="admin-error" id="erro-summary" data-error-for="summary"></p>
 
-          <label for="admin-side">Lado do trajeto</label>
-          <select id="admin-side" name="side" aria-describedby="erro-side">
-            <option value="left">Esquerda</option>
-            <option value="right">Direita</option>
-          </select>
-          <p class="admin-error" id="erro-side" data-error-for="side"></p>
+            <label for="admin-body">Conteúdo detalhado</label>
+            <div class="admin-toolbar" data-admin-toolbar role="toolbar" aria-label="Formatação">
+              <button type="button" data-mark="bold" aria-label="Negrito"><b>B</b></button>
+              <button type="button" data-mark="italic" aria-label="Itálico"><i>I</i></button>
+              <button type="button" data-mark="link" aria-label="Link">🔗</button>
+              <button type="button" data-mark="ul" aria-label="Lista">•</button>
+              <button type="button" data-mark="ol" aria-label="Lista numerada">1.</button>
+              <button type="button" data-mark="quote" aria-label="Citação">”</button>
+            </div>
+            <textarea id="admin-body" name="body" rows="6"></textarea>
 
-          <label for="admin-href">Destino</label>
-          <input id="admin-href" name="href" type="text" autocomplete="off"
-            placeholder="quem-somos.html" aria-describedby="erro-href">
-          <p class="admin-error" id="erro-href" data-error-for="href"></p>
+            <div class="admin-pair">
+              <div>
+                <p class="admin-field-label">Imagem do card</p>
+                <div class="admin-image-field">
+                  <img data-admin-image-preview alt="" hidden>
+                  <button type="button" data-admin-image-pick>Trocar imagem</button>
+                  <small>JPG, PNG ou WEBP</small>
+                </div>
+                <input id="admin-image" name="image" type="text" autocomplete="off"
+                  placeholder="media/journey-cultura.webp">
+              </div>
+              <div>
+                <p class="admin-field-label">Configurações</p>
+                <label class="admin-check">
+                  <input id="admin-published" name="published" type="checkbox" checked>
+                  <span><strong>Exibir na jornada</strong><small>O bloco fica visível na trilha</small></span>
+                </label>
+                <label class="admin-check">
+                  <input id="admin-allow-panel" name="allowPanel" type="checkbox" checked>
+                  <span><strong>Permitir abertura em slide</strong><small>Exibe o conteúdo em painel lateral</small></span>
+                </label>
+              </div>
+            </div>
+          </div>
 
-          <label for="admin-image">Imagem (caminho ou URL)</label>
-          <input id="admin-image" name="image" type="text" autocomplete="off"
-            placeholder="media/journey-cultura.webp">
+          <div role="tabpanel" data-panel="aparencia" hidden>
+            <label for="admin-icon">Ícone ou símbolo curto</label>
+            <input id="admin-icon" name="icon" type="text" autocomplete="off"
+              placeholder="Ex.: folha, círculo ou caractere">
 
-          <label for="admin-icon">Ícone ou símbolo curto</label>
-          <input id="admin-icon" name="icon" type="text" autocomplete="off"
-            placeholder="Ex.: folha, círculo ou caractere">
+            <label for="admin-title-scale">Escala do título</label>
+            <select id="admin-title-scale" name="titleScale">
+              <option value="normal">Normal</option>
+              <option value="compact">Compacta</option>
+            </select>
 
-          <label for="admin-tags">Temas (separados por vírgula)</label>
-          <input id="admin-tags" name="tags" type="text" autocomplete="off">
+            <label for="admin-tags">Temas (separados por vírgula)</label>
+            <input id="admin-tags" name="tags" type="text" autocomplete="off">
+          </div>
 
-          <label class="admin-check">
-            <input id="admin-published" name="published" type="checkbox" checked>
-            Publicado na Home
-          </label>
+          <div role="tabpanel" data-panel="seo" hidden>
+            <label for="admin-href">Destino</label>
+            <input id="admin-href" name="href" type="text" autocomplete="off"
+              placeholder="quem-somos.html" aria-describedby="erro-href">
+            <p class="admin-error" id="erro-href" data-error-for="href"></p>
+
+            <label for="admin-slug">Endereço do bloco</label>
+            <input id="admin-slug" name="slug" type="text" autocomplete="off">
+
+            <label for="admin-meta-description">Descrição acessível</label>
+            <textarea id="admin-meta-description" name="metaDescription" rows="2"></textarea>
+            <p class="admin-hint">Lida por leitores de tela ao anunciar o link do bloco.</p>
+          </div>
 
           <input name="id" type="hidden">
-          <input name="slug" type="hidden">
 
-          <button class="admin-save" type="submit">Salvar bloco</button>
+          <footer class="admin-form-actions">
+            <button type="button" data-admin-save-draft>Salvar rascunho</button>
+            <button class="admin-save" type="submit">Salvar bloco</button>
+          </footer>
         </form>
 
         <aside class="admin-preview" aria-labelledby="admin-preview-title">
           <header>
-            <div>
-              <p class="admin-kicker">Atualização ao vivo</p>
-              <h3 id="admin-preview-title">Prévia da Home</h3>
+            <h3 id="admin-preview-title">Prévia ao vivo</h3>
+            <div class="admin-device" data-admin-preview-device role="group" aria-label="Dispositivo">
+              <button type="button" data-device="desktop" aria-pressed="true" aria-label="Computador">🖥</button>
+              <button type="button" data-device="mobile" aria-pressed="false" aria-label="Telefone">📱</button>
             </div>
-            <span>O rascunho só é publicado ao salvar.</span>
+            <div class="admin-zoom" data-admin-preview-zoom role="group" aria-label="Zoom">
+              <button type="button" data-zoom="-1" aria-label="Diminuir zoom">−</button>
+              <span data-admin-zoom-value>100%</span>
+              <button type="button" data-zoom="1" aria-label="Aumentar zoom">+</button>
+            </div>
           </header>
-          <iframe data-admin-preview src="transcendido.html?admin-preview=1"
-            title="Prévia ao vivo da Home do Portal Potala"></iframe>
+
+          <div class="admin-preview-frame" data-admin-preview-frame>
+            <iframe data-admin-preview src="transcendido.html?admin-preview=1"
+              title="Prévia ao vivo da Home do Portal Potala"></iframe>
+            <p class="admin-preview-error" data-admin-preview-error hidden>
+              A prévia não carregou.
+              <button type="button" data-admin-preview-reload>Recarregar</button>
+            </p>
+          </div>
+
+          <ul class="admin-checklist" data-admin-checklist></ul>
+          <div class="admin-media-grid" data-admin-media-grid hidden></div>
         </aside>
       </div>
     </section>
