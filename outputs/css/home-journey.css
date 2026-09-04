@@ -1370,6 +1370,7 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
   .journey-region.is-expanded[data-travessia] .region-content {
     animation: none;
     transform: none;
+    translate: 0;
   }
 
   .journey-region[data-travessia="revealed"] .region-title,
@@ -2084,7 +2085,31 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  * Declarar o `to` seria reintroduzir um passo permanente, que é o que deixava
  * uma faixa de paisagem descoberta numa das bordas.
  */
+/*
+ * O ARCO, que é o que dá a impressão de deslocamento.
+ *
+ * O painel já viaja de lado: começando no card e terminando na página, o centro
+ * dele anda uns 250px. Só que essa viagem acontece DENTRO de um crescimento que
+ * multiplica o tamanho por três, e o olho lê tudo como zoom — o movimento
+ * lateral se dissolve no aumento.
+ *
+ * O começo e o fim estão travados (o card e a tela), então a única forma de
+ * aumentar o deslocamento é pelo CAMINHO: o painel sai para o próprio lado no
+ * meio do percurso e volta. O que era uma reta vira um arco, e o arco se vê.
+ *
+ * Vai na propriedade `translate`, e não no `transform`. Ela é aplicada ANTES e
+ * compõe com ele, então o arco não entra na conta do encaixe — o primeiro quadro
+ * continua caindo exatamente sobre o card, que foi o que acabou de ser
+ * consertado.
+ */
+.journey-region[data-side="right"] { --painel-arco: clamp(90px, 12vw, 250px); }
+.journey-region[data-side="left"] { --painel-arco: clamp(-250px, -12vw, -90px); }
+
 @keyframes painel-entra {
+  /* O pico fica antes da metade: o arco precisa ter voltado quando o painel já
+     está grande, senão vira um solavanco no fim. */
+  40% { translate: var(--painel-arco, 0); }
+
   from {
     /*
      * O painel AMPLIA a partir do cartão: começa reduzido ao tamanho dele, na
@@ -2125,6 +2150,9 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  */
 .journey-region.is-expanded[data-travessia] .region-content {
   transform: none;
+  /* Sem um valor declarado no repouso, o arco não tem de onde partir nem para
+     onde voltar: `translate: none` não interpola contra um comprimento. */
+  translate: 0;
   /* A ampliação parte do canto do cartão, e é a origem que dá esse sentido ao
      translate. No repouso do cartão a origem aponta para o centro do palco,
      porque ali o bloco cresce para dentro da cena. */
@@ -2150,6 +2178,8 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  * sentidos de percurso.
  */
 @keyframes painel-sai {
+  60% { translate: var(--painel-arco, 0); }
+
   to {
     transform: translate3d(var(--zoom-x, 0px), var(--zoom-y, 0px), 0) scale(var(--zoom-escala-x, 1), var(--zoom-escala-y, 1));
     border-radius: var(--zoom-raio, 0px);

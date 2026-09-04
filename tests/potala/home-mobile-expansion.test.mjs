@@ -730,3 +730,40 @@ test("a medida do recorte neutraliza o passo de camera sem apagar a travessia", 
   const anula = css.search(/\.journey-region\[data-medindo\]\s+\.region-content/);
   assert.ok(anula > aplica, "a anulacao precisa vir depois do passo que ela anula");
 });
+
+test("o painel arqueia para o proprio lado, sem mexer no encaixe", () => {
+  /*
+   * O painel ja viajava de lado: comecando no card e terminando na pagina, o
+   * centro dele anda uns 250px. So que essa viagem acontece DENTRO de um
+   * crescimento que multiplica o tamanho por tres, e o olho le tudo como zoom —
+   * o movimento lateral se dissolve no aumento.
+   *
+   * O comeco e o fim estao travados no card e na tela, entao a unica forma de
+   * aumentar o deslocamento e pelo CAMINHO: o painel sai para o proprio lado no
+   * meio do percurso e volta. O que era reta vira arco, e o arco se ve.
+   */
+  const direita = css.match(/\.journey-region\[data-side="right"\]\s*\{([^}]*--painel-arco[^}]*)\}/);
+  const esquerda = css.match(/\.journey-region\[data-side="left"\]\s*\{([^}]*--painel-arco[^}]*)\}/);
+  assert.ok(direita && esquerda, "falta a distancia do arco por lado");
+  assert.doesNotMatch(direita[1], /-\d/, "o bloco da direita arqueia para a direita");
+  assert.match(esquerda[1], /-\d/, "o da esquerda, para a esquerda");
+
+  /*
+   * O arco vai em `translate`, e nao em `transform`. Essa propriedade e aplicada
+   * ANTES e compoe com ele, entao o arco nao entra na conta do encaixe: o
+   * primeiro quadro continua caindo exatamente sobre o card.
+   */
+  for (const nome of ["painel-entra", "painel-sai"]) {
+    const bloco = semComentarios(blocoDeKeyframes(css, nome));
+    assert.match(bloco, /translate:\s*var\(--painel-arco/, `${nome} precisa do arco`);
+    assert.ok(
+      !/transform:[^;]*var\(--painel-arco/.test(bloco),
+      "no `transform` o arco desalinharia o encaixe no card",
+    );
+  }
+
+  /* E o repouso precisa de um `translate` declarado: `none` nao interpola contra
+     um comprimento, e o arco nao teria de onde partir. */
+  const repousos = css.match(/\.journey-region\.is-expanded\[data-travessia\]\s+\.region-content\s*\{[^}]*\}/g) ?? [];
+  assert.ok(repousos.some((r) => /translate:\s*0/.test(r)), "sem valor no repouso o arco nao anima");
+});
