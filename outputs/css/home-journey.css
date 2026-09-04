@@ -198,6 +198,19 @@ html.is-crossing .journey-entry-veil {
 .is-admin-preview .journey-admin-link { display: none; }
 
 /*
+ * A barra de rolagem some DENTRO da prévia.
+ *
+ * No telefone de verdade ela é uma sobreposição que aparece e some; no iframe
+ * ela ocupa largura e desenha uma faixa clara na borda direita — que ninguém
+ * vai ver no aparelho, e que ali parecia um erro de layout do site.
+ *
+ * Só na prévia: no navegador de verdade a barra é o que diz que a página
+ * continua abaixo, e escondê-la esconderia isso de quem visita.
+ */
+.is-admin-preview { scrollbar-width: none; }
+.is-admin-preview::-webkit-scrollbar { display: none; }
+
+/*
  * O LÁPIS SAI DE CENA ENQUANTO UM BLOCO ESTÁ ABERTO.
  *
  * Não é arrumação: os dois ocupam o mesmo canto. Medido na prévia, com um bloco

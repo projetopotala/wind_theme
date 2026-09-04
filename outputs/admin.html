@@ -250,8 +250,20 @@
           <input name="id" type="hidden">
 
           <footer class="admin-form-actions">
-            <button type="button" data-admin-save-draft>Salvar rascunho</button>
-            <button class="admin-save" type="submit">Salvar bloco</button>
+            <!--
+              Um botão, e não dois.
+
+              Havia "Salvar rascunho" e "Salvar bloco" lado a lado. Os nomes não
+              contavam a diferença — a de verdade é que o segundo publicava na
+              hora — e os dois respondiam "salvo". Agora ambos guardariam
+              rascunho, então dois botões seriam a mesma ação escrita duas
+              vezes, e a dúvida sobre qual clicar continuaria de graça.
+
+              O nome diz o estado em que a edição fica, e é o mesmo vocabulário
+              das etiquetas da lista. Colocar no ar tem seu próprio botão, no
+              cabeçalho: "Publicar alterações".
+            -->
+            <button class="admin-save" type="submit" data-admin-save>Salvar rascunho</button>
           </footer>
         </form>
 

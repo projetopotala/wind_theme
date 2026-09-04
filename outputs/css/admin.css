@@ -471,6 +471,80 @@ button {
   transform-origin: top left;
 }
 
+/*
+ * O MODO TELEFONE VIRA UM APARELHO, E NÃO UMA COLUNA ESTREITA.
+ *
+ * O iframe é reduzido por `transform`, e transform não muda o espaço que o
+ * elemento ocupa: a caixa continuava do tamanho da coluna, com o telefone
+ * encostado no canto superior esquerdo e um vazio à direita e embaixo.
+ *
+ * O tamanho já escalado chega em `--previa-largura` e `--previa-altura`,
+ * calculado no JS junto com a escala — deixá-lo ao CSS pediria repetir aqui a
+ * mesma conta, e as duas divergiriam na primeira mudança.
+ */
+.admin-preview-frame[data-device="mobile"] {
+  /*
+   * SEM `height` AQUI, e isso é deliberado.
+   *
+   * Repetir `height: 46svh` parecia inofensivo — era o mesmo valor da regra
+   * base. Mas há um breakpoint mais adiante que sobe a caixa para 60svh, e ele
+   * mira `.admin-preview-frame` (0,1,0) enquanto este mira o mesmo seletor mais
+   * um atributo (0,2,0). O modo telefone vencia a media query e encolhia a
+   * caixa em mais de cem pixels DEPOIS de o JS ter medido a altura antiga: a
+   * escala vinha calculada para uma caixa que já não existia, e o aparelho
+   * saía cortado embaixo.
+   *
+   * A altura da caixa não é assunto do dispositivo. Deixá-la de fora é o que
+   * mantém as duas regras falando cada uma da sua coisa.
+   */
+  position: relative;
+  border: 0;
+  background: none;
+}
+
+/*
+ * O APARELHO É POSICIONADO, E NÃO CENTRADO PELO FLUXO.
+ *
+ * O JS escreve `width: 390px` INLINE no iframe — precisa, é essa a largura que
+ * a página acredita ter. Inline vence a folha de estilo, então dar-lhe uma
+ * largura aqui não adiantava: a caixa continuava reservando 390 por 844 para um
+ * desenho de 207 por 447, e centrar o que sobrava jogava o aparelho para a
+ * esquerda e para fora por baixo.
+ *
+ * Tirando o iframe do fluxo, a reserva desaparece. O canto de cima e da
+ * esquerda vem da conta com as mesmas variáveis que o JS já calculou junto com
+ * a escala — `transform-origin` é o canto superior esquerdo, então é dali que o
+ * desenho de `--previa-largura` por `--previa-altura` cresce.
+ */
+.admin-preview-frame[data-device="mobile"] > iframe,
+.admin-preview-frame[data-device="mobile"]::before {
+  position: absolute;
+  top: calc(50% - var(--previa-altura, 430px) / 2);
+  left: calc(50% - var(--previa-largura, 200px) / 2);
+}
+
+.admin-preview-frame[data-device="mobile"]::before {
+  content: "";
+  width: var(--previa-largura, 200px);
+  height: var(--previa-altura, 430px);
+  /* A moldura é o que faz a prévia ser lida como um aparelho, e não como uma
+     página que por acaso ficou estreita. Cresce para FORA com `outline`, que
+     não entra na medida da caixa e portanto não desalinha a conta acima. */
+  border-radius: 22px;
+  outline: 6px solid #14110d;
+  background: var(--admin-ground);
+  box-shadow: 0 0 0 7px var(--admin-line), 0 16px 34px rgba(0, 0, 0, .45);
+}
+
+.admin-preview-frame[data-device="mobile"] > iframe {
+  /* Um pouco menor que a moldura: o raio de dentro é o de fora menos a
+     espessura, senão sobra um filete claro nos quatro cantos. */
+  border-radius: 18px;
+}
+
+/* O aviso de falha cobre a caixa inteira, e não só o aparelho. */
+.admin-preview-frame[data-device="mobile"] > .admin-preview-error { z-index: 1; }
+
 .admin-preview-error {
   position: absolute;
   inset: 0;

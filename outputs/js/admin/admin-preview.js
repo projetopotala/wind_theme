@@ -6,7 +6,30 @@
  * dispositivo e zoom, mais o caminho para quando a prévia não carrega.
  */
 
-export const LARGURAS = { desktop: 1280, mobile: 390 };
+/*
+ * Um dispositivo tem DUAS medidas, e o telefone precisava das duas.
+ *
+ * Só a largura estava aqui, e a altura do iframe vinha da coluna do painel. A
+ * página passava a acreditar numa tela de 390 por 271 — mais larga que alta,
+ * proporção que nenhum telefone tem. E a Home decide muita coisa por `svh`: a
+ * altura do palco, quantos blocos cabem, se o título ainda tem espaço. Nada
+ * disso podia ser conferido no modo telefone, porque nada disso aparecia.
+ *
+ * 390 × 844 é a tela de um iPhone 14/15 em pontos, e serve de aparelho médio.
+ * O desktop mantém uma altura nominal só para completar o par; quem manda no
+ * enquadramento dele continua sendo a coluna.
+ */
+export const DISPOSITIVOS = {
+  desktop: { width: 1280, height: 800 },
+  mobile: { width: 390, height: 844 },
+};
+
+/* Mantida porque o resto do painel e os testes falam em largura de
+   dispositivo, e trocar o nome não muda nada do que ela diz. */
+export const LARGURAS = {
+  desktop: DISPOSITIVOS.desktop.width,
+  mobile: DISPOSITIVOS.mobile.width,
+};
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 1.5;
 const PASSO = 0.25;
@@ -25,8 +48,36 @@ const PASSO = 0.25;
  * `visible` põe isso em número: quanto de página cabe no espaço disponível.
  */
 export function frameGeometry({ device = "desktop", zoom = 1, available = 460, height = 320 } = {}) {
-  const width = LARGURAS[device] ?? LARGURAS.desktop;
+  const aparelho = DISPOSITIVOS[device] ?? DISPOSITIVOS.desktop;
+  const width = aparelho.width;
   const fator = clampZoom(zoom);
+
+  /*
+   * O TELEFONE É UM APARELHO INTEIRO; O DESKTOP É UMA JANELA.
+   *
+   * Uma janela de desktop não tem altura própria — vê-se a largura toda e
+   * rola-se o resto, e por isso a caixa é que dita a altura dela.
+   *
+   * Um telefone tem as duas medidas, e é a tela inteira que se quer ver de uma
+   * vez: 390 por 844 encaixados na caixa, o lado mais apertado mandando. Sem
+   * isso, o modo telefone mostrava o layout de telefone numa tela que não
+   * existe, e o que ele provava não valia para nenhum aparelho.
+   */
+  if (device === "mobile") {
+    const cabe = Math.min(available / width, height / aparelho.height);
+    const scale = cabe * fator;
+    return {
+      width,
+      scale,
+      /* Fixa: é a altura que a PÁGINA acredita ter, e é dela que saem as
+         media queries e todo cálculo em `svh`. */
+      frameHeight: aparelho.height,
+      cssWidth: width * scale,
+      cssHeight: aparelho.height * scale,
+      visible: width / fator,
+    };
+  }
+
   /*
    * 100% quer dizer "a largura do dispositivo cabe na coluna", e não "um pixel
    * da página para cada pixel da tela".
@@ -43,6 +94,7 @@ export function frameGeometry({ device = "desktop", zoom = 1, available = 460, h
        encolhe a altura e sobra uma faixa morta embaixo. */
     frameHeight: height / scale,
     cssWidth: available * fator,
+    cssHeight: height,
     visible: width / fator,
   };
 }
@@ -82,6 +134,18 @@ export function createAdminPreview({ root, onPublish } = {}) {
     frame.style.width = `${geometria.width}px`;
     frame.style.height = `${Math.round(geometria.frameHeight)}px`;
     frame.style.transform = `scale(${geometria.scale})`;
+    /*
+     * A caixa recebe o tamanho JÁ ESCALADO do aparelho.
+     *
+     * O iframe é escalado por `transform`, e transform não muda o espaço que o
+     * elemento ocupa: sem dizer à caixa o tamanho final, o telefone ficava
+     * encostado no canto de um retângulo do tamanho da coluna, em vez de
+     * aparecer centrado como um aparelho. */
+    if (caixa) {
+      caixa.dataset.device = device;
+      caixa.style.setProperty("--previa-largura", `${Math.round(geometria.cssWidth)}px`);
+      caixa.style.setProperty("--previa-altura", `${Math.round(geometria.cssHeight)}px`);
+    }
     if (zoomValor) zoomValor.textContent = `${Math.round(zoom * 100)}%`;
     for (const botao of dispositivos?.querySelectorAll("[data-device]") || []) {
       botao.setAttribute("aria-pressed", botao.dataset.device === device ? "true" : "false");
@@ -128,6 +192,22 @@ export function createAdminPreview({ root, onPublish } = {}) {
   zoomGrupo?.addEventListener?.("click", onZoom);
   recarregar?.addEventListener?.("click", onRecarregar);
 
+  /*
+   * A ESCALA SAI DO TAMANHO DA CAIXA, ENTÃO PRECISA SER REFEITA QUANDO ELE MUDA.
+   *
+   * A caixa é medida em `svh`: ela muda de tamanho quando a janela muda, quando
+   * o painel cruza um breakpoint e na primeira pintura, quando o layout ainda
+   * não assentou. Medida uma vez só, a escala ficava calculada para uma caixa
+   * que já não existia — no telefone, isso corta o aparelho embaixo.
+   *
+   * `ResizeObserver` vigia a caixa, e não a janela: a coluna também muda de
+   * largura quando a prévia é recolhida, sem a janela mexer.
+   */
+  const observador = typeof ResizeObserver === "function" && caixa
+    ? new ResizeObserver(() => aplicar())
+    : null;
+  observador?.observe(caixa);
+
   aplicar();
 
   return {
@@ -149,6 +229,7 @@ export function createAdminPreview({ root, onPublish } = {}) {
       dispositivos?.removeEventListener?.("click", onDevice);
       zoomGrupo?.removeEventListener?.("click", onZoom);
       recarregar?.removeEventListener?.("click", onRecarregar);
+      observador?.disconnect();
     },
   };
 }

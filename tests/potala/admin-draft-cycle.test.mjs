@@ -70,7 +70,9 @@ function montar() {
     textContent: "",
     disabled: false,
     hidden: false,
-    style: {},
+    /* `setProperty` existe em qualquer `style` real, e faltava aqui. Um duble
+       mais magro que o original quebra onde o navegador nao quebraria. */
+    style: { setProperty() {} },
     src: "",
     value: "",
     dataset: {},
