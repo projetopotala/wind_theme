@@ -46,3 +46,10 @@ yarn-error.log*
 /.claude/
 /.superpowers/
 /.openai/
+
+# O vídeo de ORIGEM da travessia fica fora do repositório: são 19,4 MB, e o git
+# guarda binários para sempre — adicionar depois é trivial, tirar do histórico
+# não é. O que o site serve é o encode de 7,3 MB em outputs/media/, esse sim
+# versionado, e a receita para refazê-lo está em
+# scripts/prepare-home-travessia-video.mjs.
+/assets-source/home-travessia/home-travessia-source.mp4

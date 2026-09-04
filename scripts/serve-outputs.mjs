@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { createReadStream } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -40,9 +41,55 @@ export function createPreviewServer() {
     try {
       const info = await stat(target);
       if (!info.isFile()) throw new Error("not-file");
+      const tipo = types[extname(target).toLowerCase()] || "application/octet-stream";
+
+      /*
+       * PEDIDOS DE TRECHO, sem os quais nenhum vídeo é rebobinável.
+       *
+       * O fundo da jornada anda com a rolagem: cada rolagem escreve
+       * `currentTime`, e para isso o navegador busca dentro do arquivo. Buscar é
+       * pedir um trecho. Respondendo sempre 200 com o arquivo inteiro, o
+       * servidor está dizendo que não sabe recortar — e o navegador conclui que
+       * o vídeo não é buscável.
+       *
+       * O sintoma não é um erro: o vídeo carrega, `readyState` chega a 4, e
+       * `seekable` fica VAZIO. Escrever em `currentTime` é descartado em
+       * silêncio e o fundo trava no primeiro quadro. Custou uma investigação até
+       * o servidor virar suspeito, porque tudo parecia certo do lado da página.
+       */
+      const faixa = /^bytes=(\d*)-(\d*)$/.exec(request.headers.range || "");
+      if (faixa) {
+        const inicio = faixa[1] ? Number(faixa[1]) : 0;
+        const fim = faixa[2] ? Math.min(Number(faixa[2]), info.size - 1) : info.size - 1;
+
+        if (!(inicio >= 0) || inicio > fim || inicio >= info.size) {
+          /* Fora do arquivo: a resposta certa é 416, e ela precisa dizer o
+             tamanho real para o navegador se corrigir. */
+          response.writeHead(416, { "Content-Range": `bytes */${info.size}` });
+          response.end();
+          return;
+        }
+
+        response.writeHead(206, {
+          "Accept-Ranges": "bytes",
+          "Cache-Control": "no-store",
+          "Content-Type": tipo,
+          "Content-Length": fim - inicio + 1,
+          "Content-Range": `bytes ${inicio}-${fim}/${info.size}`,
+        });
+        /* Em fluxo, e não `readFile`: um trecho de cem bytes não deve custar a
+           leitura de sete megabytes. */
+        createReadStream(target, { start: inicio, end: fim }).pipe(response);
+        return;
+      }
+
       response.writeHead(200, {
+        /* Anunciado mesmo na resposta inteira: é assim que o navegador descobre
+           que PODE pedir trechos depois. */
+        "Accept-Ranges": "bytes",
         "Cache-Control": "no-store",
-        "Content-Type": types[extname(target).toLowerCase()] || "application/octet-stream",
+        "Content-Type": tipo,
+        "Content-Length": info.size,
       });
       response.end(await readFile(target));
     } catch {
