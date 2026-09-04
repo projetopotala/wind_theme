@@ -46,27 +46,48 @@ const TODO_QUADRO_KEYFRAME = [
  * leve chega perto da webp. A referência é ela, porque trocar o fundo por algo
  * mais mole que o de hoje seria uma piora.
  *
- * O `unsharp` é o que compensa a ampliação. Sem ele o resultado fica correto e
- * sem vida; os valores são discretos de propósito — realce forte num fundo
- * enevoado vira ruído.
+ * O `unsharp` é o que compensa a ampliação — em dose discreta, pelo motivo
+ * anotado junto dele.
  */
-const ESCALA_E_REALCE = "scale=2048:1152:flags=lanczos,unsharp=5:5:0.8:3:3:0.4";
+const ESCALA_E_REALCE = [
+  "scale=2048:1152:flags=lanczos+accurate_rnd+full_chroma_int",
+  /*
+   * Realce DISCRETO, e a primeira versão errou a mão aqui.
+   *
+   * Com `0.8:...:0.4` a imagem parecia melhor no quadro isolado e saía pior do
+   * encoder: realce antes de comprimir cria detalhe artificial que o codec
+   * precisa pagar em bits — bits que deixam de descrever a pedra de verdade —
+   * e ainda deixa halo nas bordas. Metade da força devolveu nitidez, não tirou.
+   */
+  "unsharp=5:5:0.5:3:3:0.2",
+].join(",");
 
 /*
- * 10 quadros por segundo, e CRF 32.
+ * 10 quadros por segundo.
  *
  * A jornada tem 12.096px de rolagem. A 10fps são 152 quadros, um a cada 80px —
  * contínuo ao olho, porque quem controla o ritmo é a mão de quem rola, e não um
  * relógio. Subir para 24fps só dobraria o peso para adiantar quadros que
  * ninguém pediu.
- *
- * O CRF foi escolhido comparando recortes 1:1: a 35 as juntas das pedras somem;
- * a 32 elas ficam, e a diferença para 28 (quase o dobro do arquivo) é difícil
- * de ver. Medidos: 24fps/CRF28 8,3MB · 12fps/CRF28 5,9MB · 10fps/CRF32 7,3MB
- * (com o upscale) · 8fps/CRF32 6,5MB.
  */
 const QUADROS_POR_SEGUNDO = "10";
-const CRF = "32";
+
+/*
+ * CRF 26, e não 32.
+ *
+ * O 32 foi escolhido comparando recortes contra a webp, e a comparação estava
+ * mal montada: faltava a referência que importa, que é o SOURCE ampliado sem
+ * compressão nenhuma. Contra ele ficou claro que a perda não era do vídeo de
+ * origem — era do encode. Comparados no mesmo recorte, o 26 fica quase
+ * indistinguível desse teto e o 32 é visivelmente o mais mole.
+ *
+ * Medidos, todos all-intra a 2048 e 10fps: CRF32 7,3MB · CRF28 11,5MB ·
+ * CRF26 14,2MB · CRF24 17,6MB. O ganho do 24 sobre o 26 é difícil de ver.
+ *
+ * VP9 foi testado esperando comprimir melhor e deu 41,7MB: a força dele é a
+ * predição entre quadros, e aqui todo quadro é independente por construção.
+ */
+const CRF = "26";
 
 function ffmpeg() {
   /* `winget` instala o binário sem colocá-lo no PATH da sessão em curso, então
@@ -83,6 +104,9 @@ const resultado = spawnSync(ffmpeg(), [
   "-an",                       // o fundo é mudo; a trilha só pesaria
   "-vf", ESCALA_E_REALCE,
   "-c:v", "libx264",
+  /* Sem movimento a estimar entre quadros, o preset mexe pouco no tempo e
+     ainda espreme melhor cada quadro isolado. */
+  "-preset", "veryslow",
   "-pix_fmt", "yuv420p",       // sem isto, Safari recusa o arquivo
   "-r", QUADROS_POR_SEGUNDO,
   "-crf", CRF,
