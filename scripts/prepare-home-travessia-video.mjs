@@ -37,20 +37,27 @@ const TODO_QUADRO_KEYFRAME = [
 ];
 
 /*
- * 2048 de largura, contra os 1280 da origem.
+ * 2816 de largura, e o número sai do ELEMENTO, não do vídeo.
  *
- * Ampliar não inventa detalhe, mas evita que o navegador estique um vídeo já
- * comprimido — que é onde a imagem realmente desmancha. Comparado a 1:1 contra
- * a `home-travessia.webp` (2048×1152, que é o fundo que este vídeo substitui):
- * o 1280 esticado empapa as pedras do caminho, e o 2048 com lanczos e um realce
- * leve chega perto da webp. A referência é ela, porque trocar o fundo por algo
- * mais mole que o de hoje seria uma piora.
+ * Ampliar não inventa detalhe. O que ela evita é o navegador esticar por cima,
+ * com o escalador barato dele — e é aí que a imagem desmancha. A conta é quantos
+ * pixels o elemento pede: `.journey-landscape` mede a largura da janela MAIS a
+ * sobra de 680px que a travessia atravessa. Numa tela de 1920 são 2600 pixels.
  *
- * O `unsharp` é o que compensa a ampliação — em dose discreta, pelo motivo
- * anotado junto dele.
+ * A primeira versão mirou em 2048 medindo numa janela de 1440, e o erro só
+ * apareceu na tela de verdade: o navegador ampliava 1,27× por cima, e afinar a
+ * compressão não tinha como aparecer debaixo dessa segunda ampliação. Comparado
+ * na escala real de 2600px, o 2048 esticado é visivelmente o mais mole.
+ *
+ * Mais pixels compensam compressão mais frouxa, e é o que faz a conta fechar:
+ * medidos na escala da tela, 2816/CRF31 (12,6MB) ficou MELHOR que 2048/CRF26
+ * (14,2MB) — arquivo menor e imagem mais nítida.
+ *
+ * O `unsharp` compensa a ampliação — em dose discreta, pelo motivo anotado
+ * junto dele.
  */
 const ESCALA_E_REALCE = [
-  "scale=2048:1152:flags=lanczos+accurate_rnd+full_chroma_int",
+  "scale=2816:1584:flags=lanczos+accurate_rnd+full_chroma_int",
   /*
    * Realce DISCRETO, e a primeira versão errou a mão aqui.
    *
@@ -73,21 +80,22 @@ const ESCALA_E_REALCE = [
 const QUADROS_POR_SEGUNDO = "10";
 
 /*
- * CRF 26, e não 32.
+ * CRF 29, casado com a resolução acima.
  *
- * O 32 foi escolhido comparando recortes contra a webp, e a comparação estava
- * mal montada: faltava a referência que importa, que é o SOURCE ampliado sem
- * compressão nenhuma. Contra ele ficou claro que a perda não era do vídeo de
- * origem — era do encode. Comparados no mesmo recorte, o 26 fica quase
- * indistinguível desse teto e o 32 é visivelmente o mais mole.
+ * O número isolado não quer dizer nada: a comparação que vale é feita na escala
+ * em que a tela realmente desenha. Medidos a 2600px, que é o que uma janela de
+ * 1920 pede — 2816/CRF29 15,4MB · 2816/CRF31 12,6MB · 2816/CRF26 21,1MB — e o
+ * de 12,6MB já supera o antigo 2048/CRF26 de 14,2MB.
  *
- * Medidos, todos all-intra a 2048 e 10fps: CRF32 7,3MB · CRF28 11,5MB ·
- * CRF26 14,2MB · CRF24 17,6MB. O ganho do 24 sobre o 26 é difícil de ver.
+ * Comparar recortes só contra a webp levou a errar duas vezes. A referência que
+ * fecha a questão é o SOURCE ampliado sem compressão nenhuma: é o teto que o
+ * vídeo de origem permite, e mostra se a perda está no encode ou no material.
+ * Estava no encode, das duas vezes.
  *
  * VP9 foi testado esperando comprimir melhor e deu 41,7MB: a força dele é a
  * predição entre quadros, e aqui todo quadro é independente por construção.
  */
-const CRF = "26";
+const CRF = "29";
 
 function ffmpeg() {
   /* `winget` instala o binário sem colocá-lo no PATH da sessão em curso, então
