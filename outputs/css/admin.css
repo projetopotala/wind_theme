@@ -324,8 +324,28 @@ button {
 }
 
 .admin-row-category { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.admin-row-thumb { width: 52px; height: 44px; border-radius: 8px; background: var(--admin-ground); }
-.admin-list img { width: 52px; height: 44px; }
+/*
+ * A MINIATURA CABE NA COLUNA, e havia duas regras discordando disso.
+ *
+ * `.admin-list img` estava declarada duas vezes, com 52px e com 64px. A segunda
+ * vencia por chegar depois — e a coluna do grid reserva 52. Os doze pixels de
+ * sobra entravam na coluna do texto e cobriam o começo do título.
+ *
+ * O sintoma enganava: parecia que título e resumo SUMIAM ao adicionar uma
+ * imagem. Não sumiam — ficavam atrás dela. Blocos sem imagem nunca quebraram,
+ * porque o espaço reservado abaixo tem exatamente a largura da coluna, e é por
+ * isso que os dois precisam continuar com a mesma medida.
+ */
+.admin-row-thumb,
+.admin-list img {
+  width: 52px;
+  height: 44px;
+  border-radius: 8px;
+  /* As imagens da jornada são paisagens largas. Sem `cover` elas entram
+     achatadas, e a lista fica com nove blocos deformados. */
+  object-fit: cover;
+  background: var(--admin-ground);
+}
 
 /* Só um texto para quem lê a tela. O rótulo visível é o símbolo ao lado. */
 .admin-sr {
@@ -378,7 +398,6 @@ button {
 .admin-row-actions button { min-height: 40px; padding: 6px 12px; font-size: .82rem; text-align: left; }
 
 .admin-list li[aria-current="true"] { border-color: var(--admin-gold); }
-.admin-list img { width: 64px; height: 48px; border-radius: 8px; object-fit: cover; }
 .admin-list .admin-row-index { color: var(--admin-muted); font-size: .74rem; }
 
 .admin-list .admin-row-category { color: var(--admin-muted); font-size: .76rem; }
@@ -508,4 +527,47 @@ button {
   .admin-nav li button,
   .admin-tabs button,
   .admin-form-tabs button { transition: background .18s ease, color .18s ease; }
+}
+
+/*
+ * A CONFIRMAÇÃO DE PUBLICAÇÃO.
+ *
+ * Publicar é a ação irreversível do painel: é ela que troca o que está no ar. A
+ * resposta era uma linha de status discreta, do mesmo tamanho e cor de qualquer
+ * outro aviso — quem publicava ficava sem saber se tinha dado certo, e o
+ * caminho natural era publicar de novo.
+ *
+ * Fixa, e não no fluxo: o botão de publicar fica no topo, a lista pode estar
+ * rolada, e uma confirmação no rodapé do painel chega a quem já não está
+ * olhando para lá.
+ *
+ * A linha de status CONTINUA existindo, com `aria-live`, e é ela que atende
+ * quem usa leitor de tela. Esta caixa é o par visual dela, não a substituta.
+ */
+.admin-confirm {
+  position: fixed;
+  z-index: 40;
+  right: 24px;
+  bottom: 24px;
+  display: grid;
+  gap: 2px;
+  max-width: min(360px, calc(100vw - 48px));
+  padding: 14px 18px;
+  border: 1px solid var(--admin-gold);
+  border-radius: 12px;
+  color: var(--admin-gold);
+  background: var(--admin-panel);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .5);
+}
+
+.admin-confirm[hidden] { display: none; }
+.admin-confirm strong { font-size: .92rem; }
+.admin-confirm small { color: var(--admin-muted); font-size: .76rem; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .admin-confirm { animation: admin-confirm-entra .28s ease; }
+}
+
+@keyframes admin-confirm-entra {
+  from { opacity: 0; translate: 0 10px; }
 }

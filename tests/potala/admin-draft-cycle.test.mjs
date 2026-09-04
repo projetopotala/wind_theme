@@ -182,7 +182,13 @@ test("publicar chama a RPC e limpa os rascunhos", async () => {
   await ouvintes.get("publish:click")();
 
   assert.ok(repo.chamadas.some(([nome]) => nome === "publishDrafts"));
-  assert.match(nos["[data-admin-status]"].textContent, /publicadas/);
+  /*
+   * O anuncio diz QUANTOS blocos foram, porque publicar e em lote: quem tinha
+   * tres rascunhos precisa saber se foram os tres. "Publicadas.", sozinho, nao
+   * distinguia um lote inteiro de um bloco so.
+   */
+  assert.match(nos["[data-admin-status]"].textContent, /1 bloco publicado/);
+  assert.match(nos["[data-admin-status]"].textContent, /Home foi atualizada/);
 });
 
 test("publicar que falha não deixa o painel achar que publicou", async () => {

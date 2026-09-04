@@ -95,6 +95,18 @@
         <input class="admin-search" type="search" data-admin-search
           placeholder="Buscar bloco" aria-label="Buscar bloco">
         <a class="admin-link" href="transcendido.html" target="_blank" rel="noopener">Visualizar site</a>
+        <!--
+          Sair do painel é diferente de encerrar a sessão.
+
+          "Visualizar site" abre em aba nova, para conferir o resultado sem
+          perder o painel — quem quisesse VOLTAR ia acumulando abas. Este leva de
+          volta à Home na mesma aba, e a sessão continua aberta: voltar a editar
+          não pede senha de novo.
+
+          O logout continua onde está, no fim da navegação, porque é outra
+          decisão e tem outra consequência.
+        -->
+        <a class="admin-link admin-leave" data-admin-leave href="transcendido.html">Sair do painel</a>
         <button class="admin-publish" type="button" data-admin-publish disabled>Publicar alterações</button>
         <p class="admin-saved-at" data-admin-saved-at role="status" aria-live="polite"></p>
       </header>
@@ -103,6 +115,19 @@
            fora da lista de propósito: a lista é redesenhada a cada mudança, e um
            aviso dentro dela seria destruído antes de ser lido em voz alta. -->
       <p class="admin-status" data-admin-status role="status" aria-live="polite"></p>
+
+      <!--
+        A confirmação de que a publicação deu certo.
+
+        Fica fora do fluxo de propósito: o botão de publicar está no topo, a
+        lista pode estar rolada, e um aviso no rodapé chega a quem já não olha
+        para lá. `aria-hidden` porque a linha de status acima já anuncia o mesmo
+        para leitores de tela — sem isso, seria anunciado duas vezes.
+      -->
+      <div class="admin-confirm" data-admin-confirm hidden aria-hidden="true">
+        <strong data-admin-confirm-title></strong>
+        <small data-admin-confirm-detail></small>
+      </div>
 
       <div class="admin-columns">
         <div class="admin-list-wrap">

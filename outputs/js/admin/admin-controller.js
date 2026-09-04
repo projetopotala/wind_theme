@@ -181,6 +181,10 @@ export function createAdminController({
   const form = root.querySelector("[data-admin-form]");
   const status = root.querySelector("[data-admin-status]");
   const previewFrame = root.querySelector("[data-admin-preview]");
+  const confirmacao = root.querySelector("[data-admin-confirm]");
+  const confirmacaoTitulo = root.querySelector("[data-admin-confirm-title]");
+  const confirmacaoDetalhe = root.querySelector("[data-admin-confirm-detail]");
+  let confirmacaoRelogio = 0;
   let blocks = [];
   let drafts = [];
   let busca = "";
@@ -225,6 +229,28 @@ export function createAdminController({
 
   const anunciar = (mensagem) => {
     if (status) status.textContent = mensagem;
+  };
+
+  /*
+   * A confirmação visual de que a publicação deu certo.
+   *
+   * Publicar é a ação irreversível do painel — é ela que troca o que está no ar
+   * — e a resposta era uma linha de status do mesmo tamanho e cor de qualquer
+   * outro aviso. Quem publicava ficava sem saber se tinha funcionado, e o
+   * caminho natural nessa dúvida é publicar de novo.
+   *
+   * `anunciar` continua sendo chamado junto: é ele que atende leitor de tela,
+   * pela região `aria-live`. Esta caixa é o par visual, e não a substituta.
+   */
+  const confirmar = (titulo, detalhe = "") => {
+    if (!confirmacao) return;
+    if (confirmacaoRelogio) clearTimeout(confirmacaoRelogio);
+    if (confirmacaoTitulo) confirmacaoTitulo.textContent = titulo;
+    if (confirmacaoDetalhe) confirmacaoDetalhe.textContent = detalhe;
+    confirmacao.hidden = false;
+    /* Some sozinha: uma confirmação que exige ser fechada vira mais um clique
+       depois de um trabalho que já terminou. */
+    confirmacaoRelogio = setTimeout(() => { confirmacao.hidden = true; }, 4200);
   };
 
   function entradas() {
@@ -448,11 +474,16 @@ export function createAdminController({
     if (!drafts.length) return;
     const anteriores = { blocos: blocks, rascunhos: drafts };
     try {
+      const quantos = drafts.length;
       blocks = await repository.publishDrafts();
       drafts = [];
       desenhar();
       agendarPreview();
-      anunciar("Alterações publicadas.");
+      /* O número entra na mensagem porque publicar é em lote: sem ele, quem
+         tinha três rascunhos não sabe se foram os três. */
+      const rotulo = quantos === 1 ? "1 bloco publicado" : `${quantos} blocos publicados`;
+      anunciar(`${rotulo}. A Home foi atualizada.`);
+      confirmar(rotulo, "A Home foi atualizada.");
     } catch (error) {
       console.error("Não foi possível publicar.", error);
       blocks = anteriores.blocos;
