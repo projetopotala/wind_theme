@@ -53,7 +53,3 @@ yarn-error.log*
 # e não desfazer histórico.
 /assets-source/home-travessia/home-travessia-source.mp4
 
-# O modelo de ORIGEM da paisagem, pelo mesmo motivo do vídeo: 81,5 MB. O que o
-# site serve é o modelo processado em outputs/media/home-travessia.glb, com
-# 9,4 MB, e a receita está em scripts/prepare-home-travessia-modelo.mjs.
-/assets-source/home-travessia/home-travessia-modelo-source.glb

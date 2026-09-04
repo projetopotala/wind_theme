@@ -21,29 +21,10 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const buildDir = path.join(root, "node_modules", "three", "build");
-const addonsDir = path.join(root, "node_modules", "three", "examples", "jsm");
 const vendorDir = path.join(root, "outputs", "vendor");
-const addonsVendorDir = path.join(vendorDir, "addons");
 
 const ENTRADA = "three.module.min.js";
 
-/*
- * Os ADDONS entram por uma lista, e não pelo mesmo rastreamento do bundle.
- *
- * O `three` publicado é um grafo de imports RELATIVOS, e é por isso que a
- * função abaixo dá conta dele sozinha. Os addons não: eles importam `"three"`,
- * que é um nome resolvido pelo importmap da página, não um arquivo ao lado. O
- * rastreador nunca chegaria neles partindo do bundle.
- *
- * A estrutura de PASTAS é copiada junto, e isso não é organização: o
- * `GLTFLoader` importa `../utils/BufferGeometryUtils.js`. Achatando tudo numa
- * pasta só, esse caminho vira 404 — e o erro aponta para o módulo de entrada,
- * não para o arquivo que faltou, exatamente como já acontecia com o bundle.
- */
-const ADDONS = [
-  "loaders/GLTFLoader.js",
-  "libs/meshopt_decoder.module.js",
-];
 
 /** Importações relativas de um bundle, sem `import()` dinâmico (não há). */
 function irmaosDe(codigo) {
@@ -69,27 +50,4 @@ while (pendentes.length) {
   for (const irmao of irmaosDe(codigo)) pendentes.push(irmao);
 }
 
-/* Os addons também trazem quem eles pedem por caminho relativo. */
-const addonsPendentes = [...ADDONS];
-const addonsCopiados = new Set();
-
-while (addonsPendentes.length) {
-  const arquivo = addonsPendentes.pop();
-  if (addonsCopiados.has(arquivo)) continue;
-  addonsCopiados.add(arquivo);
-
-  const origem = path.join(addonsDir, arquivo);
-  const codigo = await readFile(origem, "utf8");
-  const alvo = path.join(addonsVendorDir, arquivo);
-  await mkdir(path.dirname(alvo), { recursive: true });
-  await copyFile(origem, alvo);
-
-  /* Aqui os relativos podem SUBIR de pasta (`../utils/...`), diferente do
-     bundle, onde são todos irmãos. */
-  for (const [, relativo] of codigo.matchAll(/from\s*["'](\.\.?\/[^"']+)["']/g)) {
-    addonsPendentes.push(path.posix.normalize(path.posix.join(path.posix.dirname(arquivo), relativo)));
-  }
-}
-
 console.log(`Three.js copiado para outputs/vendor/: ${[...copiados].sort().join(", ")}.`);
-console.log(`Addons copiados para outputs/vendor/addons/: ${[...addonsCopiados].sort().join(", ")}.`);

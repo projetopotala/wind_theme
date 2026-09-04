@@ -1240,38 +1240,45 @@ body:has(.journey-region.is-expanded) .journey-admin-link {
 }
 
 /*
- * A CENA DO FUNDO.
+ * A CHAPA QUE AVANÇA.
  *
- * Cobre exatamente o mesmo retângulo da paisagem — inclusive a sobra que a
- * travessia atravessa —, então herda o deslocamento lateral sem precisar de
- * regra própria.
+ * Cobre o mesmo retângulo da paisagem — inclusive a sobra que a travessia
+ * atravessa — e carrega a imagem. O pai fica com o deslocamento lateral da
+ * travessia; a chapa, com a aproximação da rolagem. Separados, os dois transforms
+ * não se apagam.
  *
- * Entra por cima da imagem, e só quando o modelo terminou de montar. Até lá, e
- * sempre que a cena não entra, o que se vê é a `home-travessia.webp` que
- * continua no `background` do elemento pai. Não existe estado em que o fundo
- * seja um vazio.
+ * A imagem daqui é uma versão MAIS LARGA que a do fundo estático: a aproximação
+ * gasta resolução, e a chapa precisa ter pixels de sobra para não amolecer no
+ * fim do percurso.
  */
-.journey-landscape-scene {
+.journey-landscape-plate {
   position: absolute;
-  z-index: 1;
   inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  /* A entrada é lenta de propósito: a cena aparece por cima de uma imagem, e um
-     corte seco denunciaria a troca. */
-  transition: opacity 1.2s ease;
-  pointer-events: none;
+  background: url("../media/home-travessia-chapa.webp") center / cover no-repeat;
+
+  /*
+   * A aproximação parte do PONTO DE FUGA, e não do centro.
+   *
+   * Centrada, a imagem cresceria em direção ao meio geométrico dela, que aqui é
+   * céu — e o resultado lê como zoom, não como avanço. O caminho se perde perto
+   * de 62% da altura, e é para lá que se está indo.
+   */
+  transform-origin: 50% 62%;
+  transform: scale(var(--paisagem-avanco, 1));
+
+  /* Sem transição: o avanço é escrito a cada rolagem, e interpolar por cima
+     disso faria a paisagem chegar atrasada em relação à mão. */
+  will-change: transform;
 }
 
-.journey-landscape[data-cena-pronta="true"] .journey-landscape-scene { opacity: 1; }
-
-/* Movimento reduzido nunca chega a montar a cena — o JS não carrega o modelo.
-   Esta regra é a segunda tranca, para o caso de a preferência mudar com a
-   página já aberta. */
+/*
+ * Movimento reduzido: a paisagem fica parada.
+ *
+ * Um fundo que se aproxima a cada rolagem é exatamente o que quem pediu menos
+ * movimento está evitando — e aqui não se perde conteúdo nenhum, só o gesto.
+ */
 @media (prefers-reduced-motion: reduce) {
-  .journey-landscape-scene { display: none; }
+  .journey-landscape-plate { transform: none; }
 }
 
 body[data-travessia-ativa="true"] .journey-landscape {
