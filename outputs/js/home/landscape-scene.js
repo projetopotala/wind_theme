@@ -26,6 +26,33 @@ import { MeshoptDecoder } from "../../vendor/addons/libs/meshopt_decoder.module.
  */
 
 const MODELO = "media/home-travessia.glb";
+const CEU = "media/home-travessia-ceu.webp";
+
+/*
+ * Onde a linha das montanhas cai DENTRO da imagem do céu, de cima para baixo.
+ *
+ * Não é ajuste fino: é o que decide se a serra aparece. A imagem é quase toda
+ * céu, com as montanhas no terço de baixo. Centrada na altura do olho, essa
+ * faixa fica ABAIXO do horizonte — e o terreno, que se estende até longe, passa
+ * na frente dela. O resultado é um céu chapado, sem erro nenhum no console.
+ *
+ * O plano sobe até esta fração encostar no horizonte, e a serra aparece logo
+ * acima dele, que é onde uma serra distante fica.
+ */
+export const LINHA_DAS_MONTANHAS = 0.87;
+
+/*
+ * O ângulo que a imagem do céu cobre, em graus.
+ *
+ * Dimensionar o plano pela ALTURA parecia natural e escondia as montanhas: a
+ * arte tem o sol ao centro e as serras nas laterais, e um plano alto o bastante
+ * para preencher a tela fica largo demais — as laterais caem fora do quadro, e
+ * sobra justamente o céu vazio do meio.
+ *
+ * Medindo pelo ângulo, a imagem inteira entra no campo de visão. Os 110° cobrem
+ * com folga até as janelas mais largas, onde o campo horizontal passa de 100°.
+ */
+export const ABERTURA_DO_CEU = 110;
 
 /* Abaixo disto o fundo é a webp RETRATO, e desenhar em tempo real é o oposto de
    barato. */
@@ -199,6 +226,13 @@ export function createLandscapeScene(paisagem, {
      */
     const adiante = z + caminho.comprimento * 0.9;
     camera.lookAt(caminho.centroX, olho * 0.995 + chao * 0.005, adiante);
+
+    /* O céu anda junto: a distância dele nunca muda, e é por isso que ele lê
+       como horizonte em vez de parede. A serra fica um pouco abaixo do centro do
+       quadro, onde o horizonte cai. */
+    if (ceu) {
+      ceu.position.set(caminho.centroX, olho + ceu.userData.subida, z + ceu.userData.distancia);
+    }
   }
 
   function desenhar() {
@@ -225,6 +259,75 @@ export function createLandscapeScene(paisagem, {
   function agendar() {
     if (pedido || !vivo) return;
     pedido = janela.requestAnimationFrame?.(desenhar) ?? 0;
+  }
+
+  /*
+   * O CÉU ATRÁS DO CAMPO.
+   *
+   * O modelo é um talhão: não tem montanha, nuvem nem horizonte, e acaba num
+   * corte reto. Antes, esconder essa borda era trabalho só da névoa — e o preço
+   * era não enxergar longe. Com serra e nuvens atrás, a névoa passa a ter para
+   * onde dissolver o campo, em vez de precisar apagá-lo.
+   *
+   * É um PLANO, e não um domo, porque a câmera desta cena nunca gira: ela olha
+   * sempre na direção do caminho. Um domo gastaria resolução nos 300 graus que
+   * ninguém vê; o plano entrega a imagem inteira ao único ângulo que existe.
+   *
+   * Ele ACOMPANHA a câmera a uma distância fixa, e é isso que o faz ler como
+   * distante: montanha que se aproxima quando se caminha é morro, não serra.
+   *
+   * `fog: false` é o detalhe que faz a coisa funcionar. Fosse enevoado como o
+   * resto, a esta distância ele estaria saturado — só cor, sem montanha nenhuma.
+   * Sem névoa ele fica nítido, e o campo é que se dissolve nele. A emenda não
+   * aparece porque a névoa tem a cor do céu.
+   */
+  let ceu = null;
+  let texturaDoCeu = null;
+
+  function montarCeu(comprimento) {
+    /*
+     * O plano é montado DEPOIS de a imagem chegar, porque a proporção dela é que
+     * dá a altura. Fixá-la no código deixaria a serra esticada no dia em que a
+     * arte do céu fosse trocada por outra de recorte diferente.
+     */
+    const textura = new THREE.TextureLoader().load(CEU, (t) => {
+      const proporcao = (t.image?.width || 1) / (t.image?.height || 1);
+      montarPlanoDoCeu(comprimento, proporcao);
+      agendar();
+    });
+    textura.colorSpace = THREE.SRGBColorSpace;
+    texturaDoCeu = textura;
+  }
+
+  function montarPlanoDoCeu(comprimento, proporcao) {
+    /* Longe o bastante para ficar sempre além da borda do talhão — no começo do
+       caminho essa borda está a quase todo o comprimento de distância. */
+    const distancia = comprimento * 1.05;
+    const largura = 2 * distancia * Math.tan((ABERTURA_DO_CEU * Math.PI) / 360);
+    const altura = largura / proporcao;
+
+    ceu = new THREE.Mesh(
+      new THREE.PlaneGeometry(largura, altura),
+      /*
+       * `DoubleSide` porque o plano é visto PELAS COSTAS.
+       *
+       * `PlaneGeometry` encara +Z, e este plano fica adiante da câmera, que
+       * também olha para +Z — ou seja, vê-se a face de trás. Com o padrão
+       * `FrontSide` ele simplesmente não desenha, e o sintoma é um céu chapado
+       * sem montanha nenhuma, sem erro no console.
+       */
+      new THREE.MeshBasicMaterial({
+        map: texturaDoCeu,
+        side: THREE.DoubleSide,
+        fog: false,
+        depthWrite: false,
+      }),
+    );
+    ceu.renderOrder = -1;
+    ceu.userData.distancia = distancia;
+    /* O quanto o plano sobe para a serra encostar no horizonte. */
+    ceu.userData.subida = (LINHA_DAS_MONTANHAS - 0.5) * altura;
+    cena.add(ceu);
   }
 
   const carregador = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
@@ -273,7 +376,14 @@ export function createLandscapeScene(paisagem, {
        * touceira solta. O comprimento é a medida da paisagem, e é dela que sai
        * uma proporção estável entre o olho e o que se vê à frente.
        */
-      alturaDoOlho: tamanho.z * 0.02,
+      /*
+       * Subida de 0,02 para 0,05 do comprimento.
+       *
+       * A 0,02 o olho ficava rente à grama: via-se terra e touceira, e a
+       * paisagem não se abria. Aqui é a altura de quem caminha olhando em volta,
+       * e não de quem se abaixa.
+       */
+      alturaDoOlho: tamanho.z * 0.05,
       alvos: [gltf.scene],
     };
 
@@ -281,6 +391,7 @@ export function createLandscapeScene(paisagem, {
     const cor = new THREE.Color(...atmosfera.ceu.cor);
     cena.background = cor;
     cena.fog = new THREE.FogExp2(cor, atmosfera.nevoa.densidade);
+    montarCeu(tamanho.z);
 
     paisagem.dataset.cenaPronta = "true";
     medir();

@@ -3,6 +3,8 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
+  ABERTURA_DO_CEU,
+  LINHA_DAS_MONTANHAS,
   PISO_DA_NEVOA,
   atmosferaDoVale,
   pontoDoCaminho,
@@ -179,4 +181,48 @@ test("navegador sem `connection` não é tratado como lento", () => {
   /* Safari não expõe `navigator.connection`; recusar por isso tiraria a cena do
      desktop onde ela roda bem. */
   assert.equal(valeAPena({ ...AMPLA, conexao: undefined }), true);
+});
+
+/* ------------------------------------------------------------------
+ * O céu atrás do campo
+ * ------------------------------------------------------------------ */
+
+test("a serra fica acima do horizonte, e não atrás do chão", () => {
+  /*
+   * A imagem do céu é quase toda céu, com as montanhas embaixo. Centrada na
+   * altura do olho, essa faixa cai ABAIXO do horizonte — e o terreno, que se
+   * estende até longe, passa na frente dela. O sintoma é um céu chapado, sem
+   * erro nenhum no console, e foi exatamente o que aconteceu na primeira
+   * tentativa.
+   *
+   * A fração diz onde a linha das montanhas está dentro da imagem; o plano sobe
+   * até ela encostar no horizonte.
+   */
+  assert.ok(LINHA_DAS_MONTANHAS > 0.5, "a serra está na metade de baixo da imagem");
+  assert.ok(LINHA_DAS_MONTANHAS < 1, "e não coladinha na borda de baixo");
+});
+
+test("o céu cobre o campo de visão inteiro, e por isso é medido em ângulo", () => {
+  /*
+   * Dimensionar o plano pela ALTURA escondia justamente as montanhas: a arte tem
+   * o sol ao centro e as serras nas laterais, e um plano alto o bastante para
+   * preencher a tela fica largo demais — as pontas caem fora do quadro e sobra
+   * só o céu vazio do meio.
+   *
+   * Medido em ângulo, a imagem inteira entra. Precisa cobrir mais que o campo
+   * horizontal das janelas largas, que passa de 100°.
+   */
+  assert.ok(ABERTURA_DO_CEU > 100, `${ABERTURA_DO_CEU}° deixaria as bordas da tela sem céu`);
+});
+
+test("o céu não é enevoado, e é isso que o faz aparecer", async () => {
+  /*
+   * Ele fica a mais de um comprimento de talhão de distância. Enevoado como o
+   * resto, estaria saturado — só cor, sem montanha nenhuma. Sem névoa ele fica
+   * nítido, e é o campo que se dissolve nele; a emenda não aparece porque a
+   * névoa tem a cor do céu.
+   */
+  const modulo = await readFile(new URL("../../outputs/js/home/landscape-scene.js", import.meta.url), "utf8");
+  assert.match(modulo, /fog:\s*false/, "com névoa, a serra some");
+  assert.match(modulo, /DoubleSide/, "o plano é visto pelas costas: sem isto ele não desenha");
 });
