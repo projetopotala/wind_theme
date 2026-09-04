@@ -37,37 +37,31 @@ const TODO_QUADRO_KEYFRAME = [
 ];
 
 /*
- * 2816 de largura, e o número sai do ELEMENTO, não do vídeo.
+ * 2816 de largura, e o número sai do ELEMENTO, não do source.
  *
  * Ampliar não inventa detalhe. O que ela evita é o navegador esticar por cima,
  * com o escalador barato dele — e é aí que a imagem desmancha. A conta é quantos
  * pixels o elemento pede: `.journey-landscape` mede a largura da janela MAIS a
  * sobra de 680px que a travessia atravessa. Numa tela de 1920 são 2600 pixels.
  *
- * A primeira versão mirou em 2048 medindo numa janela de 1440, e o erro só
+ * Uma versão anterior mirou em 2048 medindo numa janela de 1440, e o erro só
  * apareceu na tela de verdade: o navegador ampliava 1,27× por cima, e afinar a
- * compressão não tinha como aparecer debaixo dessa segunda ampliação. Comparado
- * na escala real de 2600px, o 2048 esticado é visivelmente o mais mole.
+ * compressão não tinha como aparecer debaixo dessa segunda ampliação.
  *
- * Mais pixels compensam compressão mais frouxa, e é o que faz a conta fechar:
- * medidos na escala da tela, 2816/CRF31 (12,6MB) ficou MELHOR que 2048/CRF26
- * (14,2MB) — arquivo menor e imagem mais nítida.
- *
- * O `unsharp` compensa a ampliação — em dose discreta, pelo motivo anotado
- * junto dele.
+ * Conferido no cenário real de 1920 físicos a 125% — viewport de 1536 CSS — o
+ * elemento pede 2751px e o vídeo tem 2816: o navegador não amplia nada, com
+ * 65px de sobra. Subir mais só custaria bytes que aquela tela não usa.
  */
-const ESCALA_E_REALCE = [
-  "scale=2816:1584:flags=lanczos+accurate_rnd+full_chroma_int",
-  /*
-   * Realce DISCRETO, e a primeira versão errou a mão aqui.
-   *
-   * Com `0.8:...:0.4` a imagem parecia melhor no quadro isolado e saía pior do
-   * encoder: realce antes de comprimir cria detalhe artificial que o codec
-   * precisa pagar em bits — bits que deixam de descrever a pedra de verdade —
-   * e ainda deixa halo nas bordas. Metade da força devolveu nitidez, não tirou.
-   */
-  "unsharp=5:5:0.5:3:3:0.2",
-].join(",");
+/*
+ * Uma REDUÇÃO, de 3840 para 2816 — e é por isso que não há realce aqui.
+ *
+ * Enquanto a origem era 720p, o filtro ampliava, e um `unsharp` discreto
+ * compensava a moleza da ampliação. Reduzir é outro trabalho: o material já
+ * chega com mais detalhe do que o destino comporta, e realçar por cima disso só
+ * criaria halo nas bordas e gastaria bits que o codec deveria usar na pedra de
+ * verdade.
+ */
+const ESCALA = "scale=2816:1584:flags=lanczos+accurate_rnd+full_chroma_int";
 
 /*
  * 10 quadros por segundo.
@@ -80,17 +74,17 @@ const ESCALA_E_REALCE = [
 const QUADROS_POR_SEGUNDO = "10";
 
 /*
- * CRF 29, casado com a resolução acima.
+ * CRF 29, casado com a resolução acima e com um source 4K.
  *
- * O número isolado não quer dizer nada: a comparação que vale é feita na escala
- * em que a tela realmente desenha. Medidos a 2600px, que é o que uma janela de
- * 1920 pede — 2816/CRF29 15,4MB · 2816/CRF31 12,6MB · 2816/CRF26 21,1MB — e o
- * de 12,6MB já supera o antigo 2048/CRF26 de 14,2MB.
+ * O número isolado não diz nada: a comparação que vale é na escala em que a
+ * tela desenha, e contra o SOURCE sem compressão nenhuma — é essa referência
+ * que separa perda de encode de limite do material. Sem ela eu errei duas vezes
+ * seguidas, comparando só contra a webp.
  *
- * Comparar recortes só contra a webp levou a errar duas vezes. A referência que
- * fecha a questão é o SOURCE ampliado sem compressão nenhuma: é o teto que o
- * vídeo de origem permite, e mostra se a perda está no encode ou no material.
- * Estava no encode, das duas vezes.
+ * Com o 4K: 2816/CRF26 19,7MB · CRF29 14,5MB · CRF32 10,9MB. O CRF29 fica quase
+ * no teto, e — o que decide — ficou mais nítido que o arquivo anterior de
+ * 15,4MB feito a partir do 720p. Melhor imagem em menos bytes, porque o gargalo
+ * nunca foi a compressão: era o material.
  *
  * VP9 foi testado esperando comprimir melhor e deu 41,7MB: a força dele é a
  * predição entre quadros, e aqui todo quadro é independente por construção.
@@ -110,7 +104,7 @@ const resultado = spawnSync(ffmpeg(), [
   "-y", "-v", "error",
   "-i", origem,
   "-an",                       // o fundo é mudo; a trilha só pesaria
-  "-vf", ESCALA_E_REALCE,
+  "-vf", ESCALA,
   "-c:v", "libx264",
   /* Sem movimento a estimar entre quadros, o preset mexe pouco no tempo e
      ainda espreme melhor cada quadro isolado. */
