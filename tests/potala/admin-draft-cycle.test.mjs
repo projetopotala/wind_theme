@@ -246,10 +246,16 @@ test("rascunhos indisponíveis não apagam os blocos publicados", async () => {
    * edicao inteira depois. Desde que toda gravacao passa por rascunho,
    * rascunho indisponivel quer dizer que NADA pode ser salvo.
    */
-  assert.match(nos["[data-admin-status]"].textContent, /não é possível salvar/i);
+  /*
+   * O aviso diz a CONSEQUENCIA e a CAUSA, e nao so o fato.
+   *
+   * "Os rascunhos nao estao disponiveis" era verdade e nao servia para nada:
+   * quem lia continuava editando sem saber o que ia acontecer ao salvar. Sem a
+   * tabela o painel ainda edita — publicando na hora — e e ISSO que precisa
+   * ser dito, junto com o caminho para voltar a guardar rascunhos.
+   */
+  assert.match(nos["[data-admin-status]"].textContent, /direto ao ar/i);
   assert.match(nos["[data-admin-status]"].textContent, /migração home_block_drafts/i);
-  /* E os blocos publicados continuam a vista, que e o ponto deste teste. */
-  assert.match(nos["[data-admin-status]"].textContent, /já está publicado/i);
 });
 
 /* As abas do editor precisam estar MONTADAS, não só desenhadas. Sem o módulo
