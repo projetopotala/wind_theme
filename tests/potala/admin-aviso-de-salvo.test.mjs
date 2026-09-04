@@ -195,3 +195,28 @@ test("um sucesso depois de um erro nao herda o tom vermelho", async () => {
   await ouvintes.get("form:submit")({ preventDefault() {} });
   assert.notEqual(caixa.dataset.tom, "erro", "o sucesso continuou vermelho");
 });
+
+test("abrir o painel nao dispara notificacao, nem com rascunhos indisponiveis", async () => {
+  /*
+   * A NOTIFICACAO E PARA O QUE A PESSOA ACABOU DE FAZER.
+   *
+   * Rascunho indisponivel e uma condicao do banco, e nao o resultado de um
+   * clique. Anunciada como notificacao, ela abria o painel com um alerta
+   * vermelho no canto antes de qualquer acao — e gastava, num aviso que
+   * ninguem pediu, a atencao que a caixa precisa ter quando o salvar de fato
+   * falhar.
+   *
+   * A linha de status continua dizendo, para quem for procurar e para quem usa
+   * leitor de tela. E quem clicar em "Salvar rascunho" vai receber o erro ali,
+   * no momento em que ele importa.
+   */
+  const repo = repositorioFalso();
+  repo.listDrafts = async () => { throw Object.assign(new Error("no drafts"), { code: "PGRST205" }); };
+
+  const { root, caixa, nos } = montar();
+  await createAdminController({ root, repository: repo }).pronto;
+
+  assert.equal(caixa.hidden, true, "o painel abriu com uma notificacao por cima");
+  /* Mas a informacao nao se perde: ela esta na linha de status. */
+  assert.match(nos["[data-admin-status]"].textContent, /rascunho/i);
+});

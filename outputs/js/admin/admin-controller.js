@@ -628,19 +628,23 @@ export function createAdminController({
       anunciar("Não foi possível carregar os blocos. Verifique a conexão e recarregue a página.");
     } else if (semRascunhos) {
       /*
-       * O aviso diz QUAL botão deixa de funcionar, e por quê.
+       * Linha de status, e NÃO notificação.
        *
-       * "Os rascunhos não estão disponíveis" era verdade e não servia para
-       * nada: quem lia continuava editando e só descobria o problema ao clicar
-       * em "Salvar rascunho", uma edição inteira depois.
+       * A notificação é para o que a pessoa acabou de fazer. Rascunho
+       * indisponível é uma condição do banco, não o resultado de um clique:
+       * como notificação, ela abria o painel com um alerta vermelho no canto
+       * antes de qualquer ação, e gastava num aviso que ninguém pediu a
+       * atenção que a caixa precisa ter quando o salvar de fato falhar.
        *
-       * "Salvar bloco" continua funcionando — ele escreve direto em
-       * `home_blocks`, que existe. Dizer que nada pode ser salvo seria assustar
-       * sem motivo e esconder o caminho que está aberto.
+       * A informação não se perde. Fica aqui, para quem for procurar e para
+       * quem usa leitor de tela — e quem clicar em "Salvar rascunho" recebe o
+       * erro na hora em que ele importa.
+       *
+       * O texto diz QUAL botão para de funcionar: "Salvar bloco" escreve direto
+       * em `home_blocks`, que existe, e continua aberto.
        */
       const motivo = motivoDaFalha(erroDosRascunhos);
       anunciar(`"Salvar rascunho" não vai funcionar: ${motivo} "Salvar bloco" continua publicando direto.`);
-      notificar("Rascunhos indisponíveis", `${motivo} "Salvar bloco" continua publicando direto.`, "erro");
     }
     preencher(draftFromBlock(null, blocks.length));
     agendarPreview();
