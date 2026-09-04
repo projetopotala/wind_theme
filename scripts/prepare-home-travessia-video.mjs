@@ -64,14 +64,18 @@ const TODO_QUADRO_KEYFRAME = [
 const ESCALA = "scale=2816:1584:flags=lanczos+accurate_rnd+full_chroma_int";
 
 /*
- * 10 quadros por segundo.
+ * 15 quadros por segundo, e o número que importa não é esse.
  *
- * A jornada tem 12.096px de rolagem. A 10fps são 152 quadros, um a cada 80px —
- * contínuo ao olho, porque quem controla o ritmo é a mão de quem rola, e não um
- * relógio. Subir para 24fps só dobraria o peso para adiantar quadros que
- * ninguém pediu.
+ * O que conta é quantos PIXELS DE ROLAGEM cada quadro cobre, porque quem move o
+ * vídeo é a mão e não um relógio. A jornada tem 12.096px: a 10fps era um quadro
+ * a cada 80px, e um clique de roda anda cerca de 100 — cada clique pulava um
+ * quadro inteiro, e o movimento picotava mesmo com a imagem nítida. A 15fps são
+ * 227 quadros, um a cada 53px: cada clique passa por dois.
+ *
+ * 24fps daria 34px por quadro e 25,8MB. O ganho sobre 53px é pequeno perto do
+ * que custa.
  */
-const QUADROS_POR_SEGUNDO = "10";
+const QUADROS_POR_SEGUNDO = "15";
 
 /*
  * CRF 29, casado com a resolução acima e com um source 4K.
@@ -81,15 +85,17 @@ const QUADROS_POR_SEGUNDO = "10";
  * que separa perda de encode de limite do material. Sem ela eu errei duas vezes
  * seguidas, comparando só contra a webp.
  *
- * Com o 4K: 2816/CRF26 19,7MB · CRF29 14,5MB · CRF32 10,9MB. O CRF29 fica quase
- * no teto, e — o que decide — ficou mais nítido que o arquivo anterior de
- * 15,4MB feito a partir do 720p. Melhor imagem em menos bytes, porque o gargalo
- * nunca foi a compressão: era o material.
+ * Com o 4K a 10fps: CRF26 19,7MB · CRF29 14,5MB · CRF32 10,9MB. O 29 chegou a
+ * ser suficiente enquanto o gargalo era o material 720p; com o 4K por trás, a
+ * distância do 26 até ele voltou a ser visível no mesmo recorte — folhas e
+ * encosta perdem definição no 29.
+ *
+ * A 15fps: CRF26 25,4MB · CRF29 18,9MB.
  *
  * VP9 foi testado esperando comprimir melhor e deu 41,7MB: a força dele é a
  * predição entre quadros, e aqui todo quadro é independente por construção.
  */
-const CRF = "29";
+const CRF = "26";
 
 function ffmpeg() {
   /* `winget` instala o binário sem colocá-lo no PATH da sessão em curso, então
