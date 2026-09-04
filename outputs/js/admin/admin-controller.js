@@ -191,10 +191,6 @@ export function createAdminController({
   let aba = "todos";
   let ativoId = "";
   let arrastando = null;
-  let semRascunhos = false;
-  /* Guardado, e não só registrado no console: é ele que explica, no momento em
-     que alguém tenta salvar, por que salvar não vai funcionar. */
-  let erroDosRascunhos = null;
   let falhouLeitura = false;
   let previewFocusId = "";
   let previewFrameId = 0;
@@ -603,8 +599,6 @@ export function createAdminController({
   const rascunhosIniciais = repository.listDrafts
     ? repository.listDrafts().catch((error) => {
       console.error("Não foi possível ler os rascunhos.", error);
-      semRascunhos = true;
-      erroDosRascunhos = error;
       return [];
     })
     : Promise.resolve([]);
@@ -626,26 +620,19 @@ export function createAdminController({
     desenhar();
     if (falhouLeitura) {
       anunciar("Não foi possível carregar os blocos. Verifique a conexão e recarregue a página.");
-    } else if (semRascunhos) {
-      /*
-       * Linha de status, e NÃO notificação.
-       *
-       * A notificação é para o que a pessoa acabou de fazer. Rascunho
-       * indisponível é uma condição do banco, não o resultado de um clique:
-       * como notificação, ela abria o painel com um alerta vermelho no canto
-       * antes de qualquer ação, e gastava num aviso que ninguém pediu a
-       * atenção que a caixa precisa ter quando o salvar de fato falhar.
-       *
-       * A informação não se perde. Fica aqui, para quem for procurar e para
-       * quem usa leitor de tela — e quem clicar em "Salvar rascunho" recebe o
-       * erro na hora em que ele importa.
-       *
-       * O texto diz QUAL botão para de funcionar: "Salvar bloco" escreve direto
-       * em `home_blocks`, que existe, e continua aberto.
-       */
-      const motivo = motivoDaFalha(erroDosRascunhos);
-      anunciar(`"Salvar rascunho" não vai funcionar: ${motivo} "Salvar bloco" continua publicando direto.`);
     }
+    /*
+     * Rascunhos indisponíveis NÃO viram aviso na abertura.
+     *
+     * Chegou a virar, e não servia: é uma condição do banco, não o resultado de
+     * um clique, e quem abre o painel para editar não pediu um diagnóstico de
+     * migração antes de começar.
+     *
+     * Quem clicar em "Salvar rascunho" recebe o erro ali, com o motivo, na hora
+     * em que ele importa — e essa é a hora em que a informação muda o que a
+     * pessoa faz a seguir. O `console.error` do `catch` acima continua
+     * registrando a falha para quem for investigar.
+     */
     preencher(draftFromBlock(null, blocks.length));
     agendarPreview();
     return blocks;

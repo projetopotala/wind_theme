@@ -217,6 +217,7 @@ test("abrir o painel nao dispara notificacao, nem com rascunhos indisponiveis", 
   await createAdminController({ root, repository: repo }).pronto;
 
   assert.equal(caixa.hidden, true, "o painel abriu com uma notificacao por cima");
-  /* Mas a informacao nao se perde: ela esta na linha de status. */
-  assert.match(nos["[data-admin-status]"].textContent, /rascunho/i);
+  /* Nem na linha de status: quem abre o painel para editar nao pediu um
+     diagnostico de migracao antes de comecar. O erro chega no clique. */
+  assert.doesNotMatch(nos["[data-admin-status]"].textContent, /rascunho/i);
 });

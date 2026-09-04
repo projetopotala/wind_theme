@@ -248,18 +248,17 @@ test("rascunhos indisponíveis não apagam os blocos publicados", async () => {
    * rascunho indisponivel quer dizer que NADA pode ser salvo.
    */
   /*
-   * O aviso diz QUAL botao para de funcionar, e por que.
+   * E O PAINEL ABRE CALADO.
    *
-   * "Os rascunhos nao estao disponiveis" era verdade e nao servia para nada:
-   * quem lia continuava editando e so descobria o problema ao clicar em
-   * "Salvar rascunho", uma edicao inteira depois. E "Salvar bloco" continua
-   * funcionando — dizer que nada pode ser salvo assustaria sem motivo e
-   * esconderia o caminho que esta aberto.
+   * Rascunho indisponivel e uma condicao do banco, nao o resultado de um
+   * clique: quem abre o painel para editar nao pediu um diagnostico de migracao
+   * antes de comecar. Quem clicar em "Salvar rascunho" recebe o erro ali, com o
+   * motivo, na hora em que ele muda o que a pessoa faz a seguir.
+   *
+   * O que este teste segura e o que importa: a falha de UMA leitura nao pode
+   * levar embora os blocos publicados, que estavam la o tempo todo.
    */
-  const aviso = nos["[data-admin-status]"].textContent;
-  assert.match(aviso, /"Salvar rascunho" não vai funcionar/i);
-  assert.match(aviso, /migração home_block_drafts/i);
-  assert.match(aviso, /"Salvar bloco" continua/i);
+  assert.equal(nos["[data-admin-status]"].textContent, "", "o painel abriu avisando algo");
 });
 
 /* As abas do editor precisam estar MONTADAS, não só desenhadas. Sem o módulo

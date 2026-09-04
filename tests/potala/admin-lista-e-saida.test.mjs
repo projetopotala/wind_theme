@@ -95,3 +95,45 @@ test("publicar da uma confirmacao que se nota", () => {
   assert.ok(regra, "falta o estilo da confirmacao");
   assert.match(regra[1], /position:\s*fixed/, "precisa aparecer onde o olho esta, e nao no rodape do painel");
 });
+
+/* ------------------------------------------------------------------
+ * Encerrar sessao
+ * ------------------------------------------------------------------ */
+
+test("o logout fica no cabecalho, junto das outras saidas", () => {
+  /*
+   * O botao existia, escondido no fim da navegacao lateral, ao lado de
+   * "Restaurar conteudo original". Quem quisesse encerrar a sessao tinha de
+   * rolar a navegacao inteira para achar — e passava antes por uma acao
+   * destrutiva que nao tem nada a ver com sair.
+   *
+   * O cabecalho e onde ja vivem as outras duas saidas. Juntas, as tres se
+   * explicam por contraste: ver o site, voltar ao site, encerrar a sessao.
+   */
+  const cabecalho = /<header class="admin-head">[\s\S]*?<\/header>/.exec(html);
+  assert.ok(cabecalho, "o cabecalho do painel sumiu");
+  assert.match(cabecalho[0], /data-admin-sign-out/, "o logout nao esta no cabecalho");
+});
+
+test("existe um logout so, e nao dois", () => {
+  /*
+   * `admin-shell` e `admin-auth` procuram o botao com `querySelector`, que para
+   * no primeiro. Um segundo botao com o mesmo atributo ficaria na tela sem
+   * ouvinte nenhum: clicavel, mudo, e indistinguivel do que funciona.
+   */
+  const quantos = (html.match(/data-admin-sign-out/g) || []).length;
+  assert.equal(quantos, 1, `ha ${quantos} controles de logout`);
+});
+
+test("os dois botoes de sair nao se chamam a mesma coisa", () => {
+  /*
+   * "Sair do painel" volta a Home com a sessao aberta; o outro encerra a
+   * sessao. Chamar os dois de "Sair" faria a escolha depender de adivinhar
+   * qual e qual, e errar custa digitar a senha de novo.
+   */
+  const voltar = /<a[^>]*data-admin-leave[^>]*>([^<]*)</.exec(html);
+  const encerrar = /<button[^>]*data-admin-sign-out[^>]*>([^<]*)</.exec(html);
+  assert.ok(voltar && encerrar, "falta um dos dois");
+  assert.notEqual(voltar[1].trim(), encerrar[1].trim());
+  assert.match(encerrar[1], /sess[aã]o/i, "o logout precisa dizer que encerra a sessao");
+});

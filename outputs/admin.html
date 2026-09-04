@@ -82,7 +82,6 @@
               <p data-admin-password-status role="status" aria-live="polite"></p>
             </details>
             <button type="button" data-admin-reset>Restaurar conteúdo original</button>
-            <button type="button" data-admin-sign-out>Sair</button>
           </div>
         </div>
       </nav>
@@ -96,17 +95,25 @@
           placeholder="Buscar bloco" aria-label="Buscar bloco">
         <a class="admin-link" href="transcendido.html" target="_blank" rel="noopener">Visualizar site</a>
         <!--
-          Sair do painel é diferente de encerrar a sessão.
+          As TRÊS saídas ficam juntas, e é o contraste entre elas que explica
+          cada uma.
 
           "Visualizar site" abre em aba nova, para conferir o resultado sem
-          perder o painel — quem quisesse VOLTAR ia acumulando abas. Este leva de
-          volta à Home na mesma aba, e a sessão continua aberta: voltar a editar
-          não pede senha de novo.
+          perder o painel. "Voltar ao site" leva à Home na mesma aba, com a
+          sessão aberta: reabrir o painel não pede senha. "Encerrar sessão"
+          desconecta, e aí pede.
 
-          O logout continua onde está, no fim da navegação, porque é outra
-          decisão e tem outra consequência.
+          Nenhuma se chama "Sair". Chamava-se: o daqui era "Sair do painel" e o
+          logout, lá no fim da navegação, era "Sair" — dois nomes quase iguais
+          para consequências diferentes, e errar custava digitar a senha de novo.
+
+          O logout estava enterrado no rodapé da navegação lateral, ao lado de
+          "Restaurar conteúdo original": para encerrar a sessão era preciso
+          rolar a navegação inteira e passar por uma ação destrutiva que não tem
+          nada a ver com sair.
         -->
-        <a class="admin-link admin-leave" data-admin-leave href="transcendido.html">Sair do painel</a>
+        <a class="admin-link admin-leave" data-admin-leave href="transcendido.html">Voltar ao site</a>
+        <button class="admin-link admin-signout" type="button" data-admin-sign-out>Encerrar sessão</button>
         <button class="admin-publish" type="button" data-admin-publish disabled>Publicar alterações</button>
         <p class="admin-saved-at" data-admin-saved-at role="status" aria-live="polite"></p>
       </header>

@@ -253,6 +253,39 @@ button {
   text-decoration: none;
 }
 
+/*
+ * O logout é um `button` no meio de dois links, e precisa parecer igual.
+ *
+ * `.admin-link` foi escrita para âncoras, e um botão não herda nada disso: o
+ * navegador lhe dá fundo cinza, borda 3D, e a fonte do sistema em vez da fonte
+ * da página. Do lado de "Voltar ao site", saía outro objeto.
+ *
+ * Botão de verdade, e não um link com `href="#"`: encerrar sessão é uma ação,
+ * não um lugar. Um link mentiria para leitor de tela e abriria em aba nova no
+ * clique do meio, que aqui não quer dizer nada.
+ */
+.admin-link.admin-signout {
+  font: inherit;
+  cursor: pointer;
+  background: none;
+}
+
+/*
+ * Discreto até ser procurado.
+ *
+ * A consequência é maior que a das outras duas saídas — obriga a digitar a
+ * senha de novo — mas é a menos frequente. Chamar atenção o dia inteiro para o
+ * clique que interrompe o trabalho seria o desenho ao contrário; o aviso vem
+ * no hover, quando a mão já está indo.
+ */
+.admin-link.admin-signout { color: var(--admin-muted); }
+
+.admin-link.admin-signout:hover,
+.admin-link.admin-signout:focus-visible {
+  border-color: rgba(226, 122, 106, .55);
+  color: #e27a6a;
+}
+
 .admin-saved-at {
   flex-basis: 100%;
   margin: 0;
