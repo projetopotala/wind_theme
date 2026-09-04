@@ -530,19 +530,17 @@ button {
 }
 
 /*
- * A CONFIRMAÇÃO DE PUBLICAÇÃO.
+ * A NOTIFICAÇÃO DE RESULTADO.
  *
- * Publicar é a ação irreversível do painel: é ela que troca o que está no ar. A
- * resposta era uma linha de status discreta, do mesmo tamanho e cor de qualquer
- * outro aviso — quem publicava ficava sem saber se tinha dado certo, e o
- * caminho natural era publicar de novo.
+ * Salvar e publicar respondiam com uma linha de status igual a qualquer outro
+ * aviso, longe de onde o olho estava. Quem salvava ficava sem saber se tinha
+ * funcionado, e o caminho natural nessa dúvida é salvar de novo.
  *
- * Fixa, e não no fluxo: o botão de publicar fica no topo, a lista pode estar
- * rolada, e uma confirmação no rodapé do painel chega a quem já não está
- * olhando para lá.
+ * Fixa, e não no fluxo: os botões ficam no topo, a lista pode estar rolada, e
+ * um aviso no rodapé do painel chega a quem já não está olhando para lá.
  *
  * A linha de status CONTINUA existindo, com `aria-live`, e é ela que atende
- * quem usa leitor de tela. Esta caixa é o par visual dela, não a substituta.
+ * quem usa leitor de tela. Esta é o par visual dela, não a substituta.
  */
 .admin-confirm {
   position: fixed;
@@ -550,24 +548,88 @@ button {
   right: 24px;
   bottom: 24px;
   display: grid;
-  gap: 2px;
-  max-width: min(360px, calc(100vw - 48px));
-  padding: 14px 18px;
-  border: 1px solid var(--admin-gold);
-  border-radius: 12px;
-  color: var(--admin-gold);
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 2px 12px;
+  align-items: start;
+  width: min(380px, calc(100vw - 48px));
+  padding: 14px 18px 16px;
+  overflow: hidden;
+  border: 1px solid var(--admin-line, rgba(231, 202, 143, .28));
+  border-radius: 14px;
   background: var(--admin-panel);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, .5);
+  /* A sombra é o que separa a notificação da lista atrás: sem ela, a caixa lê
+     como mais uma linha do painel, e não como algo que acabou de chegar. */
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .55);
 }
 
 .admin-confirm[hidden] { display: none; }
-.admin-confirm strong { font-size: .92rem; }
-.admin-confirm small { color: var(--admin-muted); font-size: .76rem; }
+
+/* O ícone carrega o resultado antes da leitura: quem só passa o olho já sabe
+   se deu certo, sem depender de distinguir dois tons de texto. */
+.admin-confirm::before {
+  content: "✓";
+  grid-row: 1 / span 2;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #14210f;
+  font-size: .82rem;
+  font-weight: 700;
+  background: var(--admin-gold);
+  place-items: center;
+}
+
+.admin-confirm strong { color: var(--admin-fg, #f3ead9); font-size: .92rem; }
+.admin-confirm small { color: var(--admin-muted); font-size: .78rem; line-height: 1.45; }
+
+/*
+ * O tom de falha.
+ *
+ * Cor sozinha não conta o resultado a quem não distingue vermelho de dourado —
+ * por isso o símbolo muda junto, de ✓ para !.
+ */
+.admin-confirm[data-tom="erro"] { border-color: rgba(226, 122, 106, .55); }
+.admin-confirm[data-tom="erro"]::before { content: "!"; color: #2a100c; background: #e27a6a; }
+
+/*
+ * A barra que mostra o tempo restante.
+ *
+ * A notificação some sozinha, e sem essa barra o desaparecimento parece um
+ * defeito. Vendo-a encolher, quem lê entende que o sumiço é o combinado.
+ */
+.admin-confirm::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--admin-gold);
+  transform-origin: left;
+}
+
+.admin-confirm[data-tom="erro"]::after { background: #e27a6a; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .admin-confirm { animation: admin-confirm-entra .28s ease; }
+  .admin-confirm { animation: admin-confirm-entra .3s cubic-bezier(.2, .9, .3, 1); }
+  .admin-confirm::after { animation: admin-confirm-tempo 4.2s linear forwards; }
+  .admin-confirm[data-tom="erro"]::after { animation-duration: 7s; }
+}
+
+/*
+ * Sem a animação, a barra não deve ficar cheia parada fingindo um tempo que não
+ * corre. Ela some, e a notificação vale pelo texto.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .admin-confirm::after { display: none; }
 }
 
 @keyframes admin-confirm-entra {
-  from { opacity: 0; translate: 0 10px; }
+  from { opacity: 0; translate: 0 12px; }
+}
+
+@keyframes admin-confirm-tempo {
+  from { scale: 1 1; }
+  to { scale: 0 1; }
 }

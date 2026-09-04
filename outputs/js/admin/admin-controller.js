@@ -232,25 +232,35 @@ export function createAdminController({
   };
 
   /*
-   * A confirmação visual de que a publicação deu certo.
+   * A NOTIFICAÇÃO DE RESULTADO.
    *
-   * Publicar é a ação irreversível do painel — é ela que troca o que está no ar
-   * — e a resposta era uma linha de status do mesmo tamanho e cor de qualquer
-   * outro aviso. Quem publicava ficava sem saber se tinha funcionado, e o
-   * caminho natural nessa dúvida é publicar de novo.
+   * Salvar e publicar respondiam com uma linha de status do mesmo tamanho e cor
+   * de qualquer outro aviso, longe de onde o olho estava. Quem salvava ficava
+   * sem saber se tinha funcionado — e a dúvida leva a salvar de novo, ou pior,
+   * a fechar o painel achando que salvou.
+   *
+   * Cobre falha também, e não só sucesso. Uma notificação que só aparece quando
+   * dá certo ensina o olho a ler a ausência dela como "não fiz nada", e a
+   * ausência é o retrato exato de uma falha silenciosa.
    *
    * `anunciar` continua sendo chamado junto: é ele que atende leitor de tela,
-   * pela região `aria-live`. Esta caixa é o par visual, e não a substituta.
+   * pela região `aria-live`. Esta é o par visual, e não a substituta.
    */
-  const confirmar = (titulo, detalhe = "") => {
+  const notificar = (titulo, detalhe = "", tom = "ok") => {
     if (!confirmacao) return;
     if (confirmacaoRelogio) clearTimeout(confirmacaoRelogio);
     if (confirmacaoTitulo) confirmacaoTitulo.textContent = titulo;
     if (confirmacaoDetalhe) confirmacaoDetalhe.textContent = detalhe;
+    /* O tom sobrevive entre avisos: sem reescrever sempre, o sucesso seguinte
+       aparecia pintado de falha — a leitura oposta da verdade. */
+    confirmacao.dataset.tom = tom;
     confirmacao.hidden = false;
-    /* Some sozinha: uma confirmação que exige ser fechada vira mais um clique
-       depois de um trabalho que já terminou. */
-    confirmacaoRelogio = setTimeout(() => { confirmacao.hidden = true; }, 4200);
+    /* Um erro fica mais tempo: quem falhou precisa ler o que fazer, e quem
+       acertou já sabe. */
+    const espera = tom === "erro" ? 7000 : 4200;
+    /* Some sozinha: uma notificação que exige ser fechada cobra mais um clique
+       por um trabalho que já terminou, e acaba cobrindo a lista. */
+    confirmacaoRelogio = setTimeout(() => { confirmacao.hidden = true; }, espera);
   };
 
   function entradas() {
@@ -290,11 +300,13 @@ export function createAdminController({
       blocks = await repository.replaceAll(proximos);
       desenhar();
       anunciar(mensagem);
+      notificar(mensagem, "A Home foi atualizada.");
       agendarPreview();
       return true;
     } catch (error) {
       console.error("Não foi possível salvar o conteúdo editorial.", error);
       anunciar("Não foi possível salvar. Nenhuma alteração foi publicada.");
+      notificar("Não foi possível salvar", "Nenhuma alteração foi publicada. Verifique a conexão.", "erro");
       return false;
     }
   }
@@ -418,11 +430,13 @@ export function createAdminController({
       blocks = await repository.reset();
       desenhar();
       anunciar("Conteúdo original restaurado.");
+      notificar("Conteúdo original restaurado", "A Home voltou ao conteúdo de fábrica.");
       previewFocusId = "";
       agendarPreview();
     } catch (error) {
       console.error("Não foi possível restaurar o conteúdo editorial.", error);
       anunciar("Não foi possível restaurar. O conteúdo publicado não mudou.");
+      notificar("Não foi possível restaurar", "O conteúdo publicado não mudou.", "erro");
     }
   };
 
@@ -461,12 +475,14 @@ export function createAdminController({
       await repository.saveDraft(draft);
       marcarSalvo();
       anunciar(`Rascunho de "${draft.title}" guardado. A Home não mudou.`);
+      notificar(`Rascunho de "${draft.title}" guardado`, "A Home ainda não mudou: publique para colocar no ar.");
     } catch (error) {
       console.error("Não foi possível guardar o rascunho.", error);
       drafts = anteriores;
       desenhar();
       agendarPreview();
       anunciar("Não foi possível guardar o rascunho. Nada foi alterado.");
+      notificar("Não foi possível guardar o rascunho", "Nada foi alterado. Verifique a conexão e tente de novo.", "erro");
     }
   };
 
@@ -483,13 +499,14 @@ export function createAdminController({
          tinha três rascunhos não sabe se foram os três. */
       const rotulo = quantos === 1 ? "1 bloco publicado" : `${quantos} blocos publicados`;
       anunciar(`${rotulo}. A Home foi atualizada.`);
-      confirmar(rotulo, "A Home foi atualizada.");
+      notificar(rotulo, "A Home foi atualizada.");
     } catch (error) {
       console.error("Não foi possível publicar.", error);
       blocks = anteriores.blocos;
       drafts = anteriores.rascunhos;
       desenhar();
       anunciar("Não foi possível publicar. Nada foi alterado.");
+      notificar("Não foi possível publicar", "Nada foi alterado. O que está no ar continua igual.", "erro");
     }
   };
 
@@ -501,11 +518,13 @@ export function createAdminController({
     try {
       await repository.discardDraft(id);
       anunciar("Rascunho descartado. O bloco voltou ao que está no ar.");
+    notificar("Rascunho descartado", "O bloco voltou ao que está no ar.");
     } catch (error) {
       console.error("Não foi possível descartar o rascunho.", error);
       drafts = anteriores;
       desenhar();
       anunciar("Não foi possível descartar o rascunho.");
+      notificar("Não foi possível descartar o rascunho", "O rascunho continua guardado.", "erro");
     }
   };
 
