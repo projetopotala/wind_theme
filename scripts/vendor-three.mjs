@@ -25,7 +25,6 @@ const vendorDir = path.join(root, "outputs", "vendor");
 
 const ENTRADA = "three.module.min.js";
 
-
 /** Importações relativas de um bundle, sem `import()` dinâmico (não há). */
 function irmaosDe(codigo) {
   const encontrados = new Set();

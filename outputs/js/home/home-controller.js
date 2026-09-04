@@ -1,5 +1,5 @@
 import { consumeHandoff } from "../core/travessia-state.js";
-import { avancoDaPaisagem, damp, scrollCuePosition, scrollProgressForDocument } from "../core/math.js";
+import { damp, scrollCuePosition, scrollProgressForDocument } from "../core/math.js";
 import { createBlockExpansion } from "./block-expansion.js";
 import {
   createHomeAdminPreview,
@@ -10,6 +10,7 @@ import { invitationsFor, nextInvitationIndex } from "./invitations.js";
 import { createLocalContentRepository } from "./content-repository.js";
 import { DEFAULT_HOME_BLOCKS, JOURNEY_DISCOVERIES } from "./journey-data.js";
 import { createHomePath } from "./home-path-three.js";
+import { createLandscapeVideo } from "./landscape-video.js";
 import { mountJourney } from "./home-scenes.js";
 
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
@@ -243,6 +244,14 @@ export function createHomeController({
     settleTimer = setTimeout(() => { awaitingScroll = false; }, 260);
   }
 
+  /*
+   * O fundo em movimento. Ele se vira sozinho: lê o mesmo
+   * `--journey-scroll-progress` que este controlador já escreve, e decide por
+   * conta própria se vale carregar. Se não valer, devolve um objeto vazio e a
+   * paisagem segue sendo a imagem de sempre.
+   */
+  const landscapeVideo = createLandscapeVideo(document.getElementById("journey-landscape"));
+
   const expansion = createBlockExpansion(root, {
     onChange: (entry) => {
       if (shiftFrame) cancelAnimationFrame(shiftFrame);
@@ -444,12 +453,9 @@ export function createHomeController({
       scrollCuePosition({ progress, movable: true }),
     );
     path.setProgress(progress);
-    /* A paisagem avança pelo MESMO número que move o trajeto — daí os dois nunca
+    /* O fundo anda pelo MESMO número que move o trajeto — daí os dois nunca
        saírem de sincronia. */
-    document.documentElement.style.setProperty(
-      "--paisagem-avanco",
-      avancoDaPaisagem(progress).toFixed(4),
-    );
+    landscapeVideo.setProgress(progress);
   }
 
   function requestUpdate() {
@@ -503,6 +509,7 @@ export function createHomeController({
       invite?.removeEventListener("blur", resumeInvitation);
       invite?.removeEventListener("click", onInviteClick);
       expansion.destroy();
+      landscapeVideo.destroy();
       path.destroy();
       removeSound();
       window.removeEventListener("scroll", requestUpdate);

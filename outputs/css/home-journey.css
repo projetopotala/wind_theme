@@ -1240,45 +1240,37 @@ body:has(.journey-region.is-expanded) .journey-admin-link {
 }
 
 /*
- * A CHAPA QUE AVANÇA.
+ * O VÍDEO DO FUNDO.
  *
- * Cobre o mesmo retângulo da paisagem — inclusive a sobra que a travessia
- * atravessa — e carrega a imagem. O pai fica com o deslocamento lateral da
- * travessia; a chapa, com a aproximação da rolagem. Separados, os dois transforms
- * não se apagam.
+ * Cobre exatamente o mesmo retângulo da paisagem — inclusive a sobra que a
+ * travessia atravessa —, então herda o deslocamento lateral sem precisar de uma
+ * regra própria.
  *
- * A imagem daqui é uma versão MAIS LARGA que a do fundo estático: a aproximação
- * gasta resolução, e a chapa precisa ter pixels de sobra para não amolecer no
- * fim do percurso.
+ * Entra por cima da imagem, e só quando está pronto. Até lá, e sempre que ele
+ * não entra, o que se vê é a `home-travessia.webp` que continua no `background`
+ * do elemento pai. Não existe estado em que o fundo seja um vazio.
  */
-.journey-landscape-plate {
+.journey-landscape-video {
   position: absolute;
+  z-index: 1;
   inset: 0;
-  background: url("../media/home-travessia-chapa.webp") center / cover no-repeat;
-
-  /*
-   * A aproximação parte do PONTO DE FUGA, e não do centro.
-   *
-   * Centrada, a imagem cresceria em direção ao meio geométrico dela, que aqui é
-   * céu — e o resultado lê como zoom, não como avanço. O caminho se perde perto
-   * de 62% da altura, e é para lá que se está indo.
-   */
-  transform-origin: 50% 62%;
-  transform: scale(var(--paisagem-avanco, 1));
-
-  /* Sem transição: o avanço é escrito a cada rolagem, e interpolar por cima
-     disso faria a paisagem chegar atrasada em relação à mão. */
-  will-change: transform;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  /* A entrada é lenta de propósito: o vídeo aparece por cima de uma imagem
+     quase idêntica, e um corte seco denunciaria a troca. */
+  transition: opacity 1.2s ease;
+  pointer-events: none;
 }
 
-/*
- * Movimento reduzido: a paisagem fica parada.
- *
- * Um fundo que se aproxima a cada rolagem é exatamente o que quem pediu menos
- * movimento está evitando — e aqui não se perde conteúdo nenhum, só o gesto.
- */
+.journey-landscape[data-video-pronto="true"] .journey-landscape-video { opacity: 1; }
+
+/* Movimento reduzido nunca chega a carregar o vídeo — o JS não põe o `src`.
+   Esta regra é a segunda tranca, para o caso de a preferência mudar com a
+   página já aberta. */
 @media (prefers-reduced-motion: reduce) {
-  .journey-landscape-plate { transform: none; }
+  .journey-landscape-video { display: none; }
 }
 
 body[data-travessia-ativa="true"] .journey-landscape {

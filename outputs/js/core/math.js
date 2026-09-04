@@ -33,22 +33,3 @@ export const scrollCuePosition = ({
   movable = true,
   restingProgress = 0,
 } = {}) => `${(clamp(movable ? progress : restingProgress) * 100).toFixed(2)}%`;
-
-/*
- * O quanto a paisagem se aproxima, dado o quanto se rolou.
- *
- * A imagem de fundo não é mais parada: descer a página a aproxima do ponto de
- * fuga do caminho, e o caminho cresce na direção de quem olha. É o gesto que a
- * jornada descreve.
- *
- * O teto de 18% não é gosto. A chapa tem 3328px e o elemento pede cerca de 2750
- * numa tela de 1920; o que sobra é a folga que a aproximação pode gastar antes
- * de o navegador precisar ampliar — e ampliar é onde a nitidez desmancha, coisa
- * que este projeto já pagou caro para aprender.
- */
-export const AVANCO_MAXIMO = 0.18;
-
-export const avancoDaPaisagem = (progresso) => {
-  const p = Math.min(1, Math.max(0, Number(progresso) || 0));
-  return 1 + AVANCO_MAXIMO * p;
-};
