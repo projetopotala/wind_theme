@@ -55,27 +55,35 @@ const TODO_QUADRO_KEYFRAME = [
 /*
  * Uma REDUÇÃO, de 3840 para 2816 — e é por isso que não há realce aqui.
  *
- * Enquanto a origem era 720p, o filtro ampliava, e um `unsharp` discreto
- * compensava a moleza da ampliação. Reduzir é outro trabalho: o material já
- * chega com mais detalhe do que o destino comporta, e realçar por cima disso só
- * criaria halo nas bordas e gastaria bits que o codec deveria usar na pedra de
- * verdade.
+ * Houve um momento em que a origem foi um 720p, e ali o filtro AMPLIAVA: um
+ * `unsharp` discreto entrava para compensar a moleza de esticar 2,2×.
+ *
+ * Reduzir é outro trabalho. O material já chega com mais detalhe do que o
+ * destino comporta, e realçar por cima disso só criaria halo nas bordas e
+ * gastaria bits que o codec deveria usar na pedra de verdade.
  */
 const ESCALA = "scale=2816:1584:flags=lanczos+accurate_rnd+full_chroma_int";
 
 /*
- * 15 quadros por segundo, e o número que importa não é esse.
+ * 24 quadros por segundo — a taxa do source, e nenhum quadro jogado fora.
  *
- * O que conta é quantos PIXELS DE ROLAGEM cada quadro cobre, porque quem move o
- * vídeo é a mão e não um relógio. A jornada tem 12.096px: a 10fps era um quadro
- * a cada 80px, e um clique de roda anda cerca de 100 — cada clique pulava um
- * quadro inteiro, e o movimento picotava mesmo com a imagem nítida. A 15fps são
- * 227 quadros, um a cada 53px: cada clique passa por dois.
+ * O que conta não é a taxa: é quantos PIXELS DE ROLAGEM cada quadro cobre,
+ * porque quem move o vídeo é a mão e não um relógio. A jornada tem 12.096px, e
+ * um clique de roda anda cerca de 100.
  *
- * 24fps daria 34px por quadro e 25,8MB. O ganho sobre 53px é pequeno perto do
- * que custa.
+ *   10fps · 151 quadros · 80px por quadro — cada clique PULAVA um quadro
+ *   15fps · 227 quadros · 53px por quadro — cada clique passava por dois
+ *   24fps · 361 quadros · 33px por quadro — cada clique passa por três
+ *
+ * O 15 foi escolhido quando o ganho parecia pequeno perto do custo. Não é: a
+ * 53px por quadro o movimento ainda anda em degraus visíveis num arrasto lento,
+ * onde o dedo cobre poucos pixels e o mesmo quadro insiste.
+ *
+ * E 24 é o TETO, não uma preferência. O source tem 361 quadros em 24fps: pedir
+ * mais faria o ffmpeg duplicar quadro, gastando bytes para repetir uma imagem
+ * que já estava na tela.
  */
-const QUADROS_POR_SEGUNDO = "15";
+const QUADROS_POR_SEGUNDO = "24";
 
 /*
  * CRF 29, casado com a resolução acima e com um source 4K.
