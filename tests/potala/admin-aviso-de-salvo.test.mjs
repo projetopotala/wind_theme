@@ -16,15 +16,7 @@ import { createAdminController } from "../../outputs/js/admin/admin-controller.j
  * ausencia tambem seria o retrato exato de uma falha silenciosa.
  */
 
-/*
- * `falharRascunho: "uma vez"` falha so na primeira gravacao.
- *
- * E o que permite provar que o tom de erro nao gruda: sem isso, a segunda
- * tentativa falharia igual e o teste passaria por acidente, medindo apenas que
- * um erro continua vermelho.
- */
 function repositorioFalso({ falharRascunho = false, falharSalvar = false } = {}) {
-  let rascunhosFalhados = 0;
   let publicados = [
     { id: "a", slug: "a", title: "Original", summary: "r", side: "left", position: 0, published: true, tags: [] },
   ];
@@ -33,9 +25,7 @@ function repositorioFalso({ falharRascunho = false, falharSalvar = false } = {})
     async list() { return publicados.map((bloco) => ({ ...bloco })); },
     async listDrafts() { return rascunhos.map((bloco) => ({ ...bloco })); },
     async saveDraft(bloco) {
-      if (falharRascunho === "uma vez" ? rascunhosFalhados++ === 0 : falharRascunho) {
-        throw new Error("rede caiu");
-      }
+      if (falharRascunho) throw new Error("rede caiu");
       rascunhos = [...rascunhos.filter((item) => item.id !== bloco.id), { ...bloco }];
       return bloco;
     },
@@ -65,8 +55,9 @@ function montar() {
 
   const alvo = (chave, extra = {}) => ({
     innerHTML: "", textContent: "", disabled: false, hidden: false,
-    /* `setProperty` existe em qualquer `style` real, e faltava aqui. Um duble
-       mais magro que o original quebra onde o navegador nao quebraria. */
+    /* `setProperty` existe em qualquer `style` real, e a previa de celular o
+       usa para dizer a caixa o tamanho ja escalado do aparelho. Um duble mais
+       magro que o original quebra onde o navegador nao quebraria. */
     style: { setProperty() {} }, src: "", value: "", dataset: {},
     addEventListener(tipo, fn) { ouvintes.set(`${chave}:${tipo}`, fn); },
     removeEventListener(tipo) { ouvintes.delete(`${chave}:${tipo}`); },
@@ -194,7 +185,7 @@ test("um sucesso depois de um erro nao herda o tom vermelho", async () => {
    * deu certo aparecia pintada de falha — que e a leitura oposta da verdade.
    */
   const { root, ouvintes, preencherFormulario, caixa } = montar();
-  const painel = createAdminController({ root, repository: repositorioFalso({ falharRascunho: "uma vez" }) });
+  const painel = createAdminController({ root, repository: repositorioFalso({ falharRascunho: true }) });
   await painel.pronto;
   preencherFormulario(RASCUNHO);
 

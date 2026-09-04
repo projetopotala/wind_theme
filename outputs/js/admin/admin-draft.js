@@ -97,21 +97,3 @@ export function motivoDaFalha(erro) {
 
   return "Verifique a conexão e tente de novo.";
 }
-
-/**
- * Diz se a falha é a tabela de rascunhos não existir neste banco.
- *
- * Separado de `motivoDaFalha` porque não é a mesma pergunta: uma escolhe o
- * texto a mostrar, esta decide se vale gravar direto no publicado.
- *
- * Falta de PERMISSÃO fica de fora de propósito. Ali a tabela existe e a conta é
- * que não pode — cair para a gravação direta seria tentar publicar com uma
- * conta que também não pode publicar, trocando um aviso claro por outro pior.
- */
-export function rascunhosIndisponiveis(erro) {
-  const codigo = String(erro?.code || "");
-  const texto = String(erro?.message || "");
-  return codigo === "PGRST205"
-    || codigo === "42P01"
-    || /home_block_drafts/i.test(texto);
-}

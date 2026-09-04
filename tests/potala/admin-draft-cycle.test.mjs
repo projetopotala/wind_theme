@@ -70,8 +70,9 @@ function montar() {
     textContent: "",
     disabled: false,
     hidden: false,
-    /* `setProperty` existe em qualquer `style` real, e faltava aqui. Um duble
-       mais magro que o original quebra onde o navegador nao quebraria. */
+    /* `setProperty` existe em qualquer `style` real, e a previa de celular o
+       usa para dizer a caixa o tamanho ja escalado do aparelho. Um duble mais
+       magro que o original quebra onde o navegador nao quebraria. */
     style: { setProperty() {} },
     src: "",
     value: "",
@@ -247,15 +248,18 @@ test("rascunhos indisponíveis não apagam os blocos publicados", async () => {
    * rascunho indisponivel quer dizer que NADA pode ser salvo.
    */
   /*
-   * O aviso diz a CONSEQUENCIA e a CAUSA, e nao so o fato.
+   * O aviso diz QUAL botao para de funcionar, e por que.
    *
    * "Os rascunhos nao estao disponiveis" era verdade e nao servia para nada:
-   * quem lia continuava editando sem saber o que ia acontecer ao salvar. Sem a
-   * tabela o painel ainda edita — publicando na hora — e e ISSO que precisa
-   * ser dito, junto com o caminho para voltar a guardar rascunhos.
+   * quem lia continuava editando e so descobria o problema ao clicar em
+   * "Salvar rascunho", uma edicao inteira depois. E "Salvar bloco" continua
+   * funcionando — dizer que nada pode ser salvo assustaria sem motivo e
+   * esconderia o caminho que esta aberto.
    */
-  assert.match(nos["[data-admin-status]"].textContent, /direto ao ar/i);
-  assert.match(nos["[data-admin-status]"].textContent, /migração home_block_drafts/i);
+  const aviso = nos["[data-admin-status]"].textContent;
+  assert.match(aviso, /"Salvar rascunho" não vai funcionar/i);
+  assert.match(aviso, /migração home_block_drafts/i);
+  assert.match(aviso, /"Salvar bloco" continua/i);
 });
 
 /* As abas do editor precisam estar MONTADAS, não só desenhadas. Sem o módulo

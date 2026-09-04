@@ -1,7 +1,7 @@
 import { normalizeHomeBlock, normalizeHomeBlocks } from "../home/content-model.js";
 import { createLocalContentRepository } from "../home/content-repository.js";
 import { DEFAULT_HOME_BLOCKS } from "../home/journey-data.js";
-import { mergeBlocks, motivoDaFalha, pendingCount, rascunhosIndisponiveis } from "./admin-draft.js";
+import { mergeBlocks, motivoDaFalha, pendingCount } from "./admin-draft.js";
 import { countEntries, filterEntries } from "./admin-filters.js";
 import { createBlocksList } from "./admin-blocks-list.js";
 import { createMediaPicker } from "./admin-media-picker.js";
@@ -266,28 +266,6 @@ export function createAdminController({
     confirmacaoRelogio = setTimeout(() => { confirmacao.hidden = true; }, espera);
   };
 
-  /*
-   * A REDE DE SEGURANÇA PARA UM BANCO SEM A TABELA DE RASCUNHOS.
-   *
-   * Toda gravação passa por `home_block_drafts` — é isso que faz "Publicar
-   * alterações" ser o único caminho para o ar. Num banco onde a migração dessa
-   * tabela nunca foi aplicada, isso deixou de salvar qualquer coisa: cada
-   * tentativa batia num PGRST205 e voltava com um aviso.
-   *
-   * Não poder trabalhar é pior do que publicar direto. Sem a tabela, a escolha
-   * não é entre rascunho e publicação — é entre publicar direto e não editar.
-   *
-   * E o aviso é obrigatório. Cair em silêncio devolveria exatamente o defeito
-   * que a mudança veio corrigir — salvar publicando sem avisar — agora
-   * escondido atrás de uma notificação dizendo "guardado".
-   */
-  const AVISO_SEM_RASCUNHO = "Foi direto ao ar: a tabela de rascunhos não existe neste banco (falta a migração home_block_drafts).";
-
-  async function gravarDireto(proximos, mensagem) {
-    const salvou = await salvar(proximos, mensagem, { detalhe: AVISO_SEM_RASCUNHO });
-    return salvou;
-  }
-
   function entradas() {
     return mergeBlocks({ published: blocks, drafts });
   }
@@ -320,12 +298,12 @@ export function createAdminController({
     if (salvoEm) salvoEm.textContent = "Salvo há poucos segundos";
   }
 
-  async function salvar(proximos, mensagem, { detalhe = "A Home foi atualizada." } = {}) {
+  async function salvar(proximos, mensagem) {
     try {
       blocks = await repository.replaceAll(proximos);
       desenhar();
-      anunciar(`${mensagem} ${detalhe}`);
-      notificar(mensagem, detalhe);
+      anunciar(mensagem);
+      notificar(mensagem, "A Home foi atualizada.");
       agendarPreview();
       return true;
     } catch (error) {
@@ -378,19 +356,8 @@ export function createAdminController({
       if (primeiro) primeiro.focus();
       return;
     }
-    /*
-     * "Salvar bloco" guarda RASCUNHO, e não publica.
-     *
-     * Chamava `replaceAll`, que troca na hora o que o visitante vê. Era o botão
-     * de destaque do formulário, o que a mão procura, e respondia "salvo" —
-     * exatamente como o de rascunho ao lado. Quem editava não tinha como
-     * distinguir os dois, e descobria a diferença na Home já publicada.
-     *
-     * O formulário NÃO é limpo depois. Antes era, porque salvar encerrava o
-     * assunto; agora salvar é um passo no meio, e apagar o que a pessoa acabou
-     * de escrever a faria procurar o bloco de novo para continuar.
-     */
-    await onSaveDraft(draft);
+    const saved = await salvar(applyDraft(blocks, draft), `Bloco "${draft.title}" salvo.`);
+    if (saved) preencher(draftFromBlock(null, blocks.length));
   };
 
   const onListClick = async (event) => {
@@ -401,11 +368,10 @@ export function createAdminController({
     if (!bloco) return;
 
     if (action === "up" || action === "down") {
-      const saved = await guardarRascunhos(moveBlock(entradas().map((e) => e.block), id, action === "up" ? -1 : 1), {
-        mensagem: `"${bloco.title}" mudou de lugar.`,
-        detalhe: "A ordem na Home só muda quando você publicar.",
-        aoFalhar: "Não foi possível mudar o bloco de lugar.",
-      });
+      const saved = await salvar(
+        moveBlock(blocks, id, action === "up" ? -1 : 1),
+        `"${bloco.title}" mudou de lugar.`,
+      );
       if (!saved) return;
       /*
        * A lista inteira é redesenhada, então o botão que recebeu o clique deixa
@@ -420,18 +386,9 @@ export function createAdminController({
     }
 
     if (action === "toggle") {
-      /* Parte do estado do bloco, e não uma chave separada: esconder é uma
-         edição como outra qualquer, e espera o mesmo botão de publicar. */
-      const visivel = entradas().find((entrada) => entrada.id === id)?.block?.published !== false;
-      await guardarRascunhos(
-        entradas().map((entrada) => (entrada.id === id
-          ? { ...entrada.block, published: !visivel }
-          : entrada.block)),
-        {
-          mensagem: `"${bloco.title}" vai ficar ${visivel ? "oculto" : "visível"}.`,
-          detalhe: "A Home só muda quando você publicar.",
-          aoFalhar: `Não foi possível mudar a visibilidade de "${bloco.title}".`,
-        },
+      await salvar(
+        blocks.map((item) => (item.id === id ? { ...item, published: !item.published } : item)),
+        `"${bloco.title}" agora está ${bloco.published ? "oculto" : "publicado"}.`,
       );
       return;
     }
@@ -446,18 +403,7 @@ export function createAdminController({
     }
 
     if (action === "delete") {
-      /*
-       * Excluir é a única ação que ainda vai direto ao ar.
-       *
-       * Publicar rascunhos é um UPSERT: leva o que existe em
-       * `home_block_drafts` para `home_blocks`. Uma exclusão é a ausência de
-       * uma linha, e ausência não viaja num UPSERT — representá-la pediria uma
-       * coluna nova na tabela de rascunhos e uma mudança na função que publica.
-       *
-       * Enquanto isso não existe, o aviso diz a verdade em vez de deixar quem
-       * clica supor que dá para desfazer publicando depois.
-       */
-      if (!confirm(`Excluir "${bloco.title}"? O bloco sai da Home imediatamente, sem passar por "Publicar alterações", e isso não pode ser desfeito.`)) return;
+      if (!confirm(`Excluir "${bloco.title}"? Esta ação não pode ser desfeita.`)) return;
       await salvar(removeBlock(blocks, id), `"${bloco.title}" foi excluído.`);
     }
   };
@@ -475,16 +421,10 @@ export function createAdminController({
     const alvo = linha ? linha.dataset.id : null;
     if (!arrastando || !alvo || alvo === arrastando) return;
     event.preventDefault();
-    const ordem = entradas().map((entrada) => entrada.id);
-    const de = ordem.indexOf(arrastando);
-    const para = ordem.indexOf(alvo);
+    const de = blocks.findIndex((block) => block.id === arrastando);
+    const para = blocks.findIndex((block) => block.id === alvo);
     arrastando = null;
-    const lista = entradas().map((entrada) => entrada.block);
-    await guardarRascunhos(moveBlock(lista, lista[de].id, para - de), {
-      mensagem: "Ordem atualizada.",
-      detalhe: "A ordem na Home só muda quando você publicar.",
-      aoFalhar: "Não foi possível mudar a ordem.",
-    });
+    await salvar(moveBlock(blocks, blocks[de].id, para - de), "Ordem atualizada.");
   };
 
   const onReset = async () => {
@@ -502,59 +442,6 @@ export function createAdminController({
       notificar("Não foi possível restaurar", `O conteúdo publicado não mudou. ${motivoDaFalha(error)}`, "erro");
     }
   };
-
-  /*
-   * GRAVAR RASCUNHO DE VARIOS BLOCOS DE UMA VEZ.
-   *
-   * Reordenar move dois blocos, no mínimo: o que subiu e o que desceu. Gravar
-   * só o que recebeu o clique deixaria os dois com a mesma posição depois de
-   * publicar, e a ordem sairia decidida por desempate de id.
-   *
-   * Compara com o que está no ar para gravar apenas o que de fato mudou — um
-   * rascunho por bloco intocado inflaria a contagem do botão de publicar e
-   * pediria para publicar nove blocos quando dois mudaram.
-   */
-  async function guardarRascunhos(proximos, { mensagem, detalhe, aoFalhar }) {
-    if (semRascunhos) return gravarDireto(proximos, mensagem);
-
-    const anteriores = drafts.map((item) => ({ ...item }));
-    const publicadoPorId = new Map(blocks.map((bloco) => [bloco.id, bloco]));
-    const mudados = proximos.filter((bloco) => {
-      const atual = publicadoPorId.get(bloco.id);
-      if (!atual) return true;
-      return atual.position !== bloco.position
-        || atual.published !== bloco.published
-        || atual.side !== bloco.side;
-    });
-
-    const porId = new Map(drafts.map((item) => [item.id, item]));
-    for (const bloco of mudados) porId.set(bloco.id, { ...bloco });
-    drafts = [...porId.values()];
-    desenhar();
-    agendarPreview();
-
-    try {
-      /* Em série, e não em paralelo: um `Promise.all` que falha no meio deixa
-         parte gravada e parte não, e a volta atrás abaixo mentiria. */
-      for (const bloco of mudados) await repository.saveDraft(bloco);
-      marcarSalvo();
-      anunciar(`${mensagem} A Home não mudou.`);
-      notificar(mensagem, detalhe);
-      return true;
-    } catch (error) {
-      console.error("Não foi possível guardar o rascunho.", error);
-      drafts = anteriores;
-      desenhar();
-      agendarPreview();
-      if (rascunhosIndisponiveis(error)) {
-        semRascunhos = true;
-        return gravarDireto(proximos, mensagem);
-      }
-      anunciar(aoFalhar);
-      notificar(aoFalhar, `Nada foi alterado. ${motivoDaFalha(error)}`, "erro");
-      return false;
-    }
-  }
 
   const onNew = () => {
     previewFocusId = "admin-preview-draft";
@@ -580,14 +467,6 @@ export function createAdminController({
       return;
     }
 
-    /* Já sabido desde a abertura: nem tenta o rascunho para falhar e repetir. */
-    if (semRascunhos) {
-      ativoId = draft.id || ativoId;
-      /* "Publicado", e nao "salvo": e o que de fato aconteceu. */
-      await gravarDireto(applyDraft(blocks, draft), `Bloco "${draft.title}" publicado.`);
-      return;
-    }
-
     const anteriores = drafts.map((item) => ({ ...item }));
     const [normalizado] = applyDraft([], draft);
     drafts = [...drafts.filter((item) => item.id !== normalizado.id), normalizado];
@@ -605,14 +484,6 @@ export function createAdminController({
       drafts = anteriores;
       desenhar();
       agendarPreview();
-      /* Descoberto só agora — a leitura da abertura pode ter passado por outro
-         motivo. Marca para as próximas gravações não repetirem a ida perdida. */
-      if (rascunhosIndisponiveis(error)) {
-        semRascunhos = true;
-        /* "Publicado", e nao "salvo": e o que de fato aconteceu. */
-      await gravarDireto(applyDraft(blocks, draft), `Bloco "${draft.title}" publicado.`);
-        return;
-      }
       anunciar("Não foi possível guardar o rascunho. Nada foi alterado.");
       notificar("Não foi possível guardar o rascunho", `Nada foi alterado. ${motivoDaFalha(error)}`, "erro");
     }
@@ -757,27 +628,19 @@ export function createAdminController({
       anunciar("Não foi possível carregar os blocos. Verifique a conexão e recarregue a página.");
     } else if (semRascunhos) {
       /*
-       * O aviso precisa dizer a CONSEQUÊNCIA, e não só o fato.
+       * O aviso diz QUAL botão deixa de funcionar, e por quê.
        *
        * "Os rascunhos não estão disponíveis" era verdade e não servia para
-       * nada: quem lia continuava editando e só descobria o problema ao salvar,
-       * uma edição inteira depois. Desde que toda gravação passa por rascunho,
-       * rascunho indisponível quer dizer que NADA pode ser salvo — e isso tem
-       * de ser dito antes do trabalho, não depois.
+       * nada: quem lia continuava editando e só descobria o problema ao clicar
+       * em "Salvar rascunho", uma edição inteira depois.
+       *
+       * "Salvar bloco" continua funcionando — ele escreve direto em
+       * `home_blocks`, que existe. Dizer que nada pode ser salvo seria assustar
+       * sem motivo e esconder o caminho que está aberto.
        */
-      /*
-       * Sem a tabela, o painel ainda edita — só que publicando na hora. O aviso
-       * diz isso, e não que está tudo perdido: quem lê precisa saber que pode
-       * trabalhar E que cada gravação já vai ao ar.
-       */
-      if (rascunhosIndisponiveis(erroDosRascunhos)) {
-        anunciar("Sem a tabela de rascunhos: cada alteração salva vai direto ao ar. Aplique a migração home_block_drafts para voltar a guardar rascunhos.");
-        notificar("As alterações vão direto ao ar", "A tabela de rascunhos não existe neste banco: falta aplicar a migração home_block_drafts.", "erro");
-      } else {
-        const motivo = motivoDaFalha(erroDosRascunhos);
-        anunciar(`Não é possível salvar agora: ${motivo} Você está vendo o que já está publicado.`);
-        notificar("Não é possível salvar agora", motivo, "erro");
-      }
+      const motivo = motivoDaFalha(erroDosRascunhos);
+      anunciar(`"Salvar rascunho" não vai funcionar: ${motivo} "Salvar bloco" continua publicando direto.`);
+      notificar("Rascunhos indisponíveis", `${motivo} "Salvar bloco" continua publicando direto.`, "erro");
     }
     preencher(draftFromBlock(null, blocks.length));
     agendarPreview();
