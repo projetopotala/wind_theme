@@ -767,3 +767,28 @@ test("o painel arqueia para o proprio lado, sem mexer no encaixe", () => {
   const repousos = css.match(/\.journey-region\.is-expanded\[data-travessia\]\s+\.region-content\s*\{[^}]*\}/g) ?? [];
   assert.ok(repousos.some((r) => /translate:\s*0/.test(r)), "sem valor no repouso o arco nao anima");
 });
+
+test("o card que fecha nao leva o passo de camera no ultimo quadro", () => {
+  /*
+   * A saida termina exatamente sobre o card. No quadro seguinte, `is-expanded` e
+   * retirada — e a regra que anula o passo de camera exige justamente essa
+   * classe. O passo volta a valer, e o card salta.
+   *
+   * Medido a 1024x700: aos 1101ms o painel estava em 581,177 358x346, o lugar
+   * certo; aos 1111ms, em 356. Duzentos e vinte e cinco pixels de salto, que e
+   * exatamente `--travessia-camera` nessa largura. Depois ele ainda deslizava de
+   * volta por 0,7s, porque a transicao da base assumia.
+   *
+   * `:not(.is-expanded)[data-travessia="transitioning"]` identifica so quem esta
+   * fechando: na abertura esse estado existe com a classe presente, e num
+   * quadro que nem chega a ser pintado.
+   */
+  const aplica = css.search(/\.journey-region\[data-travessia="transitioning"\]\s+\.region-content[^{]*\{[^}]*transform:\s*translate3d/);
+  assert.notEqual(aplica, -1, "sumiu a regra que aplica o passo de camera");
+
+  const anula = css.search(/\.journey-region:not\(\.is-expanded\)\[data-travessia="transitioning"\]\s+\.region-content\s*\{[^}]*transform:\s*none/);
+  assert.notEqual(anula, -1, "falta poupar do passo o card que esta fechando");
+
+  /* Peso igual entre as duas; quem chega depois vence. */
+  assert.ok(anula > aplica, "a anulacao precisa vir depois do passo que ela anula");
+});

@@ -2268,3 +2268,28 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
   animation: none;
   border-radius: var(--journey-card-raio, clamp(22px, 2.4vw, 32px));
 }
+
+/*
+ * O CARD QUE FECHA NÃO LEVA O PASSO DE CÂMERA.
+ *
+ * A saída do painel termina exatamente sobre o card. No quadro seguinte
+ * `is-expanded` é retirada — e a regra que anula o passo de câmera exige
+ * justamente essa classe. O passo volta a valer no card, e ele salta.
+ *
+ * Medido a 1024×700: aos 1101ms o painel estava em 581,177 358×346, o lugar
+ * certo; aos 1111ms, em 356. Duzentos e vinte e cinco pixels, que é exatamente
+ * `--travessia-camera` nessa largura. E o estrago não parava aí: retirado o
+ * estado, a transição da base assumia e o card ainda deslizava de volta por
+ * quase um segundo.
+ *
+ * O passo existia para o bloco "ceder o palco" ao abrir, quando era o card que
+ * se movia. Agora quem faz a viagem é o painel, com o seu próprio arco; no card
+ * que já chegou, o passo é só um puxão a mais.
+ *
+ * `:not(.is-expanded)` identifica só quem está fechando: na abertura este
+ * estado também existe, mas com a classe presente, e num quadro que nem chega a
+ * ser pintado.
+ */
+.journey-region:not(.is-expanded)[data-travessia="transitioning"] .region-content {
+  transform: none;
+}
