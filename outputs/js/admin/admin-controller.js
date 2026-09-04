@@ -1,7 +1,7 @@
 import { normalizeHomeBlock, normalizeHomeBlocks } from "../home/content-model.js";
 import { createLocalContentRepository } from "../home/content-repository.js";
 import { DEFAULT_HOME_BLOCKS } from "../home/journey-data.js";
-import { mergeBlocks, pendingCount } from "./admin-draft.js";
+import { mergeBlocks, motivoDaFalha, pendingCount } from "./admin-draft.js";
 import { countEntries, filterEntries } from "./admin-filters.js";
 import { createBlocksList } from "./admin-blocks-list.js";
 import { createMediaPicker } from "./admin-media-picker.js";
@@ -192,6 +192,9 @@ export function createAdminController({
   let ativoId = "";
   let arrastando = null;
   let semRascunhos = false;
+  /* Guardado, e não só registrado no console: é ele que explica, no momento em
+     que alguém tenta salvar, por que salvar não vai funcionar. */
+  let erroDosRascunhos = null;
   let falhouLeitura = false;
   let previewFocusId = "";
   let previewFrameId = 0;
@@ -306,7 +309,7 @@ export function createAdminController({
     } catch (error) {
       console.error("Não foi possível salvar o conteúdo editorial.", error);
       anunciar("Não foi possível salvar. Nenhuma alteração foi publicada.");
-      notificar("Não foi possível salvar", "Nenhuma alteração foi publicada. Verifique a conexão.", "erro");
+      notificar("Não foi possível salvar", `Nenhuma alteração foi publicada. ${motivoDaFalha(error)}`, "erro");
       return false;
     }
   }
@@ -474,7 +477,7 @@ export function createAdminController({
     } catch (error) {
       console.error("Não foi possível restaurar o conteúdo editorial.", error);
       anunciar("Não foi possível restaurar. O conteúdo publicado não mudou.");
-      notificar("Não foi possível restaurar", "O conteúdo publicado não mudou.", "erro");
+      notificar("Não foi possível restaurar", `O conteúdo publicado não mudou. ${motivoDaFalha(error)}`, "erro");
     }
   };
 
@@ -520,7 +523,7 @@ export function createAdminController({
       desenhar();
       agendarPreview();
       anunciar(aoFalhar);
-      notificar(aoFalhar, "Nada foi alterado. Verifique a conexão e tente de novo.", "erro");
+      notificar(aoFalhar, `Nada foi alterado. ${motivoDaFalha(error)}`, "erro");
       return false;
     }
   }
@@ -567,7 +570,7 @@ export function createAdminController({
       desenhar();
       agendarPreview();
       anunciar("Não foi possível guardar o rascunho. Nada foi alterado.");
-      notificar("Não foi possível guardar o rascunho", "Nada foi alterado. Verifique a conexão e tente de novo.", "erro");
+      notificar("Não foi possível guardar o rascunho", `Nada foi alterado. ${motivoDaFalha(error)}`, "erro");
     }
   };
 
@@ -591,7 +594,7 @@ export function createAdminController({
       drafts = anteriores.rascunhos;
       desenhar();
       anunciar("Não foi possível publicar. Nada foi alterado.");
-      notificar("Não foi possível publicar", "Nada foi alterado. O que está no ar continua igual.", "erro");
+      notificar("Não foi possível publicar", `O que está no ar continua igual. ${motivoDaFalha(error)}`, "erro");
     }
   };
 
@@ -609,7 +612,7 @@ export function createAdminController({
       drafts = anteriores;
       desenhar();
       anunciar("Não foi possível descartar o rascunho.");
-      notificar("Não foi possível descartar o rascunho", "O rascunho continua guardado.", "erro");
+      notificar("Não foi possível descartar o rascunho", `O rascunho continua guardado. ${motivoDaFalha(error)}`, "erro");
     }
   };
 
@@ -686,6 +689,7 @@ export function createAdminController({
     ? repository.listDrafts().catch((error) => {
       console.error("Não foi possível ler os rascunhos.", error);
       semRascunhos = true;
+      erroDosRascunhos = error;
       return [];
     })
     : Promise.resolve([]);
@@ -708,7 +712,18 @@ export function createAdminController({
     if (falhouLeitura) {
       anunciar("Não foi possível carregar os blocos. Verifique a conexão e recarregue a página.");
     } else if (semRascunhos) {
-      anunciar("Os rascunhos não estão disponíveis. Você está vendo o que já está publicado.");
+      /*
+       * O aviso precisa dizer a CONSEQUÊNCIA, e não só o fato.
+       *
+       * "Os rascunhos não estão disponíveis" era verdade e não servia para
+       * nada: quem lia continuava editando e só descobria o problema ao salvar,
+       * uma edição inteira depois. Desde que toda gravação passa por rascunho,
+       * rascunho indisponível quer dizer que NADA pode ser salvo — e isso tem
+       * de ser dito antes do trabalho, não depois.
+       */
+      const motivo = motivoDaFalha(erroDosRascunhos);
+      anunciar(`Não é possível salvar agora: ${motivo} Você está vendo o que já está publicado.`);
+      notificar("Não é possível salvar agora", motivo, "erro");
     }
     preencher(draftFromBlock(null, blocks.length));
     agendarPreview();

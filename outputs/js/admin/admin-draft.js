@@ -61,3 +61,39 @@ export function pendingCount(entries = []) {
 export function publishPayload(entries = []) {
   return entries.filter((entrada) => entrada.hasDraft).map((entrada) => entrada.block);
 }
+
+/**
+ * Traduz a falha do banco no que a pessoa precisa fazer a seguir.
+ *
+ * "Verifique a conexão e tente de novo" era a resposta para tudo. Quando a
+ * causa era outra — a tabela de rascunhos nunca criada, ou uma conta sem
+ * permissão de administrador — a mensagem mandava repetir uma ação que ia
+ * falhar idêntica todas as vezes, e apontava a rede, que estava boa.
+ *
+ * O Postgres já diz o que houve, no `code`. O padrão de conexão continua, mas
+ * como último recurso, e não como primeiro palpite.
+ */
+export function motivoDaFalha(erro) {
+  const codigo = String(erro?.code || "");
+  const texto = String(erro?.message || "");
+
+  /* 42P01 undefined_table, e o PGRST205 do PostgREST quando a tabela não está
+     no cache de schema: na prática, a mesma migração faltando. */
+  if (codigo === "42P01" || codigo === "PGRST205" || /home_block_drafts.*does not exist/i.test(texto)) {
+    return "A tabela de rascunhos não existe neste banco: falta aplicar a migração home_block_drafts.";
+  }
+
+  /* 42703 undefined_column: a tabela existe, mas de uma versão anterior às
+     colunas que o editor passou a gravar. */
+  if (codigo === "42703") {
+    return "O banco está numa versão anterior à do editor: falta aplicar a última migração.";
+  }
+
+  /* 42501 insufficient_privilege — inclui o que a RPC levanta quando
+     `is_portal_admin()` diz não, que é o caso de uma conta sem permissão. */
+  if (codigo === "42501" || /portal_admin_required/i.test(texto)) {
+    return "Esta conta não tem permissão de administradora do portal.";
+  }
+
+  return "Verifique a conexão e tente de novo.";
+}

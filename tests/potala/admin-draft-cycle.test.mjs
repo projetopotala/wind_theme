@@ -238,7 +238,18 @@ test("rascunhos indisponíveis não apagam os blocos publicados", async () => {
 
   assert.match(nos["[data-admin-counts]"].textContent, /1 blocos/);
   assert.match(nos["[data-admin-list]"].innerHTML, /Original/);
-  assert.match(nos["[data-admin-status]"].textContent, /rascunhos não estão disponíveis/i);
+  /*
+   * O aviso diz a CONSEQUENCIA e a CAUSA, e nao so o fato.
+   *
+   * "Os rascunhos nao estao disponiveis" era verdade e nao servia para nada:
+   * quem lia continuava editando e so descobria o problema ao salvar, uma
+   * edicao inteira depois. Desde que toda gravacao passa por rascunho,
+   * rascunho indisponivel quer dizer que NADA pode ser salvo.
+   */
+  assert.match(nos["[data-admin-status]"].textContent, /não é possível salvar/i);
+  assert.match(nos["[data-admin-status]"].textContent, /migração home_block_drafts/i);
+  /* E os blocos publicados continuam a vista, que e o ponto deste teste. */
+  assert.match(nos["[data-admin-status]"].textContent, /já está publicado/i);
 });
 
 /* As abas do editor precisam estar MONTADAS, não só desenhadas. Sem o módulo
