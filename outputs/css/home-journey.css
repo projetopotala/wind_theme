@@ -1240,37 +1240,38 @@ body:has(.journey-region.is-expanded) .journey-admin-link {
 }
 
 /*
- * O VÍDEO DO FUNDO.
+ * A CENA DO FUNDO.
  *
  * Cobre exatamente o mesmo retângulo da paisagem — inclusive a sobra que a
- * travessia atravessa —, então herda o deslocamento lateral sem precisar de uma
+ * travessia atravessa —, então herda o deslocamento lateral sem precisar de
  * regra própria.
  *
- * Entra por cima da imagem, e só quando está pronto. Até lá, e sempre que ele
- * não entra, o que se vê é a `home-travessia.webp` que continua no `background`
- * do elemento pai. Não existe estado em que o fundo seja um vazio.
+ * Entra por cima da imagem, e só quando o modelo terminou de montar. Até lá, e
+ * sempre que a cena não entra, o que se vê é a `home-travessia.webp` que
+ * continua no `background` do elemento pai. Não existe estado em que o fundo
+ * seja um vazio.
  */
-.journey-landscape-video {
+.journey-landscape-scene {
   position: absolute;
   z-index: 1;
   inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
   opacity: 0;
-  /* A entrada é lenta de propósito: o vídeo aparece por cima de uma imagem
-     quase idêntica, e um corte seco denunciaria a troca. */
+  /* A entrada é lenta de propósito: a cena aparece por cima de uma imagem, e um
+     corte seco denunciaria a troca. */
   transition: opacity 1.2s ease;
   pointer-events: none;
 }
 
-.journey-landscape[data-video-pronto="true"] .journey-landscape-video { opacity: 1; }
+.journey-landscape[data-cena-pronta="true"] .journey-landscape-scene { opacity: 1; }
 
-/* Movimento reduzido nunca chega a carregar o vídeo — o JS não põe o `src`.
+/* Movimento reduzido nunca chega a montar a cena — o JS não carrega o modelo.
    Esta regra é a segunda tranca, para o caso de a preferência mudar com a
    página já aberta. */
 @media (prefers-reduced-motion: reduce) {
-  .journey-landscape-video { display: none; }
+  .journey-landscape-scene { display: none; }
 }
 
 body[data-travessia-ativa="true"] .journey-landscape {

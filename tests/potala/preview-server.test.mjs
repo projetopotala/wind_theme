@@ -11,33 +11,31 @@ test("bloqueia caminhos que escapam de outputs", () => {
   assert.equal(resolveRequestPath("/%2e%2e/package.json"), null);
 });
 
-test("a prévia atende pedidos de trecho, senão vídeo nenhum pode ser rebobinado", async () => {
+test("a prévia atende pedidos de trecho", async () => {
   /*
-   * O fundo da jornada é um vídeo movido pela rolagem: cada rolagem escreve
-   * `currentTime`, e para isso o navegador precisa buscar dentro do arquivo.
-   * Buscar é pedir um TRECHO — e um servidor que responde 200 com o arquivo
-   * inteiro está dizendo que não sabe recortar.
+   * Responder 200 a um pedido de trecho é dizer que não se sabe recortar, e o
+   * navegador tira suas conclusões disso sem reclamar de nada.
    *
-   * O sintoma não é um erro: o vídeo carrega, `readyState` chega a 4, e
-   * `seekable` fica vazio. Escrever em `currentTime` é silenciosamente
-   * descartado, e o fundo trava no primeiro quadro. Foi exatamente o que
-   * aconteceu aqui, e custou uma investigação até o servidor virar suspeito.
+   * O caso que revelou isto foi um vídeo movido pela rolagem: ele carregava,
+   * `readyState` chegava a 4, e `seekable` ficava VAZIO — escrever em
+   * `currentTime` era descartado em silêncio e o fundo travava no primeiro
+   * quadro. Aquele vídeo já não existe, mas a correção continua valendo: é
+   * comportamento HTTP correto, e o próximo arquivo grande servido daqui vai
+   * precisar dele do mesmo jeito.
    */
   const { createPreviewServer } = await import("../../scripts/serve-outputs.mjs");
   const servidor = createPreviewServer();
   await new Promise((pronto) => servidor.listen(0, "127.0.0.1", pronto));
   const porta = servidor.address().port;
+  const alvo = `http://127.0.0.1:${porta}/media/home-travessia.webp`;
 
   try {
-    const trecho = await fetch(`http://127.0.0.1:${porta}/media/home-travessia.mp4`, {
-      headers: { Range: "bytes=0-99" },
-    });
-
+    const trecho = await fetch(alvo, { headers: { Range: "bytes=0-99" } });
     assert.equal(trecho.status, 206, "um pedido de trecho tem de ser respondido com trecho");
     assert.match(trecho.headers.get("content-range") ?? "", /^bytes 0-99\/\d+$/);
     assert.equal(trecho.headers.get("content-length"), "100");
 
-    const inteiro = await fetch(`http://127.0.0.1:${porta}/media/home-travessia.mp4`);
+    const inteiro = await fetch(alvo);
     assert.equal(inteiro.status, 200, "sem cabeçalho de trecho, o arquivo vem inteiro");
     assert.equal(
       inteiro.headers.get("accept-ranges"),
