@@ -536,34 +536,28 @@ test("os cartoes voltam a vista em vez de piscar", () => {
   assert.match(regra[1], /animation:\s*cartao-volta/);
 });
 
-test("a abertura AMPLIA a partir do cartao, com escala uniforme", () => {
+test("a abertura AMPLIA a partir da caixa exata do cartao", () => {
   /*
    * O painel troca de coluna do grid ao abrir, e grid nao interpola: a mudanca
    * de tamanho e instantanea. Para o olho ver o bloco ampliando, o painel comeca
    * reduzido ao tamanho do cartao, na posicao do cartao, e cresce dali.
    *
-   * A escala e UNIFORME, com um `scale()` de um argumento so. Encaixar a caixa
-   * do cartao nas duas direcoes pediria fatores diferentes em X e Y, e o texto
-   * sairia espremido durante todo o percurso — letras estreitas e altas.
+   * A escala tem DOIS fatores, um por eixo. Com um so — escolhido de inicio para
+   * nao deformar o texto — a caixa de partida casava a largura do cartao e nao a
+   * altura: 358x249 onde o cartao tem 358x346. O receio era mal calibrado, porque
+   * nessa escala o texto tem uns seis pixels e ninguem o le; o que se ve e a
+   * forma, e a forma precisa encaixar.
    */
   const entra = semComentarios(blocoDeKeyframes(css, "painel-entra"));
 
-  assert.match(entra, /scale\(var\(--zoom-escala[,)]/, "falta a reducao ao tamanho do cartao");
+  assert.match(entra, /scale\(var\(--zoom-escala-x[,)]/, "falta a reducao no eixo horizontal");
+  assert.match(entra, /var\(--zoom-escala-y[,)]/, "falta a reducao no eixo vertical");
   assert.match(entra, /translate3d\(var\(--zoom-x[,)]/, "falta pousar o painel na posicao do cartao");
-  /* Os `var()` viram um simbolo antes da conferencia: a virgula do valor de
-     reserva contaria como um segundo fator e daria falso positivo. */
-  const semVar = entra.replace(/var\([^()]*\)/g, "V");
-  assert.ok(
-    !/scale\(\s*V\s*,/.test(semVar) && !/scale[XY]\(/.test(semVar),
-    "um `scale()` de dois fatores espremeria o texto",
-  );
 
   /*
    * `transform-origin: 0 0` e o que da sentido ao translate: sem ela, a mesma
    * conta pousaria o painel em outro lugar, porque a origem padrao e o centro.
    */
-  /* Ha mais de uma regra com este seletor — a do movimento reduzido vem antes.
-     Interessa existir a que fixa a origem. */
   const repousos = css.match(/\.journey-region\.is-expanded\[data-travessia\]\s+\.region-content\s*\{[^}]*\}/g) ?? [];
   assert.ok(
     repousos.some((regra) => /transform-origin:\s*0 0/.test(regra)),

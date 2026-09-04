@@ -240,35 +240,46 @@ test("girar o telefone refaz a conta do bloco que está aberto", () => {
  * largura, o texto da miniatura quebra igual ao texto do fim.
  */
 
-test("a ampliacao encaixa a largura do cartao e mantem a proporcao", () => {
+test("a ampliacao encaixa a caixa do cartao nos DOIS eixos", () => {
+  /*
+   * Um fator so, casando a largura, deixava a altura sobrando: medido a
+   * 1024x700, a animacao nascia com 358x249 onde o cartao tem 358x346. Quase
+   * cem pixels de diferenca embaixo — a caixa nao encaixava, e o crescimento
+   * parecia comecar de outro lugar.
+   */
   const a = ampliacaoDoCartao(
     { left: 600, top: 100, right: 900, bottom: 300 },
     { left: 0, top: 0, right: 1000, bottom: 700 },
   );
 
-  assert.equal(a.escala, 0.3, "300 de cartao em 1000 de pagina");
+  assert.equal(a.escalaX, 0.3, "300 de cartao em 1000 de pagina");
+  assert.ok(Math.abs(a.escalaY - 200 / 700) < 1e-9, "200 de cartao em 700 de pagina");
   assert.equal(a.x, 600, "o canto esquerdo do painel pousa no do cartao");
   assert.equal(a.y, 100, "e o de cima tambem");
 });
 
-test("a ampliacao e a mesma nos dois eixos", () => {
-  /* Um cartao mais baixo que a proporcao da pagina nao achata o painel: a
-     miniatura fica mais curta que o cartao, e tudo bem. Espremer o texto para
-     preencher a caixa seria pior que sobrar um vao por um instante. */
+test("os dois eixos podem discordar, e e isso que faz a caixa encaixar", () => {
+  /*
+   * O fator unico existia para nao deformar o texto. Era receio mal calibrado: a
+   * escala inicial ronda 0,35, e nela o corpo do texto tem uns seis pixels —
+   * ninguem le aquilo, o que se ve e a FORMA. Uma forma que encaixa no cartao
+   * vale mais que a proporcao correta de um texto ilegivel.
+   */
   const a = ampliacaoDoCartao(
     { left: 0, top: 0, right: 500, bottom: 100 },
     { left: 0, top: 0, right: 1000, bottom: 700 },
   );
 
-  assert.equal(a.escala, 0.5);
+  assert.equal(a.escalaX, 0.5);
+  assert.notEqual(a.escalaX, a.escalaY);
 });
 
-test("o raio inicial e o do cartao desfeita a escala", () => {
+test("o raio inicial nao fecha mais que o do cartao", () => {
   /*
-   * O `border-radius` e escalado junto com o resto. Para o canto APARECER com o
-   * raio do cartao no primeiro quadro, ele precisa entrar dividido pela escala —
-   * senao a miniatura mostra um canto proporcionalmente menor e o arredondado
-   * se perde.
+   * Com dois fatores, um raio unico viraria elipse. Dividido pelo MENOR deles, o
+   * canto nunca fica mais fechado que o do cartao — arredondar de menos passa
+   * despercebido; de mais deixa a quina redonda demais bem no quadro em que ela
+   * deveria imitar o cartao.
    */
   const a = ampliacaoDoCartao(
     { left: 0, top: 0, right: 250, bottom: 200 },
@@ -276,7 +287,7 @@ test("o raio inicial e o do cartao desfeita a escala", () => {
     24,
   );
 
-  assert.equal(a.escala, 0.25);
+  assert.equal(a.escalaX, 0.25);
   assert.equal(a.raio, 96, "24px vistos a 25% pedem 96px desenhados");
 });
 

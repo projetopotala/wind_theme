@@ -2090,16 +2090,17 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
      * O painel AMPLIA a partir do cartão: começa reduzido ao tamanho dele, na
      * posição dele, e cresce até o tamanho de página.
      *
-     * A escala é UNIFORME. Encaixar a caixa do cartão nas duas direções pediria
-     * fatores diferentes em X e Y, e o texto sairia espremido durante todo o
-     * percurso — letras estreitas e altas. Com um fator só, o que se vê é uma
-     * miniatura fiel da página crescendo.
+     * A escala tem DOIS fatores, e a primeira versão usou um só para não deformar
+     * o texto. Era receio mal calibrado: nesta escala o corpo do texto tem uns
+     * seis pixels e ninguém o lê — o que se vê é a FORMA. Com um fator, a caixa
+     * de partida casava a largura do cartão e não a altura, e o crescimento
+     * parecia começar de outro lugar.
      *
      * `transform-origin: 0 0` é o que faz o translate significar "o canto
      * superior esquerdo do painel pousa no do cartão". Com a origem no centro,
      * a mesma conta cairia em outro lugar.
      */
-    transform: translate3d(var(--zoom-x, 0px), var(--zoom-y, 0px), 0) scale(var(--zoom-escala, 1));
+    transform: translate3d(var(--zoom-x, 0px), var(--zoom-y, 0px), 0) scale(var(--zoom-escala-x, 1), var(--zoom-escala-y, 1));
 
     /* O raio entra desfeita a escala, para o canto APARECER com o raio do
        cartão em vez de um proporcionalmente menor. */
@@ -2150,7 +2151,7 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  */
 @keyframes painel-sai {
   to {
-    transform: translate3d(var(--zoom-x, 0px), var(--zoom-y, 0px), 0) scale(var(--zoom-escala, 1));
+    transform: translate3d(var(--zoom-x, 0px), var(--zoom-y, 0px), 0) scale(var(--zoom-escala-x, 1), var(--zoom-escala-y, 1));
     border-radius: var(--zoom-raio, 0px);
     background-color: var(--journey-panel-open);
   }

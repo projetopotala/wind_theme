@@ -62,30 +62,44 @@ export function ajusteQueCabe(medir, { piso = PISO_DO_AJUSTE, passos = 4 } = {})
  * reduzido ao tamanho do cartão, na posição do cartão, e cresce até o seu
  * tamanho de página.
  *
- * A escala é UNIFORME, e isso importa. Encaixar o painel na caixa do cartão nas
- * duas direções exigiria fatores diferentes em X e Y, e o texto sairia
- * espremido — letras estreitas e altas durante todo o percurso. Com um fator só,
- * o que se vê é uma miniatura fiel da página crescendo: tudo pequeno, nada
- * deformado.
+ * A escala tem DOIS fatores, um por eixo, e a primeira versão errou aqui.
  *
- * O fator vem da LARGURA porque é ela que governa a quebra de linha: casando a
- * largura, o texto da miniatura quebra igual ao do fim, e o crescimento não
- * reflui as linhas no meio do caminho.
+ * Com um fator só, o retângulo de partida casava a largura do cartão e não a
+ * altura: medido a 1024×700, a animação nascia com 358×249 onde o cartão tem
+ * 358×346. Quase cem pixels de diferença embaixo — a caixa não encaixava no
+ * cartão, e o crescimento parecia começar de outro lugar.
+ *
+ * O fator único existia para não deformar o texto. Era um receio mal calibrado:
+ * a escala inicial é de 0,35, e nela o corpo do texto tem uns seis pixels.
+ * Ninguém lê aquilo; o que se vê é a FORMA. Uma forma que encaixa no cartão vale
+ * mais que a proporção correta de um texto ilegível — ainda mais durante um
+ * segundo de percurso.
  */
 export function ampliacaoDoCartao(cartao, pagina, raioDoCartao = 0) {
   if (!cartao || !pagina) return null;
   const larguraDaPagina = pagina.right - pagina.left;
-  const larguraDoCartao = cartao.right - cartao.left;
-  if (!(larguraDaPagina > 0) || !(larguraDoCartao > 0)) return null;
+  const alturaDaPagina = pagina.bottom - pagina.top;
+  if (!(larguraDaPagina > 0) || !(alturaDaPagina > 0)) return null;
 
-  const escala = larguraDoCartao / larguraDaPagina;
+  const larguraDoCartao = cartao.right - cartao.left;
+  const alturaDoCartao = cartao.bottom - cartao.top;
+  if (!(larguraDoCartao > 0) || !(alturaDoCartao > 0)) return null;
+
+  const escalaX = larguraDoCartao / larguraDaPagina;
+  const escalaY = alturaDoCartao / alturaDaPagina;
   return {
-    escala,
+    escalaX,
+    escalaY,
     x: cartao.left - pagina.left,
     y: cartao.top - pagina.top,
-    /* O raio é escalado junto com o resto. Para o canto APARECER com o raio do
-       cartão no primeiro quadro, ele entra dividido pela escala. */
-    raio: (Number(raioDoCartao) || 0) / escala,
+    /*
+     * O raio é escalado junto com o resto, e com dois fatores ele viraria uma
+     * elipse. Dividido pelo MENOR deles, o canto nunca fica mais fechado que o
+     * do cartão — arredondar de menos passa despercebido, arredondar de mais
+     * deixa a quina redonda demais bem no quadro em que ela deveria imitar o
+     * cartão.
+     */
+    raio: (Number(raioDoCartao) || 0) / Math.min(escalaX, escalaY),
   };
 }
 
@@ -203,7 +217,8 @@ function escreverAmpliacao(painel, cartao, pagina, raio) {
   const a = ampliacaoDoCartao(cartao, pagina, parseFloat(raio) || 0);
   if (!a) return;
 
-  painel.style.setProperty("--zoom-escala", String(a.escala));
+  painel.style.setProperty("--zoom-escala-x", String(a.escalaX));
+  painel.style.setProperty("--zoom-escala-y", String(a.escalaY));
   painel.style.setProperty("--zoom-x", `${Math.round(a.x)}px`);
   painel.style.setProperty("--zoom-y", `${Math.round(a.y)}px`);
   painel.style.setProperty("--zoom-raio", `${Math.round(a.raio)}px`);
@@ -264,7 +279,7 @@ function medirAmpliacaoPadrao(entry) {
 
 function limparAmpliacao(painel) {
   if (!painel?.style) return;
-  for (const nome of ["escala", "x", "y", "raio"]) {
+  for (const nome of ["escala-x", "escala-y", "x", "y", "raio"]) {
     painel.style.removeProperty(`--zoom-${nome}`);
   }
 }
