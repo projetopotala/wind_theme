@@ -28,7 +28,16 @@ for (const [family, files] of Object.entries(pages)) {
 }
 
 test("não cria páginas que ficaram fora do escopo", async () => {
-  const forbidden = ["blog.html", "revista.html", "para-empresas.html", "trabalhe-conosco.html"];
+  /*
+   * `blog.html` SAIU desta lista porque saiu do "depois" — foi pedido e foi
+   * construído, com acervo fictício, oráculo do dia e comentários só de front.
+   *
+   * A lista continua valendo para as outras três. Ela não existe para proibir
+   * trabalho: existe para que uma página nasça quando alguém decidir que ela
+   * nasce, e não de raspão, meio pronta, porque era fácil aproveitar o
+   * gabarito da vizinha.
+   */
+  const forbidden = ["revista.html", "para-empresas.html", "trabalhe-conosco.html"];
   await Promise.all(forbidden.map(async (file) => {
     await assert.rejects(readFile(new URL(file, outputs), "utf8"));
   }));
