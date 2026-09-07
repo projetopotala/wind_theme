@@ -23,9 +23,17 @@ const expected = [
   "arte-cultura",
   "marketplace",
   "inspiracao",
+  /*
+   * O Blog fecha a jornada, e chegou aqui vindo das DESCOBERTAS.
+   *
+   * Enquanto nao existia `blog.html` ele era um cartaozinho editorial apontando
+   * para o site antigo. Com a pagina no ar, ele passa a ficar onde as outras
+   * secoes ficam: bloco da jornada, linha no menu lateral, entrada no painel.
+   */
+  "blog",
 ];
 
-test("define exatamente as dez regiões na ordem narrativa", () => {
+test("define exatamente as onze regiões na ordem narrativa", () => {
   assert.deepEqual(JOURNEY_REGIONS.map((region) => region.id), expected);
   assert.ok(JOURNEY_REGIONS.every((region) => region.href && region.href !== "#"));
 });
@@ -66,6 +74,7 @@ test("cada região leva a uma página local própria", async () => {
     "cultura.html",
     "marketplace.html",
     "inspiracao.html",
+    "blog.html",
   ];
   assert.deepEqual(JOURNEY_REGIONS.map((region) => region.href), expectedDestinations);
   for (const destination of expectedDestinations) {

@@ -15,7 +15,7 @@ test("Marketplace é uma região da travessia", () => {
 
 test("cada região tem direção e ritmo próprios", () => {
   const regioes = JOURNEY_REGIONS.filter((region) => region.type === "region");
-  assert.equal(regioes.length, 10);
+  assert.equal(regioes.length, 11);
   assert.ok(DIRECTIONS.length >= regioes.length, `DIRECTIONS tem ${DIRECTIONS.length} para ${regioes.length} regiões`);
   for (let index = 0; index < regioes.length; index += 1) {
     const ritmo = journeyRhythmForIndex(index);

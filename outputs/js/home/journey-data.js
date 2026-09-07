@@ -176,6 +176,32 @@ export const JOURNEY_REGIONS = [
     layoutVariant: "quiet-fullscreen",
     roadPlacement: "left",
   },
+  /*
+   * O BLOG ERA UMA DESCOBERTA, e virou região.
+   *
+   * Enquanto não existia página, ele era um cartãozinho editorial apontando
+   * para o site antigo — o suficiente para as relações o citarem. Agora que
+   * `blog.html` existe, ele precisa ficar ONDE AS OUTRAS SEÇÕES FICAM: um bloco
+   * da jornada, uma linha no menu lateral, e uma entrada no painel admin.
+   *
+   * Promovido em vez de duplicado. Um `id: "blog"` como descoberta E como
+   * região colidiria no mapa de relações — que resolve descobertas por último,
+   * e portanto faria as relações mostrarem o cartão antigo, apontando para o
+   * site velho, enquanto a jornada mostrava o novo.
+   */
+  {
+    id: "blog",
+    type: "region",
+    category: "O pensamento vivo",
+    title: "Blog",
+    description: "O que os profissionais da casa escrevem quando param para pensar em voz alta.",
+    href: "blog.html",
+    priority: 65,
+    tags: ["artigos", "oráculos", "colunas"],
+    relatedContent: ["revista", "cursos", "inspiracao"],
+    layoutVariant: "paper",
+    roadPlacement: "right",
+  },
 ];
 
 const EXPANDED_COPY = {
@@ -189,6 +215,7 @@ const EXPANDED_COPY = {
   "arte-cultura": "Cinema, música, literatura e criação ampliam nossos modos de perceber, conviver e cuidar.",
   marketplace: "Uma seleção contextual de livros, aromas, objetos e materiais que podem acompanhar sua prática.",
   inspiracao: "Textos, meditações e pausas para recuperar espaço, presença e um ritmo mais atento.",
+  blog: "Artigos, oráculos, colunas e entrevistas produzidos por quem atende, ensina e convive no Instituto.",
 };
 
 export const DEFAULT_HOME_BLOCKS = normalizeHomeBlocks(JOURNEY_REGIONS.map((region, position) => ({
@@ -251,16 +278,6 @@ export const JOURNEY_DISCOVERIES = [
     href: "https://www.institutopotala.com/",
     relatedContent: ["inspiracao", "saude-integrativa", "atendimentos", "cursos"],
     layoutVariant: "quote",
-  },
-  {
-    id: "blog",
-    type: "editorial",
-    category: "Blog",
-    title: "Ideias para continuar pensando",
-    description: "Textos que aproximam conhecimento e cotidiano.",
-    href: "https://www.institutopotala.com/",
-    relatedContent: ["revista", "cursos", "inspiracao"],
-    layoutVariant: "paper",
   },
   {
     id: "revista",

@@ -9,6 +9,17 @@ const DIRECTIONS = [
   { x: -.36, y: .93 },
   { x: .4, y: .92 },
   { x: 0, y: 1 },
+  /*
+   * A décima primeira, do Blog.
+   *
+   * `DIRECTIONS[index % DIRECTIONS.length]` faz uma região a mais dar a volta e
+   * herdar a direção da PRIMEIRA — a estrada repetiria no fim a curva com que
+   * abriu, e o trecho final deixaria de ter direção própria. Não quebra nada:
+   * só fica repetido, e repetição não se vê sem comparar as duas pontas.
+   *
+   * Uma inclinação suave à esquerda, para o bloco poder ficar à direita.
+   */
+  { x: -.3, y: .95 },
 ];
 
 /**
