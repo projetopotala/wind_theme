@@ -29,6 +29,8 @@ test("os dois painéis se conectam", () => {
   assert.match(html, /data-blog-teste/);
   assert.match(html, /data-blog-write/);
   assert.match(html, /data-blog-metrics/);
+  assert.match(html, /data-blog-tab="configuracao"/);
+  assert.match(html, /data-blog-settings-form/);
   assert.match(entry, /abrirMesa/);
   assert.doesNotMatch(entry, /acesso"\) === "teste"/);
 });

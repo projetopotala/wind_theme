@@ -2,6 +2,7 @@ import { arteDaCapa } from "./blog-arte.js";
 import { CATEGORIAS, DEFAULT_BLOG_POSTS, contarPorCategoria, dataLegivel } from "./blog-data.js";
 import { normalizePost, normalizePosts, placeBlogPosts } from "./blog-model.js";
 import { createBlogRepository } from "./blog-repository.js";
+import { applyBlogSettings } from "./blog-settings.js";
 
 const escapar = (valor) => String(valor ?? "")
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -162,6 +163,7 @@ export function montar(root = document) {
   window.addEventListener("message", onPreview);
   window.addEventListener("storage", onStorage);
   wireComments(root);
+  applyBlogSettings(root);
   draw();
   return { draw, destroy() { window.removeEventListener("message", onPreview); window.removeEventListener("storage", onStorage); } };
 }

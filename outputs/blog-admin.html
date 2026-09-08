@@ -42,24 +42,55 @@
           <p>Mesa do blogueiro</p>
           <h2 id="blog-desk-title">Seus textos e quem chegou até eles</h2>
         </div>
-        <button type="button" class="blog-desk-write" data-blog-write>Escrever novo artigo</button>
       </div>
-      <p class="blog-desk-note">Os acessos abaixo são de demonstração, no formato que a mesa terá quando a medição estiver ligada.</p>
-      <div class="blog-desk-metrics" data-blog-metrics></div>
-      <div class="blog-desk-grid">
-        <section aria-labelledby="blog-posts-title">
+      <div class="blog-desk-tabs" role="tablist" aria-label="Seções da mesa">
+        <button type="button" role="tab" data-blog-tab="publicacoes" aria-selected="true">Publicações</button>
+        <button type="button" role="tab" data-blog-tab="alcance" aria-selected="false">Alcance</button>
+        <button type="button" role="tab" data-blog-tab="comentarios" aria-selected="false">Comentários</button>
+        <button type="button" role="tab" data-blog-tab="configuracao" aria-selected="false">Configuração</button>
+      </div>
+
+      <section data-blog-panel="publicacoes" role="tabpanel" aria-labelledby="blog-posts-title">
+        <header class="blog-desk-panel-head">
           <h3 id="blog-posts-title">Publicações</h3>
-          <table>
-            <caption>Alcance de cada texto</caption>
-            <thead><tr><th>Texto</th><th>Viram</th><th>Curtidas</th><th>Comentários</th><th></th></tr></thead>
-            <tbody data-blog-desk-list></tbody>
-          </table>
-        </section>
-        <section aria-labelledby="blog-comments-title">
-          <h3 id="blog-comments-title">Comentários recentes</h3>
-          <ul data-blog-comments></ul>
-        </section>
-      </div>
+          <button type="button" class="blog-desk-write" data-blog-write>Escrever novo artigo</button>
+        </header>
+        <table>
+          <caption>Textos da mesa</caption>
+          <thead><tr><th>Texto</th><th>Estado</th><th></th></tr></thead>
+          <tbody data-blog-desk-list></tbody>
+        </table>
+      </section>
+
+      <section data-blog-panel="alcance" role="tabpanel" hidden aria-labelledby="blog-metrics-title">
+        <h3 id="blog-metrics-title">Alcance</h3>
+        <p class="blog-desk-note">Os acessos abaixo são de demonstração, no formato que a mesa terá quando a medição estiver ligada.</p>
+        <div class="blog-desk-metrics" data-blog-metrics></div>
+        <table>
+          <caption>Alcance de cada texto</caption>
+          <thead><tr><th>Texto</th><th>Viram</th><th>Curtidas</th><th>Comentários</th></tr></thead>
+          <tbody data-blog-reach-list></tbody>
+        </table>
+      </section>
+
+      <section data-blog-panel="comentarios" role="tabpanel" hidden aria-labelledby="blog-comments-title">
+        <h3 id="blog-comments-title">Comentários recentes</h3>
+        <ul data-blog-comments></ul>
+      </section>
+
+      <section data-blog-panel="configuracao" role="tabpanel" hidden aria-labelledby="blog-settings-title">
+        <h3 id="blog-settings-title">Configuração do blog</h3>
+        <p class="blog-desk-note">O nome e a imagem aparecem no topo do blog público.</p>
+        <form class="blog-desk-settings" data-blog-settings-form>
+          <label>Nome do blog<input name="name" required maxlength="80"></label>
+          <label>Imagem do blog<input name="cover" placeholder="media/chegada-landscape.webp" required></label>
+          <figure>
+            <img data-blog-cover-preview alt="Prévia da imagem do blog">
+          </figure>
+          <button type="submit">Salvar configuração</button>
+          <p data-blog-settings-status role="status" aria-live="polite"></p>
+        </form>
+      </section>
     </section>
 
     <section class="blog-editor" data-blog-editor hidden aria-labelledby="blog-editor-title" data-preview-device="desktop">

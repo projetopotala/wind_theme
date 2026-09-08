@@ -24,6 +24,8 @@ const DEMO_COMMENTS = [
   { author: "Leitora da casa", post: "Onde a ansiedade se instala no corpo", text: "Reconheci o ombro. Obrigado por nomear.", when: "2 dias" },
 ];
 
+import { readBlogSettings, saveBlogSettings } from "../blog/blog-settings.js";
+
 const number = new Intl.NumberFormat("pt-BR");
 const escapeHtml = (value) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -39,6 +41,31 @@ function statusLabel(status) {
 
 export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
   if (!root || !repository) throw new TypeError("root e repository são obrigatórios");
+  const form = root.querySelector("[data-blog-settings-form]");
+  const preview = root.querySelector("[data-blog-cover-preview]");
+  const status = root.querySelector("[data-blog-settings-status]");
+
+  function showTab(id) {
+    for (const tab of root.querySelectorAll("[data-blog-tab]")) {
+      tab.setAttribute("aria-selected", String(tab.getAttribute("data-blog-tab") === id));
+    }
+    for (const panel of root.querySelectorAll("[data-blog-panel]")) {
+      panel.hidden = panel.getAttribute("data-blog-panel") !== id;
+    }
+  }
+
+  function paintSettings(settings = readBlogSettings()) {
+    if (form) {
+      form.elements.name.value = settings.name;
+      form.elements.cover.value = settings.cover;
+    }
+    if (preview) {
+      preview.src = settings.cover;
+      preview.alt = `Imagem do blog ${settings.name}`;
+    }
+    const brand = root.querySelector(".blog-editor-brand small");
+    if (brand) brand.textContent = settings.name;
+  }
 
   function render() {
     const posts = repository.list();
@@ -62,14 +89,22 @@ export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
 
     const list = root.querySelector("[data-blog-desk-list]");
     if (list) {
-      list.innerHTML = posts.map((post) => {
+      list.innerHTML = posts.map((post) => `<tr>
+          <td><strong>${escapeHtml(post.title)}</strong><small>${escapeHtml(post.publishedAt || "")}</small></td>
+          <td>${escapeHtml(statusLabel(post.status))}</td>
+          <td><button type="button" data-blog-edit="${escapeHtml(post.id)}">Editar</button></td>
+        </tr>`).join("");
+    }
+
+    const reach = root.querySelector("[data-blog-reach-list]");
+    if (reach) {
+      reach.innerHTML = posts.map((post) => {
         const access = accessOf(post);
         return `<tr>
-          <td><strong>${escapeHtml(post.title)}</strong><small>${escapeHtml(statusLabel(post.status))} · ${escapeHtml(post.publishedAt || "")}</small></td>
+          <td>${escapeHtml(post.title)}</td>
           <td>${number.format(access.views)}</td>
           <td>${number.format(access.likes)}</td>
           <td>${number.format(access.comments)}</td>
-          <td><button type="button" data-blog-edit="${escapeHtml(post.id)}">Editar</button></td>
         </tr>`;
       }).join("");
     }
@@ -81,6 +116,11 @@ export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
   }
 
   function onClick(event) {
+    const tab = event.target.closest?.("[data-blog-tab]");
+    if (tab) {
+      showTab(tab.getAttribute("data-blog-tab"));
+      return;
+    }
     if (event.target.closest?.("[data-blog-write]")) {
       onWrite?.();
       return;
@@ -89,10 +129,31 @@ export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
     if (edit) onEdit?.(edit.getAttribute("data-blog-edit"));
   }
 
+  function onSubmit(event) {
+    event.preventDefault();
+    const saved = saveBlogSettings({
+      name: form.elements.name.value,
+      cover: form.elements.cover.value,
+    });
+    paintSettings(saved);
+    if (status) status.textContent = "Configuração salva. O nome e a imagem passam a aparecer no topo do blog.";
+  }
+
+  function onCoverInput() {
+    if (preview && form) preview.src = form.elements.cover.value;
+  }
+
   root.addEventListener("click", onClick);
+  form?.addEventListener("submit", onSubmit);
+  form?.elements.cover?.addEventListener("input", onCoverInput);
+  paintSettings();
   render();
   return {
     render,
-    destroy() { root.removeEventListener("click", onClick); },
+    destroy() {
+      root.removeEventListener("click", onClick);
+      form?.removeEventListener("submit", onSubmit);
+      form?.elements.cover?.removeEventListener("input", onCoverInput);
+    },
   };
 }
