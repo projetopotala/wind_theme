@@ -248,26 +248,6 @@ html.is-crossing .journey-entry-veil {
 }
 
 .journey-prologue,
-/*
- * O FIM DA PÁGINA ATRAVESSA A FAIXA DOS CONTROLES.
- *
- * A jornada vive recuada pela faixa da lupa e do lápis, e esse recuo existe
- * para um motivo só: os cartões não passarem por baixo dos dois controles. O
- * encerramento e o rodapé não têm cartão nenhum — herdavam o recuo e deixavam
- * uma tira de paisagem à vista na borda esquerda, do escurecimento até o fim.
- *
- * Aqui a lupa e o lápis podem ficar por cima: são dois discos sobre uma faixa
- * escura sem texto por baixo deles, e a alternativa — reservar a faixa até o
- * fim — é a tira clara que se quis eliminar.
- *
- * No celular o token é zero e a conta não muda nada.
- */
-.journey-continuation,
-.journey-footer {
-  width: calc(100% + var(--journey-sidebar-width));
-  margin-left: calc(var(--journey-sidebar-width) * -1);
-}
-
 .journey-continuation {
   position: relative;
   display: grid;
@@ -275,6 +255,32 @@ html.is-crossing .journey-entry-veil {
   padding: clamp(70px, 9vw, 140px);
   place-items: center;
   text-align: center;
+}
+
+/*
+ * AS FAIXAS SEM CARTÃO ATRAVESSAM A FAIXA DOS CONTROLES.
+ *
+ * A jornada vive recuada pela faixa da lupa e do lápis, e esse recuo existe
+ * para um motivo só: os cartões não passarem por baixo dos dois controles. O
+ * prólogo, o encerramento e o rodapé não têm cartão nenhum — herdavam o recuo e
+ * deixavam uma tira de paisagem à vista na borda esquerda.
+ *
+ * Aqui a lupa e o lápis podem ficar por cima: os três têm o texto centrado, e a
+ * alternativa — reservar a faixa até o fim — é a tira clara que se quis tirar.
+ *
+ * ESTA REGRA É SEPARADA DA DE CIMA, e isso importa. A primeira versão entrou no
+ * meio daquela lista de seletores: `.journey-prologue,` ficou pendurado neste
+ * bloco e o prólogo perdeu `min-height`, `place-items` e o recuo — a tela de
+ * boas-vindas encolheu para 327px e o título foi para o canto superior
+ * esquerdo. Uma vírgula de seletor não é o fim de uma regra.
+ *
+ * No celular o token é zero e a conta não muda nada.
+ */
+.journey-prologue,
+.journey-continuation,
+.journey-footer {
+  width: calc(100% + var(--journey-sidebar-width));
+  margin-left: calc(var(--journey-sidebar-width) * -1);
 }
 
 .prologue-copy,

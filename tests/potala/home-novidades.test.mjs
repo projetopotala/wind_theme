@@ -402,6 +402,25 @@ test("o veu do bloco aberto cobre a faixa dos controles", () => {
   assert.ok(!/justify-self: stretch/.test(regra), "o stretch voltou e anula a largura");
 });
 
+test("o prologo continua sendo uma tela inteira, centrada", () => {
+  /*
+   * ISTO QUEBROU UMA VEZ, e nao como falha: como tela torta.
+   *
+   * `.journey-prologue,` e `.journey-continuation` dividem uma regra de layout.
+   * Uma edicao entrou entre os dois seletores achando que o segundo comecava
+   * uma regra nova — e o prologo saiu do bloco: perdeu `min-height`,
+   * `place-items` e o recuo, encolheu para 327px e jogou "Bem-vindo." no canto
+   * superior esquerdo. Nenhum teste caiu, porque nenhum media a composicao.
+   */
+  const inicio = css.search(/\.journey-prologue,\s*\.journey-continuation \{/);
+  assert.ok(inicio >= 0, "o prologo saiu da regra de layout que divide com o encerramento");
+
+  const regra = css.slice(inicio, css.indexOf("}", inicio));
+  assert.match(regra, /min-height: 112svh/, "a tela de boas-vindas deixou de ocupar a tela");
+  assert.match(regra, /place-items: center/, "o texto deixou de ser centrado");
+  assert.match(regra, /text-align: center/);
+});
+
 test("o encerramento e o rodape atravessam a faixa dos controles", () => {
   /*
    * A faixa existe por UM motivo: os cartoes nao passarem por baixo da lupa e
@@ -412,7 +431,7 @@ test("o encerramento e o rodape atravessam a faixa dos controles", () => {
    * Aqui os dois controles podem ficar por cima: sao discos sobre uma faixa
    * escura sem texto embaixo deles, e a alternativa e a tira clara.
    */
-  const inicio = css.search(/\.journey-continuation,\s*\.journey-footer \{/);
+  const inicio = css.search(/\.journey-prologue,\s*\.journey-continuation,\s*\.journey-footer \{/);
   assert.ok(inicio >= 0, "o fim da pagina voltou a herdar o recuo da jornada");
 
   const regra = css.slice(inicio, css.indexOf("}", inicio));
