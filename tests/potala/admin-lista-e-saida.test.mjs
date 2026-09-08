@@ -100,19 +100,15 @@ test("publicar da uma confirmacao que se nota", () => {
  * Encerrar sessao
  * ------------------------------------------------------------------ */
 
-test("o logout fica no cabecalho, junto das outras saidas", () => {
+test("o logout fica na navegação, visível em qualquer aba", () => {
   /*
-   * O botao existia, escondido no fim da navegacao lateral, ao lado de
-   * "Restaurar conteudo original". Quem quisesse encerrar a sessao tinha de
-   * rolar a navegacao inteira para achar — e passava antes por uma acao
-   * destrutiva que nao tem nada a ver com sair.
-   *
-   * O cabecalho e onde ja vivem as outras duas saidas. Juntas, as tres se
-   * explicam por contraste: ver o site, voltar ao site, encerrar a sessao.
+   * O botão estava no cabeçalho da Jornada. Ao abrir Financeiro ou Blog, esse
+   * cabeçalho some, e com ele sumia a única forma de encerrar a sessão.
    */
-  const cabecalho = /<header class="admin-head">[\s\S]*?<\/header>/.exec(html);
-  assert.ok(cabecalho, "o cabecalho do painel sumiu");
-  assert.match(cabecalho[0], /data-admin-sign-out/, "o logout nao esta no cabecalho");
+  const nav = /<nav class="admin-nav"[\s\S]*?<\/nav>/.exec(html);
+  assert.ok(nav, "a navegação do painel sumiu");
+  assert.match(nav[0], /data-admin-sign-out/, "o logout nao esta na navegacao");
+  assert.match(nav[0], />Sair</);
 });
 
 test("existe um logout so, e nao dois", () => {
@@ -135,5 +131,5 @@ test("os dois botoes de sair nao se chamam a mesma coisa", () => {
   const encerrar = /<button[^>]*data-admin-sign-out[^>]*>([^<]*)</.exec(html);
   assert.ok(voltar && encerrar, "falta um dos dois");
   assert.notEqual(voltar[1].trim(), encerrar[1].trim());
-  assert.match(encerrar[1], /sess[aã]o/i, "o logout precisa dizer que encerra a sessao");
+  assert.match(encerrar[1], /sair/i, "o logout precisa dizer que sai");
 });

@@ -4,6 +4,7 @@ import {
   isAdminFirstAccess,
 } from "./admin-auth.js";
 import { createAdminController } from "./admin-controller.js";
+import { createAdminShell } from "./admin-shell.js";
 import { DEFAULT_HOME_BLOCKS } from "../home/journey-data.js";
 import { withRequiredDefaultSections } from "../home/default-section-bridge.js";
 import { createSupabaseContentRepository } from "../home/supabase-content-repository.js";
@@ -15,6 +16,8 @@ const authStatus = root?.querySelector("[data-admin-auth-status]");
 let controller = null;
 let passwordSetup = null;
 const firstAccess = isAdminFirstAccess(window.location);
+
+if (panel) createAdminShell({ root: panel });
 
 try {
   const client = getSupabaseClient();
