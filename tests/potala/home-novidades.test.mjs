@@ -303,80 +303,121 @@ test("a novidade convida a LER, e nao a explorar o proprio titulo", () => {
  * A roleta da barra lateral
  * ------------------------------------------------------------------ */
 
-const ROLETA = [
-  { id: "n1", slug: "n1", title: "Novos profissionais", href: "blog.html#a", tags: ["recente"] },
-  { id: "n2", slug: "n2", title: "Oráculo de hoje", href: "blog.html#b", tags: ["recente"] },
-  { id: "s1", slug: "s1", title: "Quem somos", href: "quem-somos.html", tags: [] },
-  { id: "s2", slug: "s2", title: "Cursos", href: "cursos.html", tags: [] },
-];
+/*
+ * A ROLETA SAIU, e com ela sete testes que descreviam a barra lateral.
+ *
+ * A barra tinha marca, subtitulo, progresso "04 / 13", a roleta com as secoes e
+ * um botao redondo com oito atalhos — uma coluna inteira da tela sobre a
+ * paisagem. Foi removida a pedido; sobraram dois controles de canto.
+ *
+ * O que a roleta oferecia nao se perdeu: ela era um indice das secoes, e as
+ * secoes continuam nos cartoes, que e por onde a jornada leva a elas. O que ela
+ * ordenava — novidades primeiro, a fronteira entre os dois grupos, o rotulo de
+ * cada trecho — continua coberto pelos testes deste arquivo, porque essas
+ * regras sao da jornada e nao do menu que a espelhava.
+ */
+test("a Home tem dois controles de canto, e nenhuma barra lateral", () => {
+  const menu = renderJourneyMenu();
 
-test("a roleta traz UMA linha Recentes, sem as manchetes", () => {
+  /* A lupa e para quem procura algo especifico em vez de percorrer; o lapis e
+     de quem mantem o site. Nenhum dos dois e substituivel pela rolagem, que e
+     o que justificou os dois terem ficado. */
+  assert.match(menu, /class="journey-canto journey-lupa"[\s\S]*?data-journey-abrir-busca/);
+  assert.match(menu, /class="journey-canto journey-lapis" href="admin\.html"/);
+
+  /* E a barra nao voltou por descuido: ela era a maior peca da Home, e o custo
+     de re-introduzi-la sem querer e uma coluna de tela a menos para a paisagem. */
+  for (const sobra of ["journey-menu-viewport", "journey-sidebar-brand", "journey-sidebar-progress", "data-menu-target", "journey-menu-marco"]) {
+    assert.ok(!menu.includes(sobra), `a barra lateral voltou: ${sobra}`);
+  }
+});
+
+test("a busca continua na Home, agora presa a tela", () => {
+  /* Ela era a ultima linha de uma coluna e vivia de `margin-top: auto`. Sem a
+     coluna, solta no comeco do documento, sumiria na primeira rolagem —
+     justamente quando alguem acabou de pedi-la. */
+  const menu = renderJourneyMenu();
+  assert.match(menu, /data-journey-busca role="search"/);
+  assert.match(menu, /data-journey-fechar-busca/);
+  assert.match(css, /\.journey-busca \{[\s\S]*?position: fixed/);
+  assert.match(css, /\.journey-lupa \{[\s\S]*?top:/);
+  assert.match(css, /\.journey-lapis \{[\s\S]*?bottom:/);
+});
+
+test("os cantos somem enquanto um bloco esta aberto, e voltam quando ele fecha", () => {
   /*
-   * Listadas uma a uma, as noticias tomavam as primeiras posicoes e a roleta
-   * lia como se o Instituto tivesse quinze secoes — quatro delas com nome de
-   * manchete. A roleta e o mapa do portal: o que ela precisa dizer sobre as
-   * novidades e que existem e que voce esta nelas.
+   * O bloco expandido e a pagina inteira: cobre a paisagem e passa a ser a
+   * unica coisa que se le. Os controles, presos a tela, continuavam por cima
+   * dele — dois discos escuros flutuando sobre um texto que ocupa tudo.
+   *
+   * `body:has(...)` porque eles vivem FORA da jornada: presos a tela, nao sao
+   * descendentes do bloco que muda de estado, e nenhum seletor de dentro do
+   * palco os alcanca.
    */
-  const menu = renderJourneyMenu(ROLETA);
-  assert.match(menu, /journey-menu-marco[^>]*>Recentes</);
-  assert.equal((menu.match(/data-menu-recentes/g) || []).length, 1);
-  assert.ok(!menu.includes("Novos profissionais"), "a manchete entrou na roleta");
-  assert.ok(!menu.includes("Oráculo de hoje"), "a manchete entrou na roleta");
-});
+  const regra = /body:has\(\.journey-region\.is-expanded\) \.journey-canto,[\s\S]*?\}/.exec(css);
+  assert.ok(regra, "os cantos nao somem com o bloco aberto");
 
-test("a roleta tem os DOIS marcos, e Destacado separa as secoes", () => {
   /*
-   * Com um unico rotulo no topo, tudo que vinha abaixo dele parecia pertencer a
-   * ele: "Quem somos" e "Recepcao" liam como noticias recentes. Um marco so
-   * marca um comeco — sao precisos dois para marcar uma fronteira.
+   * `visibility: hidden`, e nao so `opacity: 0`.
+   *
+   * Invisivel mas focalizavel, a lupa continuaria recebendo o Tab de quem le o
+   * bloco pelo teclado — e o foco sumiria num controle que ninguem ve.
    */
-  const menu = renderJourneyMenu(ROLETA);
-  assert.match(menu, /data-menu-destacado>Destacado</);
-  assert.ok(menu.indexOf("Recentes<") < menu.indexOf("Destacado<"));
-  assert.ok(menu.indexOf("Destacado<") < menu.indexOf("Quem somos"));
+  assert.match(regra[0], /visibility: hidden/);
+  assert.match(regra[0], /pointer-events: none/);
+
+  /* A busca some junto: o gatilho dela desapareceu, e um painel aberto sem o
+     controle que o abriu e uma sobra na tela. */
+  assert.match(regra[0], /\.journey-busca/);
+
+  /* E a visibilidade so troca no FIM da transicao de volta, para o controle nao
+     voltar a ser clicavel antes de estar visivel. */
+  assert.match(css, /transition: opacity \.28s ease, visibility 0s linear \.28s/);
 });
 
-test("o visitante nao rola a roleta com a mao", () => {
+test("o veu do bloco aberto cobre a faixa dos controles", () => {
   /*
-   * Ela e um INDICADOR, e quem a move e a rolagem da pagina. Rolavel pela mao,
-   * ela discordava da pagina: arrastar e soltar deixava destacada uma secao que
-   * nao tinha nada a ver com o que estava na tela.
+   * A jornada vive recuada pela faixa da lupa e do lapis. O painel aberto
+   * herdava esse recuo e deixava uma tira de paisagem a vista na borda —
+   * medidos 76px descobertos a esquerda, zero nos outros tres lados.
+   *
+   * ESTA REGRA PRECISA SER A ULTIMA das que tem este seletor.
+   *
+   * Existem duas `.journey-region.is-expanded .region-content` no arquivo, com a
+   * mesma especificidade. Escrita na de cima, a correcao nao valia nada: a de
+   * baixo devolvia `width: 100%` e `justify-self: stretch`, entao o painel
+   * andava para a esquerda pela margem negativa e mantinha a largura do palco —
+   * o vazamento so trocava de lado, e a tela continuava parecendo quase certa.
    */
-  assert.match(css, /\.journey-menu-viewport \{[\s\S]*?overflow-y: hidden/);
+  const seletor = ".journey-region.is-expanded .region-content {";
+  const ultima = css.lastIndexOf(seletor);
+  assert.ok(ultima > 0, "sumiu a regra do painel aberto");
+
+  const regra = css.slice(ultima, css.indexOf("}", ultima));
+  assert.match(regra, /width: calc\(100% \+ var\(--journey-sidebar-width\)\)/);
+  assert.match(regra, /margin-left: calc\(var\(--journey-sidebar-width\) \* -1\)/);
+  /* `stretch` ignora a largura declarada: com ele, a conta acima nao chega a
+     ser aplicada. */
+  assert.match(regra, /justify-self: start/);
+  assert.ok(!/justify-self: stretch/.test(regra), "o stretch voltou e anula a largura");
 });
 
-test("as secoes continuam numeradas de 01", () => {
-  const menu = renderJourneyMenu(ROLETA);
-  const numeros = [...menu.matchAll(/<span aria-hidden="true">(\d{2})<\/span>/g)].map((m) => m[1]);
-  assert.deepEqual(numeros, ["01", "02"]);
-  assert.match(menu, /Quem somos/);
-  assert.match(menu, /Cursos/);
-});
-
-test("a linha Recentes nao e um destino da roleta", () => {
+test("o encerramento e o rodape atravessam a faixa dos controles", () => {
   /*
-   * O controlador acha o bloco ativo procurando `data-menu-target`. A linha das
-   * novidades representa QUATRO blocos, e nenhum id serviria: ela e marcada por
-   * um caminho proprio, e por isso nao pode entrar nessa lista.
+   * A faixa existe por UM motivo: os cartoes nao passarem por baixo da lupa e
+   * do lapis. O encerramento e o rodape nao tem cartao nenhum — herdavam o
+   * recuo e deixavam uma tira de paisagem a vista na borda esquerda, do
+   * escurecimento ate o fim da pagina.
+   *
+   * Aqui os dois controles podem ficar por cima: sao discos sobre uma faixa
+   * escura sem texto embaixo deles, e a alternativa e a tira clara.
    */
-  const menu = renderJourneyMenu(ROLETA);
-  assert.match(menu, /data-menu-recentes/);
-  const marcos = [...menu.matchAll(/<li class="journey-menu-marco"[^>]*>[^<]*<\/li>/g)];
-  assert.equal(marcos.length, 2, "os dois marcos precisam existir");
-  for (const [linha] of marcos) assert.ok(!linha.includes("data-menu-target"));
-  assert.equal((menu.match(/data-menu-target/g) || []).length, 2, "so as duas secoes sao destinos");
-});
+  const inicio = css.search(/\.journey-continuation,\s*\.journey-footer \{/);
+  assert.ok(inicio >= 0, "o fim da pagina voltou a herdar o recuo da jornada");
 
-test("sem novidade nenhuma, a roleta nao inventa a linha", () => {
-  const menu = renderJourneyMenu(ROLETA.filter((r) => !ehNovidade(r)));
-  assert.ok(!menu.includes("data-menu-recentes"));
-  assert.match(menu, /Quem somos/);
-});
-
-test("o circulo do marco Recentes fica branco no trecho das novidades", () => {
-  /* As secoes acendem em dourado, que e a cor da jornada. O branco separa as
-     duas coisas sem inventar um segundo marcador. */
-  assert.match(css, /\[data-menu-recentes\]\[data-atual="true"\]::before \{[^}]*background: #fff/);
+  const regra = css.slice(inicio, css.indexOf("}", inicio));
+  assert.match(regra, /width: calc\(100% \+ var\(--journey-sidebar-width\)\)/);
+  assert.match(regra, /margin-left: calc\(var\(--journey-sidebar-width\) \* -1\)/);
 });
 
 test("o rotulo do grupo gruda no comeco dos cartoes dele", () => {

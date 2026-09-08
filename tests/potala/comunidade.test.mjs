@@ -7,6 +7,11 @@ import { MOTIVOS_DISPONIVEIS, seloDoEspecialista } from "../../outputs/js/comuni
 const outputs = new URL("../../outputs/", import.meta.url);
 const ler = (arquivo) => readFile(new URL(arquivo, outputs), "utf8");
 
+const home = await ler("transcendido.html");
+const profissionais = await ler("profissionais.html");
+const especialistas = await ler("especialistas.html");
+const secoes = await ler("secoes.js");
+
 const PAGINAS = [
   ["especialistas.html", "especialistas"],
   ["workshops.html", "workshops"],
@@ -90,18 +95,35 @@ test("Profissionais leva a Especialistas por um botao cheio, e nao so por um lin
   assert.equal((html.match(/class="photo-cta"/g) || []).length, 1);
 });
 
-test("a Home alcanca as cinco portas, com e sem script", async () => {
+test("as cinco portas continuam alcancaveis a partir da Home", () => {
   /*
-   * A Home não tem a barra — ela tem a roleta. Sem estes dois caminhos, chegar
-   * a Especialistas a partir do começo exigiria entrar numa seção qualquer
-   * antes, e quem está sem JavaScript não chegaria de jeito nenhum.
+   * O CAMINHO FICOU MAIS FUNDO, e este teste garante que ele nao sumiu.
+   *
+   * Os cinco destinos moravam no menu redondo da barra lateral da Home. A barra
+   * foi removida a pedido, e sobraram dois controles de canto: lupa e lapis.
+   *
+   * Sem script, o fallback da Home continua listando os cinco. Com script, o
+   * caminho passa a ser Profissionais — que e um cartao da jornada e tem o
+   * botao cheio para Especialistas — e dali a barra daquelas paginas leva as
+   * outras quatro. Nenhuma ficou orfa; nenhuma esta mais a um clique.
    */
-  const home = await ler("transcendido.html");
-  const cenas = await ler("js/home/home-scenes.js");
-
   for (const [arquivo] of PAGINAS) {
     assert.match(home, new RegExp(`href="${arquivo}"`), `o fallback sem script perdeu ${arquivo}`);
-    assert.match(cenas, new RegExp(`href="${arquivo}"`), `o menu da barra lateral perdeu ${arquivo}`);
+  }
+
+  assert.match(profissionais, /<a class="photo-cta" href="especialistas\.html">/, "a ponte da jornada para Especialistas caiu");
+
+  /*
+   * O segundo salto e cobrado no `secoes.js`, e nao no HTML de Especialistas.
+   *
+   * A barra daquelas paginas e montada por script — no arquivo estatico ela nao
+   * existe. Procurar os quatro destinos dentro de `especialistas.html` reprovava
+   * um caminho que funciona, e foi o que aconteceu na primeira versao deste
+   * teste: ele mediu a pagina onde a resposta nao mora.
+   */
+  assert.match(especialistas, /<body data-section="especialistas"/, "Especialistas deixou de receber a barra");
+  for (const [arquivo] of PAGINAS.slice(1)) {
+    assert.match(secoes, new RegExp(`href: "${arquivo}"`), `a barra nao leva a ${arquivo}`);
   }
 });
 

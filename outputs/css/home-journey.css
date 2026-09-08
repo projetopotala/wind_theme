@@ -62,7 +62,27 @@
    * O teto subiu junto para a proporção não achatar em tela grande: numa janela
    * de 1920 ela ficava travada em 196px enquanto tudo em volta crescia.
    */
-  --journey-sidebar-width: clamp(216px, 15vw, 264px);
+  /*
+   * ZERO: a barra lateral saiu, e a largura reservada para ela não.
+   *
+   * Seis regras usavam este valor para empurrar a jornada, a estrada e o botão
+   * de som para longe da coluna. Sem a barra, os cartões continuavam começando
+   * a 216px da esquerda com 15px sobrando na direita — encostados numa borda e
+   * afastados da outra, por causa de um vizinho que não existe mais.
+   *
+   * NÃO É ZERO, e a medição é que disse isso. Zerado, o cartão encostava na
+   * borda e a lupa — fixa a 18px — cobria os primeiros seis pixels do título
+   * dele. A barra ocupava 216px e garantia que isso nunca acontecesse; os dois
+   * controles precisam da mesma garantia, só que numa faixa do tamanho deles.
+   *
+   * 76px é a conta: 18 de margem + 46 do disco + 12 de respiro. Reaproveitar o
+   * token corrige as seis regras de uma vez — jornada, estrada e botão de som —
+   * em vez de caçar os seis usos num arquivo que outra frente está editando.
+   *
+   * No celular ele continua zero, por uma regra mais abaixo: ali os cartões já
+   * usam a largura toda, e sempre houve um controle nesse canto.
+   */
+  --journey-sidebar-width: 76px;
   --journey-sidebar-surface: rgba(94, 69, 41, .76);
   --journey-sidebar-depth: rgba(54, 39, 24, .82);
 }
@@ -228,6 +248,26 @@ html.is-crossing .journey-entry-veil {
 }
 
 .journey-prologue,
+/*
+ * O FIM DA PÁGINA ATRAVESSA A FAIXA DOS CONTROLES.
+ *
+ * A jornada vive recuada pela faixa da lupa e do lápis, e esse recuo existe
+ * para um motivo só: os cartões não passarem por baixo dos dois controles. O
+ * encerramento e o rodapé não têm cartão nenhum — herdavam o recuo e deixavam
+ * uma tira de paisagem à vista na borda esquerda, do escurecimento até o fim.
+ *
+ * Aqui a lupa e o lápis podem ficar por cima: são dois discos sobre uma faixa
+ * escura sem texto por baixo deles, e a alternativa — reservar a faixa até o
+ * fim — é a tira clara que se quis eliminar.
+ *
+ * No celular o token é zero e a conta não muda nada.
+ */
+.journey-continuation,
+.journey-footer {
+  width: calc(100% + var(--journey-sidebar-width));
+  margin-left: calc(var(--journey-sidebar-width) * -1);
+}
+
 .journey-continuation {
   position: relative;
   display: grid;
@@ -2007,12 +2047,32 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
   display: none;
 }
 
+/*
+ * O PAINEL ABERTO ATRAVESSA A FAIXA DOS CONTROLES.
+ *
+ * A jornada vive recuada 76px à esquerda, para a lupa e o lápis terem onde
+ * ficar sem cobrir título de cartão. O painel aberto herdava esse recuo e
+ * deixava uma tira de paisagem à vista: 76px descobertos à esquerda, zero nos
+ * outros três lados.
+ *
+ * A saída óbvia seria pintar um véu de tela inteira por baixo. Não serve: o
+ * fundo daqui é translúcido, e onde as duas camadas se somassem o tom ficaria
+ * mais escuro que na tira — uma emenda vertical no lugar do vazamento.
+ *
+ * E a correção mora AQUI, e não na regra de mesmo nome lá em cima: as duas têm
+ * a mesma especificidade, e esta vem depois. Escrita lá, ela não valia nada — o
+ * painel andava para a esquerda pela margem e a largura continuava a do palco,
+ * de modo que o vazamento só trocava de lado.
+ *
+ * No celular o token é zero e a conta não muda nada.
+ */
 .journey-region.is-expanded .region-content {
   display: grid;
   grid-column: 1;
   grid-row: 1;
-  justify-self: stretch;
-  width: 100%;
+  justify-self: start;
+  width: calc(100% + var(--journey-sidebar-width));
+  margin-left: calc(var(--journey-sidebar-width) * -1);
   max-width: none;
   height: 100%;
   border: none;
@@ -3144,9 +3204,9 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
    * divisória de página, e a intenção é uma marca no caminho.
    */
   /*
-   * A LINHA É DOURADA e o losango é escuro — invertido de novo, a pedido.
+   * A LINHA É DOURADA, e o losango do meio é marrom claro.
    *
-   * Passou pelas duas versões. Com a linha escura ela lia como costura no
+   * Passou por várias versões. Com a linha escura ela lia como costura no
    * terreno e o ouro ficava só no centro; dourada, ela se vê de longe sobre a
    * paisagem, que é o que uma fronteira precisa fazer para ser notada antes de
    * se chegar nela.
@@ -3167,7 +3227,16 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
   width: 13px;
   height: 13px;
   border: 1px solid rgba(231, 202, 143, .95);
-  background: rgba(30, 22, 15, .92);
+  /*
+   * Marrom claro, e não o quase-preto de antes.
+   *
+   * O escuro fazia o centro virar um furo na linha: o olho lia dois traços
+   * dourados interrompidos, em vez de uma linha com uma marca no meio. Em
+   * marrom claro o losango pertence à mesma família de tom da paisagem e da
+   * borda dourada — continua se destacando por ser geométrico, que é o que
+   * nunca aparece no cenário, e não por ser o único ponto escuro da tela.
+   */
+  background: rgba(185, 143, 87, .95);
   box-shadow: 0 0 22px rgba(231, 202, 143, .55);
   rotate: 45deg;
   translate: -50% -50%;
@@ -3343,12 +3412,122 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
   white-space: nowrap;
 }
 
+/* ==================================================================
+ * OS DOIS CONTROLES DE CANTO
+ *
+ * Substituem a barra lateral inteira: marca, progresso, roleta e o botão com
+ * oito atalhos ocupavam uma coluna da tela sobre a paisagem, e quase tudo o que
+ * ofereciam a própria jornada já oferece — cada cartão leva à sua seção.
+ *
+ * Sobraram os dois que a rolagem NÃO substitui: procurar algo específico, e
+ * entrar no painel de quem mantém o site.
+ * ================================================================== */
+
+.journey-canto {
+  position: fixed;
+  z-index: 42;
+  left: max(18px, env(safe-area-inset-left));
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid rgba(231, 202, 143, .3);
+  border-radius: 50%;
+  color: rgba(247, 237, 218, .84);
+  /*
+   * Fundo próprio, e não só o ícone solto.
+   *
+   * A paisagem atrás vai de céu claro a pedra escura conforme a rolagem: um
+   * ícone sem base fica legível num trecho e desaparece no seguinte. O disco
+   * escuro garante o contraste em qualquer ponto da travessia.
+   */
+  background: rgba(24, 17, 11, .62);
+  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(9px);
+  cursor: pointer;
+}
+
+.journey-canto svg { width: 19px; height: 19px; fill: currentColor; }
+.journey-canto:hover { border-color: rgba(231, 202, 143, .6); color: var(--journey-ivory); }
+.journey-canto:focus-visible { outline: 2px solid var(--journey-gold); outline-offset: 3px; }
+
+.journey-lupa { top: max(18px, env(safe-area-inset-top)); }
+
+/*
+ * O lápis é mais discreto que a lupa, de propósito.
+ *
+ * A lupa é para quem visita; o lápis é para quem mantém o site, e é uma pessoa
+ * só. Com o mesmo peso, ele disputaria atenção com o único controle que
+ * interessa a quem chega.
+ */
+.journey-lapis {
+  bottom: max(18px, env(safe-area-inset-bottom));
+  border-color: rgba(231, 202, 143, .18);
+  color: rgba(247, 237, 218, .55);
+}
+
+.journey-lapis:hover { color: var(--journey-ivory); }
+
+/*
+ * OS DOIS CANTOS SOMEM ENQUANTO UM BLOCO ESTÁ ABERTO.
+ *
+ * O bloco expandido é a página inteira: ele cobre a paisagem e passa a ser a
+ * única coisa que se lê. Os controles, fixos na tela, continuavam por cima dele
+ * — dois discos escuros flutuando sobre um texto que ocupa tudo, sem relação
+ * nenhuma com o que está sendo lido.
+ *
+ * Some também a busca: o gatilho dela desapareceu, e um painel aberto sem o
+ * controle que o abriu é uma sobra na tela.
+ *
+ * `visibility: hidden`, e não só `opacity: 0` — invisível mas focalizável, a
+ * lupa continuaria recebendo o Tab de quem lê o bloco pelo teclado, e o foco
+ * sumiria num controle que ninguém vê.
+ *
+ * `body:has(...)` porque os controles vivem FORA da jornada: presos à tela, eles
+ * não são descendentes do bloco que muda de estado, e nenhum seletor de dentro
+ * do palco os alcança.
+ */
+body:has(.journey-region.is-expanded) .journey-canto,
+body:has(.journey-region.is-expanded) .journey-busca {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Só a opacidade faz o percurso; a visibilidade troca no fim, para que o
+     controle não volte a ser clicável antes de estar visível de novo. */
+  .journey-canto,
+  .journey-busca { transition: opacity .28s ease, visibility 0s linear .28s; }
+  body:has(.journey-region.is-expanded) .journey-canto,
+  body:has(.journey-region.is-expanded) .journey-busca { transition-delay: 0s, .28s; }
+}
+
+/*
+ * A busca abre PRESA À TELA, embaixo da lupa.
+ *
+ * Ela era a última linha de uma coluna e por isso vivia de `margin-top: auto`.
+ * Sem a coluna, ficaria solta no começo do documento e sumiria na primeira
+ * rolagem — justamente quando alguém acabou de pedi-la.
+ */
 .journey-busca {
-  position: relative;
+  position: fixed;
+  z-index: 43;
+  top: calc(max(18px, env(safe-area-inset-top)) + 56px);
+  left: max(18px, env(safe-area-inset-left));
   display: grid;
   gap: 6px;
-  margin-top: auto;
-  grid-template-columns: minmax(0, 1fr) auto;
+  width: min(320px, calc(100vw - 36px));
+  padding: 10px;
+  border: 1px solid rgba(231, 202, 143, .2);
+  border-radius: 14px;
+  background: rgba(24, 17, 11, .8);
+  box-shadow: 0 18px 42px rgba(12, 8, 5, .45);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  /* Três colunas: campo, buscar e fechar. O X entrou depois, e sem esta coluna
+     ele caía na linha de baixo e empurrava o aviso para fora do lugar. */
+  grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
 .journey-busca[hidden] { display: none; }

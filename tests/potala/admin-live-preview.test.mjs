@@ -19,11 +19,15 @@ test("Home oferece acesso discreto ao painel e o painel contém a prévia real",
   ]);
 
   /*
-   * O acesso ao painel saiu da pilula larga e virou uma opcao dentro do botao
-   * redondo do rodape. Ele era o item mais destacado da barra e o unico que o
-   * visitante nunca vai usar — o painel e de quem mantem o site.
+   * O acesso ao painel percorreu três formas, sempre pelo mesmo motivo.
+   *
+   * Foi uma pílula larga escrita "Painel editorial" — o item mais destacado da
+   * barra lateral, e o único que o visitante nunca vai usar. Virou uma opção
+   * dentro de um botão redondo. Com a barra removida, virou o lápis no canto
+   * inferior esquerdo: discreto, e o único controle da Home que não é para
+   * quem chega.
    */
-  assert.match(homeScenes, /journey-sidebar-opcoes[\s\S]*?href="admin\.html"/);
+  assert.match(homeScenes, /journey-lapis[\s\S]*?href="admin\.html"/);
   assert.match(admin, /<iframe[^>]+data-admin-preview/);
   assert.match(admin, /src="transcendido\.html\?admin-preview=1"/);
 });

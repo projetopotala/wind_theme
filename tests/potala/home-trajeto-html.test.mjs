@@ -208,37 +208,34 @@ test("a prévia compacta mantém os dois blocos em colunas separadas", async () 
   );
 });
 
-test("a barra lateral oferece marca, progresso, páginas e painel administrativo", () => {
-  const markup = renderJourneyMenu([
-    { id: "quem-somos", title: "Quem somos", href: "quem-somos.html" },
-    { id: "atendimentos", title: "Atendimentos", href: "atendimentos.html" },
-  ]);
-
-  assert.match(markup, /class="journey-sidebar-brand"/);
-  assert.match(markup, /src="media\/potala-mark-transparent\.png"/);
-  assert.match(markup, /data-journey-current>01</);
-  assert.match(markup, /data-journey-total>02</);
-  assert.match(markup, /href="quem-somos\.html"[^>]*data-menu-target="quem-somos"/);
-  assert.match(markup, /href="atendimentos\.html"[^>]*data-menu-target="atendimentos"/);
-  /* O painel virou uma opcao do botao redondo do rodape, ao lado de
-     "Contate-nos" — que e o que um visitante de fato procura ali embaixo. */
-  assert.match(markup, /journey-sidebar-opcoes[\s\S]*?href="admin\.html"/);
-  assert.match(markup, /Contate-nos/);
-});
-
-test("a barra fica permanente no desktop e recolhida no celular", async () => {
+test("a Home nao tem barra lateral: dois controles de canto no lugar dela", async () => {
+  /*
+   * QUATRO TESTES SAIRAM DAQUI e viraram este.
+   *
+   * Eles descreviam a barra lateral: marca, progresso "01 / 02", a roleta de
+   * cinco linhas com mascara e encaixe, o botao movel com a marca, o inert no
+   * desktop. Tudo isso foi removido a pedido.
+   *
+   * Nao os apaguei sem deixar nada no lugar: o risco de remover uma peca grande
+   * e ela voltar por engano meses depois, trazida por alguem que so viu o CSS
+   * orfao e achou que faltava marcacao. Este teste e a trava.
+   */
+  const markup = renderJourneyMenu();
   const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
-  const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
 
-  assert.match(css, /--journey-sidebar-width:/);
-  assert.match(css, /--journey-sidebar-surface:\s*rgba\(94,\s*69,\s*41,\s*\.76\)/);
-  assert.match(css, /\.journey-menu\s*\{[\s\S]*backdrop-filter:\s*blur\(/);
-  assert.match(css, /@media \(min-width:\s*901px\)[\s\S]*\.journey-menu\s*\{[\s\S]*visibility:\s*visible/);
-  assert.match(css, /@media \(max-width:\s*900px\)[\s\S]*\.journey-menu\s*\{[\s\S]*transform:\s*translateX\(-/);
-  assert.match(css, /body\.is-journey-menu-open\s*\{[^}]*overflow:\s*hidden/);
-  assert.match(controlador, /matchMedia\("\(min-width: 901px\)"\)/);
-  assert.match(controlador, /menuNav\.removeAttribute\("inert"\)/);
-  assert.match(controlador, /menuNav\.setAttribute\("inert", ""\)/);
+  assert.match(markup, /class="journey-canto journey-lupa"/);
+  assert.match(markup, /class="journey-canto journey-lapis" href="admin\.html"/);
+
+  for (const sobra of [
+    "journey-menu-toggle", "journey-menu-viewport", "journey-sidebar-brand",
+    "journey-sidebar-progress", "journey-sidebar-mais", "data-menu-target",
+  ]) {
+    assert.ok(!markup.includes(sobra), `a barra lateral voltou: ${sobra}`);
+  }
+
+  /* Os dois cantos sao FIXOS: a paisagem rola atras deles, e um controle que
+     sobe com a pagina desaparece justamente quando alguem precisa dele. */
+  assert.match(css, /\.journey-canto \{[\s\S]*?position: fixed/);
 });
 
 test("o card fechado mantém títulos de uma palavra em uma linha", async () => {
@@ -260,53 +257,6 @@ test("os dois cards fechados de cada etapa compartilham a altura do maior", asyn
   const regra = css.slice(inicio, css.indexOf("}", inicio));
   assert.match(regra, /align-items:\s*stretch/, "o card menor precisa ocupar a altura da linha definida pelo maior");
   assert.match(regra, /align-content:\s*center/, "o par igualado precisa continuar centralizado na tela");
-});
-
-test("o botão móvel usa a marca e descreve abertura e fechamento", async () => {
-  const markup = renderJourneyMenu([{ id: "cursos", title: "Cursos", href: "cursos.html" }]);
-  const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
-
-  assert.match(markup, /class="journey-menu-toggle"/);
-  assert.match(markup, /aria-expanded="false" aria-controls="journey-menu"/);
-  assert.match(markup, /<img[^>]*potala-mark-transparent\.png/);
-  assert.match(controlador, /"Fechar navegação" : "Abrir navegação"/);
-});
-
-test("o índice lateral funciona como roleta linear de cinco seções", async () => {
-  const markup = renderJourneyMenu(Array.from({ length: 8 }, (_, index) => ({
-    id: `secao-${index + 1}`,
-    title: `Seção ${index + 1}`,
-    href: `secao-${index + 1}.html`,
-  })));
-  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
-  const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
-
-  assert.match(markup, /class="journey-menu-viewport"/);
-  assert.match(css, /--journey-menu-visible:\s*5/);
-  /*
-   * `hidden`, e nao `auto`: a roleta e um INDICADOR, e quem a move e a rolagem
-   * da pagina. Rolavel pela mao, ela discordava da pagina — a pessoa arrastava
-   * a lista, soltava, e ficava com uma secao destacada que nao tinha nada a ver
-   * com o que estava na tela. `scrollTo` por codigo continua funcionando.
-   */
-  assert.match(css, /\.journey-menu-viewport\s*\{[^}]*overflow-y:\s*hidden/);
-  assert.match(css, /\.journey-menu-viewport\s*\{[^}]*mask-image:\s*linear-gradient/);
-  /*
-   * O encaixe por rolagem SAIU junto com a rolagem manual.
-   *
-   * `scroll-snap-type` só age sobre quem rola a caixa com a mão, e a roleta
-   * deixou de aceitar isso: ela é um indicador, e quem a move é a rolagem da
-   * página, por `scrollTo`. A propriedade virava uma promessa sem efeito, e uma
-   * promessa dessas custa a próxima pessoa lendo o CSS e procurando o encaixe
-   * que nunca acontece.
-   *
-   * `scroll-snap-align` fica nas linhas: é ele que o `scrollTo` usa para pousar
-   * o item ativo no centro em vez de no topo.
-   */
-  assert.ok(!/scroll-snap-type/.test(css), "o encaixe voltou sem a rolagem manual");
-  assert.match(css, /scroll-snap-align:\s*center/);
-  assert.match(controlador, /menuViewport\.scrollTo\?\.\(\{/);
-  assert.match(controlador, /menuViewport\?\.addEventListener\("focusin"/);
 });
 
 test("a roleta troca do bloco esquerdo para o direito na metade do par", () => {

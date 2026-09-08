@@ -11,6 +11,7 @@ import { createLocalContentRepository } from "./content-repository.js";
 import { DEFAULT_HOME_BLOCKS, JOURNEY_DISCOVERIES, NOVIDADES_PADRAO } from "./journey-data.js";
 import { comNovidadesDoCodigo, ehNovidade, novidadesPrimeiro } from "./home-novidades.js";
 import { procurarBloco } from "./home-busca.js";
+import { criarPainelDeBusca } from "./busca-painel.js";
 import { createHomePath } from "./home-path-three.js";
 import { createLandscapeVideo } from "./landscape-video.js";
 import { mountJourney } from "./home-scenes.js";
@@ -564,17 +565,31 @@ export function createHomeController({
   const campoDeBusca = root.querySelector("[data-journey-busca-campo]");
   const avisoDeBusca = root.querySelector("[data-journey-busca-aviso]");
   const abrirBusca = root.querySelector("[data-journey-abrir-busca]");
+  const fecharBusca = root.querySelector("[data-journey-fechar-busca]");
 
-  function mostrarBusca() {
-    if (!formaDeBusca) return;
-    formaDeBusca.hidden = false;
-    /* O menu fecha: ele cumpriu o papel de revelar a busca, e aberto por cima
-       dela cobriria justamente o campo que se acabou de pedir. */
-    abrirBusca?.closest?.("details")?.removeAttribute?.("open");
-    campoDeBusca?.focus?.();
-  }
+  /*
+   * O painel sabe abrir E fechar, o que antes faltava.
+   *
+   * A busca só se fechava sozinha ao encontrar alguma coisa: quem abrisse por
+   * curiosidade, ou procurasse o que a jornada não tem, ficava com o campo na
+   * tela sem saída. No telefone, onde não há Escape, era um beco.
+   *
+   * O foco volta para a LUPA ao fechar. Ele já foi para o `summary` de um menu
+   * recolhível, porque a lupa morava dentro dele; esse menu saiu com a barra
+   * lateral, e o alvo antigo passou a não existir — fechar deixava o foco no
+   * corpo da página, e quem navega por teclado recomeçava do topo.
+   */
+  const painelDeBusca = criarPainelDeBusca({
+    forma: formaDeBusca,
+    campo: campoDeBusca,
+    aviso: avisoDeBusca,
+    fechar: fecharBusca,
+    foco: abrirBusca,
+  });
 
-  const onAbrirBusca = () => mostrarBusca();
+  /* A lupa ALTERNA. Clicar nela com a busca aberta é o segundo gesto que se
+     tenta para dispensá-la, depois do X. */
+  const onAbrirBusca = () => painelDeBusca.alternar();
   abrirBusca?.addEventListener("click", onAbrirBusca);
 
   /*
@@ -626,8 +641,7 @@ export function createHomeController({
       return;
     }
 
-    if (avisoDeBusca) avisoDeBusca.textContent = "";
-    formaDeBusca.hidden = true;
+    painelDeBusca.esconder({ devolverFoco: false });
     goToSection(achado.id);
   };
 
@@ -796,6 +810,7 @@ export function createHomeController({
       invite?.removeEventListener("click", onInviteClick);
       abrirBusca?.removeEventListener("click", onAbrirBusca);
       formaDeBusca?.removeEventListener("submit", onBuscar);
+      painelDeBusca.destroy();
       expansion.destroy();
       landscapeVideo.destroy();
       path.destroy();

@@ -402,176 +402,75 @@ export function renderInvitation(invitations = []) {
  * os itens da roleta por esse atributo, então eles não entram na conta de qual
  * bloco está ativo — e o leitor de tela recebe a divisão junto com a lista.
  */
-export function renderJourneyMenu(regions = []) {
-  const novidades = regions.filter(ehNovidade);
-  const secoes = regions.filter((region) => !ehNovidade(region));
-
-  /*
-   * As novidades ocupam UMA linha, e não uma cada.
-   *
-   * Listadas uma a uma, as manchetes tomavam as primeiras posições e a roleta
-   * lia como se o Instituto tivesse quinze seções — quatro delas com nome de
-   * notícia. A roleta é o mapa do portal, e o que ela precisa dizer sobre as
-   * novidades é só que existem e que você está nelas.
-   *
-   * O marcador circular é o que informa: ele acende enquanto o visitante
-   * percorre qualquer um dos cartões de novidade, como acende nas seções.
-   */
-  const linhaRecentes = novidades.length
-    ? `<li class="journey-menu-marco" data-menu-recentes>Recentes</li>`
-    : "";
-
-  /*
-   * "DESTACADO" existe porque "Recentes" sozinho contaminava a lista inteira.
-   *
-   * Com um único rótulo no topo, tudo que vinha abaixo dele parecia pertencer a
-   * ele: "Quem somos" e "Recepção" liam como notícias recentes. Um marco só
-   * marca um começo — são precisos dois para marcar uma fronteira.
-   */
-  const linhaDestacado = secoes.length
-    ? `<li class="journey-menu-marco" data-menu-destacado>Destacado</li>`
-    : "";
-
-  /* As seções continuam numeradas de 01 em diante. */
-  const itens = linhaRecentes + linhaDestacado + secoes.map((region, index) => {
-    const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
-    const href = escapeHtml(String(region.href || "#"));
-    const current = index === 0 && !novidades.length ? ' aria-current="true"' : "";
-    return `
-      <li>
-        <a href="${href}" data-menu-target="${id}"${current}>
-          <span aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
-          ${escapeHtml(String(region.title || ""))}
-        </a>
-      </li>`;
-  }).join("");
-  const total = String(Math.max(1, regions.length)).padStart(2, "0");
-
+/*
+ * OS DOIS CONTROLES DA TRAVESSIA, e nada mais.
+ *
+ * Aqui morava a barra lateral: marca, subtítulo, progresso "04 / 13", a roleta
+ * com as seções e um botão redondo com oito atalhos. Ela ocupava uma coluna
+ * inteira da tela em cima da paisagem, e boa parte do que oferecia a própria
+ * jornada já oferece — cada cartão leva à sua seção, e rolar é o gesto que a
+ * Home ensina desde o prólogo.
+ *
+ * Ficam dois: a lupa no alto à esquerda e o lápis embaixo. Um é para quem
+ * procura algo específico em vez de percorrer; o outro é de quem mantém o site.
+ *
+ * O QUE SAIU E PARA ONDE FOI: a roleta era um índice das seções, e as seções
+ * continuam nos cartões. Contate-nos era a Recepção, que é um cartão. Os cinco
+ * destinos da comunidade — especialistas, workshops, grupos, mentorias e
+ * eventos — continuam a um clique de Profissionais, que tem o botão para
+ * Especialistas, e dali a barra daquelas páginas leva às outras quatro. Nada
+ * ficou órfão; o caminho ficou mais fundo.
+ */
+export function renderJourneyMenu() {
   return `
-    <button class="journey-menu-toggle" type="button" data-menu-toggle
-      aria-expanded="false" aria-controls="journey-menu" aria-label="Abrir navegação"
-      data-keeps-expansion>
-      <img src="media/potala-mark-transparent.png" alt="" aria-hidden="true">
+    <button class="journey-canto journey-lupa" type="button" data-journey-abrir-busca
+      data-keeps-expansion aria-label="Pesquisar na travessia">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"/>
+      </svg>
     </button>
-    <nav class="journey-menu" id="journey-menu" aria-label="Seções da travessia"
-      data-keeps-expansion data-journey-sidebar inert>
-      <a class="journey-sidebar-brand" href="transcendido.html" aria-label="Início da Travessia">
-        <img src="media/potala-mark-transparent.png" alt="Instituto Potala">
-        <span>Instituto <strong>Potala</strong></span>
-      </a>
-      <div class="journey-sidebar-heading">
-        <p>Travessia</p>
-        <span>Ecossistema Digital</span>
-      </div>
-      <div class="journey-sidebar-progress" aria-label="Progresso na jornada">
-        <span><strong data-journey-current>01</strong> / <span data-journey-total>${total}</span></span>
-        <i aria-hidden="true"></i>
-      </div>
-      <a class="journey-sidebar-back" href="transcender.html" aria-label="Voltar à Chegada">
-        <span aria-hidden="true">←</span>
-      </a>
-      <div class="journey-menu-viewport">
-        <ul>${itens}</ul>
-      </div>
-      <!--
-        O rodapé da barra virou um BOTÃO REDONDO que abre duas opções.
 
-        Era uma pílula larga escrita "Painel editorial" — o item mais destacado
-        do rodapé, e o único que o visitante nunca vai usar: o painel é de quem
-        mantém o site. Reduzido a um ícone, ele deixa de disputar espaço com o
-        que interessa a quem chega, e abre espaço para o "Contate-nos", que é o
-        que um visitante de fato procura ali embaixo.
+    <!--
+      A BUSCA ABRE ABAIXO DA LUPA, presa na tela.
 
-        Elemento details com summary, em vez de um botão com JavaScript: abrir e
-        fechar já é comportamento nativo dele, e vem com teclado e leitor de
-        tela prontos. Um botão nosso precisaria reimplementar os três — e este
-        comentário não usa crase porque está DENTRO de um template literal, onde
-        uma crase fecha a string e derruba o arquivo inteiro.
-      -->
-      <!--
-        A BUSCA MORA FORA DO MENU, e é o menu que a revela.
+      Ela morava no pé da barra lateral. Sem a barra, precisa de lugar próprio —
+      e o lugar é junto do controle que a revela, para que a relação entre os
+      dois seja óbvia sem ninguém explicar.
 
-        Dentro do elemento details, ela fecharia junto com ele no primeiro clique fora
-        — e clicar fora é exatamente o que se faz para alcançar o teclado no
-        telefone. Aqui ela abre acima do botão e só sai quando encontra algo ou
-        quando alguém a fecha.
-      -->
-      <form class="journey-busca" data-journey-busca role="search" hidden>
-        <label class="journey-sr" for="journey-busca-campo">Buscar na jornada</label>
-        <input id="journey-busca-campo" data-journey-busca-campo type="search"
-          placeholder="tai chi, oráculo, cursos…" autocomplete="off">
-        <button type="submit" aria-label="Buscar">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"/>
-          </svg>
-        </button>
-        <p class="journey-busca-aviso" data-journey-busca-aviso role="status" aria-live="polite"></p>
-      </form>
+      Fechar clicando fora continua descartado de propósito: clicar fora é
+      exatamente o que se faz para alcançar o teclado no telefone. Sai pelo X,
+      pelo Escape ou clicando na lupa de novo.
+    -->
+    <form class="journey-busca" data-journey-busca role="search" data-keeps-expansion hidden>
+      <label class="journey-sr" for="journey-busca-campo">Buscar na jornada</label>
+      <input id="journey-busca-campo" data-journey-busca-campo type="search"
+        placeholder="tai chi, oráculo, cursos…" autocomplete="off">
+      <button type="submit" aria-label="Buscar">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"/>
+        </svg>
+      </button>
+      <button type="button" data-journey-fechar-busca aria-label="Fechar busca">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/>
+        </svg>
+      </button>
+      <p class="journey-busca-aviso" data-journey-busca-aviso role="status" aria-live="polite"></p>
+    </form>
 
-      <details class="journey-sidebar-mais">
-        <summary aria-label="Mais opções">
-          <span aria-hidden="true"></span>
-        </summary>
-        <div class="journey-sidebar-opcoes">
-          <button type="button" data-journey-abrir-busca>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"/>
-            </svg>
-            <span>Pesquisar</span>
-          </button>
-          <a href="recepcao.html">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"/>
-            </svg>
-            <span>Contate-nos</span>
-          </a>
-          <a href="admin.html">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25Zm15.7-10.4a.73.73 0 0 0 0-1.03l-1.52-1.52a.73.73 0 0 0-1.03 0l-1.19 1.19 2.75 2.75 1.19-1.19Z"/>
-            </svg>
-            <span>Painel editorial</span>
-          </a>
-          <!--
-            AS PORTAS QUE NÃO SÃO SEÇÃO.
+    <!--
+      O lápis é um LINK, e não um botão com script.
 
-            Especialistas, workshops, grupos, mentorias e eventos moram na barra
-            do topo das páginas de seção. A Home não tem essa barra — ela tem a
-            roleta — e sem estes cinco links a única forma de chegar lá a partir
-            do começo seria entrar numa seção qualquer primeiro.
-          -->
-          <a href="especialistas.html">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3Zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5Zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5Z"/>
-            </svg>
-            <span>Especialistas</span>
-          </a>
-          <a href="workshops.html">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 2 2 7l10 5 10-5-10-5Zm0 7.2L5.6 6 12 2.8 18.4 6 12 9.2ZM2 17l10 5 10-5-2.2-1.1L12 19.6l-7.8-3.7L2 17Zm0-5 10 5 10-5-2.2-1.1L12 14.6l-7.8-3.7L2 12Z"/>
-            </svg>
-            <span>Workshops</span>
-          </a>
-          <a href="grupos-de-estudo.html">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M21 5c-1.9-.6-3.9-1-6-1-1.8 0-3.5.3-5 .8v14.4c1.5-.5 3.2-.8 5-.8 2.1 0 4.1.4 6 1V5ZM9 4.8C7.5 4.3 5.8 4 4 4c-.7 0-1.4 0-2 .1v14.4c.6-.1 1.3-.1 2-.1 1.8 0 3.5.3 5 .8V4.8Z"/>
-            </svg>
-            <span>Grupos de estudo</span>
-          </a>
-          <a href="mentorias.html">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 3 1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3Zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9ZM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72Z"/>
-            </svg>
-            <span>Mentorias</span>
-          </a>
-          <a href="eventos.html">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10Zm0-12H5V6h14v2Zm-8 4H7v4h4v-4Z"/>
-            </svg>
-            <span>Eventos futuros</span>
-          </a>
-        </div>
-      </details>
-    </nav>`;
+      Ele vai para outra página. Um botão que navega precisa reimplementar o que
+      um link já faz de graça: abrir em outra aba, copiar o endereço, aparecer
+      como link para quem usa leitor de tela.
+    -->
+    <a class="journey-canto journey-lapis" href="admin.html"
+      data-keeps-expansion aria-label="Painel editorial">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25Zm15.7-10.4a.73.73 0 0 0 0-1.03l-1.52-1.52a.73.73 0 0 0-1.03 0l-1.19 1.19 2.75 2.75 1.19-1.19Z"/>
+      </svg>
+    </a>`;
 }
 
 export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
