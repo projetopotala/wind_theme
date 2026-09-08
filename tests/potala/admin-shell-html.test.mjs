@@ -7,17 +7,19 @@ const html = await readFile(new URL("../../outputs/admin.html", import.meta.url)
 test("a navegação traz a jornada e as áreas de operação", () => {
   for (const secao of [
     "Jornada", "Financeiro", "Atendimentos", "Salas físicas",
-    "Atendimentos virtuais", "Usuários",
+    "Atendimentos virtuais", "Usuários", "Blog",
   ]) {
     assert.ok(html.includes(secao), `seção ausente: ${secao}`);
   }
 });
 
 test("cada área de operação tem a própria tela, fora do editor", () => {
-  for (const secao of ["financeiro", "atendimentos", "salas", "virtuais", "usuarios"]) {
+  for (const secao of ["financeiro", "atendimentos", "salas", "virtuais", "usuarios", "blog"]) {
     assert.match(html, new RegExp(`data-admin-workspace="${secao}" hidden`));
   }
   assert.match(html, /data-admin-workspace="jornada"/);
+  assert.match(html, /Helena Vasconcelos/);
+  assert.match(html, /Marina Alves/);
 });
 
 test("a seção ativa é a Jornada", () => {

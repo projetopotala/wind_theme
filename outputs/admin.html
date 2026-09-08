@@ -51,7 +51,7 @@
           <li><button type="button" data-section="salas">Salas físicas</button></li>
           <li><button type="button" data-section="virtuais">Atendimentos virtuais</button></li>
           <li><button type="button" data-section="usuarios">Usuários</button></li>
-          <li><a class="admin-nav-link" href="blog-admin.html">Blog</a></li>
+          <li><button type="button" data-section="blog">Blog</button></li>
         </ul>
 
         <div class="admin-user" data-admin-user>
@@ -305,13 +305,113 @@
         </aside>
       </div>
 
+      <section class="admin-workspace" data-admin-workspace="blog" hidden aria-labelledby="admin-blog-title">
+        <header class="admin-workspace-head">
+          <h2 id="admin-blog-title">Blog</h2>
+          <p>Textos no ar e o que cada colaborador está escrevendo. O detalhe fica à direita.</p>
+        </header>
+        <div class="admin-workspace-split">
+          <div>
+            <div class="admin-workspace-toolbar">
+              <span class="admin-muted">8 textos · 5 colaboradores</span>
+              <a class="admin-workspace-link" href="blog-admin.html">Abrir editor</a>
+            </div>
+            <ul class="admin-pick-list" data-admin-pick-list="blog">
+              <li>
+                <button type="button" data-admin-pick="blog-ponte" aria-current="true">
+                  <strong>Oráculo de hoje: a carta da Ponte</strong>
+                  <small>Núcleo de Oráculos · publicado · 4 set</small>
+                </button>
+              </li>
+              <li>
+                <button type="button" data-admin-pick="blog-profissionais">
+                  <strong>Novos profissionais chegaram ao Instituto</strong>
+                  <small>Redação Potala · publicado · 2 set</small>
+                </button>
+              </li>
+              <li>
+                <button type="button" data-admin-pick="blog-borra">
+                  <strong>O que a borra de café ainda tem a dizer</strong>
+                  <small>Marina Alves · em revisão · 28 ago</small>
+                </button>
+              </li>
+              <li>
+                <button type="button" data-admin-pick="blog-ansiedade">
+                  <strong>Onde a ansiedade se instala no corpo</strong>
+                  <small>Equipe de Medicina Integrativa · publicado · 25 ago</small>
+                </button>
+              </li>
+              <li>
+                <button type="button" data-admin-pick="blog-sono">
+                  <strong>O sono muda de estação, e a rotina não</strong>
+                  <small>Lin Watanabe · rascunho · 9 ago</small>
+                </button>
+              </li>
+            </ul>
+          </div>
+          <article class="admin-detail" data-admin-pick-panel="blog-ponte">
+            <p class="admin-kicker">Oráculos · publicado</p>
+            <h3>Oráculo de hoje: a carta da Ponte</h3>
+            <p>A Ponte não fala de chegada, e sim da travessia. Ela aparece quando as duas margens já são conhecidas e o que falta é atravessar.</p>
+            <p>O texto de hoje fecha o ciclo da semana: três leituras curtas, uma imagem da carta e o convite para a roda de quarta.</p>
+            <ul class="admin-people">
+              <li><span>Autora</span> Helena Vasconcelos</li>
+              <li><span>Revisão</span> Núcleo de Oráculos</li>
+              <li><span>Edição</span> Redação Potala</li>
+            </ul>
+          </article>
+          <article class="admin-detail" data-admin-pick-panel="blog-profissionais" hidden>
+            <p class="admin-kicker">Artigos · publicado</p>
+            <h3>Novos profissionais chegaram ao Instituto</h3>
+            <p>Sete terapeutas passam a atender no Potala neste mês, trazendo constelação familiar, osteopatia, terapia floral e três abordagens que ainda não existiam na casa.</p>
+            <ul class="admin-people">
+              <li><span>Autora</span> Redação Potala</li>
+              <li><span>Fontes</span> Recepção · Coordenação clínica</li>
+            </ul>
+          </article>
+          <article class="admin-detail" data-admin-pick-panel="blog-borra" hidden>
+            <p class="admin-kicker">Oráculos · em revisão</p>
+            <h3>O que a borra de café ainda tem a dizer</h3>
+            <p>A cafeomancia não adivinha o futuro: ela organiza a pergunta. Um panorama de uma prática antiga que segue lotando as rodas de quarta-feira.</p>
+            <ul class="admin-people">
+              <li><span>Autora</span> Marina Alves</li>
+              <li><span>Revisão</span> Helena Vasconcelos</li>
+              <li><span>Aguardando</span> Redação Potala</li>
+            </ul>
+          </article>
+          <article class="admin-detail" data-admin-pick-panel="blog-ansiedade" hidden>
+            <p class="admin-kicker">Terapias · publicado</p>
+            <h3>Onde a ansiedade se instala no corpo</h3>
+            <p>Antes de virar pensamento, ela é mandíbula travada, respiração curta e ombro erguido. Três terapeutas da casa descrevem o que veem chegar no consultório.</p>
+            <ul class="admin-people">
+              <li><span>Autoras</span> Clara Mendes · Rita Okada · Lin Watanabe</li>
+              <li><span>Edição</span> Equipe de Medicina Integrativa</li>
+            </ul>
+          </article>
+          <article class="admin-detail" data-admin-pick-panel="blog-sono" hidden>
+            <p class="admin-kicker">Artigos · rascunho</p>
+            <h3>O sono muda de estação, e a rotina não</h3>
+            <p>A Medicina Tradicional Chinesa organiza o ano em ciclos com exigências diferentes. Dormir igual o ano inteiro é ignorar metade dessa conversa.</p>
+            <ul class="admin-people">
+              <li><span>Autor</span> Lin Watanabe</li>
+              <li><span>Convite de revisão</span> ainda sem colaborador</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
       <section class="admin-workspace" data-admin-workspace="financeiro" hidden aria-labelledby="admin-financeiro-title">
         <header class="admin-workspace-head">
           <h2 id="admin-financeiro-title">Controle financeiro</h2>
           <p>Lançamentos, recebimentos e o que ainda está em aberto.</p>
         </header>
+        <div class="admin-stats">
+          <p><small>A receber</small><strong>R$ 4.280</strong></p>
+          <p><small>Recebido no mês</small><strong>R$ 12.640</strong></p>
+          <p><small>Em aberto</small><strong>6 lançamentos</strong></p>
+        </div>
         <div class="admin-workspace-toolbar">
-          <button type="button" disabled>Novo lançamento</button>
+          <button type="button">Novo lançamento</button>
         </div>
         <table class="admin-sheet">
           <caption>Lançamentos</caption>
@@ -319,7 +419,10 @@
             <tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Situação</th></tr>
           </thead>
           <tbody>
-            <tr><td colspan="5">Nenhum lançamento cadastrado.</td></tr>
+            <tr><td>8 set</td><td>Consulta · Clara Mendes</td><td>Receita</td><td>R$ 220</td><td><span class="admin-badge">Recebido</span></td></tr>
+            <tr><td>8 set</td><td>Mensalidade da sala Lótus</td><td>Despesa</td><td>R$ 1.800</td><td><span class="admin-badge">Pago</span></td></tr>
+            <tr><td>7 set</td><td>Roda de oráculos · quarta</td><td>Receita</td><td>R$ 480</td><td><span class="admin-badge is-wait">A receber</span></td></tr>
+            <tr><td>5 set</td><td>Pacote de 4 sessões · Anita Luz</td><td>Receita</td><td>R$ 760</td><td><span class="admin-badge is-wait">Parcial</span></td></tr>
           </tbody>
         </table>
       </section>
@@ -330,7 +433,7 @@
           <p>A agenda do instituto: quem atende, quando e em qual sala.</p>
         </header>
         <div class="admin-workspace-toolbar">
-          <button type="button" disabled>Novo atendimento</button>
+          <button type="button">Novo atendimento</button>
         </div>
         <table class="admin-sheet">
           <caption>Atendimentos</caption>
@@ -338,7 +441,10 @@
             <tr><th>Data</th><th>Horário</th><th>Pessoa</th><th>Profissional</th><th>Sala</th><th>Situação</th></tr>
           </thead>
           <tbody>
-            <tr><td colspan="6">Nenhum atendimento cadastrado.</td></tr>
+            <tr><td>8 set</td><td>09:00</td><td>Anita Luz</td><td>Clara Mendes</td><td>Lótus</td><td><span class="admin-badge">Confirmado</span></td></tr>
+            <tr><td>8 set</td><td>11:30</td><td>Pedro Ianni</td><td>Lin Watanabe</td><td>Ponte</td><td><span class="admin-badge is-wait">Aguardando</span></td></tr>
+            <tr><td>8 set</td><td>15:00</td><td>Grupo de práticas</td><td>Rita Okada</td><td>Silêncio</td><td><span class="admin-badge">Em sala</span></td></tr>
+            <tr><td>9 set</td><td>10:00</td><td>Helena V.</td><td>Marina Alves</td><td>Lótus</td><td><span class="admin-badge is-wait">A confirmar</span></td></tr>
           </tbody>
         </table>
       </section>
@@ -349,17 +455,25 @@
           <p>As salas do instituto, com capacidade e o que cada uma recebe.</p>
         </header>
         <div class="admin-workspace-toolbar">
-          <button type="button" disabled>Nova sala</button>
+          <button type="button">Nova sala</button>
         </div>
-        <table class="admin-sheet">
-          <caption>Salas físicas</caption>
-          <thead>
-            <tr><th>Nome</th><th>Capacidade</th><th>Uso</th><th>Situação</th></tr>
-          </thead>
-          <tbody>
-            <tr><td colspan="4">Nenhuma sala cadastrada.</td></tr>
-          </tbody>
-        </table>
+        <ul class="admin-room-list">
+          <li>
+            <strong>Sala Lótus</strong>
+            <span>2 pessoas · atendimento individual</span>
+            <span class="admin-badge">Livre agora</span>
+          </li>
+          <li>
+            <strong>Sala Ponte</strong>
+            <span>4 pessoas · sessão em dupla</span>
+            <span class="admin-badge is-wait">Ocupada até 12:30</span>
+          </li>
+          <li>
+            <strong>Sala Silêncio</strong>
+            <span>12 pessoas · práticas e rodas</span>
+            <span class="admin-badge">Em uso · grupo</span>
+          </li>
+        </ul>
       </section>
 
       <section class="admin-workspace" data-admin-workspace="virtuais" hidden aria-labelledby="admin-virtuais-title">
@@ -368,7 +482,7 @@
           <p>Encontros à distância, com o link e o horário de cada um.</p>
         </header>
         <div class="admin-workspace-toolbar">
-          <button type="button" disabled>Novo atendimento virtual</button>
+          <button type="button">Novo atendimento virtual</button>
         </div>
         <table class="admin-sheet">
           <caption>Atendimentos virtuais</caption>
@@ -376,7 +490,9 @@
             <tr><th>Data</th><th>Horário</th><th>Pessoa</th><th>Profissional</th><th>Canal</th><th>Situação</th></tr>
           </thead>
           <tbody>
-            <tr><td colspan="6">Nenhum atendimento virtual cadastrado.</td></tr>
+            <tr><td>8 set</td><td>18:00</td><td>João Ferreira</td><td>Clara Mendes</td><td>Vídeo</td><td><span class="admin-badge">Link enviado</span></td></tr>
+            <tr><td>8 set</td><td>19:30</td><td>Casa de Ana</td><td>Lin Watanabe</td><td>Vídeo</td><td><span class="admin-badge is-wait">Aguardando entrada</span></td></tr>
+            <tr><td>9 set</td><td>08:30</td><td>Marina R.</td><td>Rita Okada</td><td>Vídeo</td><td><span class="admin-badge">Confirmado</span></td></tr>
           </tbody>
         </table>
       </section>
@@ -387,7 +503,7 @@
           <p>Quem entra no painel. O cadastro vive em <code>public.users</code>.</p>
         </header>
         <div class="admin-workspace-toolbar">
-          <button type="button" disabled>Novo usuário</button>
+          <button type="button">Novo usuário</button>
         </div>
         <table class="admin-sheet">
           <caption>Usuários do painel</caption>
@@ -395,7 +511,10 @@
             <tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Situação</th></tr>
           </thead>
           <tbody>
-            <tr><td colspan="4">Nenhum usuário listado ainda.</td></tr>
+            <tr><td>Instituto Potala</td><td>projetopotala@gmail.com</td><td>Dono</td><td><span class="admin-badge">Ativo</span></td></tr>
+            <tr><td>Helena Vasconcelos</td><td>helena@potala.org</td><td>Colaboradora · oráculos</td><td><span class="admin-badge">Ativo</span></td></tr>
+            <tr><td>Marina Alves</td><td>marina@potala.org</td><td>Colaboradora · blog</td><td><span class="admin-badge">Ativo</span></td></tr>
+            <tr><td>Lin Watanabe</td><td>lin@potala.org</td><td>Colaborador · terapias</td><td><span class="admin-badge is-wait">Convite enviado</span></td></tr>
           </tbody>
         </table>
       </section>
