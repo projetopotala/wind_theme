@@ -431,6 +431,42 @@ button {
   font-size: .85rem;
 }
 
+.admin-atalhos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.admin-atalhos button {
+  display: grid;
+  gap: 8px;
+  min-height: 132px;
+  padding: 18px 16px;
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  background: var(--admin-panel-soft);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-atalhos button:hover,
+.admin-atalhos button:focus-visible {
+  border-color: var(--admin-gold);
+  background: rgba(215, 186, 120, .08);
+}
+
+.admin-atalhos strong {
+  font-size: 1.05rem;
+  font-weight: 560;
+}
+
+.admin-atalhos small {
+  color: var(--admin-muted);
+  font-size: .82rem;
+  line-height: 1.4;
+}
+
 .admin-pick-list {
   display: grid;
   gap: 6px;

@@ -242,7 +242,7 @@ export function createAdminAuth({ client, root, onAuthorized = () => {} } = {}) 
     try {
       await sendAdminPasswordRecovery(client, {
         email,
-        redirectTo: new URL("admin.html", window.location.href).href,
+        redirectTo: new URL("/admin", window.location.origin).href,
       });
       if (status) status.textContent = "Link enviado. Abra o e-mail neste dispositivo para definir sua senha.";
     } catch (error) {

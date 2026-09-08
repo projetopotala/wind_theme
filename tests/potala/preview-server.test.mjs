@@ -6,6 +6,11 @@ test("mapeia a raiz para a Chegada", () => {
   assert.match(resolveRequestPath("/").replaceAll("\\", "/"), /outputs\/transcender\.html$/);
 });
 
+test("os painéis abrem sem o sufixo html", () => {
+  assert.match(resolveRequestPath("/admin").replaceAll("\\", "/"), /outputs\/admin\.html$/);
+  assert.match(resolveRequestPath("/blog").replaceAll("\\", "/"), /outputs\/blog-admin\.html$/);
+});
+
 test("bloqueia caminhos que escapam de outputs", () => {
   assert.equal(resolveRequestPath("/../package.json"), null);
   assert.equal(resolveRequestPath("/%2e%2e/package.json"), null);

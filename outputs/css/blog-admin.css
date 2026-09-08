@@ -22,6 +22,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .blog-editor-topbar nav { display:flex; gap:4px; }
 .blog-editor-topbar a,.blog-editor-topbar button { padding:8px 11px; border:1px solid transparent; border-radius:8px; color:rgba(247,237,218,.68); background:transparent; text-decoration:none; cursor:pointer; font-size:.76rem; }
 .blog-editor-topbar a[aria-current="page"] { border-color:var(--line); color:var(--gold); }
+.blog-editor-teste { margin:0; padding:6px 10px; border:1px solid var(--line); border-radius:8px; color:var(--gold); font-size:.72rem; }
 .blog-editor-library,.blog-editor-inspector { min-height:0; overflow:auto; background:var(--panel); }
 .blog-editor-library { display:flex; flex-direction:column; padding:18px 12px; border-right:1px solid var(--line); }
 .blog-editor-library>header,.blog-editor-inspector>header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:0 8px 14px; border-bottom:1px solid var(--line); }

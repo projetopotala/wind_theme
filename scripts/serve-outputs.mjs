@@ -16,6 +16,11 @@ const types = {
   ".webp": "image/webp",
 };
 
+const aliases = {
+  admin: "admin.html",
+  blog: "blog-admin.html",
+};
+
 export function resolveRequestPath(requestUrl) {
   let pathname;
   try {
@@ -25,7 +30,9 @@ export function resolveRequestPath(requestUrl) {
   }
   const segments = pathname.replaceAll("\\", "/").split("/");
   if (segments.includes("..")) return null;
-  const relative = pathname === "/" ? "transcender.html" : pathname.replace(/^[/\\]+/, "");
+  const stripped = pathname.replace(/\/+$/, "") || "/";
+  const alias = aliases[stripped.replace(/^\/+/, "")];
+  const relative = pathname === "/" ? "transcender.html" : (alias || pathname.replace(/^[/\\]+/, ""));
   const target = resolve(root, relative);
   if (target !== root && !target.startsWith(root + sep)) return null;
   return target;

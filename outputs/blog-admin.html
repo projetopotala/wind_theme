@@ -15,7 +15,8 @@
     <section class="blog-admin-login" data-admin-auth-view aria-labelledby="login-title">
       <img src="media/potala-mark-transparent.png" alt="Instituto Potala">
       <p>Caderno de Travessia</p>
-      <h1 id="login-title">Painel editorial</h1>
+      <h1 id="login-title">Painel do blogueiro</h1>
+      <p>Escreva e ajuste os seus textos. O endereço desta mesa é /blog.</p>
       <form data-admin-auth-form hidden>
         <label>E-mail<input name="email" type="email" autocomplete="username" required></label>
         <label>Senha<input name="password" type="password" autocomplete="current-password" required></label>
@@ -24,13 +25,14 @@
       </form>
       <p data-admin-forbidden hidden>Esta conta não possui acesso administrativo.</p>
       <p data-admin-auth-status role="status" aria-live="polite">Verificando acesso…</p>
-      <a href="blog.html">Ver o Blog</a>
+      <a href="/blog?acesso=teste">Ver o acesso de teste</a>
+      <a href="blog.html">Ver o Blog público</a>
     </section>
 
     <section class="blog-editor" id="admin-panel" hidden aria-labelledby="blog-editor-title" data-preview-device="desktop">
       <header class="blog-editor-topbar">
         <div class="blog-editor-brand"><img src="media/potala-mark-transparent.png" alt=""><span>Instituto Potala<small>Caderno de Travessia</small></span></div>
-        <nav aria-label="Painéis administrativos"><a href="admin.html">Jornada</a><a href="blog-admin.html" aria-current="page">Blog</a></nav>
+        <nav aria-label="Painéis administrativos"><a href="/admin">Jornada</a><a href="/blog" aria-current="page">Blog</a></nav>
         <a href="blog.html" target="_blank" rel="noopener">Visualizar</a>
         <button type="button" data-admin-sign-out>Encerrar sessão</button>
       </header>

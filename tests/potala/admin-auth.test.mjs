@@ -155,10 +155,10 @@ test("recuperação envia o link somente para o e-mail informado", async () => {
 
   await sendAdminPasswordRecovery(client, {
     email: " owner@example.com ",
-    redirectTo: "http://127.0.0.1:4173/admin.html",
+    redirectTo: "http://127.0.0.1:4173/admin",
   });
   assert.deepEqual(calls, [["owner@example.com", {
-    redirectTo: "http://127.0.0.1:4173/admin.html",
+    redirectTo: "http://127.0.0.1:4173/admin",
   }]]);
 });
 

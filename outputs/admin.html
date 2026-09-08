@@ -38,14 +38,15 @@
       <p class="admin-entry-links"><a href="transcendido.html">Ver a Home</a></p>
     </section>
 
-    <section class="admin-panel" id="admin-panel" data-admin-section="jornada" aria-labelledby="admin-panel-title" hidden>
+    <section class="admin-panel" id="admin-panel" data-admin-section="inicio" aria-labelledby="admin-inicio-title" hidden>
       <nav class="admin-nav" data-admin-nav aria-label="Seções do painel">
         <p class="admin-brand">
           <img class="admin-brand-logo" src="media/potala-mark-transparent.png" alt="">
           <span>Potala <small>Instituto</small></span>
         </p>
         <ul>
-          <li><button type="button" data-section="jornada" aria-current="page">Jornada</button></li>
+          <li><button type="button" data-section="inicio" aria-current="page">Início</button></li>
+          <li><button type="button" data-section="jornada">Jornada</button></li>
           <li><button type="button" data-section="financeiro">Financeiro</button></li>
           <li><button type="button" data-section="atendimentos">Atendimentos</button></li>
           <li><button type="button" data-section="salas">Salas físicas</button></li>
@@ -82,7 +83,44 @@
         <button class="admin-sair" type="button" data-admin-sign-out>Sair</button>
       </nav>
 
-      <header class="admin-head" data-admin-workspace="jornada">
+      <section class="admin-workspace admin-home" data-admin-workspace="inicio" data-admin-atalhos aria-labelledby="admin-inicio-title">
+        <header class="admin-workspace-head">
+          <h2 id="admin-inicio-title" tabindex="-1">Painel</h2>
+          <p>Escolha uma área para continuar.</p>
+        </header>
+        <div class="admin-atalhos">
+          <button type="button" data-section="jornada">
+            <strong>Jornada</strong>
+            <small>Organize e publique os blocos do portal</small>
+          </button>
+          <button type="button" data-section="financeiro">
+            <strong>Financeiro</strong>
+            <small>Lançamentos, recebimentos e o que está em aberto</small>
+          </button>
+          <button type="button" data-section="atendimentos">
+            <strong>Atendimentos</strong>
+            <small>Agenda, quem atende e em qual sala</small>
+          </button>
+          <button type="button" data-section="salas">
+            <strong>Salas físicas</strong>
+            <small>Cadastro, capacidade e uso das salas</small>
+          </button>
+          <button type="button" data-section="virtuais">
+            <strong>Atendimentos virtuais</strong>
+            <small>Encontros à distância, link e horário</small>
+          </button>
+          <button type="button" data-section="usuarios">
+            <strong>Usuários</strong>
+            <small>Quem entra no painel e com qual papel</small>
+          </button>
+          <button type="button" data-section="blog">
+            <strong>Blog</strong>
+            <small>Textos no ar e o que os colaboradores escrevem</small>
+          </button>
+        </div>
+      </section>
+
+      <header class="admin-head" data-admin-workspace="jornada" hidden>
         <div class="admin-head-title">
           <h2 id="admin-panel-title" tabindex="-1">Editor da jornada</h2>
           <p>Organize, edite e publique a experiência do portal</p>
@@ -116,7 +154,7 @@
       <!-- A faixa de status é a única confirmação de que a ação valeu, e vive
            fora da lista de propósito: a lista é redesenhada a cada mudança, e um
            aviso dentro dela seria destruído antes de ser lido em voz alta. -->
-      <p class="admin-status" data-admin-status data-admin-workspace="jornada" role="status" aria-live="polite"></p>
+      <p class="admin-status" data-admin-status data-admin-workspace="jornada" role="status" aria-live="polite" hidden></p>
 
       <!--
         A notificação de que a ação deu certo — ou não.
@@ -131,7 +169,7 @@
         <small data-admin-confirm-detail></small>
       </div>
 
-      <div class="admin-columns" data-admin-workspace="jornada">
+      <div class="admin-columns" data-admin-workspace="jornada" hidden>
         <div class="admin-list-wrap">
           <p class="admin-counts" data-admin-counts></p>
           <div class="admin-tabs" data-admin-tabs role="tablist" aria-label="Filtrar blocos">
@@ -314,7 +352,7 @@
           <div>
             <div class="admin-workspace-toolbar">
               <span class="admin-muted">8 textos · 5 colaboradores</span>
-              <a class="admin-workspace-link" href="blog-admin.html">Abrir editor</a>
+              <a class="admin-workspace-link" href="/blog">Abrir painel do blogueiro</a>
             </div>
             <ul class="admin-pick-list" data-admin-pick-list="blog">
               <li>

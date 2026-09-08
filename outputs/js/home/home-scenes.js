@@ -465,7 +465,7 @@ export function renderJourneyMenu() {
       um link já faz de graça: abrir em outra aba, copiar o endereço, aparecer
       como link para quem usa leitor de tela.
     -->
-    <a class="journey-canto journey-lapis" href="admin.html"
+    <a class="journey-canto journey-lapis" href="/admin"
       data-keeps-expansion aria-label="Painel editorial">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25Zm15.7-10.4a.73.73 0 0 0 0-1.03l-1.52-1.52a.73.73 0 0 0-1.03 0l-1.19 1.19 2.75 2.75 1.19-1.19Z"/>

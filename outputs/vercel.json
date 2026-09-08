@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/admin/", "destination": "/admin.html" },
+    { "source": "/blog", "destination": "/blog-admin.html" },
+    { "source": "/blog/", "destination": "/blog-admin.html" }
+  ]
+}

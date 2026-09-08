@@ -23,8 +23,8 @@ Os endereços das páginas não mudam. O que mudou foi só onde o casco vive.
 
 - `transcender.html` — Chegada. O casco dela está em `css/respiracao.css` e `js/chegada/respiracao.js`.
 - `transcendido.html` — Home, a travessia. O casco compartilhado das páginas está em `css/secoes.css` e `js/secoes.js`.
-- `admin.html` — editor da jornada. A senha fica no Auth; o cadastro que libera o painel é `public.users` (`owner` ou `admin`, `active`).
-- `blog-admin.html` — editor do blog, com a mesma autorização.
+- `/admin` — editor da jornada. A senha fica no Auth; o cadastro que libera o painel é `public.users` (`owner` ou `admin`, `active`).
+- `/blog` — mesa do blogueiro. O acesso de teste, sem senha, fica em `/blog?acesso=teste`.
 
 ## Onde olhar
 

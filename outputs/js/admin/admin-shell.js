@@ -27,11 +27,12 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
 
   function selecionar(botao) {
     if (!botao || isInerte(botao)) return;
+    const secao = botao.getAttribute("data-section");
     for (const item of nav?.querySelectorAll("[data-section]") || []) {
-      if (item === botao) item.setAttribute("aria-current", "page");
+      if (item.getAttribute("data-section") === secao) item.setAttribute("aria-current", "page");
       else item.removeAttribute("aria-current");
     }
-    mostrar(botao.getAttribute("data-section"));
+    mostrar(secao);
   }
 
   function onNavClick(evento) {
@@ -75,7 +76,9 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
     }
   }
 
+  const atalhos = root.querySelector("[data-admin-atalhos]");
   nav?.addEventListener?.("click", onNavClick);
+  atalhos?.addEventListener?.("click", onNavClick);
   root.addEventListener?.("click", onPick);
   menuBotao?.addEventListener?.("click", alternarMenu);
   const sair = root.querySelector("[data-admin-sign-out]");
@@ -103,6 +106,7 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
 
     destroy() {
       nav?.removeEventListener?.("click", onNavClick);
+      atalhos?.removeEventListener?.("click", onNavClick);
       root.removeEventListener?.("click", onPick);
       menuBotao?.removeEventListener?.("click", alternarMenu);
       sair?.removeEventListener?.("click", onSair);

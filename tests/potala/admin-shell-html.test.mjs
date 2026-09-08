@@ -22,8 +22,14 @@ test("cada área de operação tem a própria tela, fora do editor", () => {
   assert.match(html, /Marina Alves/);
 });
 
-test("a seção ativa é a Jornada", () => {
-  assert.match(html, /data-section="jornada" aria-current="page"/);
+test("a abertura é a grade de atalhos, não o editor", () => {
+  assert.match(html, /data-admin-section="inicio"/);
+  assert.match(html, /data-section="inicio" aria-current="page"/);
+  assert.match(html, /data-admin-atalhos/);
+  assert.match(html, /data-admin-workspace="jornada"[^>]*hidden/);
+  for (const secao of ["jornada", "financeiro", "atendimentos", "salas", "virtuais", "usuarios", "blog"]) {
+    assert.match(html, new RegExp(`data-admin-atalhos[\\s\\S]*data-section="${secao}"`));
+  }
 });
 
 test("os ganchos que os módulos procuram existem", () => {
