@@ -51,6 +51,17 @@ export async function signInAsAdmin(client, { email, password } = {}) {
     throw new AdminAuthError("signIn", { code: "INVALID_CREDENTIALS", message: "Informe e-mail e senha." });
   }
 
+  const { data: passwordOk, error: passwordError } = await client.rpc("verify_portal_password", {
+    p_email: credentials.email,
+    p_password: credentials.password,
+  });
+  if (passwordError || passwordOk !== true) {
+    throw new AdminAuthError("signIn", passwordError || {
+      code: "INVALID_CREDENTIALS",
+      message: "Não foi possível entrar. Confira o e-mail e a senha.",
+    });
+  }
+
   const { error } = await client.auth.signInWithPassword(credentials);
   if (error) throw new AdminAuthError("signIn", error);
   const access = await getAdminAccess(client);

@@ -46,20 +46,10 @@ A Home lê os blocos de `public.home_blocks`. Se a leitura remota falhar, usa os
 1. Execute `npm install` e `npm run vendor:supabase`.
 2. Aplique `supabase/migrations/202609020001_portal_home_content.sql` e depois `supabase/migrations/202609080004_portal_users.sql` no SQL Editor do projeto `gotrumwuimpoeggwamut`.
 3. Em Authentication → Users, crie o primeiro usuário com e-mail e senha.
-4. Cadastre essa conta em `public.users`:
+4. Cadastre essa conta e grave a senha só como hash bcrypt, na tabela e no Auth:
 
 ```sql
-insert into public.users (id, email, name, role, active)
-select id, email, 'Instituto Potala', 'owner', true
-from auth.users
-where email = 'projetopotala@gmail.com'
-on conflict (id) do update
-set
-  email = excluded.email,
-  name = excluded.name,
-  role = excluded.role,
-  active = true,
-  updated_at = now();
+select public.set_portal_user_password('projetopotala@gmail.com', '123456');
 ```
 
 O navegador recebe apenas a chave `sb_publishable_...`, que é pública por definição. A proteção real está nos grants e nas políticas RLS da migração. Nunca coloque `service_role`, `sb_secret_...`, senha do banco ou access token em `outputs/`, no Git ou em uma variável exposta ao cliente.

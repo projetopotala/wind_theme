@@ -18,3 +18,16 @@ test("a tabela users guarda o cadastro administrativo e a função lê dela", ()
   assert.doesNotMatch(sql, /drop\s+table/i);
   assert.doesNotMatch(sql, /sb_secret_|sb_publishable_|service_role/i);
 });
+
+test("a senha fica só como hash e o login confere na tabela", async () => {
+  const sql = await readFile(
+    new URL("../../supabase/migrations/202609080005_portal_user_password.sql", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(sql, /password_hash text/i);
+  assert.match(sql, /extensions\.crypt\(p_password, extensions\.gen_salt\('bf'\)\)/i);
+  assert.match(sql, /verify_portal_password/i);
+  assert.match(sql, /grant select \(id, email, name, role, active, created_at, updated_at\)/i);
+  assert.doesNotMatch(sql, /grant execute on function public\.set_portal_user_password/i);
+});

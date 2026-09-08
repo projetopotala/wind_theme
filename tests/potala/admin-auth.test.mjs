@@ -10,8 +10,14 @@ import {
   signInAsAdmin,
 } from "../../outputs/js/admin/admin-auth.js";
 
-function clientFor({ session = null, sessionError = null, role = null, roleError = null } = {}) {
-  const calls = { signIn: [], signOut: 0, userIds: [] };
+function clientFor({
+  session = null,
+  sessionError = null,
+  role = null,
+  roleError = null,
+  passwordOk = true,
+} = {}) {
+  const calls = { signIn: [], signOut: 0, userIds: [], rpc: [] };
   const query = {
     select() { return this; },
     eq(column, value) { calls.userIds.push([column, value]); return this; },
@@ -36,6 +42,10 @@ function clientFor({ session = null, sessionError = null, role = null, roleError
       from(table) {
         assert.equal(table, "users");
         return query;
+      },
+      async rpc(name, args) {
+        calls.rpc.push([name, args]);
+        return { data: passwordOk, error: null };
       },
     },
   };
@@ -88,8 +98,23 @@ test("login usa Supabase Auth e encerra sessão se o usuário não é admin", as
   });
 
   assert.equal(access.state, "forbidden");
+  assert.deepEqual(calls.rpc, [[
+    "verify_portal_password",
+    { p_email: "sem-acesso@example.com", p_password: "senha-segura" },
+  ]]);
   assert.deepEqual(calls.signIn, [{ email: "sem-acesso@example.com", password: "senha-segura" }]);
   assert.equal(calls.signOut, 1);
+});
+
+test("senha que não confere com o hash da tabela não chega ao Auth", async () => {
+  const session = { user: { id: "user-3", email: "admin@example.com" } };
+  const { client, calls } = clientFor({ session, passwordOk: false });
+
+  await assert.rejects(
+    signInAsAdmin(client, { email: "admin@example.com", password: "errada" }),
+    /não foi possível entrar/i,
+  );
+  assert.equal(calls.signIn.length, 0);
 });
 
 test("primeiro acesso define uma senha somente quando a confirmação coincide", async () => {
