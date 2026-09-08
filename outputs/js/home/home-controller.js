@@ -8,7 +8,9 @@ import {
 } from "./admin-preview.js";
 import { invitationsFor, nextInvitationIndex } from "./invitations.js";
 import { createLocalContentRepository } from "./content-repository.js";
-import { DEFAULT_HOME_BLOCKS, JOURNEY_DISCOVERIES } from "./journey-data.js";
+import { DEFAULT_HOME_BLOCKS, JOURNEY_DISCOVERIES, NOVIDADES_PADRAO } from "./journey-data.js";
+import { comNovidadesDoCodigo, ehNovidade, novidadesPrimeiro } from "./home-novidades.js";
+import { procurarBloco } from "./home-busca.js";
 import { createHomePath } from "./home-path-three.js";
 import { createLandscapeVideo } from "./landscape-video.js";
 import { mountJourney } from "./home-scenes.js";
@@ -34,6 +36,41 @@ export function smoothJourneyScroll(current, target, elapsed, { reducedMotion = 
 
 export function smoothRegionPresence(current, target, elapsed, { reducedMotion = false } = {}) {
   return reducedMotion ? target : damp(current, target, elapsed, 360);
+}
+
+export function regionIndexWithinPair({
+  pairTop = 0,
+  pairHeight = 1,
+  scrollY = 0,
+  viewportHeight = 1,
+  regionCount = 1,
+} = {}) {
+  const count = Math.max(1, Math.trunc(regionCount));
+  const focus = scrollY + Math.max(1, viewportHeight) * .5;
+  const progress = clamp((focus - pairTop) / Math.max(1, pairHeight), 0, .999999);
+  return Math.min(count - 1, Math.floor(progress * count));
+}
+
+/**
+ * O caminho pertence à jornada, não ao prólogo. Seu zero é a primeira dupla
+ * de cartões; assim o “Bem-vindo” permanece limpo e a curva ainda alcança o
+ * fim exatamente quando a página termina.
+ */
+export function pathProgressAfterPrologue({
+  scrollTop = 0,
+  journeyStart = 0,
+  scrollHeight = 1,
+  viewportHeight = 1,
+} = {}) {
+  const current = Math.max(0, Number(scrollTop) || 0);
+  const start = Math.max(0, Number(journeyStart) || 0);
+  if (current < start) return { active: false, progress: 0 };
+
+  const end = Math.max(start + 1, (Number(scrollHeight) || 1) - Math.max(1, Number(viewportHeight) || 1));
+  return {
+    active: true,
+    progress: clamp((current - start) / (end - start)),
+  };
 }
 
 export function motionOffsetForRegion({
@@ -174,8 +211,25 @@ export function createHomeController({
    * onde tirar título, descrição ou endereço, e simplesmente não apareciam — sem
    * erro, sem espaço vazio, sem nada que indicasse a ausência.
    */
-  const mounted = mountJourney(root, { regions: comRelacoes(blocks), discoveries: JOURNEY_DISCOVERIES });
-  const path = pathFactory(canvas, { blocks, reducedMotion });
+  /*
+   * AS NOVIDADES SOBEM AO TOPO, e a reordenação acontece AQUI.
+   *
+   * Não no banco e não no painel: lá a ordem é a que o editor arrastou, e ela
+   * precisa continuar sendo dele. O que a Home faz é uma leitura — mostrar
+   * primeiro o que mudou — e uma leitura não deve reescrever a fonte.
+   *
+   * Fazer isso na montagem também é o que permite marcar um bloco pelo painel e
+   * vê-lo subir sem tocar em código: `novidadesPrimeiro` só olha as tags.
+   *
+   * `path` recebe a MESMA lista, e não a original. A estrada é desenhada a
+   * partir das posições dos blocos; com duas ordens diferentes, os cartões
+   * apareceriam num lugar e a curva da estrada em outro.
+   */
+  /* As novidades do código entram ANTES de ordenar: elas não estão no banco, e
+     sem isto a Home e a prévia mostrariam só as onze linhas de lá. */
+  const emOrdem = novidadesPrimeiro(comNovidadesDoCodigo(blocks, NOVIDADES_PADRAO));
+  const mounted = mountJourney(root, { regions: comRelacoes(emOrdem), discoveries: JOURNEY_DISCOVERIES });
+  const path = pathFactory(canvas, { blocks: emOrdem, reducedMotion });
   /**
    * Quanto o vão do trajeto saiu do centro da tela, em pixels.
    *
@@ -297,7 +351,13 @@ export function createHomeController({
      */
     const alvo = pair.getBoundingClientRect().top + scrollY;
     scrollTo({ top: alvo, behavior: reducedMotion ? "auto" : "smooth" });
-    expansion.open(id);
+    /*
+     * `abrirCentralizado` e não `open`: abrindo direto, o painel nascia com o
+     * par ainda a meio caminho — a rolagem acima é suave e não terminou — e
+     * sobravam faixas de paisagem em cima e embaixo dele. É o mesmo defeito que
+     * o clique num cartão já não tem, e a mesma correção.
+     */
+    expansion.abrirCentralizado(id);
     // A rolagem que o próprio clique disparou não pode fechar o que ele abriu.
     armAutoClose({ programmatic: true });
   }
@@ -311,13 +371,84 @@ export function createHomeController({
    */
   const menuNav = root.querySelector(".journey-menu");
   const menuToggle = root.querySelector("[data-menu-toggle]");
+  const menuViewport = root.querySelector(".journey-menu-viewport");
+  const desktopMenu = matchMedia("(min-width: 901px)");
+
+  /*
+   * A roleta rola até a POSIÇÃO DO ITEM, e não até `índice × altura da linha`.
+   *
+   * A conta funcionava enquanto a lista era só de blocos, todos da mesma
+   * altura. Com os títulos de grupo ("Recentes", "Seções") entre eles, o
+   * enésimo bloco deixou de estar na enésima linha: a roleta parava sempre
+   * alguns itens acima, e o item ativo ficava fora do centro sem que nada
+   * indicasse a causa.
+   *
+   * Perguntar ao próprio elemento onde ele está também sobrevive a linhas de
+   * alturas diferentes, que é o que um título de grupo é.
+   */
+  /* A posição do bloco na jornada inteira, para o contador "05 / 15" continuar
+     contando blocos e não linhas da roleta — que agora são menos. */
+  function indiceDoBloco(id) {
+    return emOrdem.findIndex((bloco) => bloco.id === id);
+  }
+
+  function rolarRoletaAte(linha) {
+    if (!menuViewport || !linha) return;
+    menuViewport.scrollTo?.({
+      /* Centrado, pelo mesmo motivo do item ativo: a roleta conta o caminho
+         inteiro, e no topo ela só contaria a metade que falta. */
+      top: menuViewport.scrollTop
+        + (linha.getBoundingClientRect().top - menuViewport.getBoundingClientRect().top)
+        - (menuViewport.clientHeight - linha.offsetHeight) / 2,
+      behavior: reducedMotion ? "auto" : "smooth",
+    });
+  }
+
+  function setMenuWheelIndex(index, { animate = true } = {}) {
+    if (!menuViewport || index < 0) return;
+    const linha = mounted.menuItems[index]?.closest?.("li");
+    menuViewport.dataset.currentIndex = String(index);
+    /*
+     * A distância sai da diferença entre os RETÂNGULOS, e não de `offsetTop`.
+     *
+     * `offsetTop` é medido contra o `offsetParent`, e o da linha não é o mesmo
+     * da roleta — a conta dava um deslocamento de umas seis linhas, e o item
+     * ativo parava fora da vista. A diferença de retângulos somada à rolagem
+     * atual não depende de quem é pai de quem.
+     */
+    /*
+     * O item ativo fica no CENTRO da roleta, não no topo.
+     *
+     * Encostado no topo, ele tinha a lista inteira embaixo e nada em cima: não
+     * dava para ver de onde se veio, só para onde se vai. No centro, a roleta
+     * mostra os dois lados do caminho — que é o que ela existe para contar.
+     */
+    const destino = linha
+      ? menuViewport.scrollTop
+        + (linha.getBoundingClientRect().top - menuViewport.getBoundingClientRect().top)
+        - (menuViewport.clientHeight - linha.offsetHeight) / 2
+      : index * 38;
+    menuViewport.scrollTo?.({
+      top: destino,
+      behavior: animate && !reducedMotion ? "smooth" : "auto",
+    });
+  }
+
+  const onMenuWheelFocus = (event) => {
+    const link = event.target.closest?.("[data-menu-target]");
+    const index = mounted.menuItems.indexOf(link);
+    setMenuWheelIndex(index);
+  };
+  menuViewport?.addEventListener("focusin", onMenuWheelFocus);
 
   function setMenuOpen(open) {
     if (!menuNav || !menuToggle) return;
-    menuToggle.setAttribute("aria-expanded", String(open));
-    menuToggle.setAttribute("aria-label", open ? "Fechar o menu de seções" : "Abrir o menu de seções");
-    menuNav.classList.toggle("is-open", open);
-    if (open) menuNav.removeAttribute("inert");
+    const next = desktopMenu.matches || Boolean(open);
+    menuToggle.setAttribute("aria-expanded", String(next));
+    menuToggle.setAttribute("aria-label", next ? "Fechar navegação" : "Abrir navegação");
+    menuNav.classList.toggle("is-open", next);
+    document.body.classList.toggle("is-journey-menu-open", next && !desktopMenu.matches);
+    if (next) menuNav.removeAttribute("inert");
     else menuNav.setAttribute("inert", "");
   }
 
@@ -327,38 +458,180 @@ export function createHomeController({
   menuToggle?.addEventListener("click", onMenuToggle);
 
   const onMenuClick = (event) => {
-    const botao = event.target.closest?.("[data-menu-target]");
-    if (!botao) return;
-    goToSection(botao.dataset.menuTarget);
-    // Escolhida a seção, o menu sai da frente: mantê-lo aberto esconderia
-    // justamente o bloco que o clique acabou de trazer.
+    const link = event.target.closest?.("[data-menu-target]");
+    if (!link) return;
     setMenuOpen(false);
   };
   menuNav?.addEventListener("click", onMenuClick);
 
-  /*
-   * Qual seção está sendo percorrida, para o menu dizer onde se está.
+  const onMenuBreakpoint = () => setMenuOpen(desktopMenu.matches);
+  desktopMenu.addEventListener?.("change", onMenuBreakpoint);
+  setMenuOpen(desktopMenu.matches);
+
+  const onMenuKeydown = (event) => {
+    if (event.key !== "Escape" || desktopMenu.matches || !menuNav?.classList.contains("is-open")) return;
+    setMenuOpen(false);
+    menuToggle?.focus();
+  };
+  document.addEventListener("keydown", onMenuKeydown);
+
+  let menuPairBounds = [];
+  let pathJourneyStart = 0;
+
+  function measureMenuPairs() {
+    menuPairBounds = mounted.pairs.map((pair) => {
+      const rect = pair.getBoundingClientRect();
+      return {
+        /* O elemento vai junto: é a classe `is-present` dele que diz se há
+           cartão na tela, e o retângulo sozinho não conta isso. */
+        element: pair,
+        top: rect.top + scrollY,
+        height: rect.height,
+        ids: [...pair.querySelectorAll(".journey-region")]
+          .map((region) => region.dataset.regionId),
+      };
+    });
+    pathJourneyStart = menuPairBounds[0]?.top ?? 0;
+  }
+
+  function updateCurrentMenuItem() {
+    if (!menuPairBounds.length) return;
+    const focus = scrollY + innerHeight * .5;
+    const pair = menuPairBounds.reduce((closest, candidate) => {
+      const bottom = candidate.top + candidate.height;
+      const distance = focus < candidate.top
+        ? candidate.top - focus
+        : focus > bottom ? focus - bottom : 0;
+      return !closest || distance < closest.distance ? { ...candidate, distance } : closest;
+    }, null);
+    const localIndex = regionIndexWithinPair({
+      pairTop: pair.top,
+      pairHeight: pair.height,
+      scrollY,
+      viewportHeight: innerHeight,
+      regionCount: pair.ids.length,
+    });
+    const activeId = pair.ids[localIndex];
+    /*
+     * O trecho atual — novidades ou seções — governa três coisas de uma vez: o
+     * título no alto da Home, a linha "Recentes" da roleta e a rolagem dela.
+     *
+     * As novidades NÃO têm linha própria na roleta: as quatro compartilham uma.
+     * Por isso a busca por `data-menu-target` não as encontra, e sem este
+     * caminho separado o `activeIndex < 0` abaixo simplesmente devolvia — a
+     * roleta congelava nos quatro primeiros cartões, e o título não aparecia.
+     */
+    const blocoAtivo = emOrdem.find((bloco) => bloco.id === activeId);
+    const emNovidades = Boolean(blocoAtivo && ehNovidade(blocoAtivo));
+
+    const linhaRecentes = root.querySelector("[data-menu-recentes]");
+    const linhaDestacado = root.querySelector("[data-menu-destacado]");
+    /*
+     * `data-atual`, e não `aria-current`.
+     *
+     * O marcador diz em que GRUPO se está; o item da lista diz em que SEÇÃO. Os
+     * dois acesos ao mesmo tempo com `aria-current` davam duas "posições
+     * atuais" na mesma navegação, e um leitor de tela anuncia as duas sem ter
+     * como dizer que uma contém a outra.
+     */
+    linhaRecentes?.setAttribute("data-atual", emNovidades ? "true" : "false");
+    linhaDestacado?.setAttribute("data-atual", emNovidades ? "false" : "true");
+
+    const activeIndex = mounted.menuItems.findIndex((item) => item.dataset.menuTarget === activeId);
+
+    mounted.menuItems.forEach((item, index) => {
+      item.setAttribute("aria-current", index === activeIndex ? "true" : "false");
+    });
+    const counter = root.querySelector("[data-journey-current]");
+    if (counter) counter.textContent = String(indiceDoBloco(activeId) + 1).padStart(2, "0");
+
+    /* Nas novidades a roleta para na linha "Recentes"; nas seções, na linha da
+       seção. Sem isto ela ficava presa onde estava quando a jornada abriu. */
+    if (emNovidades && linhaRecentes) rolarRoletaAte(linhaRecentes);
+    else if (activeIndex >= 0) setMenuWheelIndex(activeIndex);
+  }
+
+  /* ---------------------------------------------------------------
+   * A busca da barra lateral
    *
-   * A faixa estreita no meio da tela (as margens de -45%) é o que impede dois
-   * pares de se dizerem atuais ao mesmo tempo durante a passagem de um para o
-   * outro. Observador em vez de leitura por quadro: saber a seção atual não
-   * justifica medir layout 60 vezes por segundo.
+   * Ela NÃO redireciona. Encontra o bloco que responde ao que foi digitado,
+   * desce até ele e o abre — e para por aí. Buscar "tai chi" e ser jogado para
+   * outra página tiraria da pessoa a chance de ver que ao lado há as práticas
+   * orientais, adiante os cursos e depois a programação. A busca abre uma porta
+   * na jornada; não atravessa a porta por ninguém.
+   * --------------------------------------------------------------- */
+  const formaDeBusca = root.querySelector("[data-journey-busca]");
+  const campoDeBusca = root.querySelector("[data-journey-busca-campo]");
+  const avisoDeBusca = root.querySelector("[data-journey-busca-aviso]");
+  const abrirBusca = root.querySelector("[data-journey-abrir-busca]");
+
+  function mostrarBusca() {
+    if (!formaDeBusca) return;
+    formaDeBusca.hidden = false;
+    /* O menu fecha: ele cumpriu o papel de revelar a busca, e aberto por cima
+       dela cobriria justamente o campo que se acabou de pedir. */
+    abrirBusca?.closest?.("details")?.removeAttribute?.("open");
+    campoDeBusca?.focus?.();
+  }
+
+  const onAbrirBusca = () => mostrarBusca();
+  abrirBusca?.addEventListener("click", onAbrirBusca);
+
+  /*
+   * O ÍNDICE DAS SEÇÕES chega na PRIMEIRA busca, e não no carregamento.
+   *
+   * São 22 KB que a esmagadora maioria das visitas nunca vai usar: quem percorre
+   * a jornada não abre a busca. Baixá-lo junto com a Home cobraria isso de todo
+   * mundo pelo benefício de alguns.
+   *
+   * A promessa é guardada, não o resultado: duas buscas seguidas antes de a
+   * primeira responder pediriam o arquivo duas vezes.
    */
-  const currentObserver = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver(
-    (entradas) => {
-      for (const entrada of entradas) {
-        if (!entrada.isIntersecting) continue;
-        const ids = [...entrada.target.querySelectorAll(".journey-region")]
-          .map((region) => region.dataset.regionId);
-        for (const item of mounted.menuItems) {
-          const atual = ids.includes(item.dataset.menuTarget);
-          item.setAttribute("aria-current", atual ? "true" : "false");
-        }
+  let indiceDasSecoes = null;
+
+  function carregarIndice() {
+    if (!indiceDasSecoes) {
+      indiceDasSecoes = fetch("busca-indice.json")
+        .then((resposta) => (resposta.ok ? resposta.json() : null))
+        /*
+         * Falhar aqui NÃO pode quebrar a busca.
+         *
+         * Sem o índice ela continua encontrando pelo texto dos blocos, que é o
+         * que ela sempre soube fazer. Uma busca que responde menos é melhor que
+         * uma que não responde.
+         */
+        .catch(() => null);
+    }
+    return indiceDasSecoes;
+  }
+
+  const onBuscar = async (evento) => {
+    evento.preventDefault?.();
+    const termo = campoDeBusca?.value ?? "";
+    const indice = await carregarIndice();
+    const achado = procurarBloco(emOrdem, termo, indice);
+
+    if (!achado) {
+      /*
+       * Dizer que não achou, em vez de abrir um bloco qualquer.
+       *
+       * Levar a pessoa ao primeiro da lista faria o site parecer ter entendido
+       * — e ela leria o bloco errado procurando o que pediu.
+       */
+      if (avisoDeBusca) {
+        avisoDeBusca.textContent = termo.trim()
+          ? "Nada na jornada responde a isso."
+          : "Escreva o que procura.";
       }
-    },
-    { rootMargin: "-45% 0px -45% 0px" },
-  );
-  mounted.pairs.forEach((pair) => currentObserver?.observe(pair));
+      return;
+    }
+
+    if (avisoDeBusca) avisoDeBusca.textContent = "";
+    formaDeBusca.hidden = true;
+    goToSection(achado.id);
+  };
+
+  formaDeBusca?.addEventListener("submit", onBuscar);
 
   const handoff = consumeHandoff();
   const removeSound = mountSoundResume(root, handoff.soundEnabled === true);
@@ -452,10 +725,18 @@ export function createHomeController({
       "--journey-scroll-position",
       scrollCuePosition({ progress, movable: true }),
     );
-    path.setProgress(progress);
+    updateCurrentMenuItem();
+    const pathState = pathProgressAfterPrologue({
+      scrollTop: scrollY,
+      journeyStart: pathJourneyStart,
+      scrollHeight: document.documentElement.scrollHeight,
+      viewportHeight: innerHeight,
+    });
+    path.setActive?.(pathState.active);
+    path.setProgress(pathState.progress);
     /* O fundo anda pelo MESMO número que move o trajeto — daí os dois nunca
        saírem de sincronia. */
-    landscapeVideo.setProgress(progress);
+    landscapeVideo.setProgress(pathState.progress);
   }
 
   function requestUpdate() {
@@ -463,6 +744,7 @@ export function createHomeController({
   }
 
   function onResize() {
+    measureMenuPairs();
     path.resize();
     requestUpdate();
   }
@@ -480,6 +762,7 @@ export function createHomeController({
   window.addEventListener("resize", onResize, { passive: true });
   document.addEventListener("visibilitychange", onVisibilityChange);
   document.body.classList.add("is-ready");
+  measureMenuPairs();
   requestUpdate();
 
   return {
@@ -498,9 +781,12 @@ export function createHomeController({
       clearTimeout(entryTimer);
       presenceObserver.disconnect();
       if (shiftFrame) cancelAnimationFrame(shiftFrame);
-      currentObserver?.disconnect();
+      menuViewport?.removeEventListener("focusin", onMenuWheelFocus);
       menuNav?.removeEventListener("click", onMenuClick);
       menuToggle?.removeEventListener("click", onMenuToggle);
+      desktopMenu.removeEventListener?.("change", onMenuBreakpoint);
+      document.removeEventListener("keydown", onMenuKeydown);
+      document.body.classList.remove("is-journey-menu-open");
       clearTimeout(inviteTimer);
       clearTimeout(settleTimer);
       invite?.removeEventListener("pointerenter", pauseInvitation);
@@ -508,6 +794,8 @@ export function createHomeController({
       invite?.removeEventListener("focus", pauseInvitation);
       invite?.removeEventListener("blur", resumeInvitation);
       invite?.removeEventListener("click", onInviteClick);
+      abrirBusca?.removeEventListener("click", onAbrirBusca);
+      formaDeBusca?.removeEventListener("submit", onBuscar);
       expansion.destroy();
       landscapeVideo.destroy();
       path.destroy();

@@ -13,12 +13,17 @@ import {
 } from "../../outputs/js/home/admin-preview.js";
 
 test("Home oferece acesso discreto ao painel e o painel contém a prévia real", async () => {
-  const [home, admin] = await Promise.all([
-    readFile(new URL("../../outputs/transcendido.html", import.meta.url), "utf8"),
+  const [homeScenes, admin] = await Promise.all([
+    readFile(new URL("../../outputs/js/home/home-scenes.js", import.meta.url), "utf8"),
     readFile(new URL("../../outputs/admin.html", import.meta.url), "utf8"),
   ]);
 
-  assert.match(home, /class="journey-admin-link"[^>]+href="admin\.html"/);
+  /*
+   * O acesso ao painel saiu da pilula larga e virou uma opcao dentro do botao
+   * redondo do rodape. Ele era o item mais destacado da barra e o unico que o
+   * visitante nunca vai usar — o painel e de quem mantem o site.
+   */
+  assert.match(homeScenes, /journey-sidebar-opcoes[\s\S]*?href="admin\.html"/);
   assert.match(admin, /<iframe[^>]+data-admin-preview/);
   assert.match(admin, /src="transcendido\.html\?admin-preview=1"/);
 });

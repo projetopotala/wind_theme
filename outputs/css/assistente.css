@@ -1,0 +1,131 @@
+/*
+ * A PRÉVIA DO ASSISTENTE, como componente de página.
+ *
+ * A Recepção tem uma versão anterior desta mesma coisa, escrita dentro do CSS
+ * daquela página e amarrada por seletores compartilhados ao widget de retorno
+ * que vive só lá. Este arquivo é a versão solta: não depende de nenhuma página,
+ * e é para cá que a da Recepção deve migrar quando alguém for mexer nela.
+ *
+ * As cores saem de variáveis com padrão escuro. A seção que usar o componente
+ * pode redefini-las e o componente acompanha, sem uma segunda folha de estilo
+ * só para trocar de tom.
+ */
+
+.assistente {
+  --assistente-fundo: #241a12;
+  --assistente-tinta: #f4ead9;
+  --assistente-linha: rgba(244, 234, 217, .22);
+  --assistente-suave: rgba(244, 234, 217, .66);
+  --assistente-realce: #d7ba78;
+
+  display: grid;
+  gap: clamp(32px, 6vw, 96px);
+  align-items: start;
+  padding: clamp(64px, 9vw, 132px) clamp(24px, 8vw, 136px);
+  color: var(--assistente-tinta);
+  background: var(--assistente-fundo);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 900px) {
+  .assistente { grid-template-columns: minmax(280px, .8fr) minmax(400px, 1.2fr); }
+}
+
+.assistente-kicker {
+  margin: 0 0 14px;
+  color: var(--assistente-realce);
+  font: 700 .68rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.assistente h2 {
+  margin: 0 0 18px;
+  font: 400 clamp(2.6rem, 5vw, 5.4rem)/.94 Georgia, "Times New Roman", serif;
+  letter-spacing: -.05em;
+}
+
+.assistente-copy p {
+  max-width: 46ch;
+  margin: 0;
+  color: var(--assistente-suave);
+  font: 400 .96rem/1.75 Arial, Helvetica, sans-serif;
+}
+
+.assistente-forma { display: grid; gap: 18px; }
+
+.assistente-forma > label {
+  color: var(--assistente-suave);
+  font: 700 .68rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+/*
+ * O campo e o botão dividem uma linha SUBLINHADA, e não uma caixa.
+ *
+ * Uma caixa com borda em volta lê como formulário administrativo; a linha lê
+ * como um lugar de escrever. É a mesma decisão da Recepção, e ela é o que faz
+ * a prévia parecer uma conversa em vez de um cadastro.
+ */
+.assistente-campo {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--assistente-linha);
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.assistente-campo input {
+  min-width: 0;
+  border: 0;
+  color: inherit;
+  font: 400 clamp(1rem, 1.6vw, 1.3rem)/1.4 Georgia, "Times New Roman", serif;
+  background: transparent;
+}
+
+.assistente-campo input::placeholder { color: rgba(244, 234, 217, .32); }
+.assistente-campo input:focus-visible { outline: 2px solid var(--assistente-realce); outline-offset: 4px; }
+
+.assistente-campo button,
+.assistente-sugestoes button {
+  border: 1px solid var(--assistente-linha);
+  border-radius: 999px;
+  color: var(--assistente-tinta);
+  font: 700 .66rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  background: none;
+  cursor: pointer;
+}
+
+.assistente-campo button { padding: 11px 22px; }
+.assistente-sugestoes button { padding: 11px 15px; color: var(--assistente-suave); }
+
+.assistente-campo button:hover,
+.assistente-sugestoes button:hover {
+  border-color: var(--assistente-realce);
+  color: var(--assistente-realce);
+}
+
+.assistente-campo button:focus-visible,
+.assistente-sugestoes button:focus-visible {
+  outline: 2px solid var(--assistente-realce);
+  outline-offset: 3px;
+}
+
+.assistente-sugestoes { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/*
+ * O aviso não reserva espaço enquanto está vazio.
+ *
+ * Um vão permanente embaixo das sugestões faria a seção parecer ter esquecido
+ * de carregar alguma coisa — e a mensagem só existe depois de alguém enviar.
+ */
+.assistente-aviso {
+  min-height: 1.2em;
+  margin: 0;
+  color: var(--assistente-realce);
+  font: 400 .82rem/1.5 Arial, Helvetica, sans-serif;
+}

@@ -67,14 +67,35 @@
       </div>
     </section>
 
-    <section class="about-signature" aria-labelledby="signature-title">
-      <p class="about-kicker">Nossa essência</p>
-      <h2 id="signature-title">Não queremos indicar um único caminho. Queremos iluminar possibilidades para que cada pessoa reconheça o seu.</h2>
-      <a class="about-action about-action--light" href="transcendido.html">Voltar à travessia <span aria-hidden="true">↗</span></a>
+    <div class="about-closing-pause" aria-hidden="true"></div>
+
+    <div class="about-closing-veil" data-about-closing-veil hidden aria-live="polite"
+      role="dialog" aria-modal="true" aria-labelledby="about-closing-copy" tabindex="-1">
+      <canvas class="about-closing-canvas" data-about-closing-canvas aria-hidden="true"></canvas>
+      <p id="about-closing-copy">Conhecer um lugar é importante. Mas conhecer as pessoas, as ideias e os propósitos que o sustentam tornam qualquer encontro muito mais verdadeiro. Agora que você já conhece um pouco da nossa história, gostaríamos de apresentar aquilo que fazemos todos os dias: cuidar de pessoas.</p>
+    </div>
+
+    <section class="about-closing-stage" data-about-closing-trigger aria-label="Um encontro no caminho">
+      <figure class="about-closing-photo">
+        <img src="media/quem-somos-encerramento-v1.png"
+          alt="Duas pessoas caminham juntas por um jardim em direção a um espaço acolhedor"
+          width="1672" height="941" loading="lazy" decoding="async">
+      </figure>
     </section>
 
+    <!--
+      O CAMINHO DE VOLTA, que esta página não tinha.
+
+      Ela era a única seção sem nenhum link interno: o único jeito de sair daqui
+      era o menu do topo. Quando esse menu deixou de aparecer nas seções, a
+      página virou beco sem saída — a pessoa lê a história do Instituto e só lhe
+      resta o botão de voltar do navegador.
+
+      As outras onze seções já terminavam assim; esta tinha ficado de fora.
+    -->
     <footer class="about-footer">
       <p>Instituto Cultural Potala · Indaiatuba, SP</p>
+      <a href="transcendido.html">Voltar à travessia</a>
       <a href="https://www.institutopotala.com/quemsomos" rel="noreferrer">Conhecer o site oficial</a>
     </footer>
   </main>

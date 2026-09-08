@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#e9ddca">
+  <meta name="description" content="Revista Potala: atualidade, ciência, cultura e sociedade sob um olhar integrativo.">
+  <title>Revista — Instituto Potala</title>
+  <script>document.documentElement.classList.add("js");</script>
+  <link rel="preload" href="media/journey-inspiracao.webp" as="image" type="image/webp" fetchpriority="high">
+  <link rel="stylesheet" href="secoes.css">
+  <link rel="stylesheet" href="css/section-editorial.css">
+  <link rel="stylesheet" href="css/section-magazine.css">
+  <script type="module" src="secoes.js"></script>
+  <script type="module" src="js/sections/front-demo.js"></script>
+  <script type="module" src="js/revista/magazine-filter.js"></script>
+</head>
+<body data-section="revista">
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <main class="editorial-page magazine-page" id="conteudo" data-section-family="editorial">
+    <header class="magazine-hero" aria-labelledby="magazine-title">
+      <img src="media/journey-inspiracao.webp" alt="Montanhas e vale iluminados por uma luz suave entre a névoa" width="1600" height="900" fetchpriority="high" decoding="async">
+      <div class="magazine-hero-shade" aria-hidden="true"></div>
+      <div class="magazine-masthead">
+        <a href="transcendido.html"><img src="media/potala-mark-transparent.png" alt="Instituto Potala" width="84" height="70"></a>
+        <strong>Revista Potala</strong>
+        <span>Edição de apresentação · 01</span>
+      </div>
+      <div class="magazine-hero-copy" data-reveal>
+        <p class="editorial-kicker">Mundo · cuidado · consciência</p>
+        <h1 id="magazine-title">O presente pede contexto.</h1>
+        <p>Selecionamos acontecimentos que merecem atenção e os aproximamos da ciência, da filosofia, da saúde integral e da experiência humana.</p>
+        <a class="editorial-action" href="#pautas">Ler com calma <span aria-hidden="true">↓</span></a>
+      </div>
+      <aside class="magazine-cover-lines" aria-label="Nesta edição" data-reveal>
+        <p>Nesta edição</p>
+        <a href="#pautas"><span>Ciência e saúde</span>Música, cérebro e vínculo</a>
+        <a href="#pautas"><span>Sociedade</span>Longevidade e pertencimento</a>
+        <a href="#pautas"><span>Ambiente</span>Calor, sono e adaptação</a>
+      </aside>
+    </header>
+
+    <section class="magazine-archive magazine-issue" id="pautas" aria-labelledby="magazine-archive-title">
+      <header data-reveal>
+        <p class="magazine-issue-number">01</p>
+        <div><p class="editorial-kicker">Edição de apresentação</p><h2 id="magazine-archive-title">Perspectivas para viver o nosso tempo.</h2></div>
+        <ol class="magazine-toc" aria-label="Sumário da edição">
+          <li><span>01</span> Ciência e saúde</li>
+          <li><span>02</span> Comportamento e sociedade</li>
+          <li><span>03</span> Meio ambiente</li>
+          <li><span>04</span> Arte e cultura</li>
+        </ol>
+      </header>
+
+      <div class="magazine-filter" data-magazine-filter data-reveal>
+        <label><span>Pesquisar leituras</span><input type="search" placeholder="Tema ou palavra-chave" autocomplete="off" data-magazine-query></label>
+        <div role="group" aria-label="Filtrar pautas por tema">
+          <button type="button" data-magazine-category="todos" aria-pressed="true">Todas</button>
+          <button type="button" data-magazine-category="saude" aria-pressed="false">Ciência e saúde</button>
+          <button type="button" data-magazine-category="sociedade" aria-pressed="false">Comportamento e sociedade</button>
+          <button type="button" data-magazine-category="cultura" aria-pressed="false">Cultura</button>
+          <button type="button" data-magazine-category="ambiente" aria-pressed="false">Meio ambiente</button>
+        </div>
+        <p data-magazine-status role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="magazine-grid">
+        <article class="magazine-lead-story" data-magazine-article data-category="saude" data-title="Música, cérebro e vínculo" data-excerpt="O que novas pesquisas ajudam a compreender sobre memória, emoção e convivência" data-reveal>
+          <img src="media/journey-cultura.webp" alt="Ambiente cultural iluminado ao entardecer" width="1600" height="900" loading="lazy" decoding="async">
+          <div><span>Ciência e saúde · capa</span><h3>Música, cérebro e vínculo</h3><p>O que novas pesquisas ajudam a compreender sobre memória, emoção e convivência.</p><small>Leitura principal · 6 min</small></div>
+        </article>
+        <article data-magazine-article data-category="sociedade" data-title="Longevidade também é pertencimento" data-excerpt="Envelhecer com autonomia envolve corpo, vínculos e participação na comunidade" data-reveal>
+          <img src="media/profissionais-encontro.webp" alt="Pessoas reunidas em um espaço acolhedor de escuta" width="1600" height="900" loading="lazy" decoding="async">
+          <div><span>Comportamento e sociedade</span><h3>Longevidade também é pertencimento</h3><p>Envelhecer com autonomia envolve corpo, vínculos e participação na comunidade.</p><small>7 min de leitura</small></div>
+        </article>
+        <article data-magazine-article data-category="ambiente" data-title="Calor, sono e adaptação" data-excerpt="Como mudanças no ambiente alcançam o corpo e a rotina" data-reveal>
+          <img src="media/saude-integrativa-escuta.webp" alt="Paisagem natural calma associada a cuidado e equilíbrio" width="1600" height="900" loading="lazy" decoding="async">
+          <div><span>Meio ambiente e qualidade de vida</span><h3>Calor, sono e adaptação</h3><p>Como mudanças no ambiente alcançam o corpo, o descanso e a rotina.</p><small>5 min de leitura</small></div>
+        </article>
+        <article data-magazine-article data-category="cultura" data-title="A cultura como espaço de encontro" data-excerpt="Por que criar e compartilhar arte fortalece comunidades" data-reveal>
+          <img src="media/atividades-pratica.webp" alt="Prática coletiva em contato com natureza e movimento" width="1600" height="900" loading="lazy" decoding="async">
+          <div><span>Cultura</span><h3>A cultura como espaço de encontro</h3><p>Por que criar e compartilhar arte fortalece comunidades e abre novas conversas.</p><small>4 min de leitura</small></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="magazine-learning" id="aprendizado" aria-labelledby="magazine-learning-title">
+      <div data-reveal>
+        <p class="editorial-kicker">O que esta notícia nos ensina?</p>
+        <h2 id="magazine-learning-title">A leitura termina. A reflexão continua pelo Ecossistema.</h2>
+      </div>
+      <div class="magazine-paths" data-reveal>
+        <a href="blog.html"><span>Artigos relacionados</span><strong>Aprofundar ideias e experiências</strong></a>
+        <a href="profissionais.html"><span>Profissionais relacionados</span><strong>Encontrar diferentes trajetórias</strong></a>
+        <a href="cursos.html"><span>Cursos relacionados</span><strong>Transformar interesse em aprendizagem</strong></a>
+        <a href="atendimentos.html"><span>Atendimentos relacionados</span><strong>Conhecer possibilidades de cuidado</strong></a>
+        <a href="inspiracao.html"><span>Inspiração diária</span><strong>Fazer uma pausa antes de seguir</strong></a>
+        <a href="cultura.html"><span>Biblioteca Potala</span><strong>Continuar a pesquisa em outras fontes</strong></a>
+      </div>
+    </section>
+
+    <footer class="editorial-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>
+  </main>
+</body>
+</html>

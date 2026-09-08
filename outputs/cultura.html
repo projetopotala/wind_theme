@@ -10,8 +10,10 @@
   <link rel="preload" href="media/journey-cultura.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
   <link rel="stylesheet" href="css/section-editorial.css">
+  <link rel="stylesheet" href="css/culture-experience.css">
   <script type="module" src="secoes.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
+  <script type="module" src="js/culture/library-catalog.js"></script>
 </head>
 <body data-section="cultura" data-entry="right" data-left="programacao.html">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
@@ -44,12 +46,53 @@
         <p>Os encontros variam ao longo do ano e ocupam a casa de diferentes maneiras, preservando sempre o espaço para presença e troca.</p>
       </header>
       <div class="editorial-grid">
-        <article data-reveal><span>01</span><h3>Cine Potala</h3><p>Sessões em que o filme abre uma conversa, em vez de encerrar um tema.</p></article>
-        <article data-reveal><span>02</span><h3>Biblioteca Potala</h3><p>Livros para consulta, estudo e continuidade das descobertas iniciadas na casa.</p></article>
-        <article data-reveal><span>03</span><h3>Café filosófico</h3><p>Pensamento compartilhado em encontros abertos, sem exigir formação prévia.</p></article>
-        <article data-reveal><span>04</span><h3>Saraus e lançamentos</h3><p>Palavra, música e presença reunidas em noites de criação e escuta.</p></article>
-        <article data-reveal><span>05</span><h3>Oficinas</h3><p>Experiências de arte e expressão em que aprender também significa fazer.</p></article>
-        <article data-reveal><span>06</span><h3>Rodas de conversa</h3><p>Encontros onde escutar tem a mesma importância que falar.</p></article>
+        <article data-reveal><a href="experiencias-culturais.html?experiencia=cine-potala"><span>01</span><h3>Cine Potala</h3><p>Filmes cuidadosamente escolhidos, seguidos por debate, roda de conversa e materiais para continuar a reflexão.</p><small>Conhecer experiência →</small></a></article>
+        <article data-reveal><a href="experiencias-culturais.html?experiencia=exposicoes"><span>02</span><h3>Exposições e apresentações</h3><p>Música, recitais, coral, dança e artes visuais aproximam artistas, comunidade e novos olhares.</p><small>Conhecer experiência →</small></a></article>
+        <article data-reveal><a href="experiencias-culturais.html?experiencia=cafe-filosofico"><span>03</span><h3>Café filosófico</h3><p>Pensamento compartilhado em encontros abertos, sem exigir formação prévia.</p><small>Conhecer experiência →</small></a></article>
+        <article data-reveal><a href="experiencias-culturais.html?experiencia=saraus"><span>04</span><h3>Saraus e lançamentos</h3><p>Poesia, literatura e música reunidas a novos livros e vozes da comunidade.</p><small>Conhecer experiência →</small></a></article>
+        <article data-reveal><a href="experiencias-culturais.html?experiencia=festivais"><span>05</span><h3>Festivais e mostras</h3><p>Programações especiais fazem diferentes linguagens artísticas conviverem em uma mesma experiência.</p><small>Conhecer experiência →</small></a></article>
+        <article data-reveal><a href="experiencias-culturais.html?experiencia=rodas-de-conversa"><span>06</span><h3>Rodas de conversa</h3><p>Encontros onde escutar tem a mesma importância que falar.</p><small>Conhecer experiência →</small></a></article>
+      </div>
+    </section>
+
+    <section class="culture-communities" id="comunidades" aria-labelledby="culture-communities-title">
+      <header data-reveal>
+        <p class="editorial-kicker">Laços que permanecem</p>
+        <h2 id="culture-communities-title">Comunidades que continuam depois do encontro.</h2>
+        <p>Algumas experiências ganham ritmo próprio e passam a reunir pessoas em torno de interesses compartilhados.</p>
+      </header>
+      <ol class="culture-community-list">
+        <li data-reveal><span>01</span><strong>Clube de leitura</strong><small>Livros, ideias e diferentes modos de interpretar uma mesma obra.</small></li>
+        <li data-reveal><span>02</span><strong>Jogos de pensamento</strong><small>Xadrez e Rummikub como exercício de presença, estratégia e convivência.</small></li>
+        <li data-reveal><span>03</span><strong>Escrita e música</strong><small>Grupos para criar, compartilhar processos e aprender com outras sensibilidades.</small></li>
+        <li data-reveal><span>04</span><strong>Clube de cinema</strong><small>Filmes escolhidos em conjunto e conversas que não acabam nos créditos.</small></li>
+      </ol>
+    </section>
+
+    <section class="culture-library" id="biblioteca" aria-labelledby="culture-library-title">
+      <div class="culture-library-intro" data-reveal>
+        <p class="editorial-kicker">Biblioteca Potala</p>
+        <h2 id="culture-library-title">Uma descoberta pode continuar em outra leitura.</h2>
+        <p>Consulte uma amostra do acervo físico, do Sebo Potala, de publicações digitais e dos materiais que acompanham cursos e encontros.</p>
+        <label class="culture-library-search">
+          <span>Buscar no acervo</span>
+          <input type="search" placeholder="Título, tema ou formato" autocomplete="off" data-library-search>
+        </label>
+        <p class="culture-library-status" data-library-status role="status" aria-live="polite"></p>
+      </div>
+      <div class="culture-library-results" aria-label="Amostra do acervo">
+        <article data-library-item data-title="A arte de escutar" data-author="Acervo Potala" data-format="Livro físico" data-themes="filosofia,convivência" data-reveal>
+          <span>Livro físico · disponível</span><h3>A arte de escutar</h3><p>Filosofia e convivência</p>
+        </article>
+        <article data-library-item data-title="Corpo, saúde e presença" data-author="Acervo Potala" data-format="Artigo científico" data-themes="saúde integral,ciência" data-reveal>
+          <span>Artigo científico · consulta digital</span><h3>Corpo, saúde e presença</h3><p>Saúde integral e ciência</p>
+        </article>
+        <article data-library-item data-title="Poéticas do cuidado" data-author="Sebo Potala" data-format="Livro físico" data-themes="arte,cultura" data-reveal>
+          <span>Sebo Potala · disponível</span><h3>Poéticas do cuidado</h3><p>Arte e cultura</p>
+        </article>
+        <article data-library-item data-title="Caminhos de aprendizagem" data-author="Instituto Potala" data-format="Publicação digital" data-themes="educação,cursos" data-reveal>
+          <span>Publicação digital · acesso local</span><h3>Caminhos de aprendizagem</h3><p>Educação e cursos</p>
+        </article>
       </div>
     </section>
 

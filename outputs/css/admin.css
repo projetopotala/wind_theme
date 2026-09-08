@@ -63,6 +63,12 @@ body {
 }
 
 .admin-entry h1 { margin: 0; font-size: 2rem; font-weight: 500; }
+.admin-entry-logo {
+  width: 92px;
+  height: 76px;
+  margin: 0 auto -4px;
+  object-fit: contain;
+}
 .admin-intro, .admin-auth-status, .admin-forbidden { margin: 0; color: var(--admin-muted); }
 .admin-login { display: grid; gap: 8px; width: 100%; }
 .admin-entry-links a { color: var(--admin-gold); }
@@ -167,7 +173,7 @@ button {
   text-transform: uppercase;
 }
 
-.admin-brand-mark { color: var(--admin-gold); font-size: 1.4rem; }
+.admin-brand-logo { width: 34px; height: 34px; object-fit: contain; }
 .admin-brand small { display: block; font-size: .6rem; color: var(--admin-muted); letter-spacing: .3em; }
 
 .admin-nav ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
@@ -740,3 +746,13 @@ button {
   from { scale: 1 1; }
   to { scale: 0 1; }
 }
+.admin-nav-link {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-nav-link:hover { background: rgba(215, 186, 120, .08); }
+.admin-nav-link:focus-visible { outline: 2px solid #d7ba78; outline-offset: 2px; }

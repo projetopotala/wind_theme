@@ -106,3 +106,199 @@ img { max-width: 100%; }
   html { scroll-behavior: auto; }
   [data-reveal] { opacity: 1; transform: none; transition: none; }
 }
+
+
+/* ------------------------------------------------------------------
+ * Programação por categoria: um índice com atalho, não uma grade
+ * ------------------------------------------------------------------ */
+
+/*
+ * ISTO É UMA LISTA. O filtro apenas escolhe qual parte do índice permanece
+ * visível; ele não transforma modalidades em cartões nem remove o conteúdo do
+ * HTML quando o JavaScript não está disponível.
+ *
+ * Os cartões davam a cada modalidade o mesmo peso visual de uma seção inteira,
+ * e dezesseis deles viravam uma parede — a pessoa varria com o olho sem ler
+ * nenhum. A lista preserva a visão completa, enquanto as categorias oferecem
+ * um atalho para quem já sabe o que veio procurar.
+ *
+ * Em lista, o olho desce por uma coluna de títulos e para no que reconhece. É a
+ * forma de um índice, e um índice é o que esta seção é.
+ */
+.guided-categorias { padding: clamp(80px, 11vw, 150px) clamp(24px, 8vw, 132px); background: var(--guided-ink); }
+
+.guided-category-filter {
+  margin-top: clamp(44px, 6vw, 70px);
+  padding: 24px 0 22px;
+  border-top: 1px solid var(--guided-line);
+  border-bottom: 1px solid var(--guided-line);
+}
+
+.guided-category-filter-label {
+  margin-bottom: 17px;
+  color: rgba(239, 228, 212, .5);
+  font-size: .63rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.guided-category-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.guided-category-filter-options button {
+  padding: 10px 14px;
+  border: 1px solid rgba(196, 154, 93, .28);
+  border-radius: 999px;
+  color: rgba(239, 228, 212, .62);
+  background: transparent;
+  font: 700 .65rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .08em;
+  cursor: pointer;
+  transition: color .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.guided-category-filter-options button:hover {
+  border-color: rgba(196, 154, 93, .65);
+  color: var(--guided-cream);
+}
+
+.guided-category-filter-options button[aria-pressed="true"] {
+  border-color: var(--guided-gold);
+  color: var(--guided-ink);
+  background: var(--guided-gold);
+}
+
+.guided-category-filter-options button:focus-visible {
+  outline: 2px solid var(--guided-gold);
+  outline-offset: 3px;
+}
+
+.guided-category-filter-status {
+  min-height: 1.4em;
+  margin: 16px 0 0;
+  color: rgba(239, 228, 212, .46);
+  font-size: .72rem;
+  line-height: 1.4;
+}
+
+.guided-indice {
+  display: grid;
+  gap: clamp(44px, 6vw, 72px);
+  margin-top: 60px;
+}
+
+/*
+ * O título da categoria fica na coluna da esquerda, e as modalidades na direita.
+ *
+ * Empilhado, cada categoria virava um bloco com cabeçalho, e sete blocos são
+ * outra vez uma parede. Ao lado, o rótulo funciona como a margem de um índice:
+ * quem procura curso desce pela coluna estreita, não pelo conteúdo.
+ */
+.guided-grupo { display: grid; gap: 14px clamp(30px, 5vw, 76px); }
+.guided-grupo[hidden] { display: none; }
+
+@media (min-width: 860px) {
+  .guided-grupo { grid-template-columns: minmax(160px, .26fr) minmax(0, 1fr); align-items: start; }
+  .guided-grupo h3 { position: sticky; top: 26px; }
+}
+
+.guided-grupo h3 {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--guided-line);
+  color: var(--guided-gold);
+  font: 700 .68rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+/* A contagem em algarismo, como a numeração das outras seções: diz o tamanho
+   do grupo antes de a pessoa descer por ele. */
+.guided-grupo h3 span { color: rgba(239, 228, 212, .4); font-size: .9em; }
+
+.guided-grupo ul {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--guided-line);
+  list-style: none;
+}
+
+.guided-grupo li { border-bottom: 1px solid var(--guided-line); }
+
+/*
+ * A linha inteira é o alvo do clique, e não só o título.
+ *
+ * Num índice, a pessoa mira o texto que leu — que na maioria das vezes é a
+ * descrição, e não o nome. Um link do tamanho do título transformaria metade
+ * das tentativas em clique no vazio.
+ */
+.guided-grupo a {
+  display: grid;
+  gap: 4px 24px;
+  align-items: baseline;
+  padding: 18px 4px 20px;
+  color: inherit;
+  text-decoration: none;
+  grid-template-columns: minmax(0, 1fr) 20px;
+}
+
+.guided-grupo strong { font: 400 clamp(1.1rem, 1.7vw, 1.45rem)/1.25 Georgia, "Times New Roman", serif; }
+.guided-grupo a > span { color: rgba(239, 228, 212, .58); font-size: .89rem; line-height: 1.6; }
+
+@media (min-width: 700px) {
+  /* Título e descrição na mesma linha, como num sumário: o olho desce pelos
+     nomes e só entra na descrição quando um deles o segura. */
+  .guided-grupo a { grid-template-columns: minmax(0, .42fr) minmax(0, 1fr) 20px; }
+  .guided-grupo a > span { grid-column: 2; }
+}
+
+.guided-grupo em {
+  grid-column: -2;
+  grid-row: 1;
+  color: var(--guided-gold);
+  font-size: 1.05rem;
+  font-style: normal;
+  opacity: 0;
+}
+
+.guided-grupo a:hover { background: rgba(196, 154, 93, .1); }
+.guided-grupo a:hover strong { color: var(--guided-gold); }
+.guided-grupo a:hover em,
+.guided-grupo a:focus-visible em { opacity: 1; }
+.guided-grupo a:focus-visible { outline: 2px solid var(--guided-gold); outline-offset: -3px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .guided-grupo a,
+  .guided-grupo em { transition: color .2s ease, background .2s ease, opacity .2s ease; }
+}
+
+@media (max-width: 620px) {
+  .guided-category-filter-options {
+    flex-wrap: nowrap;
+    margin-right: calc(clamp(24px, 8vw, 132px) * -1);
+    padding-right: clamp(24px, 8vw, 132px);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    scroll-snap-type: inline proximity;
+  }
+
+  .guided-category-filter-options::-webkit-scrollbar { display: none; }
+
+  .guided-category-filter-options button {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guided-category-filter-options button { transition: none; }
+}

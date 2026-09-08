@@ -14,6 +14,7 @@
 <body>
   <main class="admin" id="admin-app" data-auth-state="checking">
     <section class="admin-entry" data-admin-auth-view aria-labelledby="admin-entry-title">
+      <img class="admin-entry-logo" src="media/potala-mark-transparent.png" alt="Instituto Potala">
       <p class="admin-kicker">Instituto Potala</p>
       <h1 id="admin-entry-title">Painel editorial</h1>
       <p class="admin-intro">Entre com a conta autorizada para editar a jornada da Home.</p>
@@ -46,12 +47,13 @@
       -->
       <nav class="admin-nav" data-admin-nav aria-label="Seções do painel">
         <p class="admin-brand">
-          <span class="admin-brand-mark" aria-hidden="true">▲</span>
+          <img class="admin-brand-logo" src="media/potala-mark-transparent.png" alt="">
           <span>Potala <small>Instituto</small></span>
         </p>
         <ul>
           <li><button type="button" data-section="visao" aria-disabled="true">Visão geral <small>em breve</small></button></li>
           <li><button type="button" data-section="jornada" aria-current="page">Jornada</button></li>
+          <li><a class="admin-nav-link" href="blog-admin.html">Blog</a></li>
           <li><button type="button" data-section="paginas" aria-disabled="true">Páginas <small>em breve</small></button></li>
           <li><button type="button" data-section="midia" aria-disabled="true">Mídia <small>em breve</small></button></li>
           <li><button type="button" data-section="programacao" aria-disabled="true">Programação <small>em breve</small></button></li>
@@ -216,6 +218,26 @@
                 <label class="admin-check">
                   <input id="admin-published" name="published" type="checkbox" checked>
                   <span><strong>Exibir na jornada</strong><small>O bloco fica visível na trilha</small></span>
+                </label>
+                <!--
+                  NOVIDADE RECENTE — uma caixa, e não a digitação da tag.
+
+                  O que marca o bloco é a tag "recente" no campo Temas, e ela
+                  continua sendo o dado de verdade: não há coluna nova no banco,
+                  então a marcação viaja onde já havia lugar para ela.
+
+                  A caixa existe porque digitar é onde se erra. "Recentes",
+                  "Recente ", um acento a mais — qualquer um deles produz um
+                  bloco que a pessoa marcou, salvou e publicou, e que mesmo
+                  assim não sobe para o topo da Home. Um silêncio impossível de
+                  depurar olhando a tela.
+
+                  Ela não substitui o campo Temas nem o apaga: escreve e remove
+                  apenas o marcador, e o que a pessoa digitou ali continua.
+                -->
+                <label class="admin-check">
+                  <input id="admin-novidade" data-admin-novidade type="checkbox">
+                  <span><strong>Novidade recente</strong><small>Abre a Home com as outras novidades, com o selo “Recentes”</small></span>
                 </label>
                 <label class="admin-check">
                   <input id="admin-allow-panel" name="allowPanel" type="checkbox" checked>

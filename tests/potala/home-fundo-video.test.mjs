@@ -127,15 +127,15 @@ test("o vídeo recebe o progresso do controlador, sem escutar a rolagem por cont
    * A primeira versão escutava `scroll` e agendava por `requestAnimationFrame`.
    * Funcionava, e era um segundo cano para a mesma água: o controlador já
    * escuta a rolagem, já calcula o progresso e já o distribui — é ele que move o
-   * trajeto por esse mesmo valor. Dois caminhos para o mesmo número podem
-   * discordar em qualquer quadro, e o que aparece é o mais lento.
+   * trajeto por esse mesmo valor. Esse progresso agora começa depois do prólogo:
+   * assim vídeo e linha permanecem parados no “Bem-vindo” e avançam juntos.
    */
   const fonte = await readFile(new URL("../../outputs/js/home/landscape-video.js", import.meta.url), "utf8");
   assert.match(fonte, /setProgress/, "o vídeo precisa receber o progresso de fora");
   assert.ok(!/addEventListener\(\s*"scroll"/.test(fonte), "escutar a rolagem aqui duplica o que o controlador já faz");
 
   const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
-  assert.match(controlador, /landscapeVideo\.setProgress\(progress\)/, "falta o controlador avisar o vídeo");
+  assert.match(controlador, /landscapeVideo\.setProgress\(pathState\.progress\)/, "falta o controlador avisar o vídeo");
 });
 
 test("com um bloco aberto o vídeo para de ser rebobinado", async () => {

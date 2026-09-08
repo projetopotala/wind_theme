@@ -24,12 +24,6 @@
 </head>
 <body data-story-page="true">
   <a class="skip-link" href="#journey-root">Ir para a jornada</a>
-  <a class="journey-admin-link" href="admin.html" aria-label="Editar conteúdo da Home"
-    title="Editar Home">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25Zm15.7-10.4a.73.73 0 0 0 0-1.03l-1.52-1.52a.73.73 0 0 0-1.03 0l-1.19 1.19 2.75 2.75 1.19-1.19Z"/>
-    </svg>
-  </a>
   <!--
     A paisagem sai do `body` e vira ELEMENTO.
     Um `background-attachment: fixed` não pode ser animado, e a travessia
@@ -57,7 +51,6 @@
       muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
   </div>
   <canvas class="journey-road journey-path" id="journey-road" aria-hidden="true"></canvas>
-  <div class="journey-scroll-cue" aria-hidden="true"><span></span></div>
   <div class="journey-entry-veil" id="journey-entry-veil" aria-hidden="true"></div>
   <main id="journey-root" aria-label="Travessia pelo Ecossistema Potala"></main>
 
@@ -65,16 +58,37 @@
     <section class="journey-noscript" aria-labelledby="journey-noscript-title">
       <h1 id="journey-noscript-title">Ecossistema Potala</h1>
       <p>Escolha um caminho para continuar:</p>
+      <!--
+        A LISTA COMPLETA, e não a que sobrou.
+
+        Ela tinha nove das treze seções: faltavam Recepção, Saúde Integrativa e
+        Blog, e ninguém notou porque a lista só aparece sem JavaScript. Enquanto
+        as páginas de seção carregavam um menu com as treze, o buraco era
+        contornável; agora que a barra do topo mudou de assunto, este é o único
+        caminho de quem não tem script, e uma seção fora daqui não existe.
+      -->
       <ul>
         <li><a href="quem-somos.html">Quem somos</a></li>
+        <li><a href="recepcao.html">Recepção</a></li>
         <li><a href="atendimentos.html">Atendimentos</a></li>
         <li><a href="cursos.html">Cursos</a></li>
         <li><a href="atividades.html">Atividades</a></li>
         <li><a href="profissionais.html">Profissionais</a></li>
+        <li><a href="saude-integrativa.html">Saúde Integrativa</a></li>
         <li><a href="programacao.html">Programação</a></li>
         <li><a href="cultura.html">Arte e cultura</a></li>
         <li><a href="marketplace.html">Marketplace</a></li>
         <li><a href="inspiracao.html">Inspiração</a></li>
+        <li><a href="revista.html">Revista</a></li>
+        <li><a href="blog.html">Blog</a></li>
+      </ul>
+      <p>E o que acontece fora da grade de aulas:</p>
+      <ul>
+        <li><a href="especialistas.html">Especialistas</a></li>
+        <li><a href="workshops.html">Workshops</a></li>
+        <li><a href="grupos-de-estudo.html">Grupos de estudo</a></li>
+        <li><a href="mentorias.html">Mentorias</a></li>
+        <li><a href="eventos.html">Eventos futuros</a></li>
       </ul>
     </section>
   </noscript>

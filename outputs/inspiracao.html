@@ -10,8 +10,10 @@
   <link rel="preload" href="media/journey-inspiracao.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
   <link rel="stylesheet" href="css/section-guided.css">
+  <link rel="stylesheet" href="css/inspiration-experience.css">
   <script type="module" src="secoes.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
+  <script type="module" src="js/inspiration/practice-studio.js"></script>
 </head>
 <body data-section="inspiracao">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
@@ -26,28 +28,101 @@
       </div>
     </section>
 
-    <section class="guided-intro" aria-labelledby="inspiration-intro-title">
-      <p class="guided-index">01</p>
-      <div data-reveal><p class="guided-kicker">Escutar o mundo</p><h2 id="inspiration-intro-title">O silêncio também pode orientar.</h2></div>
-      <div class="guided-prose" data-reveal>
-        <p>O nome Potala recorda a imagem de Avalokiteshvara, associado à compaixão e à escuta dos clamores do mundo. Aqui, essa lembrança se transforma em convite: diminuir o ruído para perceber o que pede atenção.</p>
-        <p>Este espaço está preparado para receber, no futuro, meditações, músicas, mantras e pequenas reflexões.</p>
+    <section class="guided-choice-section inspiration-studio" id="pausa" aria-labelledby="inspiration-choices-title" data-practice-studio>
+      <header class="guided-choice-head" data-reveal>
+        <div><p class="guided-kicker">Escolha sua pausa</p><h2 id="inspiration-choices-title">Como você quer estar aqui?</h2></div>
+        <p>Nada começa automaticamente. Escolha uma experiência e inicie somente quando estiver confortável.</p>
+      </header>
+      <div class="guided-options">
+        <button class="guided-option is-selected" type="button" data-practice-choice="respirar" aria-pressed="true"><span>01</span><strong>Respirar</strong><small>Três ciclos guiados de inspirar, segurar e expirar por três segundos.</small></button>
+        <button class="guided-option" type="button" data-practice-choice="meditar" aria-pressed="false"><span>02</span><strong>Meditar</strong><small>Um minuto de quietude com orientação mínima e tempo visível.</small></button>
+        <button class="guided-option" type="button" data-practice-choice="escutar" aria-pressed="false"><span>03</span><strong>Escutar</strong><small>Trinta segundos para reconhecer sons distantes, próximos e internos.</small></button>
+        <button class="guided-option" type="button" data-practice-choice="refletir" aria-pressed="false"><span>04</span><strong>Ler uma reflexão</strong><small>Uma pergunta que permanece disponível para levar consigo.</small></button>
+      </div>
+      <div class="practice-stage" data-practice-stage data-kind="respirar" aria-live="polite">
+        <div class="practice-orb" data-practice-orb aria-hidden="true"><span></span></div>
+        <div class="practice-stage-copy">
+          <p class="practice-label" data-practice-label>Respiração 3–3–3</p>
+          <p class="practice-message" data-practice-message>Quando quiser, inicie três ciclos. Você pode interromper a qualquer momento.</p>
+          <p class="practice-time" data-practice-time>27 segundos</p>
+          <div class="practice-actions">
+            <button type="button" data-practice-start>Iniciar</button>
+            <button type="button" data-practice-reset>Recomeçar</button>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="guided-choice-section" id="pausa" aria-labelledby="inspiration-choices-title" data-guided-group>
-      <header class="guided-choice-head" data-reveal>
-        <div><p class="guided-kicker">Escolha sua pausa</p><h2 id="inspiration-choices-title">Como você quer estar aqui?</h2></div>
-        <p>Nada é iniciado automaticamente. Escolha apenas se quiser experimentar uma breve orientação.</p>
+    <section class="inspiration-daily" id="praticas" aria-labelledby="inspiration-daily-title" data-guided-group>
+      <header data-reveal>
+        <p class="guided-kicker">Um gesto para hoje</p>
+        <h2 id="inspiration-daily-title">Pequenas práticas cabem na vida real.</h2>
+        <p>Escolha uma semente. O conteúdo muda sem tirar você deste espaço.</p>
       </header>
-      <div class="guided-options">
-        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Respirar: perceba o ar entrando, faça uma pequena pausa e solte devagar. Repita no seu ritmo."><span>01</span><strong>Respirar</strong><small>Retorne por alguns instantes ao ritmo do próprio corpo.</small></button>
-        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Meditar: escolha um ponto diante de você e permita que os pensamentos passem sem precisar segui-los."><span>02</span><strong>Meditar</strong><small>Encontre um pequeno intervalo entre um pensamento e outro.</small></button>
-        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Escutar: note primeiro o som mais distante, depois o mais próximo, e por fim o silêncio entre eles."><span>03</span><strong>Escutar</strong><small>Perceba os sons ao redor sem tentar nomear todos eles.</small></button>
-        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Ler: leve consigo esta pergunta — o que merece mais espaço na sua vida hoje?"><span>04</span><strong>Ler uma reflexão</strong><small>Uma pergunta curta para acompanhar o restante do caminho.</small></button>
+      <div class="inspiration-daily-shell" data-reveal>
+        <div class="inspiration-daily-menu" role="group" aria-label="Práticas e conteúdos do dia">
+          <button type="button" data-guided-choice aria-pressed="true" class="is-selected" data-response="Frase do dia: entre uma resposta rápida e uma resposta consciente, existe um instante de presença.">Frase do dia</button>
+          <button type="button" data-guided-choice aria-pressed="false" data-response="Reflexão do dia: o que pode ser feito com mais cuidado, sem precisar ser feito com mais pressa?">Reflexão</button>
+          <button type="button" data-guided-choice aria-pressed="false" data-response="Afirmação positiva: posso reconhecer meu ritmo e ainda assim continuar caminhando.">Afirmação</button>
+          <button type="button" data-guided-choice aria-pressed="false" data-response="Prática de gratidão: recorde uma presença, um aprendizado e um gesto simples que sustentaram seu dia.">Gratidão</button>
+          <button type="button" data-guided-choice aria-pressed="false" data-response="Respiração: inspire com conforto, perceba uma breve pausa e solte o ar sem forçar. Repita no seu ritmo.">Respiração</button>
+          <button type="button" data-guided-choice aria-pressed="false" data-response="Música do dia: uma paisagem sonora do Potala para acompanhar alguns minutos de pausa.">Música</button>
+        </div>
+        <blockquote class="inspiration-daily-response" aria-live="polite" data-guided-response>Frase do dia: entre uma resposta rápida e uma resposta consciente, existe um instante de presença.</blockquote>
       </div>
-      <div class="guided-response" aria-live="polite"><p data-guided-response>Escolha uma pausa. Você pode sair ou continuar a qualquer momento.</p></div>
-      <div class="guided-links"><a class="guided-link" href="cultura.html">Arte e cultura ↗</a><a class="guided-link" href="atividades.html">Práticas do corpo ↗</a></div>
+      <details class="inspiration-audio" data-reveal>
+        <summary>Ouvir a paisagem sonora do Potala</summary>
+        <audio controls preload="none" src="musica-fundo.mp3">Seu navegador não oferece reprodução de áudio.</audio>
+      </details>
+      <div class="inspiration-practice-ribbon" role="group" aria-label="Outras práticas sugeridas" data-reveal>
+        <button class="is-selected" type="button" data-inspiration-resource="meditacao" aria-pressed="true">Meditação guiada</button>
+        <button type="button" data-inspiration-resource="mantra" aria-pressed="false">Mantra</button>
+        <button type="button" data-inspiration-resource="receita" aria-pressed="false">Receita saudável</button>
+        <button type="button" data-inspiration-resource="gentileza" aria-pressed="false">Desafio de gentileza</button>
+        <button type="button" data-inspiration-resource="bem-estar" aria-pressed="false">Dica de bem-estar</button>
+      </div>
+      <article class="inspiration-resource-panel" data-inspiration-resource-panel data-reveal aria-live="polite">
+        <p class="guided-kicker">Prática aberta</p>
+        <h3 data-inspiration-resource-title>Meditação de chegada</h3>
+        <p data-inspiration-resource-description>Dois minutos para pousar a atenção no corpo antes de continuar o dia.</p>
+        <ol data-inspiration-resource-steps>
+          <li>Sente-se com apoio e perceba três pontos de contato do corpo.</li>
+          <li>Acompanhe o ar sem controlar o ritmo por seis respirações.</li>
+          <li>Antes de seguir, reconheça uma sensação presente sem julgá-la.</li>
+        </ol>
+      </article>
+    </section>
+
+    <section class="inspiration-symbolic" id="mensagem-simbolica" aria-labelledby="inspiration-symbolic-title" data-guided-group>
+      <div class="inspiration-symbolic-copy" data-reveal>
+        <p class="guided-kicker">Mensagem simbólica</p>
+        <h2 id="inspiration-symbolic-title">Uma imagem para refletir, não uma resposta pronta.</h2>
+        <p>Escolha uma tradição contemplativa. Esta demonstração apresenta somente uma pergunta de autoconhecimento.</p>
+        <p class="inspiration-symbolic-note"><strong>Importante:</strong> a mensagem não é previsão, diagnóstico ou substituta do discernimento pessoal e do cuidado profissional.</p>
+      </div>
+      <div class="inspiration-symbolic-panel" data-reveal>
+        <div class="inspiration-symbolic-options" role="group" aria-label="Escolha uma tradição simbólica">
+          <button type="button" data-guided-choice aria-pressed="false" data-response="Pathwork — Que parte de você está pedindo para ser vista com mais honestidade e menos julgamento?">Pathwork</button>
+          <button type="button" data-guided-choice aria-pressed="false" data-response="Tarô — O Eremita convida a diminuir o ruído para reconhecer a luz que já acompanha o caminho.">Tarô</button>
+          <button type="button" data-guided-choice aria-pressed="false" data-response="Runas — Jera lembra que alguns processos amadurecem em ciclos e não respondem à pressa.">Runas</button>
+          <button type="button" data-guided-choice aria-pressed="false" data-response="I Ching — A quietude não interrompe o movimento; ela ajuda a perceber sua direção.">I Ching</button>
+        </div>
+        <p class="inspiration-symbolic-response" data-guided-response aria-live="polite">Escolha uma linguagem simbólica para receber uma pergunta de reflexão.</p>
+      </div>
+    </section>
+
+    <section class="inspiration-connections" aria-labelledby="inspiration-connections-title">
+      <div data-reveal>
+        <p class="guided-kicker">O Ecossistema continua</p>
+        <h2 id="inspiration-connections-title">Uma pausa pode abrir outros caminhos.</h2>
+      </div>
+      <nav aria-label="Conteúdos relacionados" data-reveal>
+        <a href="blog.html"><span>01</span>Leituras do Blog</a>
+        <a href="revista.html"><span>02</span>Revista Potala</a>
+        <a href="cursos.html"><span>03</span>Cursos e vivências</a>
+        <a href="atendimentos.html"><span>04</span>Atendimentos</a>
+        <a href="cultura.html"><span>05</span>Arte e Cultura</a>
+      </nav>
     </section>
 
     <section class="guided-closing" aria-labelledby="inspiration-closing-title">

@@ -34,3 +34,11 @@ test("trajeto mantém curvas discretas dentro da faixa central", () => {
   assert.ok(layout.points.at(-1).y < layout.checkpoints.at(-1).y);
 });
 
+test("trajeto muda de direção sem guinadas laterais", () => {
+  const { checkpoints } = buildHomePathLayout(DEFAULT_HOME_BLOCKS);
+  const deslocamentos = checkpoints.slice(1).map((point, index) => (
+    Math.abs(point.x - checkpoints[index].x)
+  ));
+
+  assert.ok(Math.max(...deslocamentos) <= 0.18, "curvas consecutivas precisam formar uma passagem calma");
+});

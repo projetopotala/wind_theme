@@ -12,8 +12,28 @@
    *
    * Sem `backdrop-filter` de propósito: o bloco escala e translada, e desfoque
    * em superfície grande em movimento é caro em toda máquina. */
-  --journey-panel: rgba(43, 32, 22, 1);
-  --journey-panel-open: rgba(38, 28, 19, 1);
+  /*
+   * A COR DOS CARTÕES É A DA BARRA LATERAL — mesmo marrom, mais opaco.
+   *
+   * Eram dois marrons diferentes na mesma tela: a barra num tom quente e claro,
+   * os cartões quase pretos. Lado a lado pareciam de dois projetos.
+   *
+   * O que NÃO se pode copiar é a transparência. A barra vive a .76 porque tem
+   * desfoque atrás; os cartões não têm, e a essa altura a paisagem atravessava
+   * o texto — montanha, água e névoa ao mesmo tempo, com o contraste mudando de
+   * linha para linha. Mesma cor, alfa alto: parentesco sem perder a leitura.
+   */
+  --journey-panel: rgba(76, 56, 34, .97);
+  --journey-panel-open: rgba(58, 42, 26, .98);
+  /*
+   * A MESMA descida de tom da barra lateral, com o alfa alto dos cartões.
+   *
+   * A barra vai de rgba(94,69,41,.76) a rgba(54,39,24,.82); estes são os mesmos
+   * dois tons, só que opacos. Um valor chapado já aproximava as duas coisas,
+   * mas a barra escurece de cima para baixo e o cartão não — lado a lado, a
+   * diferença aparecia como se fossem materiais distintos.
+   */
+  --journey-panel-superficie: linear-gradient(180deg, rgba(94, 69, 41, .97), rgba(54, 39, 24, .98));
   /*
    * O veu do bloco ampliado. Mesmo tom do painel, com alfa.
    *
@@ -30,6 +50,21 @@
   --journey-veu: rgba(30, 22, 15, .8);
   --journey-line-gutter: clamp(104px, 15vw, 210px);
   --journey-line-gutter-open: clamp(76px, 10.5vw, 148px);
+  /*
+   * 216px no mínimo, e não 168.
+   *
+   * A largura antiga foi calibrada quando a roleta listava só nomes curtos de
+   * seção. Ela passou a carregar mais: os dois marcos de grupo, a numeração e
+   * títulos como "Atendimentos", que chegavam a 150 dos 168px disponíveis — a
+   * barra parecia uma tira, e o texto encostava na borda que agora se dissolve,
+   * onde o contraste é o menor da coluna.
+   *
+   * O teto subiu junto para a proporção não achatar em tela grande: numa janela
+   * de 1920 ela ficava travada em 196px enquanto tudo em volta crescia.
+   */
+  --journey-sidebar-width: clamp(216px, 15vw, 264px);
+  --journey-sidebar-surface: rgba(94, 69, 41, .76);
+  --journey-sidebar-depth: rgba(54, 39, 24, .82);
 }
 
 html {
@@ -109,8 +144,9 @@ body[data-story-page="true"]::before {
   width: 100vw;
   height: 100svh;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 1.4s ease;
+  /* A entrada agora é desenhada pela própria ponta da luz no shader. Alterar
+     a opacidade do canvas inteiro fazia o trajeto materializar de uma vez. */
+  opacity: 1;
 }
 
 body.is-ready .journey-road { opacity: 1; }
@@ -164,39 +200,6 @@ html.is-crossing .journey-entry-veil {
   pointer-events: none;
 }
 
-.journey-admin-link {
-  position: fixed;
-  z-index: 24;
-  top: max(16px, env(safe-area-inset-top));
-  left: max(16px, env(safe-area-inset-left));
-  display: grid;
-  width: 40px;
-  height: 40px;
-  place-items: center;
-  border: 1px solid rgba(255, 238, 200, .26);
-  border-radius: 999px;
-  background: rgba(48, 36, 25, .62);
-  color: #f0d59a;
-  opacity: .66;
-  transition: opacity .25s ease, background .25s ease, transform .25s ease;
-}
-
-/* A ida e a volta acompanham a travessia; sem isto o lápis pisca no meio do
-   gesto, aparecendo antes de o painel terminar de encolher. */
-.journey-admin-link {
-  transition: opacity calc(var(--travessia-total, 2000ms) * .45) var(--travessia-curva, ease);
-}
-
-.journey-admin-link:hover,
-.journey-admin-link:focus-visible {
-  background: rgba(48, 36, 25, .9);
-  opacity: 1;
-  transform: translateY(-1px);
-}
-
-.journey-admin-link svg { width: 17px; height: 17px; fill: currentColor; }
-.is-admin-preview .journey-admin-link { display: none; }
-
 /*
  * A barra de rolagem some DENTRO da prévia.
  *
@@ -209,30 +212,6 @@ html.is-crossing .journey-entry-veil {
  */
 .is-admin-preview { scrollbar-width: none; }
 .is-admin-preview::-webkit-scrollbar { display: none; }
-
-/*
- * O LÁPIS SAI DE CENA ENQUANTO UM BLOCO ESTÁ ABERTO.
- *
- * Não é arrumação: os dois ocupam o mesmo canto. Medido na prévia, com um bloco
- * aberto, a flecha de voltar fica em (16,16) com 44×44 e o lápis em (16,16) com
- * 40×40 — e como ele é `position: fixed` com z-index 24, ficava por cima.
- * `elementFromPoint` no centro da flecha devolvia o ícone do lápis: o botão de
- * sair do painel estava intercetado, e clicar nele levava para o admin.
- *
- * `pointer-events` não é redundante com a opacidade. Um elemento invisível
- * continua recebendo clique, e era justamente o clique que estava sendo roubado.
- *
- * Some com a mesma curva da travessia, para não piscar no meio do gesto, e volta
- * assim que o bloco encolhe.
- */
-body:has(.journey-region.is-expanded) .journey-admin-link {
-  opacity: 0;
-  pointer-events: none;
-}
-
-@media (pointer: coarse) {
-  .journey-admin-link { width: 44px; height: 44px; }
-}
 
 .journey-scroll-cue span {
   position: absolute;
@@ -362,6 +341,14 @@ body:has(.journey-region.is-expanded) .journey-admin-link {
   padding: clamp(36px, 5vw, 84px);
 }
 
+/* A linha da grade assume a altura do card mais alto; esticar o irmão faz o
+   par fechado manter o mesmo tamanho sem impor uma altura fixa. Ao abrir, a
+   regra deixa de valer e o painel ampliado volta a seguir o próprio conteúdo. */
+.region-stage:not(:has(.journey-region.is-expanded)) {
+  align-items: stretch;
+  align-content: center;
+}
+
 .region-content {
   position: relative;
   width: min(35vw, 500px);
@@ -369,7 +356,7 @@ body:has(.journey-region.is-expanded) .journey-admin-link {
   overflow: auto;
   border: 1px solid rgba(231, 202, 143, .2);
   border-radius: clamp(22px, 2.4vw, 32px);
-  background: var(--journey-panel);
+  background: var(--journey-panel-superficie);
   box-shadow: 0 24px 80px rgba(29, 20, 13, .28);
   color: var(--journey-ivory);
   opacity: 0;
@@ -528,6 +515,19 @@ body:has(.journey-region.is-expanded) .journey-admin-link {
 
 .journey-region[data-title-scale="compact"] .region-title {
   font-size: clamp(2.55rem, 4.7vw, 5.8rem);
+}
+
+/* Nos cartões fechados, uma palavra funciona como assinatura editorial: ela
+   encolhe o necessário, mas não se parte no último caractere. Frases mantêm a
+   composição normal, e o painel aberto preserva a escala de leitura própria. */
+.journey-region[data-title-flow="single"]:not(.is-expanded) .region-title {
+  overflow-wrap: normal;
+  white-space: nowrap;
+  font-size: clamp(2.35rem, 3.8vw, 4.35rem);
+}
+
+.journey-region[data-title-flow="single"][data-title-scale="compact"]:not(.is-expanded) .region-title {
+  font-size: clamp(2.05rem, 3.25vw, 3.7rem);
 }
 
 .region-description {
@@ -788,6 +788,12 @@ body:has(.journey-region.is-expanded) .journey-admin-link {
   .region-category { margin-bottom: 26px; }
   .region-title { font-size: clamp(2.7rem, 15vw, 4.8rem); }
   .journey-region[data-title-scale="compact"] .region-title { font-size: clamp(2.35rem, 12.5vw, 4.1rem); }
+  .journey-region[data-title-flow="single"]:not(.is-expanded) .region-title {
+    font-size: clamp(1.9rem, 9.5vw, 3rem);
+  }
+  .journey-region[data-title-flow="single"][data-title-scale="compact"]:not(.is-expanded) .region-title {
+    font-size: clamp(1.7rem, 8vw, 2.55rem);
+  }
   .region-description { font-size: .95rem; }
 
   .journey-footer {
@@ -2305,4 +2311,1099 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  */
 .journey-region:not(.is-expanded)[data-travessia="transitioning"] .region-content {
   transform: none;
+}
+
+/* ============================================================
+ * ÍNDICE LATERAL DA TRAVESSIA
+ *
+ * A linha conta continuidade; esta barra conta localização. Ela reúne marca,
+ * progresso e destinos sem disputar o centro da paisagem com os blocos.
+ * ============================================================ */
+
+.journey-sidebar-brand {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  color: var(--journey-ivory);
+  text-align: center;
+  text-decoration: none;
+}
+
+.journey-sidebar-brand img {
+  width: clamp(54px, 5vw, 70px);
+  height: 56px;
+  object-fit: contain;
+}
+
+.journey-sidebar-brand > span {
+  display: grid;
+  gap: 1px;
+  font-size: .54rem;
+  letter-spacing: .28em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+.journey-sidebar-brand strong { font-size: .68rem; font-weight: 600; }
+
+.journey-sidebar-heading {
+  margin-top: 12px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.journey-sidebar-heading p {
+  margin: 0;
+  color: var(--journey-gold);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+}
+
+.journey-sidebar-heading span {
+  display: block;
+  margin-top: 4px;
+  color: rgba(247, 237, 218, .58);
+  font-size: .51rem;
+  letter-spacing: .13em;
+}
+
+.journey-sidebar-progress {
+  display: grid;
+  gap: 9px;
+  margin-top: 18px;
+  color: rgba(247, 237, 218, .52);
+  font-size: .68rem;
+  letter-spacing: .12em;
+}
+
+.journey-sidebar-progress strong { color: var(--journey-gold); font-size: 1rem; }
+
+.journey-sidebar-progress i {
+  position: relative;
+  display: block;
+  height: 1px;
+  overflow: hidden;
+  background: rgba(247, 237, 218, .16);
+}
+
+.journey-sidebar-progress i::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--journey-scroll-progress, 0) * 100%);
+  background: linear-gradient(90deg, #c89546, #f0d498);
+  box-shadow: 0 0 12px rgba(229, 181, 92, .62);
+  content: "";
+  transition: width .18s linear;
+}
+
+.journey-sidebar-back {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin: 16px auto 10px;
+  border: 1px solid rgba(231, 202, 143, .3);
+  border-radius: 50%;
+  color: var(--journey-gold);
+  font-size: 1.2rem;
+  place-items: center;
+  text-decoration: none;
+  transition: border-color .25s ease, background .25s ease, transform .25s ease;
+}
+
+.journey-sidebar-back:hover,
+.journey-sidebar-back:focus-visible {
+  border-color: rgba(231, 202, 143, .7);
+  background: rgba(231, 202, 143, .08);
+  transform: translateX(-2px);
+}
+
+.journey-menu-viewport {
+  --journey-menu-row: 38px;
+  --journey-menu-visible: 5;
+  --journey-menu-height: 190px;
+  --journey-menu-edge-space: 76px;
+  position: relative;
+  flex: 0 0 var(--journey-menu-height);
+  height: var(--journey-menu-height);
+  overflow-x: hidden;
+  /*
+   * A ROLETA NÃO É ROLADA PELA MÃO.
+   *
+   * Ela é um indicador: mostra onde o visitante está na jornada, e quem a move
+   * é a rolagem da página. Rolável, ela discordava da página — a pessoa
+   * arrastava a lista, soltava, e ficava com uma seção destacada que não tinha
+   * nada a ver com o que estava na tela.
+   *
+   * `hidden` não impede a rolagem por código: `scrollTo` continua funcionando,
+   * e é assim que ela acompanha o trecho atual.
+   */
+  overflow-y: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 17%, #000 83%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 17%, #000 83%, transparent);
+}
+
+.journey-menu-viewport::-webkit-scrollbar { display: none; }
+
+.journey-menu-viewport ul {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: var(--journey-menu-row);
+  gap: 0;
+  min-height: 0;
+  margin: 0;
+  padding: var(--journey-menu-edge-space) 0 var(--journey-menu-edge-space) 14px;
+  overflow: visible;
+  border-left: 1px solid rgba(231, 202, 143, .16);
+  list-style: none;
+}
+
+.journey-menu li {
+  position: relative;
+  height: var(--journey-menu-row);
+  opacity: .46;
+  scroll-snap-align: center;
+  transition: opacity .38s ease, transform .5s cubic-bezier(.22, .72, .2, 1);
+}
+
+.journey-menu li::before {
+  position: absolute;
+  top: 50%;
+  left: -17px;
+  width: 5px;
+  height: 5px;
+  border: 1px solid rgba(231, 202, 143, .45);
+  border-radius: 50%;
+  background: #211910;
+  content: "";
+  transform: translateY(-50%);
+}
+
+.journey-menu li:has(a[aria-current="true"])::before {
+  border-color: #f2d18e;
+  background: #e2ad56;
+  box-shadow: 0 0 13px rgba(231, 181, 94, .82);
+}
+
+.journey-menu li:has(a[aria-current="true"]) {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+.journey-menu li:has(a:hover),
+.journey-menu li:has(a:focus-visible) { opacity: .86; }
+
+.journey-menu li a {
+  display: flex;
+  min-height: var(--journey-menu-row);
+  gap: 8px;
+  align-items: center;
+  padding: 7px 6px;
+  border-radius: 8px;
+  color: rgba(247, 237, 218, .6);
+  font-size: .67rem;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: color .22s ease, background .22s ease;
+}
+
+.journey-menu li a > span {
+  flex: 0 0 20px;
+  color: rgba(215, 186, 120, .54);
+  font-size: .52rem;
+  letter-spacing: .12em;
+}
+
+.journey-menu li a:hover,
+.journey-menu li a:focus-visible {
+  background: rgba(231, 202, 143, .07);
+  color: var(--journey-ivory);
+}
+
+.journey-menu li a[aria-current="true"] {
+  background: linear-gradient(90deg, rgba(231, 202, 143, .12), transparent);
+  color: var(--journey-ivory);
+  font-weight: 650;
+}
+
+.journey-sidebar-admin {
+  display: flex;
+  min-height: 42px;
+  gap: 9px;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  border: 1px solid rgba(231, 202, 143, .2);
+  border-radius: 999px;
+  color: rgba(247, 237, 218, .66);
+  font-size: .61rem;
+  letter-spacing: .08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color .22s ease, border-color .22s ease, background .22s ease;
+}
+
+.journey-sidebar-admin svg { width: 15px; height: 15px; fill: currentColor; }
+
+.journey-sidebar-admin:hover,
+.journey-sidebar-admin:focus-visible {
+  border-color: rgba(231, 202, 143, .52);
+  background: rgba(231, 202, 143, .07);
+  color: var(--journey-gold);
+}
+
+.journey-sidebar-back:focus-visible,
+.journey-menu a:focus-visible {
+  outline: 2px solid var(--journey-gold);
+  outline-offset: 2px;
+}
+
+@media (min-width: 901px) {
+  #journey-root {
+    width: calc(100% - var(--journey-sidebar-width));
+    margin-left: var(--journey-sidebar-width);
+  }
+
+  .journey-road {
+    right: 0;
+    left: var(--journey-sidebar-width);
+    width: calc(100vw - var(--journey-sidebar-width));
+  }
+
+  .journey-region:not(.is-expanded) .region-content { width: min(100%, 500px); }
+
+  .journey-menu {
+    position: fixed;
+    z-index: 32;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: var(--journey-sidebar-width);
+    height: 100svh;
+    padding: max(20px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    /*
+     * O FUNDO SAI DAQUI e vai para uma camada própria, logo abaixo.
+     *
+     * A barra terminava numa borda de 1px e uma sombra: um corte reto de cima a
+     * baixo, com a paisagem de um lado e o marrom do outro. Ela parecia colada
+     * por cima da Home em vez de pertencer a ela.
+     *
+     * Desvanecer o fundo pede uma máscara, e máscara aplicada aqui levaria o
+     * TEXTO junto — "Atendimentos" chega perto da borda direita e ficaria
+     * meio apagado. Separando o fundo numa camada, a máscara age só nele.
+     */
+    background: none;
+    box-shadow: none;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: none;
+  }
+
+  /*
+   * A camada de fundo da barra.
+   *
+   * Ela continua separada da barra mesmo sem máscara: é ela que carrega o fundo
+   * e o desfoque quando estes existem, e mantê-la à parte deixa o texto fora do
+   * alcance de qualquer efeito que venha a ser aplicado ao fundo.
+   */
+  .journey-menu[data-journey-sidebar]::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background:
+      linear-gradient(180deg, var(--journey-sidebar-surface), var(--journey-sidebar-depth));
+    content: "";
+    /*
+     * SEM DESFOQUE E SEM DISSOLUÇÃO: a borda é um corte limpo.
+     *
+     * As duas coisas existiam para a barra se misturar com a paisagem, e as
+     * duas produziam a mesma fenda. O desfoque continuava agindo onde a cor já
+     * era quase transparente, e devolvia uma faixa de paisagem borrada. A
+     * máscara, mesmo em nove pixels, apagava a cor da barra ANTES de o painel
+     * do bloco aberto começar — e nesses nove pixels aparecia a paisagem crua,
+     * clara, entre duas superfícies escuras.
+     *
+     * É uma troca assumida: a barra deixa de se fundir com a paisagem e passa a
+     * ter uma aresta. Uma aresta limpa é melhor que uma passagem que só funciona
+     * com o bloco fechado — a fenda aparecia justamente quando havia mais o que
+     * ler na tela.
+     *
+     * O fio de luz do `::after` continua, e é ele que impede a aresta de virar
+     * um corte de tesoura.
+     */
+    pointer-events: none;
+  }
+
+  /*
+   * A antiga borda de 1px virou um fio que também apaga.
+   *
+   * Sem nenhuma linha, a barra perde a aresta e o olho não sabe onde ela acaba;
+   * com a linha inteira, volta o corte reto. O fio forte em cima, onde o fundo
+   * ainda é cheio, e apagando junto com ele.
+   */
+  .journey-menu[data-journey-sidebar]::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(180deg, rgba(231, 202, 143, .26), rgba(231, 202, 143, .04));
+    content: "";
+    opacity: .5;
+    pointer-events: none;
+  }
+
+  .journey-menu-toggle { display: none; }
+  .journey-sound { left: calc(var(--journey-sidebar-width) + 18px); }
+}
+
+@media (max-width: 900px) {
+  :root { --journey-sidebar-width: 0px; }
+
+  body.is-journey-menu-open { overflow: hidden; }
+
+  #journey-root { width: 100%; margin-left: 0; }
+
+  .journey-road {
+    right: 0;
+    left: 0;
+    width: 100vw;
+  }
+
+  .journey-path { transform: none; }
+
+  .journey-menu {
+    position: fixed;
+    z-index: 48;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(82vw, 294px);
+    height: 100dvh;
+    padding: max(20px, env(safe-area-inset-top)) 22px max(18px, env(safe-area-inset-bottom));
+    overflow: hidden;
+    border: 0;
+    border-right: 1px solid rgba(231, 202, 143, .24);
+    border-radius: 0 24px 24px 0;
+    background: linear-gradient(180deg, var(--journey-sidebar-surface), var(--journey-sidebar-depth));
+    -webkit-backdrop-filter: blur(18px) saturate(112%);
+    backdrop-filter: blur(18px) saturate(112%);
+    box-shadow: 22px 0 70px rgba(12, 8, 5, .42);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-110%);
+    transform-origin: left center;
+    transition:
+      opacity .34s cubic-bezier(.2, .72, .2, 1),
+      transform .46s cubic-bezier(.2, .72, .2, 1),
+      visibility 0s linear .46s;
+  }
+
+  .journey-menu.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+    transition-delay: 0s;
+  }
+
+  .journey-menu-toggle {
+    position: fixed;
+    z-index: 49;
+    top: max(14px, env(safe-area-inset-top));
+    right: auto;
+    bottom: auto;
+    left: max(14px, env(safe-area-inset-left));
+    display: grid;
+    width: 48px;
+    height: 48px;
+    border-color: rgba(231, 202, 143, .34);
+    background: rgba(38, 29, 21, .9);
+    place-items: center;
+  }
+
+  .journey-menu-toggle img { width: 29px; height: 29px; object-fit: contain; }
+
+  .journey-menu-toggle[aria-expanded="true"] {
+    border-color: rgba(231, 202, 143, .72);
+    transform: translateX(min(82vw, 294px)) translateX(-64px);
+  }
+
+  .journey-sidebar-brand img { width: 62px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-sidebar-progress i::before,
+  .journey-menu,
+  .journey-menu a,
+  .journey-sidebar-back,
+  .journey-sidebar-admin { transition-duration: .01ms !important; }
+}
+
+/* ==================================================================
+ * NOVIDADES: os cartões que abrem a jornada
+ *
+ * Eles levam a um texto do Blog em vez de a uma seção, e por isso se
+ * comportam ao contrário dos outros: a seção fechada mostra TEXTO e esconde a
+ * imagem; a novidade fechada mostra a IMAGEM e esconde o texto.
+ *
+ * A razão é o trabalho de cada um. A seção precisa ser lida para se decidir se
+ * vale abrir. A novidade precisa ser reconhecida — e é a figura, a mesma que o
+ * post usa no Blog, que faz esse reconhecimento antes de qualquer clique.
+ * ================================================================== */
+
+/*
+ * A ETIQUETA DO CANTO.
+ *
+ * Fora do fluxo do texto: no fluxo, ela empurraria a numeração e o título para
+ * baixo, e as duas famílias de cartão deixariam de se alinhar entre si.
+ */
+.region-selo {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  padding: 6px 12px;
+  border-radius: 14px 0 12px;
+  color: var(--journey-ink);
+  font: 700 .62rem/1 system-ui, sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  background: var(--journey-gold);
+}
+
+/* O permanente é discreto: ele é a regra da casa, e a novidade é a exceção que
+   merece a cor cheia. */
+.region-selo[data-selo="fixo"] {
+  color: rgba(247, 237, 218, .82);
+  background: rgba(247, 237, 218, .14);
+}
+
+.region-summary { position: relative; }
+
+/* A notícia é uma pequena capa editorial: fotografia, véu inferior e título
+   sempre legível. Ela não depende de hover, portanto funciona igual no toque. */
+.journey-region[data-card-kind="novidade"] .region-capa {
+  position: absolute;
+  z-index: 0;
+  inset: clamp(12px, 2vw, 18px);
+  overflow: hidden;
+  border: 1px solid rgba(226, 201, 151, .32);
+  border-radius: clamp(16px, 2vw, 22px);
+  background: #30251b;
+  box-shadow: inset 0 0 0 1px rgba(255, 245, 222, .05);
+}
+
+.journey-region[data-card-kind="novidade"] .region-capa::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(180deg, rgba(29, 21, 14, .04) 30%, rgba(26, 18, 12, .86) 100%),
+    linear-gradient(120deg, rgba(214, 163, 85, .12), transparent 54%);
+  pointer-events: none;
+}
+
+.journey-region[data-card-kind="novidade"] .region-capa svg,
+.journey-region[data-card-kind="novidade"] .region-capa img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: var(--journey-gold);
+  object-fit: cover;
+  filter: sepia(.16) saturate(.78) brightness(.82);
+  transform: scale(1.01);
+}
+
+.journey-region[data-card-kind="novidade"]:not(.is-expanded) .region-category,
+.journey-region[data-card-kind="novidade"]:not(.is-expanded) .region-description,
+.journey-region[data-card-kind="novidade"]:not(.is-expanded) .region-expand-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.journey-region[data-card-kind="novidade"]:not(.is-expanded) .region-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.journey-region[data-card-kind="novidade"] .region-news-meta {
+  position: absolute;
+  z-index: 2;
+  right: clamp(30px, 4vw, 42px);
+  bottom: clamp(28px, 4vw, 40px);
+  left: clamp(30px, 4vw, 42px);
+  display: grid;
+  gap: 7px;
+  color: var(--journey-ivory);
+  text-align: left;
+  text-shadow: 0 2px 18px rgba(18, 12, 8, .9);
+  pointer-events: none;
+}
+
+.journey-region[data-card-kind="novidade"] .region-news-meta small {
+  color: #e7c98f;
+  font: 700 .58rem/1 system-ui, sans-serif;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.journey-region[data-card-kind="novidade"] .region-news-meta > span {
+  max-width: 18ch;
+  font: 500 clamp(1.08rem, 1.8vw, 1.48rem)/1.05 Georgia, "Times New Roman", serif;
+  text-wrap: balance;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .journey-region[data-card-kind="novidade"] .region-capa img {
+    transition: transform .65s cubic-bezier(.2, .7, .2, 1), filter .65s ease;
+  }
+  .journey-region[data-card-kind="novidade"] .region-summary:hover .region-capa img,
+  .journey-region[data-card-kind="novidade"] .region-summary:focus-visible .region-capa img {
+    filter: sepia(.12) saturate(.86) brightness(.92);
+    transform: scale(1.045);
+  }
+}
+
+/* Aberta, a novidade volta a ser um bloco comum: a capa sai e o texto manda. */
+.journey-region[data-card-kind="novidade"].is-expanded .region-capa,
+.journey-region[data-card-kind="novidade"].is-expanded .region-news-meta { display: none; }
+
+/*
+ * O TÍTULO SÓ APARECE SE O CARTÃO O DEIXAR SAIR.
+ *
+ * `.region-content` tem `overflow: auto` — a rede de segurança para o texto que
+ * não cabe no bloco. Ela também recorta tudo que é posicionado FORA da caixa, e
+ * o título da novidade fica exatamente ali, abaixo do cartão.
+ *
+ * O efeito era cruel de depurar: `getBoundingClientRect` devolvia a posição
+ * certa, `getComputedStyle` devolvia `opacity: 1`, e na tela não havia nada. A
+ * medição confirmava um elemento que o recorte tinha apagado.
+ *
+ * Liberado só no cartão FECHADO de novidade, onde não há texto para rolar — a
+ * rede continua inteira no bloco aberto, que é onde ela foi criada para agir.
+ */
+.journey-region[data-card-kind="novidade"]:not(.is-expanded) .region-content {
+  aspect-ratio: 4 / 3;
+  overflow: visible;
+}
+
+.journey-region[data-card-kind="novidade"]:not(.is-expanded) .region-summary {
+  height: 100%;
+  padding: 0;
+}
+
+/*
+ * O SELO É DO CARTÃO NA HOME, e não do bloco aberto.
+ *
+ * Ele responde a uma pergunta que só existe percorrendo a jornada: este cartão
+ * é novidade ou é seção permanente? Dentro do bloco aberto essa pergunta já foi
+ * respondida — a pessoa escolheu entrar — e a etiqueta vira ruído no canto
+ * superior esquerdo do texto, exatamente onde a leitura começa.
+ */
+.journey-region.is-expanded .region-selo { display: none; }
+
+/*
+ * OS TÍTULOS DE GRUPO DA ROLETA.
+ *
+ * Fora do ritmo das linhas de propósito: eles são mais baixos e não têm o
+ * marcador circular à esquerda que os blocos têm. Uma linha de grupo com a
+ * mesma altura e o mesmo peso das outras seria lida como mais um destino
+ * clicável, e a divisão que ela veio anunciar se perderia.
+ */
+.journey-menu .journey-menu-grupo {
+  height: auto;
+  padding: 14px 0 6px;
+  color: rgba(231, 202, 143, .72);
+  font: 700 .58rem/1 system-ui, sans-serif;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  opacity: 1;
+  scroll-snap-align: none;
+}
+
+/* O primeiro não precisa do respiro de cima: ele já encosta na borda da lista. */
+.journey-menu .journey-menu-grupo:first-child { padding-top: 0; }
+
+/* O marcador circular pertence aos destinos, e o título de grupo não é um. */
+.journey-menu .journey-menu-grupo::before { content: none; }
+
+/*
+ * O RÓTULO DO GRUPO, no começo dos cartões a que se refere.
+ *
+ * Ele já morou fixo no alto da tela. Ali estava sempre visível e sempre longe
+ * do que descrevia: quem olhava os cartões não olhava o canto, e a palavra
+ * trocava sem que ninguém visse.
+ *
+ * `sticky` e não `fixed`: fixo, ele acompanharia a página inteira, inclusive o
+ * prólogo e a subida final, onde não há cartão nenhum para rotular. Grudado,
+ * ele existe exatamente enquanto o grupo dele passa — chega com o primeiro
+ * cartão e sai com o último.
+ */
+.journey-trecho {
+  /*
+   * PARADO no começo do grupo, e não grudado no alto da tela.
+   *
+   * Foi `sticky` por uma versão, e ali ele acompanhava a rolagem: passava a
+   * jornada inteira no topo, atravessando cartões que já não pertenciam ao
+   * grupo que ele nomeia. Um rótulo que segue quem lê deixa de ser rótulo e
+   * vira mais um elemento de interface competindo pela atenção.
+   *
+   * Estático, ele é lido uma vez, no lugar em que a coisa começa — como um
+   * intertítulo de revista. Sai de cena junto com o primeiro cartão, e quem
+   * precisar da resposta de novo a tem na barra lateral, que é onde ela mora.
+   */
+  /*
+   * UMA LINHA DA GRADE, logo acima dos cartões — e não um absoluto no topo.
+   *
+   * Absoluto, ele ficava preso ao alto do palco enquanto os cartões ficam
+   * CENTRADOS nele: numa tela alta sobravam duzentos pixels de paisagem entre o
+   * rótulo e o que ele nomeia, e a ligação entre os dois se perdia.
+   *
+   * Ocupando a primeira linha da grade, ele desce junto: as duas linhas — o
+   * rótulo e os cartões — são centradas como um bloco só, e a distância entre
+   * eles passa a ser o `row-gap`, que é uma medida e não um acaso.
+   *
+   * Na primeira coluna, ele também se alinha à borda esquerda do primeiro
+   * cartão, sem nenhum recuo escrito à mão.
+   */
+  grid-column: 1 / -1;
+  justify-self: start;
+  z-index: 12;
+  display: grid;
+  grid-template-columns: auto clamp(42px, 5vw, 62px);
+  grid-template-rows: auto auto;
+  align-items: end;
+  column-gap: clamp(12px, 1.5vw, 18px);
+  width: min(100%, 460px);
+  margin: 0;
+  padding: 0;
+  color: var(--journey-ivory);
+  text-shadow: 0 2px 16px rgba(30, 22, 15, .88);
+  pointer-events: none;
+}
+
+.journey-trecho span {
+  grid-column: 1;
+  color: #e3c27f;
+  font: 700 .56rem/1 system-ui, sans-serif;
+  letter-spacing: .21em;
+  text-transform: uppercase;
+}
+
+.journey-trecho strong {
+  grid-column: 1;
+  margin-top: 5px;
+  font: 500 clamp(1.35rem, 2.5vw, 2.05rem)/1 Georgia, "Times New Roman", serif;
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+
+.journey-trecho i {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: end;
+  width: 100%;
+  height: 1px;
+  margin-bottom: .35em;
+  background: linear-gradient(90deg, rgba(227, 194, 127, .85), rgba(227, 194, 127, .08));
+}
+
+/*
+ * O palco ganha uma segunda linha quando há rótulo.
+ *
+ * Sem `grid-template-rows`, o rótulo e os cartões disputariam a mesma linha e a
+ * grade colocaria o primeiro cartão ao lado dele. Com as duas linhas declaradas
+ * e `align-content: center`, o conjunto inteiro fica centrado na tela — que é
+ * onde os cartões já estavam, agora com o rótulo colado neles.
+ */
+.region-stage:has(.journey-trecho) {
+  grid-template-rows: auto auto;
+  align-content: center;
+  row-gap: clamp(12px, 1.8vh, 22px);
+}
+
+/*
+ * As linhas são DECLARADAS, e não deixadas para a colocação automática.
+ *
+ * O rótulo vem primeiro no HTML e mesmo assim caía na linha de baixo: os
+ * cartões trazem coluna explícita, e o algoritmo os acomoda antes de resolver o
+ * item que ocupa a linha inteira. O resultado era o nome do grupo aparecendo
+ * trezentos pixels ABAIXO do grupo — pior do que o problema que veio corrigir.
+ */
+.region-stage:has(.journey-trecho) > .journey-trecho { grid-row: 1; }
+.region-stage:has(.journey-trecho) .region-content { grid-row: 2; }
+
+/* No telefone o cabeçalho é uma terceira faixa. A regra desktop acima colocava
+   os dois cards explicitamente na linha 2 e eles se sobrepunham. Devolver a
+   colocação automática faz a grade reservar uma linha para cada notícia. */
+@media (max-width: 720px) {
+  .region-stage:has(.journey-trecho) {
+    grid-template-rows: auto repeat(2, minmax(0, 1fr));
+    align-content: stretch;
+    row-gap: 10px;
+  }
+
+  .region-stage:has(.journey-trecho) .region-content { grid-row: auto; }
+}
+
+/*
+ * A LINHA "RECENTES" DA ROLETA.
+ *
+ * As quatro novidades compartilham uma linha. Listadas uma a uma, as manchetes
+ * tomavam as primeiras posições e a roleta lia como se o Instituto tivesse
+ * quinze seções — quatro delas com nome de notícia.
+ *
+ * Ela usa o mesmo marcador circular das outras linhas, e é ele que acende
+ * enquanto o visitante percorre qualquer um dos quatro cartões.
+ */
+.journey-menu .journey-menu-marco {
+  display: flex;
+  align-items: center;
+  padding-left: 2px;
+  color: rgba(231, 202, 143, .8);
+  font: 700 .62rem/1 system-ui, sans-serif;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.journey-menu .journey-menu-marco[data-atual="true"] {
+  color: var(--journey-ivory);
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/*
+ * O círculo fica BRANCO no trecho das novidades.
+ *
+ * As seções acendem em dourado, que é a cor da jornada. O branco separa as duas
+ * coisas sem inventar um segundo marcador: é o mesmo ponto, com outra
+ * temperatura, e a diferença se lê sem legenda.
+ */
+.journey-menu [data-menu-recentes][data-atual="true"]::before {
+  border-color: #fff;
+  background: #fff;
+  box-shadow: 0 0 13px rgba(255, 255, 255, .8);
+}
+
+/*
+ * A MARCA DA FRONTEIRA, no silêncio entre as novidades e as seções.
+ *
+ * Sutil de propósito: uma linha fina que atravessa a estrada e apaga nas duas
+ * pontas, com um ponto no meio. Não é um aviso — é o tipo de coisa que se
+ * percebe depois de ter passado, e que explica em retrospecto por que a palavra
+ * no alto mudou.
+ *
+ * `::before` é a linha e `::after` é o ponto. O silêncio não tinha conteúdo
+ * nenhum até aqui, então os dois estavam livres.
+ */
+.journey-silence[data-fronteira="true"] {
+  position: relative;
+}
+
+.journey-silence[data-fronteira="true"]::before,
+.journey-silence[data-fronteira="true"]::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.journey-silence[data-fronteira="true"]::before {
+  width: min(72vw, 880px);
+  height: 2px;
+  /*
+   * Mais grossa e mais acesa que a primeira tentativa.
+   *
+   * A 1px e 42% de dourado ela sumia: a paisagem atrás é cheia de detalhe na
+   * mesma faixa de luz, e uma linha discreta sobre um fundo movimentado não é
+   * discreta — é invisível. Subtileza ali virou ausência.
+   *
+   * Continua apagando nas pontas: uma linha de ponta a ponta viraria uma
+   * divisória de página, e a intenção é uma marca no caminho.
+   */
+  /*
+   * A LINHA É DOURADA e o losango é escuro — invertido de novo, a pedido.
+   *
+   * Passou pelas duas versões. Com a linha escura ela lia como costura no
+   * terreno e o ouro ficava só no centro; dourada, ela se vê de longe sobre a
+   * paisagem, que é o que uma fronteira precisa fazer para ser notada antes de
+   * se chegar nela.
+   */
+  background: linear-gradient(to right, transparent, rgba(231, 202, 143, .92) 26%, rgba(231, 202, 143, .92) 74%, transparent);
+  box-shadow: 0 0 18px rgba(231, 202, 143, .45);
+  translate: -50% -50%;
+}
+
+/*
+ * O ponto do meio virou um losango com halo.
+ *
+ * Um círculo de 7px sobre pedra e névoa lê como um detalhe da imagem. O losango
+ * não existe na paisagem — nada ali é geométrico — e é isso que o faz ser lido
+ * como sinal, e não como parte do cenário.
+ */
+.journey-silence[data-fronteira="true"]::after {
+  width: 13px;
+  height: 13px;
+  border: 1px solid rgba(231, 202, 143, .95);
+  background: rgba(30, 22, 15, .92);
+  box-shadow: 0 0 22px rgba(231, 202, 143, .55);
+  rotate: 45deg;
+  translate: -50% -50%;
+}
+
+/* ==================================================================
+ * O rodapé da barra lateral: um botão redondo com duas opções
+ * ================================================================== */
+
+.journey-sidebar-mais {
+  position: relative;
+  margin-top: auto;
+  /* Centrado na coluna: sozinho e redondo, encostado à esquerda ele parecia
+     um item da lista que perdeu o texto. */
+  align-self: center;
+}
+
+.journey-sidebar-mais summary {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(231, 202, 143, .22);
+  border-radius: 50%;
+  background: rgba(30, 22, 15, .72);
+  cursor: pointer;
+  place-items: center;
+  /* O triângulo padrão do `summary` não cabe num botão redondo de ícone. */
+  list-style: none;
+}
+
+.journey-sidebar-mais summary::-webkit-details-marker { display: none; }
+.journey-sidebar-mais summary:hover { border-color: rgba(231, 202, 143, .5); }
+.journey-sidebar-mais summary:focus-visible { outline: 2px solid var(--journey-gold); outline-offset: 3px; }
+
+/*
+ * As três linhas do ícone, desenhadas em CSS.
+ *
+ * Um SVG de três retas é mais markup do que desenho; a caixa mais duas bordas
+ * dão exatamente a mesma figura, e ela acompanha a cor do botão sem nenhuma
+ * regra a mais.
+ */
+.journey-sidebar-mais summary span {
+  position: relative;
+  display: block;
+  width: 15px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: rgba(247, 237, 218, .82);
+}
+
+.journey-sidebar-mais summary span::before,
+.journey-sidebar-mais summary span::after {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: inherit;
+  content: "";
+}
+
+.journey-sidebar-mais summary span::before { top: -5px; }
+.journey-sidebar-mais summary span::after { top: 5px; }
+
+/*
+ * As opções sobem em vez de descer: o botão mora no rodapé da barra, e um menu
+ * para baixo abriria fora da tela.
+ */
+.journey-sidebar-opcoes {
+  position: absolute;
+  z-index: 4;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  display: grid;
+  gap: 2px;
+  width: max-content;
+  padding: 6px;
+  border: 1px solid rgba(231, 202, 143, .2);
+  border-radius: 14px;
+  background: rgba(24, 17, 11, .96);
+  box-shadow: 0 14px 34px rgba(14, 10, 7, .4);
+  translate: -50% 0;
+}
+
+.journey-sidebar-opcoes a {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 9px;
+  color: rgba(247, 237, 218, .74);
+  font-size: .62rem;
+  letter-spacing: .08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.journey-sidebar-opcoes a:hover { color: var(--journey-ivory); background: rgba(231, 202, 143, .12); }
+.journey-sidebar-opcoes a:focus-visible { outline: 2px solid var(--journey-gold); outline-offset: -2px; }
+.journey-sidebar-opcoes svg { width: 14px; height: 14px; fill: currentColor; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .journey-sidebar-mais summary { transition: border-color .22s ease; }
+  .journey-sidebar-mais[open] .journey-sidebar-opcoes { animation: sidebar-opcoes-entra .2s ease; }
+}
+
+@keyframes sidebar-opcoes-entra {
+  from { opacity: 0; translate: -50% 6px; }
+}
+
+/*
+ * A BARRA NÃO MUDA COM O BLOCO ABERTO — e já mudou.
+ *
+ * Houve uma versão em que ela ficava opaca no tom do painel, para apagar a
+ * fenda que aparecia entre as duas. A fenda era um degrau de densidade: as duas
+ * superfícies translúcidas se sobrepõem em 45px, ali a paisagem é coberta duas
+ * vezes, e a dissolução larga da borda espalhava esse degrau numa faixa.
+ *
+ * O que resolveu de verdade foi outra coisa: tirar o desfoque e encurtar a
+ * dissolução de 26px para 9. Com a borda curta e nítida, o degrau deixou de ter
+ * onde se espalhar — e trocar a cor virou remendo sobre problema já resolvido,
+ * um remendo que se via, porque a barra piscava de tom a cada bloco aberto.
+ *
+ * Se a fenda voltar, o lugar de mexer é a borda, não a cor.
+ */
+
+/*
+ * COM UM BLOCO ABERTO, O RÓTULO DO GRUPO SAI DE CENA.
+ *
+ * Ele nomeia um trecho da JORNADA — "estes cartões são novidades". Dentro de um
+ * bloco aberto essa pergunta já foi respondida, e o rótulo fica no alto da tela
+ * repetindo uma informação de outro nível, competindo com o título da própria
+ * notícia poucos pixels abaixo.
+ *
+ * E ele não só aparecia: ocupava a primeira linha da grade do palco. O bloco
+ * aberto, na segunda, começava algumas centenas de pixels abaixo do topo — e
+ * era isso que deixava uma faixa de paisagem em cima dele, como se o painel não
+ * conseguisse chegar até a borda.
+ *
+ * `display: none` em vez de `visibility: hidden` justamente por causa disso:
+ * escondido, ele continuaria segurando a linha, e a faixa continuaria lá.
+ */
+.region-stage:has(.journey-region.is-expanded) .journey-trecho { display: none; }
+
+/*
+ * E o palco volta a ter uma linha só, para o bloco ocupar a altura inteira.
+ *
+ * A regra que põe os cartões na segunda linha vale enquanto há rótulo; com o
+ * bloco aberto o rótulo saiu, e mantê-los na linha dois deixaria uma primeira
+ * linha vazia empurrando tudo para baixo.
+ */
+.region-stage:has(.journey-trecho):has(.journey-region.is-expanded) {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.region-stage:has(.journey-trecho):has(.journey-region.is-expanded) .region-content {
+  grid-row: 1;
+}
+
+/* ==================================================================
+ * A busca da jornada
+ * ================================================================== */
+
+/* Só para leitor de tela: a lupa diz o que o campo faz para quem vê, e este
+   rótulo diz o mesmo para quem ouve. */
+.journey-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.journey-busca {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.journey-busca[hidden] { display: none; }
+
+.journey-busca input {
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(231, 202, 143, .26);
+  border-radius: 10px;
+  color: var(--journey-ivory);
+  font: 400 .78rem/1 system-ui, sans-serif;
+  background: rgba(24, 17, 11, .72);
+}
+
+.journey-busca input::placeholder { color: rgba(247, 237, 218, .4); }
+.journey-busca input:focus-visible { outline: 2px solid var(--journey-gold); outline-offset: 1px; }
+
+.journey-busca button {
+  display: grid;
+  width: 34px;
+  border: 1px solid rgba(231, 202, 143, .26);
+  border-radius: 10px;
+  color: rgba(247, 237, 218, .82);
+  background: rgba(24, 17, 11, .72);
+  cursor: pointer;
+  place-items: center;
+}
+
+.journey-busca button:hover { border-color: rgba(231, 202, 143, .5); }
+.journey-busca button:focus-visible { outline: 2px solid var(--journey-gold); outline-offset: 2px; }
+.journey-busca svg { width: 15px; height: 15px; fill: currentColor; }
+
+/*
+ * O aviso ocupa a linha inteira e só existe quando tem o que dizer.
+ *
+ * `:empty` para não reservar espaço à toa: um vão permanente embaixo do campo
+ * empurraria o botão do menu e faria a barra parecer desalinhada o tempo todo
+ * por causa de uma mensagem que aparece raramente.
+ */
+.journey-busca-aviso {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: rgba(247, 237, 218, .62);
+  font: 400 .68rem/1.4 system-ui, sans-serif;
+}
+
+.journey-busca-aviso:empty { display: none; }
+
+/* O botão de pesquisar do menu é um `button`, e o resto são links: sem isto
+   ele herdaria a aparência do navegador no meio de dois links iguais. */
+.journey-sidebar-opcoes button {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  background: none;
+  cursor: pointer;
 }

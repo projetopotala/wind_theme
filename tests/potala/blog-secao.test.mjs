@@ -20,7 +20,6 @@ import {
 
 const html = readFileSync(new URL("../../outputs/blog.html", import.meta.url), "utf8");
 const css = readFileSync(new URL("../../outputs/css/blog.css", import.meta.url), "utf8");
-const secoes = readFileSync(new URL("../../outputs/secoes.js", import.meta.url), "utf8");
 
 /* ------------------------------------------------------------------
  * O acervo
@@ -281,8 +280,21 @@ test("o blog usa a marca da Travessia, e nao outra", () => {
   assert.match(html, /media\/potala-mark-transparent\.png/);
 });
 
-test("o blog entra no menu do portal", () => {
-  assert.match(secoes, /key: "blog"[\s\S]*?href: "blog\.html"/);
+test("o blog entra no indice das secoes", () => {
+  /*
+   * A CHECAGEM MUDOU DE LUGAR, e nao de propósito.
+   *
+   * Ela olhava o menu de treze seções de `seções.js`, que saiu do ar: as
+   * páginas de seção passaram a ter uma barra fina com as portas que a
+   * Travessia nao oferece (especialistas, workshops, mentorias), e o índice das
+   * seções ficou onde sempre esteve de verdade — na jornada da Home.
+   *
+   * O que o teste protege continua igual: uma seção que existe e não ésta
+   * listada em lugar nenhum é uma página órfã, alcançável só por quem souber a
+   * URL de cor.
+   */
+  const jornada = readFileSync(new URL("../../outputs/js/home/journey-data.js", import.meta.url), "utf8");
+  assert.match(jornada, /id: "blog"[\s\S]*?href: "blog\.html"/);
 });
 
 test("a paleta do blog sai da Travessia, sem digito trocado", () => {

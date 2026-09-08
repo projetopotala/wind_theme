@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#241a12">
-  <meta name="description" content="O pensamento vivo do Instituto Potala: artigos, oráculos, terapias, cursos e cultura produzidos por quem atende na casa.">
-  <title>Blog — Instituto Potala</title>
+  <meta name="theme-color" content="#302318">
+  <meta name="description" content="Caderno de Travessia: ideias, práticas e reflexões para uma vida mais consciente.">
+  <title>Caderno de Travessia — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
   <link rel="stylesheet" href="secoes.css">
   <link rel="stylesheet" href="css/blog.css">
@@ -14,92 +14,66 @@
 </head>
 <body class="blog-body" data-section="blog">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-
   <main class="blog" id="conteudo">
-    <!--
-      O CABEÇALHO É A REFERÊNCIA QUE O CLIENTE MANDOU: marca centrada, lema
-      embaixo, e uma régua separando da navegação editorial.
-
-      A marca é a mesma da barra lateral da Travessia — o mesmo arquivo, não uma
-      reprodução — porque um blog que estampasse outra marca leria como outro
-      site, e o documento do Ecossistema insiste que o visitante não deve sentir
-      que troca de site a cada clique.
-    -->
-    <header class="blog-cabecalho">
-      <a class="blog-marca" href="transcendido.html" aria-label="Início da Travessia">
-        <img src="media/potala-mark-transparent.png" alt="Instituto Potala" width="96" height="78">
+    <header class="blog-panorama">
+      <div class="blog-panorama__shade" aria-hidden="true"></div>
+      <a class="blog-marca" href="transcendido.html" aria-label="Voltar à Travessia">
+        <img src="media/potala-mark-transparent.png" alt="Instituto Potala" width="86" height="70">
       </a>
-      <p class="blog-lema">o pensamento vivo do Potala</p>
+      <div class="blog-panorama__copy">
+        <p class="blog-temas">pensamentos · práticas · pessoas · caminhos</p>
+        <h1>Caderno de Travessia</h1>
+        <p class="blog-lema">Ideias, práticas e reflexões para uma vida mais consciente.</p>
+      </div>
+      <blockquote>“Todo caminho verdadeiro<br>começa no mundo interno.”</blockquote>
     </header>
 
-    <!--
-      A navegação editorial fica separada da navegação do site (a pílula fixa lá
-      em cima, montada por `secoes.js`): uma leva a outras seções do portal, esta
-      filtra o que já está na tela. Misturá-las faria o clique em "oráculos"
-      parecer que sai do blog.
-    -->
-    <nav class="blog-categorias" aria-label="Categorias do blog">
-      <ul data-blog-categorias></ul>
-    </nav>
-
-    <div class="blog-corpo">
-      <div class="blog-principal">
-        <!-- O destaque e a grade são desenhados pelo controlador: os dois leem a
-             mesma lista, e o filtro precisa poder redesenhar os dois juntos. -->
+    <div class="blog-shell">
+      <section class="blog-principal" aria-label="Publicações">
         <div data-blog-destaque></div>
-        <h2 class="blog-secao-titulo" id="ultimas">Últimas publicações</h2>
-        <div class="blog-grade" data-blog-grade aria-labelledby="ultimas"></div>
-        <p class="blog-vazio" data-blog-vazio hidden>Ainda não há textos publicados nesta categoria.</p>
-      </div>
+        <header class="blog-list-head">
+          <h2 id="artigos">Artigos</h2>
+          <span>mais recentes</span>
+        </header>
+        <div class="blog-grade" data-blog-grade aria-labelledby="artigos"></div>
+        <p class="blog-vazio" data-blog-vazio hidden>Nenhum texto encontrado neste caminho.</p>
+      </section>
 
-      <aside class="blog-lateral" aria-label="Destaques">
-        <!--
-          O ORÁCULO DO DIA é o que este blog tem e nenhum outro tem.
-
-          O Instituto faz oráculos de verdade — tarô, cafeomancia, runas — e a
-          referência que o cliente mandou traz um bloco de comunidade nesta
-          mesma posição. Trocar aquele bloco por um oráculo é usar a moldura
-          conhecida para mostrar o que a casa realmente é.
-        -->
-        <section class="oraculo" data-oraculo aria-labelledby="oraculo-titulo">
-          <p class="oraculo-etiqueta">Oráculo de hoje</p>
-          <h2 class="oraculo-titulo" id="oraculo-titulo" data-oraculo-nome></h2>
-          <div class="oraculo-carta" data-oraculo-arte></div>
-          <p class="oraculo-verso" data-oraculo-verso></p>
-          <p class="oraculo-nota">Uma carta por dia, a mesma para todos, até a meia-noite.</p>
+      <aside class="blog-lateral" aria-label="Explorar o Caderno">
+        <label class="blog-busca">
+          <span class="sr-only">Buscar no blog</span>
+          <span aria-hidden="true">⌕</span>
+          <input type="search" data-blog-search placeholder="Buscar no blog…" autocomplete="off">
+        </label>
+        <nav class="blog-categorias" aria-label="Categorias do blog">
+          <h2>Categorias</h2>
+          <ul data-blog-categorias></ul>
+        </nav>
+        <section class="lateral-convite" aria-labelledby="inspiracoes">
+          <p class="lateral-eyebrow">Receba nossas inspirações</p>
+          <h2 class="lateral-titulo" id="inspiracoes">Um intervalo de presença na sua caixa de entrada.</h2>
+          <form data-blog-newsletter>
+            <label class="sr-only" for="blog-email">Seu e-mail</label>
+            <input id="blog-email" type="email" placeholder="Seu e-mail…" required>
+            <button class="lateral-acao" type="submit" aria-label="Enviar e-mail">→</button>
+          </form>
+          <p class="lateral-feedback" data-blog-newsletter-status role="status" aria-live="polite"></p>
         </section>
-
-        <section class="lateral-lista" aria-labelledby="mais-lidos">
-          <h2 class="lateral-titulo" id="mais-lidos">Mais lidos da semana</h2>
-          <ol data-blog-mais-lidos></ol>
-        </section>
-
-        <section class="lateral-convite" aria-labelledby="escrever">
-          <h2 class="lateral-titulo" id="escrever">Quero escrever para o Blog</h2>
-          <p>Profissionais da casa e autores convidados podem propor um texto. A linha editorial é
-            a mesma que orienta o Instituto: conhecimento que se possa experimentar.</p>
-          <a class="lateral-acao" href="profissionais.html">Como propor um texto</a>
+        <section class="lateral-lista" aria-labelledby="recentes">
+          <h2 class="lateral-titulo" id="recentes">Posts recentes</h2>
+          <ol data-blog-recentes></ol>
         </section>
       </aside>
     </div>
 
-    <!--
-      COMENTÁRIOS — apenas o front, e a interface diz isso.
-
-      Não há gravação: o que for escrito aqui vive na aba e some ao recarregar.
-      Um formulário que aceita texto e o descarta em silêncio é pior do que
-      formulário nenhum, então o aviso fica visível junto do botão, e não numa
-      nota de rodapé que ninguém lê antes de escrever.
-    -->
     <section class="comentarios" aria-labelledby="comentarios-titulo">
+      <p class="comentarios-kicker">Mais que conteúdo, um convite ao encontro.</p>
       <h2 class="comentarios-titulo" id="comentarios-titulo">Conversa</h2>
-      <p class="comentarios-intro">O que fica depois da leitura também é conteúdo. Comente com o
-        nome que quiser usar.</p>
-
+      <p class="comentarios-intro">Esta representação mostra como a conversa poderá continuar após uma leitura.</p>
       <form class="comentario-forma" data-comentario-forma novalidate>
         <div class="campo">
           <label for="comentario-nome">Como quer ser chamada ou chamado</label>
-          <input id="comentario-nome" name="nome" type="text" autocomplete="nickname" maxlength="60" required>
+          <input id="comentario-nome" name="nome" type="text" maxlength="60" required>
           <p class="campo-erro" data-erro-nome></p>
         </div>
         <div class="campo">
@@ -113,17 +87,10 @@
           <button class="comentario-enviar" type="submit">Publicar comentário</button>
         </div>
       </form>
-
       <p class="comentario-status" data-comentario-status role="status" aria-live="polite"></p>
       <ol class="comentario-lista" data-comentario-lista></ol>
     </section>
   </main>
-
-  <noscript>
-    <div class="journey-noscript">
-      <p>O blog do Instituto Potala precisa de JavaScript para montar as publicações.
-        Enquanto isso, você pode <a href="transcendido.html">percorrer a Travessia</a>.</p>
-    </div>
-  </noscript>
+  <noscript><p class="journey-noscript">Ative o JavaScript para ver as publicações do Caderno.</p></noscript>
 </body>
 </html>

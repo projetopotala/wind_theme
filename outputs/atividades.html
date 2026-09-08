@@ -10,7 +10,10 @@
   <link rel="preload" href="media/atividades-pratica.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
   <link rel="stylesheet" href="css/section-photographic.css">
+  <link rel="stylesheet" href="css/assistente.css">
+  <link rel="stylesheet" href="css/section-transition.css">
   <script type="module" src="secoes.js"></script>
+  <script type="module" src="js/shared/assistente.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
 </head>
 <body data-section="atividades" data-entry="left" data-return-section="atendimentos" data-right="transcendido.html#atendimentos">
@@ -22,7 +25,22 @@
         <p class="photo-kicker">O movimento</p>
         <h1 id="activities-title">Atividades</h1>
         <p class="photo-subtitle">&amp; experiências para viver</p>
-        <p class="photo-lead">O conhecimento também passa pelo corpo, pela expressão e pela convivência. Cada prática é uma forma de estar presente.</p>
+        <!--
+          Três parágrafos, e não um só com quebras.
+
+          O texto tem três movimentos — o encontro que muda de uma vez, o
+          processo que pede tempo, e o convite. Emendados num parágrafo só, o
+          leitor perde as duas pausas que separam as ideias; com `<br>`, ganha
+          as pausas e perde a estrutura, porque quebra de linha não é começo de
+          parágrafo para quem ouve a página em vez de vê-la.
+
+          A margem inferior do `.photo-lead` vale para todos, então o último
+          fica com o espaço que o botão embaixo já esperava, e os dois de cima
+          se separam pela mesma medida.
+        -->
+        <p class="photo-lead">Algumas mudanças acontecem em um único encontro — uma conversa, uma descoberta, um instante capaz de abrir novos caminhos.</p>
+        <p class="photo-lead">Outras precisam de algo diferente: presença, disciplina, repetição e tempo.</p>
+        <p class="photo-lead">Cada processo tem seu próprio ritmo. Aqui, o convite é para caminhar com atenção, respeitar esse tempo e permitir que cada experiência encontre espaço para se transformar em algo que permaneça.</p>
         <a class="photo-action" href="#possibilidades">Conhecer possibilidades <span aria-hidden="true">↓</span></a>
       </div>
     </section>
@@ -34,13 +52,186 @@
     </section>
 
     <section class="photo-list" id="possibilidades" aria-labelledby="activities-list-title">
-      <header class="photo-list-head" data-reveal><div><p class="photo-kicker">Formas de participar</p><h2 id="activities-list-title">Corpo, Expressão e Convivência.</h2></div><p>As modalidades e os horários variam. Comece por uma família de práticas e descubra o que combina com seu momento.</p></header>
+      <header class="photo-list-head" data-reveal><div><p class="photo-kicker">Formas de participar</p><h2 id="activities-list-title">Corpo, Mente, Expressão e Convivência.</h2></div><!--
+          O convite é um BOTÃO, e não um parágrafo.
+
+          Escrito como frase, "agende uma aula" era só uma sugestão no meio do
+          texto: quem se convencesse não tinha o que fazer em seguida, e a
+          página pedia uma ação sem oferecer nenhuma.
+
+          O agendamento online ainda não existe. Em vez de um botão que finge —
+          e que devolve "em breve" a quem já decidiu — ele abre os caminhos que
+          funcionam HOJE: WhatsApp e telefone, os mesmos que a Recepção usa.
+          A promessa é pequena e é cumprida na hora.
+        -->
+        <div class="photo-agendar" data-agendar>
+          <p>Experimente antes de decidir. A primeira aula serve para você sentir como a prática encontra o seu corpo e o seu momento.</p>
+          <button class="photo-agendar-botao" type="button" data-agendar-abrir aria-expanded="false" aria-controls="agendar-canais">
+            Agendar uma aula <span aria-hidden="true">→</span>
+          </button>
+          <div class="photo-agendar-canais" id="agendar-canais" data-agendar-canais hidden>
+            <p>O agendamento pelo Portal chega em uma próxima etapa. Por enquanto, a turma responde por aqui:</p>
+            <a href="https://wa.me/5519997766131" rel="noreferrer">WhatsApp <span>(19) 99776-6131</span></a>
+            <a href="tel:+551938346147">Telefone <span>(19) 3834-6147</span></a>
+          </div>
+        </div></header>
       <div class="photo-rows">
-        <article data-reveal><span>01</span><h3>Corpo e consciência</h3><p>Yoga, pilates, alongamento e práticas de percepção aproximam movimento, respiração e atenção.</p></article>
-        <article data-reveal><span>02</span><h3>Práticas orientais</h3><p>Tai chi chuan, qi gong e artes marciais trabalham presença, coordenação e continuidade.</p></article>
-        <article data-reveal><span>03</span><h3>Dança e expressão</h3><p>Diferentes linguagens de dança convidam à criação, à escuta do corpo e ao encontro.</p></article>
-        <article data-reveal><span>04</span><h3>Convivência</h3><p>Meditação, xadrez e outras experiências mostram que concentração e troca também fazem parte do cuidado.</p></article>
+        <article data-reveal>
+          <span>01</span>
+          <h3>Corpo e consciência</h3>
+          <p>Yoga, pilates, alongamento e práticas de percepção aproximam movimento, respiração e atenção.</p>
+          <details class="photo-aulas">
+            <summary>Ver as 4 aulas e seus horários</summary>
+            <div class="photo-aulas-lista">
+              <details class="photo-aula" name="aulas-corpo">
+                <summary>Yoga</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Segunda, quarta e sexta</dd></div><div><dt>Horários</dt><dd>7h e 19h</dd></div><div><dt>Duração</dt><dd>60 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>2× por semana</dd></div><div><dt>Nível</dt><dd>Todos os níveis, na mesma turma</dd></div><div><dt>O que levar</dt><dd>Roupa confortável. Tapete e apoios ficam na sala.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-corpo">
+                <summary>Pilates</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Terça e quinta</dd></div><div><dt>Horários</dt><dd>8h, 12h e 18h</dd></div><div><dt>Duração</dt><dd>50 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>2× por semana</dd></div><div><dt>Nível</dt><dd>Iniciante e intermediário, em turmas separadas</dd></div><div><dt>O que levar</dt><dd>Roupa confortável e meia antiderrapante.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-corpo">
+                <summary>Alongamento</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Segunda a sexta</dd></div><div><dt>Horários</dt><dd>12h</dd></div><div><dt>Duração</dt><dd>30 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>Livre — venha nos dias que der</dd></div><div><dt>Nível</dt><dd>Sem experiência prévia</dd></div><div><dt>O que levar</dt><dd>Nada. A aula cabe no intervalo do almoço e não exige troca de roupa.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-corpo">
+                <summary>Consciência corporal</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Quarta</dd></div><div><dt>Horários</dt><dd>19h</dd></div><div><dt>Duração</dt><dd>75 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>1× por semana</dd></div><div><dt>Nível</dt><dd>Todos os níveis, na mesma turma</dd></div><div><dt>O que levar</dt><dd>Roupa confortável. A prática é descalça.</dd></div></dl>
+              </details>
+            </div>
+          </details>
+        </article>
+        <article data-reveal>
+          <span>02</span>
+          <h3>Práticas orientais</h3>
+          <p>Tai chi chuan, qi gong e artes marciais trabalham presença, coordenação e continuidade.</p>
+          <details class="photo-aulas">
+            <summary>Ver as 3 aulas e seus horários</summary>
+            <div class="photo-aulas-lista">
+              <details class="photo-aula" name="aulas-orientais">
+                <summary>Tai chi chuan</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Terça e quinta</dd></div><div><dt>Horários</dt><dd>8h</dd></div><div><dt>Duração</dt><dd>75 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>2× por semana</dd></div><div><dt>Nível</dt><dd>Iniciantes e quem já pratica, na mesma roda</dd></div><div><dt>O que levar</dt><dd>Roupa leve. A prática é descalça ou de meia.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-orientais">
+                <summary>Qi gong</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Terça e quinta</dd></div><div><dt>Horários</dt><dd>19h30</dd></div><div><dt>Duração</dt><dd>60 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>2× por semana</dd></div><div><dt>Nível</dt><dd>Sem experiência prévia</dd></div><div><dt>O que levar</dt><dd>Roupa leve e garrafa de água.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-orientais">
+                <summary>Artes marciais</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Segunda, quarta e sexta</dd></div><div><dt>Horários</dt><dd>20h</dd></div><div><dt>Duração</dt><dd>90 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>2 a 3× por semana</dd></div><div><dt>Nível</dt><dd>Turmas separadas por tempo de prática</dd></div><div><dt>O que levar</dt><dd>Roupa leve. O uniforme só a partir do terceiro mês.</dd></div></dl>
+              </details>
+            </div>
+          </details>
+        </article>
+        <article data-reveal>
+          <span>03</span>
+          <h3>Dança e expressão</h3>
+          <p>Diferentes linguagens de dança convidam à criação, à escuta do corpo e ao encontro.</p>
+          <details class="photo-aulas">
+            <summary>Ver as 3 aulas e seus horários</summary>
+            <div class="photo-aulas-lista">
+              <details class="photo-aula" name="aulas-danca">
+                <summary>Dança contemporânea</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Quarta</dd></div><div><dt>Horários</dt><dd>20h</dd></div><div><dt>Duração</dt><dd>90 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>1× por semana</dd></div><div><dt>Nível</dt><dd>Sem experiência prévia</dd></div><div><dt>O que levar</dt><dd>Roupa que permita movimento amplo.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-danca">
+                <summary>Danças circulares</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Sexta</dd></div><div><dt>Horários</dt><dd>19h</dd></div><div><dt>Duração</dt><dd>75 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>1× por semana</dd></div><div><dt>Nível</dt><dd>Aberto a todos, inclusive a quem nunca dançou</dd></div><div><dt>O que levar</dt><dd>Roupa confortável e sapato leve.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-danca">
+                <summary>Expressão corporal</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Sexta</dd></div><div><dt>Horários</dt><dd>20h30</dd></div><div><dt>Duração</dt><dd>60 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>1× por semana</dd></div><div><dt>Nível</dt><dd>Sem experiência prévia</dd></div><div><dt>O que levar</dt><dd>Roupa confortável. A prática é descalça.</dd></div></dl>
+              </details>
+            </div>
+          </details>
+        </article>
+        <article data-reveal>
+          <span>04</span>
+          <h3>Convivência</h3>
+          <p>Meditação, rodas de conversa e outras experiências mostram que concentração e troca também fazem parte do cuidado.</p>
+          <details class="photo-aulas">
+            <summary>Ver os 3 encontros e seus horários</summary>
+            <div class="photo-aulas-lista">
+              <details class="photo-aula" name="aulas-convivencia">
+                <summary>Meditação</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Sábado</dd></div><div><dt>Horários</dt><dd>9h</dd></div><div><dt>Duração</dt><dd>45 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>Livre — venha quando puder</dd></div><div><dt>Nível</dt><dd>Aberto a todos</dd></div><div><dt>O que levar</dt><dd>Nada. Almofadas e bancos ficam na sala.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-convivencia">
+                <summary>Rodas de conversa</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Sábado</dd></div><div><dt>Horários</dt><dd>10h</dd></div><div><dt>Duração</dt><dd>90 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>Encontros quinzenais</dd></div><div><dt>Nível</dt><dd>Aberto a todos</dd></div><div><dt>O que levar</dt><dd>Nada além de vir.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-convivencia">
+                <summary>Encontros de silêncio</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Primeiro sábado do mês</dd></div><div><dt>Horários</dt><dd>8h</dd></div><div><dt>Duração</dt><dd>60 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>Mensal</dd></div><div><dt>Nível</dt><dd>Aberto a todos, e é comum vir sozinho</dd></div><div><dt>O que levar</dt><dd>Nada. Não há conversa antes nem depois.</dd></div></dl>
+              </details>
+            </div>
+          </details>
+        </article>
+        <!--
+          O xadrez está aqui, e não na Convivência.
+
+          Ele cabia nas duas: foi citado ali como exemplo de concentração e
+          pedido aqui como prática de mente. Repetido, a lista deixaria de ser
+          um índice de famílias e viraria exemplos que se cruzam — e quem
+          procura xadrez encontraria duas portas para o mesmo lugar.
+        -->
+        <article data-reveal>
+          <span>05</span>
+          <h3>Mente e expressão</h3>
+          <p>Desenho, pintura, violão, violino, canto, xadrez, escrita, teatro e fotografia. Práticas em que a atenção se organiza fazendo — e o estudo de uma técnica vira um jeito de dizer o que ainda não tinha forma.</p>
+          <details class="photo-aulas">
+            <summary>Ver as 9 aulas e seus horários</summary>
+            <div class="photo-aulas-lista">
+              <details class="photo-aula" name="aulas-mente">
+                <summary>Desenho</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Segunda e quarta</dd></div><div><dt>Horários</dt><dd>14h e 19h</dd></div><div><dt>Duração</dt><dd>90 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>1× por semana</dd></div><div><dt>Nível</dt><dd>Do primeiro traço ao aprofundamento</dd></div><div><dt>O que levar</dt><dd>Caderno e lápis. Na primeira aula o Instituto empresta.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-mente">
+                <summary>Pintura</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Terça</dd></div><div><dt>Horários</dt><dd>14h</dd></div><div><dt>Duração</dt><dd>120 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>1× por semana</dd></div><div><dt>Nível</dt><dd>Iniciante e continuidade, no mesmo ateliê</dd></div><div><dt>O que levar</dt><dd>Avental. Tintas, telas e cavaletes ficam na sala.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-mente">
+                <summary>Violão</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Segunda a quinta</dd></div><div><dt>Horários</dt><dd>17h, 18h e 19h</dd></div><div><dt>Duração</dt><dd>60 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>1× por semana</dd></div><div><dt>Nível</dt><dd>Do primeiro acorde ao repertório</dd></div><div><dt>O que levar</dt><dd>Instrumento próprio. O Instituto empresta nos dois primeiros meses.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-mente">
+                <summary>Violino</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Terça e quinta</dd></div><div><dt>Horários</dt><dd>17h e 18h</dd></div><div><dt>Duração</dt><dd>60 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>1× por semana</dd></div><div><dt>Nível</dt><dd>Iniciantes a partir dos 7 anos</dd></div><div><dt>O que levar</dt><dd>Instrumento do tamanho certo. A escolha se faz na primeira aula.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-mente">
+                <summary>Canto</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Quarta e sexta</dd></div><div><dt>Horários</dt><dd>19h</dd></div><div><dt>Duração</dt><dd>75 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>1× por semana</dd></div><div><dt>Nível</dt><dd>Sem experiência prévia</dd></div><div><dt>O que levar</dt><dd>Garrafa de água. Nada mais.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-mente">
+                <summary>Xadrez</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Sexta</dd></div><div><dt>Horários</dt><dd>18h</dd></div><div><dt>Duração</dt><dd>120 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>Livre — o clube fica aberto</dd></div><div><dt>Nível</dt><dd>De quem aprendeu ontem a quem joga há anos</dd></div><div><dt>O que levar</dt><dd>Nada. Tabuleiros e relógios ficam na sala.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-mente">
+                <summary>Escrita</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Quinta</dd></div><div><dt>Horários</dt><dd>19h30</dd></div><div><dt>Duração</dt><dd>120 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>Encontros quinzenais</dd></div><div><dt>Nível</dt><dd>Sem experiência prévia; não é preciso ter escrito antes</dd></div><div><dt>O que levar</dt><dd>Caderno ou computador, como preferir.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-mente">
+                <summary>Teatro</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Terça e quinta</dd></div><div><dt>Horários</dt><dd>20h</dd></div><div><dt>Duração</dt><dd>120 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>2× por semana</dd></div><div><dt>Nível</dt><dd>Sem experiência prévia</dd></div><div><dt>O que levar</dt><dd>Roupa confortável, de preferência escura.</dd></div></dl>
+              </details>
+              <details class="photo-aula" name="aulas-mente">
+                <summary>Fotografia</summary>
+                <dl class="photo-rotina"><div><dt>Dias</dt><dd>Sábado</dd></div><div><dt>Horários</dt><dd>9h</dd></div><div><dt>Duração</dt><dd>180 minutos</dd></div><div><dt>Frequência sugerida</dt><dd>Encontros quinzenais</dd></div><div><dt>Nível</dt><dd>Do celular à câmera manual</dd></div><div><dt>O que levar</dt><dd>Qualquer câmera, inclusive a do celular.</dd></div></dl>
+              </details>
+            </div>
+          </details>
+        </article>
       </div>
+      <!--
+        O aviso fica DEPOIS da lista, e não antes.
+
+        Antes, ele seria a primeira coisa lida sobre a rotina — e começaria
+        avisando que a informação pode mudar, o que faz a lista inteira parecer
+        pouco confiável antes de ser lida. Depois, ele é o que é: um lembrete de
+        confirmar, para quem já escolheu o dia.
+      -->
+      <p class="photo-rotina-nota">Turmas abrem e fecham ao longo do ano, e os horários mudam nas férias. Confirme o dia da sua antes da primeira aula — é para isso que o botão acima existe.</p>
     </section>
 
     <section class="photo-dark" aria-labelledby="activities-first-title">
@@ -48,7 +239,58 @@
       <div class="photo-dark-copy" data-reveal><p>Consulte as turmas abertas e pergunte sobre uma aula experimental. O mais importante é perceber como a prática encontra você.</p><a class="photo-link" href="https://www.institutopotala.com/atividadescorporais" rel="noreferrer">Ver atividades atuais ↗</a></div>
     </section>
 
+    <!--
+      A prévia do assistente, a mesma ideia que a Recepção tem.
+
+      Ela entra ANTES do encerramento: quem chegou até aqui já leu as famílias
+      de práticas e o convite para agendar, e é nesse ponto que a dúvida
+      específica aparece — "serve para quem nunca praticou?", "tem turma de
+      manhã?". Depois do encerramento, ela viria quando a pessoa já está de
+      saída.
+
+      Nada é enviado nem guardado, e o texto diz isso. Um campo que aceita a
+      pergunta de alguém e a descarta em silêncio é pior do que campo nenhum:
+      a pessoa vai embora achando que perguntou.
+    -->
+    <section class="assistente" id="assistente" aria-labelledby="activities-assistant-title">
+      <div class="assistente-copy">
+        <p class="assistente-kicker">Prévia do assistente</p>
+        <h2 id="activities-assistant-title">Posso ajudar você?</h2>
+        <p>Esta é a interface visual da futura conversa inteligente do Portal. A integração será feita em uma próxima etapa; por enquanto, nenhuma mensagem é enviada ou armazenada.</p>
+      </div>
+      <form class="assistente-forma" data-assistente>
+        <label for="activities-question">O que você gostaria de praticar?</label>
+        <div class="assistente-campo">
+          <input id="activities-question" name="question" type="text" autocomplete="off" placeholder="Escreva sua pergunta...">
+          <button type="submit">Continuar</button>
+        </div>
+        <div class="assistente-sugestoes" aria-label="Perguntas sugeridas">
+          <button type="button" data-sugestao="Nunca pratiquei nada parecido. Por onde começo?">Nunca pratiquei</button>
+          <button type="button" data-sugestao="Quero uma prática mais calma, para o fim do dia.">Procuro algo calmo</button>
+          <button type="button" data-sugestao="Quero aprender um instrumento ou desenhar.">Quero aprender uma arte</button>
+        </div>
+        <p class="assistente-aviso" data-assistente-aviso role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
     <section class="photo-closing" aria-labelledby="activities-closing-title"><div data-reveal><p class="photo-kicker">Outros caminhos</p><h2 id="activities-closing-title">Uma prática pode abrir novas curiosidades.</h2></div><div class="photo-closing-copy" data-reveal><p>Conheça também os cursos e os acontecimentos que ampliam a experiência.</p><div class="photo-connections"><a class="photo-link" href="cursos.html">Cursos ↗</a><a class="photo-link" href="programacao.html">Programação ↗</a></div></div></section>
+
+    <div class="section-transition-pause" aria-hidden="true"></div>
+
+    <div class="section-transition-veil" data-section-closing-veil hidden aria-live="polite"
+      role="dialog" aria-modal="true" aria-labelledby="atividades-transition-copy" tabindex="-1">
+      <canvas class="section-transition-canvas" data-section-closing-canvas aria-hidden="true"></canvas>
+      <p id="atividades-transition-copy">Nem toda dúvida desaparece na primeira conversa. Às vezes precisamos apenas de alguém que nos ajude a encontrar o melhor caminho.</p>
+    </div>
+
+    <section class="section-transition-stage" data-section-closing-trigger aria-label="Da experiência à orientação">
+      <figure class="section-transition-photo">
+        <img src="media/recepcao-acolhimento.webp"
+          alt="Uma profissional acolhe uma visitante em uma conversa atenta"
+          width="1280" height="1600" loading="lazy" decoding="async">
+      </figure>
+    </section>
+
     <footer class="photo-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>
   </main>
 </body>

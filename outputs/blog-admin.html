@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#20180f">
+  <title>Potala — Editor do Blog</title>
+  <link rel="stylesheet" href="css/blog-admin.css">
+  <script src="vendor/supabase.js"></script>
+  <script type="module" src="js/blog-admin/blog-admin-entry.js"></script>
+</head>
+<body>
+  <main class="blog-admin" id="blog-admin-app" data-auth-state="checking">
+    <section class="blog-admin-login" data-admin-auth-view aria-labelledby="login-title">
+      <img src="media/potala-mark-transparent.png" alt="Instituto Potala">
+      <p>Caderno de Travessia</p>
+      <h1 id="login-title">Painel editorial</h1>
+      <form data-admin-auth-form hidden>
+        <label>E-mail<input name="email" type="email" autocomplete="username" required></label>
+        <label>Senha<input name="password" type="password" autocomplete="current-password" required></label>
+        <button type="submit">Entrar</button>
+        <button type="button" data-admin-recovery>Primeiro acesso ou esqueci a senha</button>
+      </form>
+      <p data-admin-forbidden hidden>Esta conta não possui acesso administrativo.</p>
+      <p data-admin-auth-status role="status" aria-live="polite">Verificando acesso…</p>
+      <a href="blog.html">Ver o Blog</a>
+    </section>
+
+    <section class="blog-editor" id="admin-panel" hidden aria-labelledby="blog-editor-title" data-preview-device="desktop">
+      <header class="blog-editor-topbar">
+        <div class="blog-editor-brand"><img src="media/potala-mark-transparent.png" alt=""><span>Instituto Potala<small>Caderno de Travessia</small></span></div>
+        <nav aria-label="Painéis administrativos"><a href="admin.html">Jornada</a><a href="blog-admin.html" aria-current="page">Blog</a></nav>
+        <a href="blog.html" target="_blank" rel="noopener">Visualizar</a>
+        <button type="button" data-admin-sign-out>Encerrar sessão</button>
+      </header>
+
+      <aside class="blog-editor-library">
+        <header><p>Publicações</p><button type="button" data-blog-new aria-label="Criar novo texto">＋</button></header>
+        <ol data-blog-editor-list></ol>
+        <button class="blog-editor-reset" type="button" data-blog-reset>Restaurar demonstração</button>
+      </aside>
+
+      <section class="blog-editor-canvas" aria-labelledby="blog-editor-title">
+        <header>
+          <div><p>Atualização ao vivo</p><h2 id="blog-editor-title" tabindex="-1">Prévia do Blog</h2></div>
+          <div class="blog-editor-switch" data-preview-pages role="group" aria-label="Página na prévia">
+            <button type="button" data-preview-page="blog" aria-pressed="true">Blog</button>
+            <button type="button" data-preview-page="article" aria-pressed="false">Artigo</button>
+          </div>
+          <div class="blog-editor-switch" data-preview-devices role="group" aria-label="Tamanho da prévia">
+            <button type="button" data-preview-device="desktop" aria-pressed="true">Desktop</button>
+            <button type="button" data-preview-device="mobile" aria-pressed="false">Mobile</button>
+          </div>
+        </header>
+        <div class="blog-editor-frame"><iframe data-blog-preview src="blog.html?preview=1" title="Prévia ao vivo do Blog"></iframe></div>
+      </section>
+
+      <aside class="blog-editor-inspector">
+        <header><p>Opções de edição</p><span>Estrutura fixa</span></header>
+        <form data-blog-editor-form>
+          <fieldset>
+            <legend>Publicação</legend>
+            <label>Título<input name="title" required></label>
+            <label>Subtítulo<textarea name="subtitle" rows="2"></textarea></label>
+            <label>Resumo<textarea name="excerpt" rows="4" required></textarea></label>
+            <div class="blog-editor-pair"><label>Categoria<input name="category"></label><label>Autor<input name="author"></label></div>
+            <div class="blog-editor-pair"><label>Data<input name="publishedAt" type="date"></label><label>Leitura (min)<input name="readingMinutes" type="number" min="1" max="120"></label></div>
+            <label>Imagem de capa<input name="cover" placeholder="media/imagem.webp"></label>
+            <label>Descrição da imagem<input name="coverAlt"></label>
+            <div class="blog-editor-pair"><label>Status<select name="status"><option value="draft">Rascunho</option><option value="published">Publicado</option><option value="hidden">Oculto</option></select></label><label class="blog-editor-check"><input name="featured" type="checkbox"><span>Artigo principal</span></label></div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Conteúdo do artigo</legend>
+            <div class="blog-editor-add" data-blog-block-types>
+              <button type="button" data-add-block="paragraph">＋ Parágrafo</button>
+              <button type="button" data-add-block="heading">＋ Título</button>
+              <button type="button" data-add-block="image">＋ Imagem</button>
+              <button type="button" data-add-block="quote">＋ Citação</button>
+              <button type="button" data-add-block="list">＋ Lista</button>
+              <button type="button" data-add-block="divider">＋ Divisor</button>
+            </div>
+            <div data-blog-blocks></div>
+          </fieldset>
+
+          <footer>
+            <button type="button" class="danger" data-blog-delete>Excluir</button>
+            <button type="submit">Salvar alterações</button>
+            <button type="button" class="primary" data-blog-publish>Publicar</button>
+          </footer>
+          <p data-blog-editor-status role="status" aria-live="polite"></p>
+        </form>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

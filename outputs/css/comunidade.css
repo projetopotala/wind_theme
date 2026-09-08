@@ -1,0 +1,312 @@
+/*
+ * AS PÁGINAS DA BARRA: especialistas e os encontros que não são aula regular.
+ *
+ * Cinco páginas com a mesma anatomia — cabeçalho, lista de fichas, fecho — e
+ * por isso uma folha só. Separá-las por página daria cinco arquivos quase
+ * idênticos, e a primeira divergência apareceria num detalhe que ninguém
+ * decidiu: a página que alguém editou por último ficaria diferente das outras
+ * sem que isso fosse uma escolha.
+ *
+ * A paleta é a mesma da família fotográfica, redeclarada aqui em vez de
+ * importada: estas páginas não usam o resto daquela folha, e puxá-la inteira
+ * traria a grade de heróis, as vidraças e o resto por um punhado de cores.
+ */
+
+.com-page {
+  --com-cream: #f2e9dc;
+  --com-paper: #e6d6c4;
+  --com-brown: #563c2d;
+  --com-ink: #2a211b;
+  --com-gold: #b98f57;
+  --com-line: rgba(86, 60, 45, .2);
+
+  min-height: 100svh;
+  /* A barra do topo é fixa e tem 56px. Sem esta folga o kicker nasce embaixo
+     dela, e some justamente na primeira dobra. */
+  padding: calc(56px + clamp(46px, 8vw, 104px)) clamp(24px, 8vw, 136px) 0;
+  color: var(--com-brown);
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--com-cream);
+}
+
+.com-page h1,
+.com-page h2 { margin-top: 0; font-weight: 400; font-family: Georgia, "Times New Roman", serif; letter-spacing: -.03em; }
+
+/* ------------------------------------------------------------------
+ * O cabeçalho
+ * ------------------------------------------------------------------ */
+
+.com-hero {
+  display: grid;
+  gap: 0 clamp(40px, 7vw, 110px);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-bottom: clamp(48px, 7vw, 92px);
+  border-bottom: 1px solid var(--com-line);
+}
+
+@media (min-width: 900px) {
+  /* Título à esquerda, texto à direita: a mesma divisão das outras seções, para
+     que a página nova não pareça de outro site. */
+  .com-hero { grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); }
+  .com-hero > .com-kicker,
+  .com-hero > h1,
+  .com-hero > .com-subtitulo { grid-column: 1; }
+  .com-hero > .com-lead { grid-row: 1 / span 3; grid-column: 2; align-self: end; }
+  .com-hero > .com-aviso { grid-column: 2; }
+}
+
+.com-kicker {
+  margin: 0 0 18px;
+  color: var(--com-gold);
+  font: 700 .66rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.com-hero h1 {
+  margin: 0;
+  font-size: clamp(3rem, 8vw, 6.6rem);
+  line-height: .92;
+}
+
+.com-subtitulo {
+  margin: 6px 0 0;
+  font: 400 clamp(1.2rem, 2.4vw, 2rem)/1.2 Georgia, "Times New Roman", serif;
+  color: rgba(86, 60, 45, .74);
+}
+
+.com-lead p {
+  max-width: 56ch;
+  margin: 0 0 16px;
+  font-size: clamp(1rem, 1.2vw, 1.12rem);
+  line-height: 1.78;
+  color: rgba(86, 60, 45, .82);
+}
+
+.com-lead a,
+.com-texto a { color: inherit; text-underline-offset: 4px; }
+
+/*
+ * Empilhado, o texto precisa de um respiro que a grade não dá.
+ *
+ * Acima de 900px o texto fica na coluna ao lado do título e o espaço entre eles
+ * é horizontal. Abaixo, tudo vira uma coluna só, e sem esta margem "São 16
+ * pessoas" nascia colado no subtítulo, como se fosse a terceira linha dele.
+ */
+@media (max-width: 899px) {
+  .com-lead { margin-top: 26px; }
+}
+
+/*
+ * O AVISO DE QUE O CONTEÚDO É FICTÍCIO fica na página, e não num comentário.
+ *
+ * São dezesseis currículos com universidade, ano e titulação: lidos sem
+ * ressalva, passam por reais, e alguém apareceria aqui procurando a Marina.
+ * O Portal já faz isso no blog e no agendamento — prometer só o que cumpre.
+ */
+.com-aviso {
+  max-width: 56ch;
+  margin: 10px 0 0;
+  padding-left: 14px;
+  border-left: 2px solid var(--com-gold);
+  color: rgba(86, 60, 45, .62);
+  font: italic 400 .84rem/1.6 Arial, Helvetica, sans-serif;
+}
+
+/* ------------------------------------------------------------------
+ * A lista de fichas
+ * ------------------------------------------------------------------ */
+
+.com-lista {
+  display: grid;
+  gap: clamp(30px, 4vw, 56px);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: clamp(48px, 7vw, 92px) 0;
+  /* 360px e nao 400: a 400 a segunda coluna só aparecia acima de 1040px de
+     viewport, e um notebook de 13 polegadas caía na coluna única com dezesseis
+     fichas longas — página de rolagem infinita por 16px de folga. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+}
+
+.com-ficha {
+  display: grid;
+  gap: clamp(18px, 2.4vw, 30px);
+  align-items: start;
+  grid-template-columns: 96px minmax(0, 1fr);
+}
+
+/*
+ * O selo herda a cor do texto, e é por isso que ele funciona.
+ *
+ * O desenho inteiro é `currentColor`: uma cor aqui pinta o traço, e a mesma
+ * marcação serve qualquer fundo. Sem isso seriam dois SVGs por especialista.
+ */
+.com-selo { color: var(--com-gold); }
+.com-selo .selo { display: block; width: 96px; height: 96px; }
+
+.com-area {
+  margin: 0 0 8px;
+  color: var(--com-gold);
+  font: 700 .6rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.com-ficha h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 1.72rem);
+  line-height: 1.15;
+}
+
+.com-frase {
+  max-width: 46ch;
+  margin: 12px 0 0;
+  color: var(--com-ink);
+  font: italic 400 1rem/1.6 Georgia, "Times New Roman", serif;
+}
+
+.com-texto {
+  max-width: 56ch;
+  margin: 12px 0 0;
+  color: rgba(86, 60, 45, .82);
+  font-size: .94rem;
+  line-height: 1.72;
+}
+
+/*
+ * As aulas são LINKS, e não etiquetas.
+ *
+ * Quem está lendo a ficha de quem ensina violino já decidiu metade da coisa; o
+ * que falta é o dia e a hora, e isso mora em Atividades. Uma etiqueta sem link
+ * obrigaria a voltar pela barra e procurar de novo.
+ */
+.com-aulas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.com-aulas a {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 1px solid var(--com-line);
+  border-radius: 999px;
+  color: rgba(86, 60, 45, .82);
+  font: 700 .62rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .12em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.com-aulas a:hover { border-color: var(--com-gold); color: var(--com-gold); }
+.com-aulas a:focus-visible { outline: 2px solid var(--com-gold); outline-offset: 3px; }
+
+.com-cv {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 0;
+  padding-left: 16px;
+  border-left: 1px solid var(--com-line);
+}
+
+.com-cv > div { display: grid; gap: 3px; }
+
+.com-cv dt {
+  color: var(--com-gold);
+  font: 700 .56rem/1.2 Arial, Helvetica, sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.com-cv dd {
+  margin: 0;
+  color: rgba(86, 60, 45, .86);
+  font-size: .85rem;
+  line-height: 1.55;
+}
+
+/*
+ * Os campos do encontro ficam em UMA coluna, e a tentativa de duas foi medida.
+ *
+ * A ficha já ocupa metade da página; dividi-la de novo dava colunas de 116px,
+ * e "Marina Sayuri Okabe ou Paulo Renato Miquelin" quebrava em três linhas
+ * dentro de uma delas. Duas colunas economizam altura e cobram legibilidade no
+ * campo exato que a pessoa veio ler.
+ */
+
+/* ------------------------------------------------------------------
+ * O fecho e o rodapé
+ * ------------------------------------------------------------------ */
+
+.com-fecho {
+  display: grid;
+  gap: clamp(20px, 4vw, 60px);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: clamp(60px, 8vw, 110px) 0;
+  border-top: 1px solid var(--com-line);
+}
+
+@media (min-width: 900px) {
+  .com-fecho { grid-template-columns: minmax(0, 1fr) minmax(260px, .6fr); align-items: start; }
+  .com-fecho h2 { grid-row: 1 / span 2; }
+}
+
+.com-fecho h2 { max-width: 18ch; margin: 0; font-size: clamp(1.7rem, 3.4vw, 2.9rem); line-height: 1.06; }
+.com-fecho p { max-width: 48ch; margin: 0; color: rgba(86, 60, 45, .76); font-size: .96rem; line-height: 1.74; }
+
+.com-links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 20px; }
+
+.com-link {
+  color: var(--com-brown);
+  font: 700 .64rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .14em;
+  text-decoration: none;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--com-line);
+  padding-bottom: 6px;
+}
+
+.com-link:hover { border-bottom-color: var(--com-gold); color: var(--com-gold); }
+.com-link:focus-visible { outline: 2px solid var(--com-gold); outline-offset: 3px; }
+
+.com-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 30px;
+  justify-content: space-between;
+  margin: 0 calc(clamp(24px, 8vw, 136px) * -1);
+  padding: 30px clamp(24px, 8vw, 136px);
+  color: rgba(240, 228, 212, .74);
+  font-size: .76rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: var(--com-brown);
+}
+
+.com-footer p { margin: 0; }
+.com-footer a { color: #dfc59d; text-decoration: none; }
+.com-footer a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+/* ------------------------------------------------------------------
+ * Entrada
+ * ------------------------------------------------------------------ */
+
+[data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }
+[data-reveal].is-visible { opacity: 1; transform: none; }
+
+@media (max-width: 620px) {
+  /* No celular o selo desce de 96 para 64: dois terços da largura da ficha eram
+     desenho, e o nome só começava depois dele. */
+  .com-ficha { grid-template-columns: 64px minmax(0, 1fr); gap: 16px; }
+  .com-selo .selo { width: 64px; height: 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] { opacity: 1; transform: none; transition: none; }
+}

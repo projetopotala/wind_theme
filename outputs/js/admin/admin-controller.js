@@ -2,6 +2,7 @@ import { normalizeHomeBlock, normalizeHomeBlocks } from "../home/content-model.j
 import { createLocalContentRepository } from "../home/content-repository.js";
 import { DEFAULT_HOME_BLOCKS } from "../home/journey-data.js";
 import { mergeBlocks, motivoDaFalha, pendingCount } from "./admin-draft.js";
+import { comMarcacao, ehNovidade } from "../home/home-novidades.js";
 import { countEntries, filterEntries } from "./admin-filters.js";
 import { createBlocksList } from "./admin-blocks-list.js";
 import { createMediaPicker } from "./admin-media-picker.js";
@@ -181,6 +182,7 @@ export function createAdminController({
   const form = root.querySelector("[data-admin-form]");
   const status = root.querySelector("[data-admin-status]");
   const previewFrame = root.querySelector("[data-admin-preview]");
+  const caixaNovidade = root.querySelector("[data-admin-novidade]");
   const confirmacao = root.querySelector("[data-admin-confirm]");
   const confirmacaoTitulo = root.querySelector("[data-admin-confirm-title]");
   const confirmacaoDetalhe = root.querySelector("[data-admin-confirm-detail]");
@@ -328,8 +330,24 @@ export function createAdminController({
       if (controle.type === "checkbox") controle.checked = Boolean(valor);
       else controle.value = valor == null ? "" : valor;
     }
+    /*
+     * A caixa de novidade LÊ a tag, e não o contrário.
+     *
+     * Ela não é um campo do bloco: o dado é a tag "recente" em `tags`, porque o
+     * banco não tem coluna para isso. Se a caixa guardasse estado próprio, ela
+     * discordaria do campo Temas assim que alguém digitasse a tag à mão — e as
+     * duas coisas na tela diriam o oposto uma da outra.
+     */
+    if (caixaNovidade) caixaNovidade.checked = ehNovidade({ tags: separarTags(draft.tags) });
     mostrarErros({});
     editorUI?.refresh();
+  }
+
+  /* O campo Temas é uma linha separada por vírgulas; o modelo trabalha com
+     lista. A conversão vive aqui porque os dois lados dela são deste arquivo. */
+  function separarTags(valor) {
+    if (Array.isArray(valor)) return valor;
+    return String(valor ?? "").split(",").map((tag) => tag.trim()).filter(Boolean);
   }
 
   function lerFormulario() {
@@ -337,6 +355,17 @@ export function createAdminController({
     for (const controle of form.elements) {
       if (!controle.name) continue;
       draft[controle.name] = controle.type === "checkbox" ? controle.checked : controle.value;
+    }
+    /*
+     * A caixa de novidade não tem `name`, então não entra pelo laço acima: ela
+     * não é um campo do bloco, é um atalho para escrever uma tag.
+     *
+     * Escreve só o marcador, preservando o que a pessoa digitou em Temas —
+     * substituir a lista inteira apagaria o trabalho dela para gravar uma
+     * palavra.
+     */
+    if (caixaNovidade) {
+      draft.tags = comMarcacao(separarTags(draft.tags), caixaNovidade.checked);
     }
     return draft;
   }

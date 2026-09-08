@@ -1,6 +1,65 @@
 import { normalizeHomeBlocks } from "./content-model.js";
+import { DEFAULT_BLOG_POSTS, POSTS } from "../blog/blog-data.js";
+
+/*
+ * AS NOVIDADES ABREM A JORNADA.
+ *
+ * Quem chega precisa ver primeiro o que MUDOU no Instituto, e só depois as
+ * seções permanentes: sem isso a Home conta sempre a mesma história, e quem
+ * volta na semana seguinte não tem como saber que algo aconteceu.
+ *
+ * Elas são regiões como as outras — não um carrossel à parte — porque o que as
+ * distingue é conteúdo, não mecânica: cada uma leva a um texto do Blog em vez
+ * de a uma seção. Tratá-las como um componente separado duplicaria expansão,
+ * teclado, foco e ritmo para ganhar nada.
+ *
+ * A ordem NÃO vem daqui. É `novidadesPrimeiro`, em `home-novidades.js`, que sobe
+ * ao topo tudo que carrega a tag — inclusive o que for marcado pelo painel
+ * depois, sem passar por este arquivo.
+ *
+ * O conteúdo vem do acervo do Blog. Assim a Home não mantém uma segunda cópia
+ * de manchetes e resumos que poderia ficar desatualizada. A composição escolhe
+ * somente quais quatro textos abrem a jornada e em que lado aparecem.
+ */
+const CATEGORIAS_DO_BLOG = {
+  artigos: "Artigo",
+  oraculos: "Oráculo",
+  terapias: "Saúde integrativa",
+  cursos: "Curso",
+  cultura: "Arte e cultura",
+  praticas: "Prática",
+};
+
+const NOVIDADES_DO_BLOG = [
+  "oraculo-de-hoje",
+  "novos-profissionais",
+  "borra-de-cafe",
+  "ansiedade-corpo",
+];
+
+const NOVIDADES = NOVIDADES_DO_BLOG.map((slug, index) => {
+  const post = DEFAULT_BLOG_POSTS.find((candidate) => candidate.slug === slug);
+  const legado = POSTS.find((candidate) => candidate.id === slug);
+  if (!post) return null;
+
+  return {
+    id: `novidade-${post.slug}`,
+    type: "region",
+    category: CATEGORIAS_DO_BLOG[post.category] || "Caderno",
+    title: post.title,
+    description: post.excerpt,
+    image: post.cover,
+    href: `artigo.html?post=${encodeURIComponent(post.slug)}`,
+    priority: 95 - index,
+    tags: [...(legado?.tags || []), "recente"],
+    motivo: legado?.motivo || "",
+    layoutVariant: "paper",
+    roadPlacement: index % 2 === 0 ? "right" : "left",
+  };
+}).filter(Boolean);
 
 export const JOURNEY_REGIONS = [
+  ...NOVIDADES,
   {
     id: "quem-somos",
     type: "region",
@@ -176,6 +235,21 @@ export const JOURNEY_REGIONS = [
     layoutVariant: "quiet-fullscreen",
     roadPlacement: "left",
   },
+  {
+    id: "revista",
+    type: "region",
+    category: "O mundo em perspectiva",
+    title: "Revista",
+    description: "Acontecimentos do presente lidos com contexto, cuidado e profundidade.",
+    media: "media/journey-inspiracao.webp",
+    alt: "Montanhas atravessadas por luz e névoa em uma paisagem contemplativa",
+    href: "revista.html",
+    priority: 68,
+    tags: ["atualidade", "ciência", "sociedade"],
+    relatedContent: ["blog", "arte-cultura", "quem-somos"],
+    layoutVariant: "magazine",
+    roadPlacement: "right",
+  },
   /*
    * O BLOG ERA UMA DESCOBERTA, e virou região.
    *
@@ -215,6 +289,7 @@ const EXPANDED_COPY = {
   "arte-cultura": "Cinema, música, literatura e criação ampliam nossos modos de perceber, conviver e cuidar.",
   marketplace: "Uma seleção contextual de livros, aromas, objetos e materiais que podem acompanhar sua prática.",
   inspiracao: "Textos, meditações e pausas para recuperar espaço, presença e um ritmo mais atento.",
+  revista: "Uma curadoria de acontecimentos relevantes que transforma informação em reflexão e abre caminhos pelo Ecossistema.",
   blog: "Artigos, oráculos, colunas e entrevistas produzidos por quem atende, ensina e convive no Instituto.",
 };
 
@@ -225,7 +300,7 @@ export const DEFAULT_HOME_BLOCKS = normalizeHomeBlocks(JOURNEY_REGIONS.map((regi
   title: region.title,
   summary: region.description,
   body: EXPANDED_COPY[region.id],
-  image: "",
+  image: region.image || region.media || "",
   icon: "",
   tags: region.tags,
   href: region.href,
@@ -236,7 +311,22 @@ export const DEFAULT_HOME_BLOCKS = normalizeHomeBlocks(JOURNEY_REGIONS.map((regi
      elas: a lista de caminhos do painel do bloco ficava vazia sem erro, sem
      espaço em branco e sem nada que indicasse a falta. */
   relatedContent: region.relatedContent,
+  /* O desenho da capa viaja junto: é ele que o cartão fechado mostra. Blocos
+     vindos do banco não o têm, e ali a capa vem do campo `image`. */
+  motivo: region.motivo,
 })));
+
+/*
+ * As novidades JÁ NORMALIZADAS, tiradas do próprio snapshot.
+ *
+ * Exportar a lista crua obrigaria quem a usasse a repetir a normalização: o
+ * cru tem `description` onde o bloco tem `summary`, e não tem `slug`,
+ * `published` nem `position`. Filtrar o snapshot devolve a mesma novidade na
+ * forma que o resto da Home espera, sem uma segunda conversão para divergir.
+ */
+export const NOVIDADES_PADRAO = DEFAULT_HOME_BLOCKS.filter(
+  (bloco) => NOVIDADES.some((novidade) => novidade.id === bloco.id),
+);
 
 export const JOURNEY_DISCOVERIES = [
   {
@@ -278,16 +368,6 @@ export const JOURNEY_DISCOVERIES = [
     href: "https://www.institutopotala.com/",
     relatedContent: ["inspiracao", "saude-integrativa", "atendimentos", "cursos"],
     layoutVariant: "quote",
-  },
-  {
-    id: "revista",
-    type: "editorial",
-    category: "Revista",
-    title: "Leituras do Ecossistema",
-    description: "Reportagens, conversas e novas perspectivas.",
-    href: "https://www.institutopotala.com/",
-    relatedContent: ["blog", "arte-cultura", "quem-somos"],
-    layoutVariant: "magazine",
   },
   {
     id: "eventos",

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#302219">
+  <meta name="description" content="Experiências de Arte e Cultura do Instituto Potala.">
+  <title>Cine Potala — Instituto Potala</title>
+  <script>document.documentElement.classList.add("js");</script>
+  <link rel="stylesheet" href="secoes.css">
+  <link rel="stylesheet" href="css/section-editorial.css">
+  <link rel="stylesheet" href="css/cultural-detail.css">
+  <script type="module" src="secoes.js"></script>
+  <script type="module" src="js/sections/front-demo.js"></script>
+  <script type="module" src="js/culture/cultural-experiences.js"></script>
+</head>
+<body data-section="cultura">
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <main class="editorial-page cultural-detail" id="conteudo" data-section-family="editorial" data-cultural-experience>
+    <nav class="cultural-detail-nav" aria-label="Experiências culturais" data-cultural-navigation>
+      <a href="cultura.html">← Arte e Cultura</a>
+      <div>
+        <a href="?experiencia=cine-potala">Cinema</a>
+        <a href="?experiencia=exposicoes">Exposições</a>
+        <a href="?experiencia=cafe-filosofico">Café filosófico</a>
+        <a href="?experiencia=saraus">Saraus</a>
+        <a href="?experiencia=festivais">Festivais</a>
+        <a href="?experiencia=rodas-de-conversa">Rodas</a>
+      </div>
+    </nav>
+
+    <header class="cultural-detail-hero">
+      <div data-reveal>
+        <p class="editorial-kicker" data-cultural-eyebrow>Cinema, conversa e presença</p>
+        <h1 data-cultural-title>Cine Potala</h1>
+        <p data-cultural-lead>Uma sessão não termina nos créditos. O filme abre um território para escuta, contexto e conversa.</p>
+      </div>
+      <figure data-reveal><img src="media/journey-cultura.webp" alt="Imagem editorial para Cine Potala" width="1600" height="900" fetchpriority="high" decoding="async" data-cultural-image></figure>
+    </header>
+
+    <section class="cultural-detail-sections" aria-label="Como funciona a experiência">
+      <article data-cultural-section data-reveal><span>01</span><h2>Como acontece</h2><p>Cada encontro reúne uma obra cuidadosamente escolhida, uma breve apresentação e uma conversa mediada após a exibição.</p></article>
+      <article data-cultural-section data-reveal><span>02</span><h2>O que acompanha</h2><p>Referências, perguntas e materiais complementares ajudam quem quiser continuar a reflexão depois da sessão.</p></article>
+      <article data-cultural-section data-reveal><span>03</span><h2>Próxima experiência</h2><p>A programação informa filme, classificação, duração, formato do debate e condições de participação.</p></article>
+    </section>
+
+    <section class="cultural-detail-actions" aria-labelledby="cultural-next-title">
+      <div data-reveal><p class="editorial-kicker">Quando fizer sentido</p><h2 id="cultural-next-title">Acompanhe o próximo encontro.</h2></div>
+      <div data-reveal>
+        <a href="programacao.html">Consultar programação <span aria-hidden="true">→</span></a>
+        <button type="button" aria-pressed="false" data-cultural-interest>Tenho interesse</button>
+        <p>O interesse fica somente nesta visita. Nenhum dado é enviado nesta versão.</p>
+      </div>
+    </section>
+    <footer class="editorial-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>
+  </main>
+</body>
+</html>

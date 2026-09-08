@@ -10,6 +10,7 @@
   <link rel="preload" href="media/atendimentos-acolhimento.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
   <link rel="stylesheet" href="css/atendimentos.css">
+  <link rel="stylesheet" href="css/section-transition.css">
   <script type="module" src="secoes.js"></script>
 </head>
 <body data-section="atendimentos">
@@ -122,6 +123,22 @@
           <a href="https://www.institutopotala.com/terapias" rel="noreferrer">Ver todas as terapias <span aria-hidden="true">↗</span></a>
         </div>
       </div>
+    </section>
+
+    <div class="section-transition-pause" aria-hidden="true"></div>
+
+    <div class="section-transition-veil" data-section-closing-veil hidden aria-live="polite"
+      role="dialog" aria-modal="true" aria-labelledby="atendimentos-transition-copy" tabindex="-1">
+      <canvas class="section-transition-canvas" data-section-closing-canvas aria-hidden="true"></canvas>
+      <p id="atendimentos-transition-copy">Cuidar também é aprender. Muitas vezes um atendimento acolhe uma necessidade do presente; um curso transforma a maneira como enxergamos o futuro. É por isso que o Potala também é um espaço de aprendizagem.</p>
+    </div>
+
+    <section class="section-transition-stage" data-section-closing-trigger aria-label="Do cuidado ao conhecimento">
+      <figure class="section-transition-photo">
+        <img src="media/profissionais-encontro.webp"
+          alt="Pessoas conversam em um jardim e compartilham experiências"
+          width="1600" height="1000" loading="lazy" decoding="async">
+      </figure>
     </section>
 
     <footer class="care-footer">

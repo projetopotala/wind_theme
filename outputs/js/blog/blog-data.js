@@ -142,6 +142,41 @@ export const POSTS = [
   },
 ];
 
+const CAPAS = {
+  lotus: "media/home-travessia.webp",
+  oraculo: "media/journey-inspiracao.webp",
+  circulo: "media/chegada-landscape.webp",
+  fumaca: "media/saude-integrativa-escuta.webp",
+  cristal: "media/journey-quem-somos.webp",
+  montanha: "media/journey-cultura.webp",
+  semente: "media/atividades-pratica.webp",
+  onda: "media/atendimentos-acolhimento.webp",
+};
+
+export const DEFAULT_BLOG_POSTS = POSTS.map((post) => ({
+  id: post.id,
+  slug: post.id,
+  title: post.titulo,
+  subtitle: post.destaque ? "Um convite para reencontrar o essencial." : "Ideias que acompanham a vida cotidiana.",
+  excerpt: post.resumo,
+  category: post.categoria,
+  author: post.autor,
+  publishedAt: post.data,
+  readingMinutes: post.leitura,
+  cover: CAPAS[post.motivo] || "media/home-travessia.webp",
+  coverAlt: `Paisagem contemplativa que acompanha o texto ${post.titulo}`,
+  featured: post.destaque,
+  status: "published",
+  content: [
+    { id: `${post.id}-intro`, type: "paragraph", text: post.resumo },
+    { id: `${post.id}-heading`, type: "heading", text: "Um caminho para observar" },
+    { id: `${post.id}-body`, type: "paragraph", text: "Cada experiência pode ser lida por muitos ângulos. Este texto abre uma pausa para reconhecer o que já está presente e perceber possibilidades que antes passavam despercebidas." },
+    { id: `${post.id}-quote`, type: "quote", text: "Conhecimento ganha sentido quando encontra a experiência." },
+  ],
+  relatedPostIds: POSTS.filter((candidate) => candidate.id !== post.id).slice(0, 2).map(({ id }) => id),
+  updatedAt: `${post.data}T12:00:00.000Z`,
+}));
+
 /*
  * O ORÁCULO DO DIA.
  *

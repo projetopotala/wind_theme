@@ -1,4 +1,6 @@
-const X_PATTERN = [-0.08, 0.12, -0.16, 0.07, 0.17, -0.11, -0.04, 0.14, -0.09];
+// Mudanças curtas e assimétricas: a linha procura o próximo encontro sem
+// serpentear de um lado ao outro a cada tela.
+const X_PATTERN = [-0.06, 0.06, -0.08, 0.04, 0.12, -0.04, -0.09, 0.07, -0.03];
 
 export function buildHomePathLayout(blocks = []) {
   /*
@@ -31,4 +33,3 @@ export function buildHomePathLayout(blocks = []) {
 
   return { points, checkpoints };
 }
-

@@ -55,6 +55,14 @@ export function normalizeHomeBlock(input = {}, index = 0) {
     relatedContent: Array.isArray(input.relatedContent)
       ? input.relatedContent.map(cleanString).filter(Boolean)
       : [],
+    /*
+     * O desenho da capa do cartão, quando o bloco é uma novidade do Blog.
+     *
+     * Vive nos dados da jornada, como `relatedContent`: o banco não tem coluna
+     * para ele e o painel não o edita. Um bloco criado pelo painel fica sem
+     * motivo e mostra a capa pelo campo `image`, que é o caminho normal.
+     */
+    motivo: cleanString(input.motivo),
     updatedAt: cleanString(input.updatedAt),
   };
 }

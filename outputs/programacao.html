@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/section-guided.css">
   <script type="module" src="secoes.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
+  <script type="module" src="js/sections/programacao-categorias.js"></script>
 </head>
 <body data-section="programacao" data-entry="down" data-left="saude-integrativa.html" data-right="cultura.html">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
@@ -35,27 +36,90 @@
       </div>
     </section>
 
-    <section class="guided-choice-section" id="orientacao" aria-labelledby="schedule-choices-title" data-guided-group>
+    <section class="guided-categorias" id="orientacao" aria-labelledby="schedule-categories-title" data-categorias>
       <header class="guided-choice-head" data-reveal>
-        <div><p class="guided-kicker">Escolha uma direção</p><h2 id="schedule-choices-title">O que combina com o seu momento?</h2></div>
-        <p>Esta seleção é apenas uma orientação visual. Ela não agenda nem armazena informações.</p>
+        <div><p class="guided-kicker">Programação por categoria</p><h2 id="schedule-categories-title">Tudo o que acontece na casa.</h2></div>
+        <p>Atendimentos, cursos, atividades, eventos culturais, grupos de estudo, oficinas e mentorias — as 16 modalidades do Instituto, cada uma levando à página em que os horários e as condições estão escritos.</p>
       </header>
-      <div class="guided-options">
-        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Para algo imediato, consulte Acontece hoje e confirme os horários atualizados no site oficial."><span>01</span><strong>Acontece hoje</strong><small>Veja atendimentos, aulas e encontros disponíveis no dia.</small></button>
-        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="As Atividades permanentes criam continuidade: práticas corporais, grupos e encontros semanais."><span>02</span><strong>Atividades permanentes</strong><small>Encontre práticas que podem fazer parte da sua rotina.</small></button>
-        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Cursos e vivências permitem experimentar um tema ou seguir por uma formação mais longa."><span>03</span><strong>Aprender algo novo</strong><small>Conheça cursos, oficinas, vivências e grupos de estudo.</small></button>
-        <button class="guided-option" type="button" data-guided-choice aria-pressed="false" data-response="Eventos culturais e comunitários aproximam cinema, música, conversa, arte e convivência."><span>04</span><strong>Participar de um encontro</strong><small>Descubra acontecimentos culturais e experiências em grupo.</small></button>
+      <div class="guided-category-filter" data-reveal>
+        <p class="guided-category-filter-label" id="category-filter-label">Encontrar por categoria</p>
+        <div class="guided-category-filter-options" role="group" aria-labelledby="category-filter-label">
+          <button type="button" data-categoria="todas" aria-pressed="true">Tudo</button>
+          <button type="button" data-categoria="atendimentos" aria-pressed="false">Atendimentos</button>
+          <button type="button" data-categoria="cursos" aria-pressed="false">Cursos</button>
+          <button type="button" data-categoria="atividades" aria-pressed="false">Atividades</button>
+          <button type="button" data-categoria="culturais" aria-pressed="false">Eventos culturais</button>
+          <button type="button" data-categoria="grupos" aria-pressed="false">Grupos de estudo</button>
+          <button type="button" data-categoria="oficinas" aria-pressed="false">Oficinas</button>
+          <button type="button" data-categoria="mentorias" aria-pressed="false">Mentorias</button>
+        </div>
+        <p class="guided-category-filter-status" data-categorias-aviso aria-live="polite">16 modalidades no Instituto.</p>
       </div>
-      <div class="guided-response" aria-live="polite"><p data-guided-response>Escolha uma possibilidade para receber uma orientação breve.</p></div>
-      <div class="guided-links">
-        <a class="guided-link" href="https://www.institutopotala.com/programacao" rel="noreferrer">Ver programação atual ↗</a>
-        <a class="guided-link" href="recepcao.html">Pedir orientação ↗</a>
+      <div class="guided-indice">
+        <div class="guided-grupo" data-grupo="atendimentos" data-grupo-itens="2" data-reveal>
+          <h3 id="categoria-atendimentos">Atendimentos <span aria-hidden="true">02</span></h3>
+          <ul aria-labelledby="categoria-atendimentos">
+            <li><a href="atendimentos.html"><strong>Atendimentos individuais</strong><span>Sessões marcadas uma a uma, com hora combinada e sem obrigação de continuidade.</span><em aria-hidden="true">→</em></a></li>
+            <li><a href="saude-integrativa.html"><strong>Terapias integrativas</strong><span>Práticas que acompanham o cuidado convencional em vez de substituí-lo.</span><em aria-hidden="true">→</em></a></li>
+          </ul>
+        </div>
+        <div class="guided-grupo" data-grupo="cursos" data-grupo-itens="3" data-reveal>
+          <h3 id="categoria-cursos">Cursos <span aria-hidden="true">03</span></h3>
+          <ul aria-labelledby="categoria-cursos">
+            <li><a href="cursos.html"><strong>Cursos livres</strong><span>Um tema, um ciclo com começo e fim, sem pré-requisito de formação.</span><em aria-hidden="true">→</em></a></li>
+            <li><a href="cursos.html"><strong>Formações profissionais</strong><span>Percursos longos, com prática supervisionada, para quem vai atuar na área.</span><em aria-hidden="true">→</em></a></li>
+            <li><a href="cursos.html"><strong>Monte seu curso</strong><span>Turmas que nascem de um grupo que se juntou e pediu — e não do calendário.</span><em aria-hidden="true">→</em></a></li>
+          </ul>
+        </div>
+        <div class="guided-grupo" data-grupo="atividades" data-grupo-itens="5" data-reveal>
+          <h3 id="categoria-atividades">Atividades <span aria-hidden="true">05</span></h3>
+          <ul aria-labelledby="categoria-atividades">
+            <li><a href="atividades.html"><strong>Corpo e consciência</strong><span>Yoga, pilates, alongamento e consciência corporal, de segunda a sexta.</span><em aria-hidden="true">→</em></a></li>
+            <li><a href="atividades.html"><strong>Práticas orientais</strong><span>Tai chi chuan, qi gong e artes marciais, em turmas por tempo de prática.</span><em aria-hidden="true">→</em></a></li>
+            <li><a href="atividades.html"><strong>Dança e expressão</strong><span>Dança contemporânea, danças circulares e expressão corporal, à noite.</span><em aria-hidden="true">→</em></a></li>
+            <li><a href="atividades.html"><strong>Convivência</strong><span>Meditação, rodas de conversa e encontros de silêncio, aos sábados.</span><em aria-hidden="true">→</em></a></li>
+            <li><a href="atividades.html"><strong>Mente e expressão</strong><span>Desenho, pintura, violão, violino, canto, xadrez, escrita, teatro e fotografia.</span><em aria-hidden="true">→</em></a></li>
+          </ul>
+        </div>
+        <div class="guided-grupo" data-grupo="culturais" data-grupo-itens="3" data-reveal>
+          <h3 id="categoria-culturais">Eventos culturais <span aria-hidden="true">03</span></h3>
+          <ul aria-labelledby="categoria-culturais">
+            <li><a href="cultura.html"><strong>Cine Potala</strong><span>Sessões com conversa depois, abertas a quem não estuda na casa.</span><em aria-hidden="true">→</em></a></li>
+            <li><a href="cultura.html"><strong>Biblioteca Potala</strong><span>Acervo de consulta e o ponto de encontro de boa parte dos grupos.</span><em aria-hidden="true">→</em></a></li>
+            <li><a href="eventos.html"><strong>Eventos futuros</strong><span>Mostras, torneios, saraus e retiros — os marcos maiores do calendário.</span><em aria-hidden="true">→</em></a></li>
+          </ul>
+        </div>
+        <div class="guided-grupo" data-grupo="grupos" data-grupo-itens="1" data-reveal>
+          <h3 id="categoria-grupos">Grupos de estudo <span aria-hidden="true">01</span></h3>
+          <ul aria-labelledby="categoria-grupos">
+            <li><a href="grupos-de-estudo.html"><strong>Grupos de estudo</strong><span>Permanentes, sem começo de turma: quem entra em março não está atrasado.</span><em aria-hidden="true">→</em></a></li>
+          </ul>
+        </div>
+        <div class="guided-grupo" data-grupo="oficinas" data-grupo-itens="1" data-reveal>
+          <h3 id="categoria-oficinas">Oficinas <span aria-hidden="true">01</span></h3>
+          <ul aria-labelledby="categoria-oficinas">
+            <li><a href="workshops.html"><strong>Workshops de fim de semana</strong><span>Encontro único, um assunto, o suficiente para continuar sozinho depois.</span><em aria-hidden="true">→</em></a></li>
+          </ul>
+        </div>
+        <div class="guided-grupo" data-grupo="mentorias" data-grupo-itens="1" data-reveal>
+          <h3 id="categoria-mentorias">Mentorias <span aria-hidden="true">01</span></h3>
+          <ul aria-labelledby="categoria-mentorias">
+            <li><a href="mentorias.html"><strong>Mentorias</strong><span>Acompanhamento individual em ciclos declarados, de quatro a doze meses.</span><em aria-hidden="true">→</em></a></li>
+          </ul>
+        </div>
       </div>
     </section>
 
     <section class="guided-closing" aria-labelledby="schedule-closing-title">
       <div data-reveal><p class="guided-kicker">Chegar com calma</p><h2 id="schedule-closing-title">Você não precisa participar de tudo.</h2></div>
-      <div class="guided-closing-copy" data-reveal><p>Escolha apenas o que faz sentido agora. Outros caminhos continuarão disponíveis quando seu momento mudar.</p></div>
+      <div class="guided-closing-copy" data-reveal><p>Escolha apenas o que faz sentido agora. Outros caminhos continuarão disponíveis quando seu momento mudar.</p><!--
+        OS DOIS LINKS DESCERAM PARA CÁ, e não foram apagados junto com o bloco.
+
+        A introdução desta página diz que "os detalhes atuais permanecem no site
+        oficial". Sem o link, isso vira uma instrução para procurar sozinho — e a
+        página passaria a apontar para fora sem abrir a porta.
+      -->
+      <div class="guided-links"><a class="guided-link" href="https://www.institutopotala.com/programacao" rel="noreferrer">Ver programação atual ↗</a><a class="guided-link" href="recepcao.html">Pedir orientação ↗</a></div></div>
     </section>
     <footer class="guided-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>
   </main>

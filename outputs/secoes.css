@@ -65,25 +65,62 @@ button, a { -webkit-tap-highlight-color: transparent; }
   letter-spacing: -.055em;
 }
 
+/*
+ * A BARRA DO TOPO.
+ *
+ * Faixa de largura inteira, e não mais a pastilha flutuante com treze seções.
+ * A referência que o cliente trouxe é a barra fina de loja: marca à esquerda,
+ * poucos destinos em caixa alta, e o conteúdo da página começando logo abaixo.
+ *
+ * A classe continua sendo `.site-nav` de propósito. Três folhas por página já
+ * a escurecem (Recepção), clareiam (Quem somos) e apagam durante a transição de
+ * encerramento — renomear teria quebrado as três em silêncio, e o defeito só
+ * apareceria na página que ninguém abriu no dia.
+ */
 .site-nav {
   position: fixed;
   z-index: 60;
-  top: max(14px, env(safe-area-inset-top));
-  left: 50%;
-  width: min(820px, calc(100% - 28px));
-  padding: 6px;
-  border: 1px solid rgba(74, 55, 40, .13);
-  border-radius: 18px;
+  top: 0;
+  left: 0;
+  display: flex;
+  gap: clamp(20px, 4vw, 56px);
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 clamp(14px, 4vw, 40px);
+  padding-top: env(safe-area-inset-top);
+  border-bottom: 1px solid rgba(74, 55, 40, .13);
   background: rgba(237, 241, 237, .88);
-  box-shadow: 0 10px 30px rgba(74, 55, 40, .10);
-  transform: translateX(-50%);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
 
+/* A marca é o caminho de volta à Travessia. Sem ela a barra ofereceria cinco
+   portas novas e nenhuma de saída — e a Home é onde vivem a busca e a ordem
+   das seções. */
+.site-nav-marca {
+  display: inline-flex;
+  flex: none;
+  gap: 10px;
+  align-items: center;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.site-nav-marca img { width: auto; height: 26px; }
+
+.site-nav-marca span {
+  font: 700 .64rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.site-nav-marca:focus-visible { outline: 2px solid var(--ink-soft); outline-offset: 4px; }
+
 .site-nav-list {
   display: flex;
-  gap: 2px;
+  gap: clamp(14px, 2.4vw, 30px);
   margin: 0;
   padding: 0;
   overflow-x: auto;
@@ -91,28 +128,38 @@ button, a { -webkit-tap-highlight-color: transparent; }
   scrollbar-width: none;
 }
 
+.site-nav-list::-webkit-scrollbar { display: none; }
+
+/*
+ * O destino atual ganha um traço embaixo, e não uma pastilha preenchida.
+ *
+ * Numa faixa fina o retângulo cheio vira um botão no meio de links e puxa o
+ * olho para onde a pessoa JÁ está. O traço marca sem chamar.
+ */
 .site-nav-link {
-  display: grid;
-  min-height: 38px;
-  padding: 0 13px;
-  place-items: center;
-  border-radius: 12px;
-  color: rgba(74, 55, 40, .7);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .08em;
+  display: block;
+  padding: 19px 0;
+  border-bottom: 2px solid transparent;
+  color: rgba(74, 55, 40, .72);
+  font: 700 .64rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .13em;
   text-decoration: none;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.site-nav-link:hover,
-.site-nav-link.is-active { color: var(--ink); background: rgba(255, 255, 255, .72); }
-.site-nav-link:focus-visible { outline: 2px solid var(--ink-soft); outline-offset: 2px; }
+.site-nav-link:hover { color: var(--ink); }
+.site-nav-link.is-active { border-bottom-color: var(--gold); color: var(--ink); }
+.site-nav-link:focus-visible { outline: 2px solid var(--ink-soft); outline-offset: -4px; }
 
 .journey-noscript { max-width: 720px; margin: 10vh auto; padding: 32px; }
 .journey-noscript a { display: inline-block; padding: 6px 0; }
 
 @media (max-width: 720px) {
-  .site-nav { border-radius: 14px; }
-  .site-nav-link { min-height: 34px; padding: 0 10px; font-size: 9px; }
+  /* No celular a marca vira só o símbolo: o nome por extenso comeria metade da
+     faixa e empurraria os cinco destinos para fora da tela. */
+  .site-nav { gap: 16px; min-height: 50px; }
+  .site-nav-marca span { display: none; }
+  .site-nav-marca img { height: 22px; }
+  .site-nav-link { padding: 16px 0; font-size: .6rem; letter-spacing: .1em; }
 }

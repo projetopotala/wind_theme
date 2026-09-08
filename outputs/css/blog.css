@@ -1,534 +1,133 @@
-/*
- * O BLOG DO INSTITUTO POTALA.
- *
- * A moldura veio de uma referência que o cliente mandou: marca centrada, lema
- * abaixo, réguas grossas, navegação editorial horizontal, manchete com o título
- * dentro de uma caixa sobre a imagem, e uma coluna lateral à direita.
- *
- * A PALETA veio da Travessia — mesmo marrom-tinta, mesmo dourado, mesmo marfim.
- * Mas a Travessia é noturna, e um blog é para ler: manter o fundo escuro dela
- * aqui seria fidelidade à cor com traição ao uso. O que se faz é herdar a
- * FAMÍLIA e inverter a luz.
- *
- * O fundo é o `--ice` que as outras seções do portal já usam: um cinza-esverdeado
- * frio. Isso é deliberado e é o que salva a página de virar o creme quente que
- * qualquer blog de bem-estar usa — o calor entra pelos CARTÕES, em marfim, e a
- * tensão entre o fundo frio e o papel quente é a assinatura cromática do
- * Instituto, não uma escolha nova inventada aqui.
- *
- * O ÚNICO objeto escuro da página é o oráculo. Ele é o painel da Travessia
- * atravessando para cá — e concentrar toda a ousadia nele é o que permite que o
- * resto seja quieto.
- */
-
 :root {
-  /* Da Travessia, sem alterar um dígito. */
   --blog-tinta: #302318;
   --blog-marfim: #f7edda;
   --blog-ouro: #d7ba78;
   --blog-painel: #2b2016;
-
-  /* Do coração da marca. Só aparece em estado ativo e em foco — é o acento que
-     se gasta rápido se usado como decoração. */
   --blog-brasa: #c8402f;
-
-  --blog-papel: #fffdf8;
-  --blog-linha: rgba(48, 35, 24, .16);
-  --blog-linha-forte: rgba(48, 35, 24, .8);
-  --blog-suave: rgba(48, 35, 24, .62);
-
+  --blog-papel: #fffaf0;
+  --blog-suave: rgba(48, 35, 24, .68);
+  --blog-linha: rgba(48, 35, 24, .18);
   --blog-serifa: Georgia, "Times New Roman", serif;
   --blog-sans: Arial, Helvetica, sans-serif;
 }
 
-.blog-body {
-  background: var(--ice);
-  color: var(--blog-tinta);
-}
+* { box-sizing: border-box; }
+.blog-body { margin: 0; background: #d8c9af; color: var(--blog-tinta); }
+.blog-body::before { content: ""; position: fixed; inset: 0; z-index: -2; background: linear-gradient(rgba(247,237,218,.58), rgba(247,237,218,.88)), url("../media/home-travessia.webp") center/cover; filter: sepia(.16); }
+.blog { width: min(100% - clamp(16px, 4vw, 64px), 1420px); margin: 0 auto; padding: 72px 0 80px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
-.blog {
-  /* O topo abre espaço para a pílula de navegação do portal, que é `fixed`. */
-  padding: clamp(78px, 9vw, 104px) clamp(18px, 5vw, 56px) clamp(64px, 9vw, 120px);
-  margin: 0 auto;
-  max-width: 1180px;
-}
-
-/* ------------------------------------------------------------------
- * Cabeçalho
- * ------------------------------------------------------------------ */
-
-.blog-cabecalho {
-  display: grid;
-  gap: 14px;
-  justify-items: center;
-  padding-bottom: clamp(24px, 4vw, 40px);
-}
-
-.blog-marca {
-  display: block;
-  /* Um alvo de toque inteiro, e não só o pixel do desenho. */
-  padding: 8px;
-  border-radius: 14px;
-}
-
-.blog-marca img {
-  display: block;
-  width: clamp(72px, 9vw, 104px);
-  height: auto;
-}
-
+.blog-panorama { position: relative; min-height: clamp(260px, 31vw, 430px); overflow: hidden; border: 1px solid rgba(247,237,218,.34); border-radius: 24px 24px 0 0; background: url("../media/chegada-landscape.webp") center 46%/cover; box-shadow: 0 28px 70px rgba(48,35,24,.26); }
+.blog-panorama__shade { position:absolute; inset:0; background:linear-gradient(90deg,rgba(35,25,15,.5),transparent 63%),linear-gradient(0deg,rgba(30,20,12,.32),transparent 55%); }
+.blog-marca { position: absolute; z-index: 2; top: 24px; left: 28px; padding: 7px; border-radius: 12px; }
+.blog-marca img { display:block; width: clamp(58px, 6vw, 84px); height:auto; filter: sepia(.2) brightness(1.35); }
 .blog-marca:focus-visible { outline: 2px solid var(--blog-brasa); outline-offset: 4px; }
+.blog-panorama__copy { position:absolute; z-index:1; left:clamp(24px,4.2vw,70px); bottom:clamp(28px,4vw,58px); max-width:78%; color:var(--blog-marfim); }
+.blog-temas,.blog-lema { margin:0; text-transform:uppercase; letter-spacing:.28em; font:700 clamp(.58rem,.72vw,.74rem)/1.5 var(--blog-sans); }
+.blog-panorama h1 { margin:.15em 0 .06em; font:400 clamp(3.25rem,7.3vw,7.8rem)/.9 var(--blog-serifa); letter-spacing:-.055em; text-wrap:balance; }
+.blog-panorama blockquote { position:absolute; z-index:1; top:40px; right:clamp(24px,4vw,60px); margin:0; color:var(--blog-marfim); text-align:right; font:italic clamp(.72rem,.9vw,.92rem)/1.5 var(--blog-serifa); }
 
-/*
- * O lema em caixa alta e espaçado, como na referência.
- *
- * Ele não repete o nome do Instituto — a marca acima já o diz, e repetir
- * gastaria a linha mais visível da página com informação que já chegou.
- */
-.blog-lema {
-  margin: 0;
-  color: var(--blog-suave);
-  font: 400 clamp(.78rem, 1.5vw, .95rem)/1 var(--blog-sans);
-  letter-spacing: .34em;
-  text-align: center;
-  text-transform: lowercase;
+.blog-shell { display:grid; grid-template-columns:minmax(0,1fr) clamp(270px,24vw,340px); background:rgba(247,237,218,.94); box-shadow:0 28px 70px rgba(48,35,24,.22); }
+.blog-principal { min-width:0; padding:clamp(16px,2vw,28px); border-right:1px solid var(--blog-linha); }
+.blog-lateral { display:flex; flex-direction:column; gap:28px; padding:clamp(18px,2vw,30px); background:linear-gradient(150deg,rgba(55,41,27,.96),rgba(43,32,22,.98)); color:var(--blog-marfim); }
+.blog-list-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:26px 0 14px; border-bottom:1px solid var(--blog-linha); }
+.blog-list-head h2,.blog-categorias h2 { margin:0 0 9px; text-transform:uppercase; letter-spacing:.24em; font:700 .72rem/1 var(--blog-sans); }
+.blog-list-head span { margin-bottom:9px; color:var(--blog-suave); font:.72rem var(--blog-sans); }
+.blog-grade { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.blog-vazio { min-height:220px; place-items:center; color:var(--blog-suave); font:italic 1rem var(--blog-serifa); }
+.blog-vazio:not([hidden]) { display:grid; }
+
+.post { display:flex; flex-direction:column; min-width:0; background:rgba(255,250,240,.86); border:1px solid var(--blog-linha); border-radius:10px; overflow:hidden; transition:transform .35s ease,box-shadow .35s ease; }
+.post:hover { transform:translateY(-3px); box-shadow:0 16px 30px rgba(48,35,24,.13); }
+.post-capa { display:block; position:relative; min-height:150px; aspect-ratio:16/9; overflow:hidden; background:var(--blog-painel); }
+.post-capa img { width:100%; height:100%; display:block; object-fit:cover; transition:transform .8s cubic-bezier(.2,.7,.2,1); }
+.post:hover .post-capa img { transform:scale(1.035); }
+.post-arte { display:block; width:100%; height:100%; }
+.post-texto { display:grid; align-content:start; gap:8px; padding:16px; }
+.post-etiqueta,.lateral-eyebrow { margin:0; color:#9b6e2d; text-transform:uppercase; letter-spacing:.18em; font:700 .6rem/1.2 var(--blog-sans); }
+.post-titulo { margin:0; font:400 clamp(1.15rem,1.6vw,1.52rem)/1.02 var(--blog-serifa); }
+.post-titulo a { color:inherit; text-decoration:none; }
+.post-titulo a:hover { text-decoration:underline; text-underline-offset:4px; }
+.post-titulo a:focus-visible { outline:2px solid var(--blog-brasa); outline-offset:3px; }
+.post-resumo { margin:0; color:var(--blog-suave); font:.83rem/1.42 var(--blog-sans); }
+.post-credito { display:flex; gap:8px 14px; flex-wrap:wrap; margin:5px 0 0; color:var(--blog-suave); font:.65rem/1.3 var(--blog-sans); }
+.post-link { display:none; color:inherit; text-decoration:none; }
+
+.post--destaque { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(280px,.9fr); min-height:330px; background:var(--blog-painel); color:var(--blog-marfim); border-color:rgba(215,186,120,.35); }
+.post--destaque .post-capa { aspect-ratio:auto; min-height:330px; }
+.post--destaque .post-texto { align-content:center; padding:clamp(28px,4vw,52px); background:linear-gradient(145deg,rgba(62,47,33,.96),rgba(43,32,22,.99)); }
+.post--destaque .post-titulo { font-size:clamp(2.2rem,4vw,4.4rem); }
+.post--destaque .post-resumo,.post--destaque .post-credito { color:rgba(247,237,218,.76); }
+.post--destaque .post-link { display:block; justify-self:start; padding:10px 18px; border:1px solid var(--blog-ouro); border-radius:999px; }
+
+.blog-busca { display:flex; gap:8px; align-items:center; padding:10px 14px; border:1px solid rgba(247,237,218,.18); border-radius:999px; background:rgba(0,0,0,.2); }
+.blog-busca input { min-width:0; width:100%; border:0; outline:0; color:inherit; background:transparent; }
+.blog-busca input::placeholder { color:rgba(247,237,218,.5); }
+.blog-categorias { border-top:1px solid rgba(247,237,218,.18); padding-top:18px; }
+.blog-categorias ul { list-style:none; margin:0; padding:0; }
+.blog-categorias li { border-bottom:1px solid rgba(247,237,218,.08); }
+.blog-categorias button { width:100%; display:flex; justify-content:space-between; gap:10px; padding:9px 0; border:0; color:rgba(247,237,218,.62); background:none; cursor:pointer; font:.76rem var(--blog-sans); text-align:left; }
+.blog-categorias button[aria-pressed="true"] { color:var(--blog-ouro); }
+.blog-categorias button:disabled { opacity:.3; cursor:default; }
+.blog-categorias button:focus-visible { outline:2px solid var(--blog-brasa); outline-offset:3px; }
+.lateral-convite { padding:18px; border:1px solid rgba(215,186,120,.28); background:rgba(215,186,120,.09); }
+.lateral-titulo { margin:8px 0 14px; font:400 1rem/1.35 var(--blog-serifa); }
+.lateral-convite form { display:flex; border-bottom:1px solid rgba(247,237,218,.3); }
+.lateral-convite input { min-width:0; flex:1; border:0; color:inherit; background:transparent; padding:8px 0; }
+.lateral-acao { display:grid; place-items:center; width:34px; height:34px; border:0; border-radius:50%; background:var(--blog-ouro); color:var(--blog-painel); cursor:pointer; text-decoration:none; }
+.lateral-acao:focus-visible { outline:2px solid var(--blog-brasa); outline-offset:3px; }
+.lateral-feedback { min-height:1em; margin:8px 0 0; color:rgba(247,237,218,.66); font:.68rem var(--blog-sans); }
+.lateral-lista ol { list-style:none; margin:0; padding:0; }
+.lateral-lista li { display:grid; grid-template-columns:54px 1fr; gap:10px; padding:10px 0; border-bottom:1px solid rgba(247,237,218,.09); }
+.lateral-lista img { width:54px; height:42px; object-fit:cover; border-radius:4px; }
+.lateral-lista a { color:inherit; text-decoration:none; font:.75rem/1.25 var(--blog-serifa); }
+.lateral-lista a:focus-visible { outline:2px solid var(--blog-brasa); outline-offset:3px; }
+
+.comentarios { margin:0; padding:clamp(36px,6vw,76px) clamp(20px,6vw,80px); border-radius:0 0 24px 24px; background:rgba(255,250,240,.96); box-shadow:0 28px 70px rgba(48,35,24,.2); }
+.comentarios-kicker { color:#9b6e2d; text-transform:uppercase; letter-spacing:.22em; font:.68rem var(--blog-sans); }
+.comentarios-titulo { margin:0; font:400 clamp(2rem,4vw,4rem)/1 var(--blog-serifa); }
+.comentarios-intro { color:var(--blog-suave); }
+.comentario-forma { display:grid; grid-template-columns:1fr 2fr; gap:20px; margin-top:24px; }
+.campo { display:grid; gap:7px; align-content:start; }
+.campo label { font:.74rem var(--blog-sans); letter-spacing:.06em; }
+.campo input,.campo textarea { width:100%; padding:12px; border:1px solid var(--blog-linha); border-radius:8px; background:#fffdf8; color:inherit; font:inherit; }
+.campo-erro { min-height:1em; margin:0; color:#9f2d1d; font:.7rem var(--blog-sans); }
+.campo-contador { margin:0; text-align:right; color:var(--blog-suave); font:.68rem var(--blog-sans); }
+.comentario-rodape { grid-column:1/-1; display:flex; justify-content:space-between; gap:20px; align-items:center; }
+.comentario-aviso { margin:0; color:var(--blog-suave); font:.74rem var(--blog-sans); }
+.comentario-enviar { padding:11px 18px; border:0; border-radius:999px; background:var(--blog-tinta); color:var(--blog-marfim); cursor:pointer; }
+.comentario-enviar:focus-visible { outline:2px solid var(--blog-brasa); outline-offset:3px; }
+.comentario-status { min-height:1em; }
+.comentario-lista { list-style:none; padding:0; }
+.comentario { display:grid; grid-template-columns:38px 1fr; gap:12px; padding:16px 0; border-top:1px solid var(--blog-linha); }
+.comentario-inicial { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:var(--blog-ouro); }
+.comentario-quem,.comentario-texto { margin:0; }
+.comentario-quem span { color:var(--blog-suave); font-size:.75rem; }
+.comentario-texto { margin-top:4px; color:var(--blog-suave); }
+
+@media (max-width: 980px) {
+  .blog-shell { grid-template-columns:1fr; }
+  .blog-principal { border-right:0; }
+  .blog-lateral { display:grid; grid-template-columns:1fr 1fr; }
+  .blog-busca { grid-column:1/-1; }
+  .blog-grade { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
-
-/* ------------------------------------------------------------------
- * Navegação editorial
- *
- * As réguas grossas acima e abaixo vêm da referência, e ganham função: elas
- * separam o que é IDENTIDADE (marca e lema) do que é ÍNDICE. Sem elas, a
- * navegação flutuava no meio do cabeçalho e o olho não sabia onde começava a
- * lista de assuntos.
- * ------------------------------------------------------------------ */
-
-.blog-categorias {
-  border-top: 2px solid var(--blog-linha-forte);
-  border-bottom: 1px solid var(--blog-linha);
+@media (max-width: 680px) {
+  .blog { width:100%; padding:0; }
+  .blog-panorama { min-height:390px; border-radius:0; }
+  .blog-panorama__copy { max-width:calc(100% - 40px); }
+  .blog-panorama h1 { font-size:clamp(3.4rem,16vw,5.3rem); }
+  .blog-panorama blockquote { display:none; }
+  .post--destaque { grid-template-columns:1fr; }
+  .post--destaque .post-capa { min-height:220px; }
+  .blog-grade,.blog-lateral,.comentario-forma { grid-template-columns:1fr; }
+  .comentario-rodape { grid-column:auto; align-items:flex-start; flex-direction:column; }
+  .comentarios { border-radius:0; }
 }
-
-.blog-categorias ul {
-  display: flex;
-  gap: clamp(4px, 2vw, 28px);
-  /*
-   * `safe center`, e não `center`.
-   *
-   * Centrado, um flex que transborda é cortado dos DOIS lados — e o começo
-   * cortado não volta com rolagem nenhuma. No celular a lista some antes de
-   * "tudo", que é justamente a aba que devolve o blog inteiro: quem filtrasse
-   * por uma categoria ficava sem caminho de volta.
-   *
-   * `safe` desiste de centrar quando centrar causaria perda, e alinha ao início.
-   */
-  justify-content: safe center;
-  margin: 0;
-  padding: 0;
-  overflow-x: auto;
-  list-style: none;
-  scrollbar-width: none;
-}
-
-.blog-categorias ul::-webkit-scrollbar { display: none; }
-
-.blog-categorias button {
-  padding: 16px 8px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  color: var(--blog-suave);
-  font: 400 clamp(.92rem, 1.8vw, 1.06rem)/1 var(--blog-serifa);
-  white-space: nowrap;
-  background: none;
-  cursor: pointer;
-}
-
-.blog-categorias button:hover:not(:disabled) { color: var(--blog-tinta); }
-
-.blog-categorias button[aria-pressed="true"] {
-  border-bottom-color: var(--blog-brasa);
-  color: var(--blog-tinta);
-}
-
-.blog-categorias button:disabled { opacity: .3; cursor: default; }
-.blog-categorias button:focus-visible { outline: 2px solid var(--blog-brasa); outline-offset: -4px; }
-
-/* ------------------------------------------------------------------
- * Corpo: coluna principal e lateral
- * ------------------------------------------------------------------ */
-
-.blog-corpo {
-  display: grid;
-  gap: clamp(28px, 4vw, 52px);
-  padding-top: clamp(28px, 4vw, 44px);
-  grid-template-columns: minmax(0, 1fr);
-}
-
-@media (min-width: 940px) {
-  .blog-corpo { grid-template-columns: minmax(0, 1fr) clamp(240px, 24vw, 300px); }
-}
-
-.blog-secao-titulo {
-  margin: clamp(36px, 5vw, 56px) 0 clamp(16px, 2vw, 24px);
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--blog-linha);
-  font: 400 1.1rem/1 var(--blog-serifa);
-  letter-spacing: .02em;
-}
-
-.blog-grade {
-  display: grid;
-  gap: clamp(20px, 3vw, 34px);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 268px), 1fr));
-}
-
-.blog-vazio { color: var(--blog-suave); font-style: italic; }
-
-/* ------------------------------------------------------------------
- * O cartão de publicação
- * ------------------------------------------------------------------ */
-
-.post {
-  display: grid;
-  overflow: hidden;
-  border: 1px solid var(--blog-linha);
-  border-radius: 4px;
-  background: var(--blog-papel);
-}
-
-/*
- * A CAPA é desenho, e não fotografia.
- *
- * Um blog de terapias é o terreno mais fértil que existe para a foto de banco
- * de imagens — a mão com o cristal, o olhar sereno na janela. Aqui a capa é
- * geometria tirada do vocabulário da casa: a pétala da marca, o aro da xícara
- * da cafeomancia, a fumaça do incenso, a crista da serra da Travessia.
- *
- * O gradiente é escuro para o traço dourado ter onde aparecer. É o segundo e
- * último lugar escuro da página, e o parentesco com o oráculo é proposital: os
- * dois são a Travessia aparecendo dentro do blog.
- */
-.post-capa {
-  display: block;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  color: var(--blog-ouro);
-  background:
-    radial-gradient(120% 90% at 20% 15%, rgba(215, 186, 120, .16), transparent 60%),
-    linear-gradient(150deg, #3a2c1e, var(--blog-painel) 62%);
-}
-
-.post-arte { display: block; width: 100%; height: 100%; }
-
-.post-texto { display: grid; align-content: start; gap: 10px; padding: clamp(16px, 2.4vw, 24px); }
-
-.post-etiqueta {
-  margin: 0;
-  color: var(--blog-suave);
-  font: 700 .68rem/1 var(--blog-sans);
-  letter-spacing: .16em;
-  text-transform: uppercase;
-}
-
-.post-titulo { margin: 0; font: 400 clamp(1.24rem, 2.1vw, 1.5rem)/1.18 var(--blog-serifa); }
-.post-titulo a { text-decoration: none; }
-.post-titulo a:hover { text-decoration: underline; text-underline-offset: 4px; }
-.post-titulo a:focus-visible { outline: 2px solid var(--blog-brasa); outline-offset: 3px; }
-
-.post-resumo { margin: 0; color: var(--blog-suave); font: 400 .95rem/1.6 var(--blog-sans); }
-
-.post-credito {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  margin: 4px 0 0;
-  color: var(--blog-suave);
-  font: 400 .78rem/1.4 var(--blog-sans);
-}
-
-/*
- * A MANCHETE: título dentro de uma caixa sobre a imagem, como na referência.
- *
- * A caixa é opaca de propósito. Testada com transparência, o desenho da capa
- * passava por trás das letras e a serifa fina perdia a haste — e é justamente
- * no maior título da página que isso mais aparece.
- */
-@media (min-width: 620px) {
-  .post--destaque { position: relative; border: 0; background: none; }
-  /*
-   * 16/9, e não o 16/8 que parecia mais elegante.
-   *
-   * A caixa do título cobre o terço de baixo. Com 16/8 a capa era 12% mais
-   * baixa, o desenho ficava inteiro atrás da caixa e o que sobrava à vista eram
-   * duas tiras de gradiente — a manchete parecia ter perdido a imagem.
-   *
-   * Com 16/9 a capa é servida na proporção nativa do desenho: nada é recortado
-   * e o motivo aparece acima da caixa.
-   */
-  .post--destaque .post-capa { aspect-ratio: 16 / 9; border-radius: 4px; }
-
-  /*
-   * A caixa é ESTREITA e ancorada à esquerda, e não uma faixa de ponta a ponta.
-   *
-   * De ponta a ponta ela cobria a capa quase inteira: sobrava a ponta de uma
-   * pétala aparecendo por cima, e a manchete parecia um cartão de texto com uma
-   * moldura escura em volta. Recuando a borda direita, o desenho tem onde
-   * existir — e a assimetria entre a caixa e o espaço vazio é o que dá à
-   * manchete o peso de capa que a grade não tem.
-   */
-  .post--destaque .post-texto {
-    position: absolute;
-    right: auto;
-    bottom: clamp(-18px, -1vw, -10px);
-    left: clamp(20px, 4vw, 48px);
-    width: min(560px, 64%);
-    padding: clamp(20px, 2.6vw, 30px);
-    border: 1px solid var(--blog-linha);
-    background: var(--blog-papel);
-  }
-
-  .post--destaque .post-titulo { font-size: clamp(1.7rem, 3.4vw, 2.5rem); }
-
-}
-
-/* Sem a sobreposição no celular: a caixa cobriria a capa inteira. */
-@media (max-width: 619px) {
-  .post--destaque .post-capa { aspect-ratio: 4 / 3; }
-}
-
-/* ------------------------------------------------------------------
- * Lateral
- * ------------------------------------------------------------------ */
-
-.blog-lateral { display: grid; align-content: start; gap: clamp(18px, 2.5vw, 26px); }
-
-/*
- * O ORÁCULO — o único objeto escuro da página, e o que este blog tem que
- * nenhum outro tem.
- *
- * O Instituto faz oráculos de verdade: tarô, runas, cafeomancia. A referência
- * traz um bloco de comunidade nesta posição; trocá-lo por um oráculo é usar uma
- * moldura conhecida para mostrar o que a casa realmente é.
- *
- * Toda a ousadia da página está aqui. É o que permite que o resto seja quieto.
- */
-.oraculo {
-  display: grid;
-  gap: 12px;
-  padding: clamp(20px, 2.6vw, 26px);
-  border-radius: 4px;
-  color: var(--blog-marfim);
-  background:
-    radial-gradient(130% 100% at 50% 0%, rgba(215, 186, 120, .18), transparent 62%),
-    linear-gradient(170deg, #3a2c1e, var(--blog-painel) 70%);
-}
-
-.oraculo-etiqueta {
-  margin: 0;
-  color: var(--blog-ouro);
-  font: 700 .68rem/1 var(--blog-sans);
-  letter-spacing: .18em;
-  text-transform: uppercase;
-}
-
-.oraculo-titulo { margin: 0; font: 400 clamp(1.5rem, 2.6vw, 1.9rem)/1.1 var(--blog-serifa); }
-
-.oraculo-carta {
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border: 1px solid rgba(215, 186, 120, .28);
-  border-radius: 3px;
-  color: var(--blog-ouro);
-}
-
-.oraculo-carta svg { display: block; width: 100%; height: 100%; }
-
-/*
- * O verso em itálico e maior que o corpo: é a única frase da página escrita
- * para ser lida devagar, e a forma precisa dizer isso antes do conteúdo.
- */
-.oraculo-verso {
-  margin: 0;
-  font: italic 400 1.06rem/1.5 var(--blog-serifa);
-}
-
-.oraculo-nota {
-  margin: 0;
-  color: rgba(247, 237, 218, .58);
-  font: 400 .74rem/1.4 var(--blog-sans);
-}
-
-.lateral-lista, .lateral-convite {
-  padding: clamp(18px, 2.4vw, 22px);
-  border: 1px solid var(--blog-linha);
-  border-radius: 4px;
-  background: var(--blog-papel);
-}
-
-.lateral-titulo {
-  margin: 0 0 12px;
-  font: 400 1.02rem/1.2 var(--blog-serifa);
-}
-
-.lateral-lista ol { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
-
-.lateral-lista li {
-  display: grid;
-  gap: 10px;
-  align-items: baseline;
-  grid-template-columns: auto minmax(0, 1fr);
-}
-
-.lateral-lista span {
-  color: var(--blog-ouro);
-  font: 400 .8rem/1 var(--blog-serifa);
-}
-
-.lateral-lista a {
-  font: 400 .92rem/1.4 var(--blog-sans);
-  text-decoration: none;
-}
-
-.lateral-lista a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.lateral-lista a:focus-visible { outline: 2px solid var(--blog-brasa); outline-offset: 2px; }
-
-.lateral-convite p { margin: 0 0 14px; color: var(--blog-suave); font: 400 .9rem/1.55 var(--blog-sans); }
-
-.lateral-acao {
-  display: inline-block;
-  padding: 9px 16px;
-  border: 1px solid var(--blog-linha-forte);
-  border-radius: 999px;
-  font: 400 .84rem/1 var(--blog-sans);
-  text-decoration: none;
-}
-
-.lateral-acao:hover { color: var(--blog-marfim); background: var(--blog-tinta); }
-.lateral-acao:focus-visible { outline: 2px solid var(--blog-brasa); outline-offset: 2px; }
-
-/* ------------------------------------------------------------------
- * Conversa
- * ------------------------------------------------------------------ */
-
-.comentarios {
-  max-width: 760px;
-  margin: clamp(48px, 7vw, 88px) auto 0;
-  padding-top: clamp(28px, 4vw, 40px);
-  border-top: 2px solid var(--blog-linha-forte);
-}
-
-.comentarios-titulo { margin: 0 0 8px; font: 400 clamp(1.5rem, 3vw, 2rem)/1 var(--blog-serifa); }
-.comentarios-intro { margin: 0 0 24px; color: var(--blog-suave); font: 400 .95rem/1.6 var(--blog-sans); }
-
-.comentario-forma { display: grid; gap: 16px; }
-.campo { display: grid; gap: 6px; }
-
-.campo label {
-  color: var(--blog-suave);
-  font: 700 .7rem/1 var(--blog-sans);
-  letter-spacing: .12em;
-  text-transform: uppercase;
-}
-
-.campo input, .campo textarea {
-  padding: 11px 13px;
-  border: 1px solid var(--blog-linha);
-  border-radius: 3px;
-  color: inherit;
-  font: 400 .96rem/1.5 var(--blog-sans);
-  background: var(--blog-papel);
-  resize: vertical;
-}
-
-.campo input:focus-visible, .campo textarea:focus-visible {
-  outline: 2px solid var(--blog-brasa);
-  outline-offset: 1px;
-}
-
-.campo [aria-invalid="true"] { border-color: var(--blog-brasa); }
-
-.campo-erro { min-height: 1em; margin: 0; color: var(--blog-brasa); font: 400 .8rem/1.3 var(--blog-sans); }
-.campo-erro:empty { min-height: 0; }
-.campo-contador { margin: 0; color: var(--blog-suave); font: 400 .75rem/1 var(--blog-sans); text-align: right; }
-
-.comentario-rodape {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 18px;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/*
- * O AVISO FICA JUNTO DO BOTÃO, e não numa nota de rodapé.
- *
- * Não há gravação: o comentário vive na aba e some ao recarregar. Um formulário
- * que aceita texto e o descarta em silêncio é pior do que formulário nenhum, e
- * o momento de contar isso é ANTES de alguém escrever — não depois.
- */
-.comentario-aviso {
-  max-width: 42ch;
-  margin: 0;
-  color: var(--blog-suave);
-  font: italic 400 .8rem/1.4 var(--blog-sans);
-}
-
-.comentario-enviar {
-  padding: 12px 22px;
-  border: 0;
-  border-radius: 999px;
-  color: var(--blog-marfim);
-  font: 400 .92rem/1 var(--blog-sans);
-  background: var(--blog-tinta);
-  cursor: pointer;
-}
-
-.comentario-enviar:hover { background: #45311f; }
-.comentario-enviar:focus-visible { outline: 2px solid var(--blog-brasa); outline-offset: 2px; }
-
-.comentario-status { min-height: 1.2em; margin: 14px 0 0; color: var(--blog-suave); font: 400 .85rem/1.4 var(--blog-sans); }
-
-.comentario-lista { display: grid; gap: 20px; margin: 24px 0 0; padding: 0; list-style: none; }
-
-.comentario {
-  display: grid;
-  gap: 14px;
-  padding-top: 20px;
-  border-top: 1px solid var(--blog-linha);
-  grid-template-columns: auto minmax(0, 1fr);
-}
-
-/*
- * A inicial em vez do avatar.
- *
- * Sem contas não há retrato, e o boneco cinza padrão povoaria a conversa de
- * fantasmas iguais. A letra distingue quem falou sem inventar um rosto.
- */
-.comentario-inicial {
-  display: grid;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  color: var(--blog-marfim);
-  font: 400 1rem/1 var(--blog-serifa);
-  background: linear-gradient(150deg, #3a2c1e, var(--blog-painel));
-  place-items: center;
-}
-
-.comentario-quem { margin: 0 0 4px; font: 400 .92rem/1.3 var(--blog-sans); }
-.comentario-quem span { color: var(--blog-suave); font-size: .8rem; }
-.comentario-texto { margin: 0; font: 400 .96rem/1.6 var(--blog-sans); }
-
-/* ------------------------------------------------------------------
- * Movimento
- *
- * Uma transição só, e nos cartões. A página é para ler; animar a entrada de
- * oito cartões faria o índice performar em vez de informar.
- * ------------------------------------------------------------------ */
 
 @media (prefers-reduced-motion: no-preference) {
-  .post { transition: border-color .2s ease, transform .2s ease; }
-  .post:hover { border-color: rgba(48, 35, 24, .34); transform: translateY(-2px); }
-  .post--destaque:hover { transform: none; }
-  .blog-categorias button { transition: color .15s ease, border-color .15s ease; }
+  .blog-panorama__copy { animation:blog-arrive .9s ease both; }
+  .post { animation:blog-arrive .65s ease both; }
+  @keyframes blog-arrive { from { opacity:0; transform:translateY(14px); } }
 }
+@media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; } }

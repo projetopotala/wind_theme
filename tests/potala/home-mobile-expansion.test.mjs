@@ -684,23 +684,8 @@ test("so a irma precisa de uma volta a vista", () => {
   assert.match(corpo.slice(0, corpo.indexOf("}")), /animation:\s*cartao-volta/);
 });
 
-test("o lapis do admin sai de cena enquanto o bloco esta aberto", () => {
-  /*
-   * Nao e so arrumacao: os dois ocupam o MESMO canto. Medido na previa, com um
-   * bloco aberto, a flecha de voltar fica em (16,16) 44x44 e o lapis em (16,16)
-   * 40x40 — e como ele e `position: fixed` com z-index 24, ficava por cima.
-   * `document.elementFromPoint` no centro da flecha devolvia o icone do lapis:
-   * o botao de sair do painel estava intercetado, e clicar nele levava para o
-   * admin.
-   *
-   * Com o painel ocupando a pagina inteira, editar tambem nao e o gesto do
-   * momento — quem abriu um bloco esta lendo. O lapis volta assim que o bloco
-   * encolhe.
-   */
-  const regra = css.match(/body:has\(\.journey-region\.is-expanded\)\s+\.journey-admin-link\s*\{([^}]*)\}/);
-  assert.ok(regra, "falta tirar o lapis de cena com o bloco aberto");
-  assert.match(regra[1], /opacity:\s*0/, "o lapis nao pode ficar visivel sobre o painel");
-  assert.match(regra[1], /pointer-events:\s*none/, "invisivel e insuficiente: ele ainda intercetaria a flecha");
+test("o antigo lapis solto nao disputa o canto com o painel", () => {
+  assert.doesNotMatch(css, /\.journey-admin-link/, "acesso ao admin agora pertence a barra lateral");
 });
 
 test("a medida do recorte neutraliza o passo de camera sem apagar a travessia", () => {

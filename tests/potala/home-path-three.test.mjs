@@ -2,10 +2,42 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import {
-  buildRibbonAttributes,
-  qualityForViewport,
-} from "../../outputs/js/home/home-path-three.js";
+import * as homePath from "../../outputs/js/home/home-path-three.js";
+
+const { buildRibbonAttributes, qualityForViewport } = homePath;
+
+test("o trajeto permanece apagado no Bem-vindo e só nasce quando a jornada começa", () => {
+  assert.equal(typeof homePath.pathEntranceState, "function");
+  const hidden = homePath.pathEntranceState({ active:false, elapsedMs:1800, scrollProgress:.4 });
+  const start = homePath.pathEntranceState({ active:true, elapsedMs:0, scrollProgress:0 });
+  const middle = homePath.pathEntranceState({ active:true, elapsedMs:900, scrollProgress:0 });
+  const end = homePath.pathEntranceState({ active:true, elapsedMs:1800, scrollProgress:0 });
+
+  assert.deepEqual(hidden, { reveal:0, opacity:0, complete:true });
+  assert.deepEqual(start, { reveal:0, opacity:0, complete:false });
+  assert.ok(middle.reveal > 0 && middle.reveal < .075);
+  assert.ok(middle.opacity > 0 && middle.opacity < 1);
+  assert.deepEqual(end, { reveal:.075, opacity:1, complete:true });
+});
+
+test("o scroll pode conduzir a ponta sem saltar a posição renderizada", () => {
+  assert.equal(typeof homePath.advanceHomePathProgress, "function");
+  const first = homePath.advanceHomePathProgress(0, .8);
+  const second = homePath.advanceHomePathProgress(first, .8);
+  assert.ok(first > 0 && first < .8);
+  assert.ok(second > first && second < .8);
+  assert.equal(homePath.advanceHomePathProgress(.79999, .8), .8);
+
+  const scrolled = homePath.pathEntranceState({ active:true, elapsedMs:200, scrollProgress:.4 });
+  assert.equal(scrolled.reveal, .4, "a introdução não pode atrasar quem já rolou");
+});
+
+test("movimento reduzido mostra o início do caminho sem animá-lo", () => {
+  assert.deepEqual(
+    homePath.pathEntranceState({ active:true, elapsedMs:0, scrollProgress:0, reducedMotion:true }),
+    { reveal:.075, opacity:1, complete:true },
+  );
+});
 
 /** Reta na diagonal: a normal esperada é conhecida de antemão. */
 const diagonal = (t) => ({ x: t, y: t, z: 0 });
@@ -74,6 +106,18 @@ test("movimento reduzido usa geometria mais leve", () => {
   const quality = qualityForViewport({ width: 1440, devicePixelRatio: 3, reducedMotion: true });
   assert.equal(quality.dpr, 1);
   assert.equal(quality.segments, 160);
+});
+
+test("o trajeto mantém presença sem dominar telas pequenas", () => {
+  assert.equal(typeof homePath.pathVisualProfile, "function");
+
+  const celular = homePath.pathVisualProfile({ width: 390, height: 844 });
+  const desktop = homePath.pathVisualProfile({ width: 1440, height: 900 });
+
+  assert.ok(celular.ribbonPixels >= 28 && celular.ribbonPixels <= 38);
+  assert.ok(celular.offsetPixels <= -70 && celular.offsetPixels >= -125);
+  assert.ok(desktop.ribbonPixels >= 44 && desktop.ribbonPixels <= 60);
+  assert.equal(desktop.offsetPixels, 0);
 });
 
 test("o brilho é uma queda contínua, não uma casca de opacidade fixa", async () => {
@@ -231,6 +275,7 @@ test("a câmera usa o deslocamento lateral, e no sentido contrário", async () =
 
   // Calcular o deslocamento e não aplicá-lo deixa a linha parada no meio da
   // tela enquanto o vão anda — e o bloco aberto passa por cima dela.
-  assert.match(fonte, /camera\.position\.set\(point\.x \* 0\.12 - lateral/);
-  assert.match(fonte, /camera\.lookAt\(point\.x \* 0\.22 - lateral/);
+  assert.match(fonte, /const totalLateral = lateral \+ responsiveLateral/);
+  assert.match(fonte, /camera\.position\.set\(point\.x \* 0\.12 - totalLateral/);
+  assert.match(fonte, /camera\.lookAt\(point\.x \* 0\.22 - totalLateral/);
 });

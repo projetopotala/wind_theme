@@ -22,6 +22,18 @@ const CONVITES = {
   "arte-cultura": "Conheça nossa arte e cultura",
   marketplace: "Visite nossa loja",
   inspiracao: "Faça uma pausa com a gente",
+  /*
+   * As NOVIDADES levam a um texto, e não a uma seção — o convite muda de verbo.
+   *
+   * O fallback é "Conheça " mais o título, e com um título de notícia ele
+   * produzia "Conheça O que a borra de café ainda tem a dizer": uma frase que
+   * ninguém diria em voz alta. "Leia" cabe em qualquer manchete, e é o que a
+   * pessoa vai de fato fazer.
+   */
+  "novidade-novos-profissionais": "Leia quem chegou ao Instituto",
+  "novidade-oraculo-de-hoje": "Veja o oráculo de hoje",
+  "novidade-borra-de-cafe": "Leia sobre a borra de café",
+  "novidade-cinema-quinta": "Veja o cinema de setembro",
 };
 
 /**

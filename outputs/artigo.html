@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#302318">
+  <meta name="description" content="Leitura completa do Caderno de Travessia do Instituto Potala.">
+  <title>Artigo — Caderno de Travessia</title>
+  <link rel="stylesheet" href="secoes.css">
+  <link rel="stylesheet" href="css/artigo.css">
+  <script type="module" src="secoes.js"></script>
+  <script type="module" src="js/blog/article-controller.js"></script>
+</head>
+<body class="article-body" data-section="blog">
+  <a class="skip-link" href="#artigo">Ir para o artigo</a>
+  <main class="article-page" id="artigo">
+    <a class="article-back" href="blog.html">← Caderno de Travessia</a>
+    <article data-article-root aria-live="polite"></article>
+    <section class="article-related" aria-labelledby="related-title">
+      <p class="article-kicker">Outros caminhos</p>
+      <h2 id="related-title">Continue a travessia</h2>
+      <div class="article-related__grid" data-article-related></div>
+    </section>
+    <section class="article-comments" data-article-comments aria-labelledby="article-comments-title">
+      <p class="article-kicker">Conversa</p>
+      <h2 id="article-comments-title">O que esta leitura despertou?</h2>
+      <form data-article-comment-form>
+        <label>Seu nome<input name="name" maxlength="60" required></label>
+        <label>Sua reflexão<textarea name="text" rows="4" minlength="3" maxlength="600" required></textarea></label>
+        <p>Representação local: comentários ainda não são enviados ao servidor.</p>
+        <button type="submit">Compartilhar nesta aba</button>
+      </form>
+      <p data-article-comment-status role="status" aria-live="polite"></p>
+      <ol data-article-comment-list></ol>
+    </section>
+  </main>
+</body>
+</html>

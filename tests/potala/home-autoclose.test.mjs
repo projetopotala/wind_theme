@@ -2,7 +2,21 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { shouldCloseOnScroll } from "../../outputs/js/home/home-controller.js";
+import { pathProgressAfterPrologue, shouldCloseOnScroll } from "../../outputs/js/home/home-controller.js";
+
+test("a linha começa somente depois que o prólogo saiu da tela", () => {
+  const base = {
+    journeyStart: 900,
+    scrollHeight: 4900,
+    viewportHeight: 900,
+  };
+
+  assert.deepEqual(pathProgressAfterPrologue({ ...base, scrollTop:0 }), { active:false, progress:0 });
+  assert.deepEqual(pathProgressAfterPrologue({ ...base, scrollTop:899 }), { active:false, progress:0 });
+  assert.deepEqual(pathProgressAfterPrologue({ ...base, scrollTop:900 }), { active:true, progress:0 });
+  assert.deepEqual(pathProgressAfterPrologue({ ...base, scrollTop:2450 }), { active:true, progress:.5 });
+  assert.deepEqual(pathProgressAfterPrologue({ ...base, scrollTop:4000 }), { active:true, progress:1 });
+});
 
 test("tremor não fecha o bloco; gesto fecha", () => {
   const base = { openedAt: 1200, viewportHeight: 800 };

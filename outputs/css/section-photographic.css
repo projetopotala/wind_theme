@@ -40,6 +40,45 @@ img { max-width: 100%; }
 .photo-link { display: inline-flex; align-items: center; gap: 10px; color: inherit; font-size: .7rem; font-weight: 700; letter-spacing: .17em; text-decoration: none; text-transform: uppercase; }
 .photo-action { padding-bottom: 9px; border-bottom: 1px solid currentColor; }
 
+/*
+ * A AÇÃO PRINCIPAL DO HERÓI: botão cheio, e não mais um sublinhado.
+ *
+ * O padrão da família é o link de texto sublinhado, e ele serve quando há UMA
+ * ação. Quando há duas, dois sublinhados iguais viram uma escolha que ninguém
+ * pediu — o olho lê os dois, compara e hesita.
+ *
+ * O cheio é usado uma vez por página, no alto. Repetido, deixa de significar
+ * "principal" e passa a significar "link".
+ */
+.photo-hero-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 30px;
+  align-items: center;
+}
+
+.photo-cta {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  padding: 17px 32px;
+  border: 1px solid var(--photo-ink);
+  border-radius: 999px;
+  color: var(--photo-paper);
+  font: 700 .72rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .17em;
+  text-decoration: none;
+  text-transform: uppercase;
+  background: var(--photo-ink);
+}
+
+.photo-cta:hover { color: var(--photo-ink); background: none; }
+.photo-cta:focus-visible { outline: 2px solid var(--photo-gold); outline-offset: 4px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .photo-cta { transition: color .22s ease, background .22s ease; }
+}
+
 .photo-intro,
 .photo-dark,
 .photo-closing { display: grid; grid-template-columns: minmax(160px, .36fr) minmax(0, 1fr); gap: clamp(38px, 8vw, 140px); padding: clamp(92px, 12vw, 176px) clamp(24px, 8vw, 136px); }
@@ -48,8 +87,36 @@ img { max-width: 100%; }
 .photo-list-head h2,
 .photo-dark h2,
 .photo-closing h2 { max-width: 14ch; margin-bottom: 28px; font-size: clamp(2.8rem, 5.4vw, 6.2rem); line-height: .98; letter-spacing: -.045em; }
+/*
+ * O ENCERRAMENTO INVERTE AS COLUNAS: o título grande fica no lado largo.
+ *
+ * Ele herdava a grade do `.photo-dark`, que põe uma coluna estreita à esquerda
+ * e a larga à direita — proporção certa quando a esquerda é um rótulo e a
+ * direita é texto corrido. Aqui é o oposto: à esquerda mora um display de 6rem
+ * e à direita duas linhas com dois links.
+ *
+ * O resultado era o pior dos dois: o título quebrava em cinco linhas numa
+ * coluna que não cabia nele, e a coluna larga ficava vazia da metade para
+ * baixo. Trocar a proporção resolve sem mexer no HTML nem nas outras seções,
+ * que continuam com a grade que lhes serve.
+ */
+.photo-closing { grid-template-columns: minmax(0, 1fr) minmax(240px, .52fr); }
+
+/*
+ * E o título ganha mais largura de linha aqui.
+ *
+ * 14ch é uma boa medida para um display que ocupa uma coluna inteira da tela;
+ * na coluna larga do encerramento ele passa a quebrar antes do necessário, e
+ * "curiosidades." descia sozinha para uma quinta linha.
+ */
+.photo-closing h2 { max-width: 20ch; }
+
 .photo-prose,
 .photo-closing-copy { width: min(100%, 650px); justify-self: end; }
+
+/* O texto de apoio encosta no alto, alinhado com o começo do título, em vez de
+   flutuar no meio da coluna. */
+.photo-closing-copy { align-self: start; }
 .photo-prose p,
 .photo-closing-copy p { font-size: clamp(1rem, 1.2vw, 1.17rem); line-height: 1.8; }
 
@@ -99,4 +166,218 @@ img { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   [data-reveal] { opacity: 1; transform: none; transition: none; }
+}
+
+/*
+ * O CONVITE PARA AGENDAR — o lado direito do cabeçalho da lista.
+ *
+ * Ele ocupa a célula em que antes havia só um parágrafo. A frase continua, mas
+ * agora ela introduz um botão em vez de terminar em si mesma: quem se convence
+ * lendo tem o que fazer na linha seguinte.
+ */
+.photo-agendar { display: grid; gap: 18px; justify-items: start; margin-left: auto; max-width: 52ch; }
+.photo-agendar > p { max-width: 46ch; margin: 0; line-height: 1.7; }
+
+.photo-agendar-botao {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  padding: 15px 28px;
+  border: 1px solid var(--photo-ink);
+  border-radius: 999px;
+  color: var(--photo-ink);
+  font: 700 .72rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+  background: none;
+  cursor: pointer;
+}
+
+.photo-agendar-botao:hover { color: var(--photo-paper); background: var(--photo-ink); }
+.photo-agendar-botao:focus-visible { outline: 2px solid var(--photo-gold); outline-offset: 3px; }
+
+/* A seta gira para baixo quando os canais estão abertos: o botão passa a
+   apontar para o que ele revelou, em vez de continuar prometendo avanço. */
+.photo-agendar-botao[aria-expanded="true"] span { rotate: 90deg; }
+
+.photo-agendar-canais {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  padding: 20px 24px;
+  border: 1px solid var(--photo-line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .5);
+}
+
+.photo-agendar-canais[hidden] { display: none; }
+.photo-agendar-canais > p { max-width: 40ch; margin: 0 0 4px; font-size: .88rem; line-height: 1.6; }
+
+.photo-agendar-canais a {
+  display: inline-flex;
+  gap: 10px;
+  align-items: baseline;
+  color: inherit;
+  font: 700 .72rem/1.4 Arial, Helvetica, sans-serif;
+  letter-spacing: .14em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.photo-agendar-canais a span { font-weight: 400; letter-spacing: .02em; text-transform: none; }
+.photo-agendar-canais a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.photo-agendar-canais a:focus-visible { outline: 2px solid var(--photo-gold); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .photo-agendar-botao { transition: color .22s ease, background .22s ease; }
+  .photo-agendar-botao span { transition: rotate .22s ease; }
+}
+/*
+ * AS AULAS DE CADA FAMÍLIA, EM DOIS NÍVEIS.
+ *
+ * A rotina existia por família e mentia um pouco: yoga e pilates não têm o
+ * mesmo dia nem o mesmo horário, e "segunda a sexta, 7h, 12h e 19h" era a união
+ * de tudo — quem lia não sabia quando ir para a aula que queria.
+ *
+ * Agora a família recolhe, e dentro dela cada aula é um bloco que abre a
+ * própria rotina. Quem só passa os olhos vê cinco linhas; quem procura violino
+ * abre duas vezes e chega ao dia, à hora e ao que levar.
+ *
+ * `<details>` e `<summary>` nativos, sem JavaScript: o teclado, o leitor de
+ * tela e o "procurar na página" do navegador já sabem o que fazer com eles, e
+ * qualquer versão nossa desse comportamento seria uma imitação pior.
+ */
+.photo-rows summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.photo-rows summary::-webkit-details-marker { display: none; }
+
+/*
+ * A família ocupa a coluna do TEXTO, e não uma quarta coluna.
+ *
+ * Sem esta colocação, ela cairia na primeira coluna da linha seguinte — debaixo
+ * do número, longe do que descreve. Na coluna do texto ela lê como continuação
+ * da descrição, que é o que é.
+ */
+.photo-rows article > .photo-aulas { grid-column: 3; }
+
+.photo-aulas > summary {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 20px;
+  color: var(--photo-gold);
+  font: 700 .66rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+/* O sinal diz para que lado a coisa vai: fechado convida a abrir, aberto
+   convida a fechar. Um ícone único deixaria a pessoa adivinhar. */
+.photo-aulas > summary::after {
+  content: "+";
+  font-size: 1.1em;
+  line-height: 0;
+}
+
+.photo-aulas[open] > summary::after { content: "–"; }
+.photo-aulas > summary:hover { color: var(--photo-ink); }
+.photo-aulas > summary:focus-visible { outline: 2px solid var(--photo-gold); outline-offset: 4px; }
+
+.photo-aulas-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/*
+ * Fechada, a aula é uma pastilha e as pastilhas se acomodam em linhas.
+ *
+ * Aberta, ela toma a linha inteira e mostra a rotina embaixo do próprio nome —
+ * as vizinhas continuam onde estavam, acima e abaixo, e nada dança de lugar
+ * enquanto a pessoa compara horários.
+ */
+.photo-aula > summary {
+  display: inline-flex;
+  padding: 10px 17px;
+  border: 1px solid var(--photo-line);
+  border-radius: 999px;
+  color: rgba(86, 60, 45, .82);
+  font: 700 .66rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.photo-aula > summary:hover {
+  border-color: var(--photo-gold);
+  color: var(--photo-gold);
+}
+
+.photo-aula > summary:focus-visible { outline: 2px solid var(--photo-gold); outline-offset: 3px; }
+
+.photo-aula[open] { flex: 1 0 100%; }
+
+/* A aula aberta fica cheia. Sem isso, quem rolasse a página de volta não
+   saberia qual das pastilhas está respondendo o painel logo abaixo. */
+.photo-aula[open] > summary {
+  border-color: var(--photo-ink);
+  color: var(--photo-paper);
+  background: var(--photo-ink);
+}
+
+/*
+ * A ROTINA DE CADA AULA.
+ *
+ * Dias, horários, duração, frequência, nível e o que levar. O documento do
+ * Ecossistema pede que isso seja fácil de achar, e "fácil de achar" aqui quer
+ * dizer JUNTO da prática — não numa página de horários à parte, onde quem lê
+ * sobre tai chi teria de sair, procurar a linha certa e voltar.
+ *
+ * Uma `<dl>`, e não uma tabela: são pares de rótulo e valor de UMA aula, não
+ * uma grade comparativa. Quem ouve a página recebe "Dias, terça e quinta" em
+ * vez de ter de cruzar linha com coluna.
+ */
+.photo-rotina {
+  display: grid;
+  gap: 14px 28px;
+  margin: 16px 0 6px;
+  padding-left: 17px;
+  border-left: 1px solid var(--photo-line);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+/* Cada par vive num `div` para o rótulo e o valor não se separarem quando a
+   grade quebra de linha. */
+.photo-rotina > div { display: grid; gap: 3px; }
+
+.photo-rotina dt {
+  color: var(--photo-gold);
+  font: 700 .58rem/1.2 Arial, Helvetica, sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.photo-rotina dd {
+  margin: 0;
+  color: rgba(86, 60, 45, .88);
+  font: 400 .84rem/1.45 Arial, Helvetica, sans-serif;
+}
+
+.photo-rotina-nota {
+  max-width: 62ch;
+  margin: 34px 0 0;
+  color: rgba(86, 60, 45, .68);
+  font: italic 400 .86rem/1.6 Arial, Helvetica, sans-serif;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .photo-aulas > summary,
+  .photo-aula > summary { transition: color .2s ease, border-color .2s ease, background .2s ease; }
+}
+
+@media (max-width: 900px) {
+  .photo-rows article > .photo-aulas { grid-column: 2; }
 }

@@ -10,8 +10,11 @@
   <link rel="preload" href="media/journey-quem-somos.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="secoes.css">
   <link rel="stylesheet" href="css/section-editorial.css">
+  <link rel="stylesheet" href="css/course-learning-studio.css">
+  <link rel="stylesheet" href="css/section-transition.css">
   <script type="module" src="secoes.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
+  <script type="module" src="js/courses/learning-studio.js"></script>
 </head>
 <body data-section="cursos" data-entry="right" data-return-section="atendimentos" data-left="transcendido.html#atendimentos">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
@@ -53,6 +56,131 @@
       </div>
     </section>
 
+    <section class="learning-studio" data-learning-studio aria-labelledby="learning-studio-title">
+      <header class="learning-studio-intro" data-reveal>
+        <p class="learning-studio-overline">Ateliê de aprendizagem</p>
+        <h2 id="learning-studio-title">Uma escolha pode começar com uma conversa.</h2>
+        <p>Antes da inscrição, o Potala aproxima dúvidas, interesses e pessoas experientes. Aqui, o visitante pode compreender caminhos, imaginar uma nova turma e acompanhar como uma experiência coletiva começa a existir.</p>
+      </header>
+
+      <div class="learning-studio-journey">
+        <article class="learning-studio-step learning-studio-advice" aria-labelledby="learning-advice-title">
+          <div class="learning-studio-copy" data-reveal>
+            <span class="learning-studio-number" aria-hidden="true">01</span>
+            <p class="learning-studio-overline">Aconselhamento Holístico</p>
+            <h3 id="learning-advice-title">Encontre sentido antes de escolher.</h3>
+            <p>Uma orientação humana para comparar propostas, reconhecer o momento atual e construir um percurso de aprendizagem possível.</p>
+            <ul class="learning-studio-formats" aria-label="Formas de aproximação">
+              <li>Conversa de orientação</li>
+              <li>Mentoria individual ou coletiva</li>
+              <li>Encontro com facilitadores</li>
+            </ul>
+          </div>
+
+          <div class="learning-advice-console" data-reveal>
+            <p class="learning-console-prompt">O que ajudaria você agora?</p>
+            <div class="learning-advice-options" role="group" aria-label="Objetivo da orientação">
+              <button class="is-selected" type="button" data-learning-goal="choose" aria-pressed="true">Escolher um curso</button>
+              <button type="button" data-learning-goal="path" aria-pressed="false">Construir um percurso</button>
+            </div>
+            <div class="learning-advice-answer" aria-live="polite">
+              <p data-advice-eyebrow>Uma conversa antes da escolha</p>
+              <h4 data-advice-title>Compare possibilidades com alguém experiente.</h4>
+              <p data-advice-description>Um encontro breve ajuda a esclarecer diferenças entre cursos, formatos e níveis de aprofundamento.</p>
+              <a href="#monte-seu-curso" data-advice-next>Solicitar conversa de orientação</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="learning-studio-step learning-studio-builder" id="monte-seu-curso" aria-labelledby="course-builder-title">
+          <div class="learning-studio-copy" data-reveal>
+            <span class="learning-studio-number" aria-hidden="true">02</span>
+            <p class="learning-studio-overline">Monte seu Curso</p>
+            <h3 id="course-builder-title">Ajude uma nova turma a nascer.</h3>
+            <p>Registre um interesse ainda não contemplado na programação. Tema, formato e disponibilidade passam a orientar novas conversas com facilitadores e com a comunidade.</p>
+            <p class="learning-studio-note">Nesta prévia, suas escolhas ficam apenas nesta tela e não são enviadas ao Instituto.</p>
+          </div>
+
+          <form class="course-interest-form" data-course-interest-form data-reveal novalidate>
+            <div class="course-field course-field-wide">
+              <label for="course-topic">O que você gostaria de aprender?</label>
+              <input id="course-topic" name="topic" type="text" autocomplete="off" placeholder="Ex.: filosofia, Yoga e consciência corporal">
+            </div>
+
+            <fieldset class="course-field">
+              <legend>Como prefere participar?</legend>
+              <label><input type="radio" name="modality" value="presencial"> <span>Presencial</span></label>
+              <label><input type="radio" name="modality" value="online"> <span>Online</span></label>
+            </fieldset>
+
+            <fieldset class="course-field">
+              <legend>Quando costuma ter disponibilidade?</legend>
+              <label><input type="checkbox" name="availability" value="manha"> <span>Manhã</span></label>
+              <label><input type="checkbox" name="availability" value="tarde"> <span>Tarde</span></label>
+              <label><input type="checkbox" name="availability" value="noite"> <span>Noite</span></label>
+              <label><input type="checkbox" name="availability" value="sábado"> <span>Sábado</span></label>
+            </fieldset>
+
+            <div class="course-field course-field-wide">
+              <label for="course-goal">O que espera transformar ou desenvolver?</label>
+              <textarea id="course-goal" name="goal" rows="3" placeholder="Conte brevemente o que trouxe você até este tema"></textarea>
+            </div>
+
+            <div class="course-interest-action course-field-wide">
+              <button type="submit">Visualizar meu interesse <span aria-hidden="true">→</span></button>
+              <p data-interest-status role="status" aria-live="polite">Você poderá revisar tudo antes de um envio futuro.</p>
+            </div>
+
+            <section class="course-interest-review course-field-wide" data-interest-review tabindex="-1" hidden aria-labelledby="interest-review-title">
+              <p class="learning-studio-overline">Sua ideia de percurso</p>
+              <h4 id="interest-review-title" data-interest-topic></h4>
+              <dl>
+                <div><dt>Formato e disponibilidade</dt><dd data-interest-format></dd></div>
+                <div><dt>Intenção</dt><dd data-interest-goal></dd></div>
+              </dl>
+              <p>Quando este recurso for conectado ao Instituto, esta proposta poderá aproximar você de outras pessoas interessadas.</p>
+            </section>
+          </form>
+        </article>
+
+        <article class="learning-studio-step learning-studio-cohort" aria-labelledby="cohort-title">
+          <div class="learning-studio-copy" data-reveal>
+            <span class="learning-studio-number" aria-hidden="true">03</span>
+            <p class="learning-studio-overline">Turma em formação</p>
+            <h3 id="cohort-title">Acompanhe o caminho que você ajudou a abrir.</h3>
+            <p>Em vez de esperar uma confirmação sem contexto, cada participante poderá ver o grupo se formar, a disponibilidade do facilitador e as próximas decisões.</p>
+          </div>
+
+          <div class="cohort-board" data-reveal>
+            <header class="cohort-board-head">
+              <div>
+                <p>Exemplo de acompanhamento</p>
+                <h4>Yoga e consciência corporal</h4>
+              </div>
+              <span>12 de 16 interessados</span>
+            </header>
+
+            <div class="cohort-progress" data-cohort-progress data-current-stage="2" data-total-stages="5"
+              role="progressbar" aria-label="Progresso da formação da turma" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+              <ol>
+                <li data-cohort-stage><span>Interesse recebido</span></li>
+                <li data-cohort-stage><span>Grupo em formação</span></li>
+                <li data-cohort-stage><span>Facilitadora disponível</span></li>
+                <li data-cohort-stage><span>Datas em definição</span></li>
+                <li data-cohort-stage><span>Turma confirmada</span></li>
+              </ol>
+            </div>
+
+            <dl class="cohort-facts">
+              <div><dt>Facilitadora</dt><dd>Disponibilidade confirmada</dd></div>
+              <div><dt>Preferência do grupo</dt><dd>Sábados pela manhã</dd></div>
+              <div><dt>Previsão de início</dt><dd>Próximo ciclo de programação</dd></div>
+            </dl>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <section class="editorial-quote" aria-label="Síntese dos cursos"><blockquote data-reveal>O conhecimento ganha sentido quando encontra a vida.</blockquote></section>
 
     <section class="editorial-closing" aria-labelledby="courses-closing-title">
@@ -65,6 +193,22 @@
           <a class="editorial-link" href="https://www.institutopotala.com/cursos" rel="noreferrer">Cursos no site oficial <span aria-hidden="true">↗</span></a>
         </div>
       </div>
+    </section>
+
+    <div class="section-transition-pause" aria-hidden="true"></div>
+
+    <div class="section-transition-veil" data-section-closing-veil hidden aria-live="polite"
+      role="dialog" aria-modal="true" aria-labelledby="cursos-transition-copy" tabindex="-1">
+      <canvas class="section-transition-canvas" data-section-closing-canvas aria-hidden="true"></canvas>
+      <p id="cursos-transition-copy">Existem conhecimentos que só florescem quando saem dos livros e passam a fazer parte da rotina. Algumas experiências precisam ser vividas com o corpo, com a sensibilidade e com a convivência.</p>
+    </div>
+
+    <section class="section-transition-stage" data-section-closing-trigger aria-label="Do conhecimento à experiência">
+      <figure class="section-transition-photo">
+        <img src="media/atividades-pratica.webp"
+          alt="Pessoas vivem uma prática corporal juntas em um jardim"
+          width="1600" height="1000" loading="lazy" decoding="async">
+      </figure>
     </section>
 
     <footer class="editorial-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>

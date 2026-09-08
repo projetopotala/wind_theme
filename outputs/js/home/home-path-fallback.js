@@ -3,6 +3,7 @@ const clamp = (value) => Math.min(1, Math.max(0, Number(value) || 0));
 export function createHomePathFallback(canvas) {
   const context = canvas?.getContext?.("2d");
   let progress = 0;
+  let active = false;
   let paused = false;
   let destroyed = false;
 
@@ -18,9 +19,11 @@ export function createHomePathFallback(canvas) {
     const width = canvas.clientWidth || globalThis.innerWidth || 1;
     const height = canvas.clientHeight || globalThis.innerHeight || 1;
     context.clearRect(0, 0, width, height);
+    if (!active) return;
+    const visibleProgress = Math.max(.075, progress);
     context.save();
-    context.globalAlpha = Math.max(0.05, progress);
-    context.setLineDash([Math.max(1, progress * height * 1.4), height * 2]);
+    context.globalAlpha = Math.max(0.05, visibleProgress);
+    context.setLineDash([Math.max(1, visibleProgress * height * 1.4), height * 2]);
     context.lineDashOffset = height * 1.15;
     trace(width, height);
     context.strokeStyle = "rgba(217, 164, 73, .26)";
@@ -52,6 +55,11 @@ export function createHomePathFallback(canvas) {
 
   return {
     mode: "fallback",
+    setActive(value) {
+      active = Boolean(value);
+      if (!active) progress = 0;
+      draw();
+    },
     setProgress(value) {
       progress = clamp(value);
       draw();

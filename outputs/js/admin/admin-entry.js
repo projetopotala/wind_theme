@@ -5,6 +5,7 @@ import {
 } from "./admin-auth.js";
 import { createAdminController } from "./admin-controller.js";
 import { DEFAULT_HOME_BLOCKS } from "../home/journey-data.js";
+import { withRequiredDefaultSections } from "../home/default-section-bridge.js";
 import { createSupabaseContentRepository } from "../home/supabase-content-repository.js";
 import { getSupabaseClient } from "../supabase/client.js";
 
@@ -17,10 +18,10 @@ const firstAccess = isAdminFirstAccess(window.location);
 
 try {
   const client = getSupabaseClient();
-  const repository = createSupabaseContentRepository({
+  const repository = withRequiredDefaultSections(createSupabaseContentRepository({
     client,
     defaults: DEFAULT_HOME_BLOCKS,
-  });
+  }), DEFAULT_HOME_BLOCKS, ["revista"]);
 
   createAdminAuth({
     client,

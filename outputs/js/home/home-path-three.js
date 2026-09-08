@@ -2,7 +2,46 @@ import * as THREE from "three";
 import { buildHomePathLayout } from "./home-path-layout.js";
 import { createHomePathFallback } from "./home-path-fallback.js";
 
-const clamp = (value) => Math.min(1, Math.max(0, Number(value) || 0));
+const clamp = (value, minimum = 0, maximum = 1) => (
+  Math.min(maximum, Math.max(minimum, Number(value) || 0))
+);
+
+const PATH_ENTRANCE_DURATION = 1800;
+const PATH_ENTRANCE_REVEAL = 0.075;
+
+/** Estado visual da chegada do trajeto, separado da GPU para ser verificável. */
+export function pathEntranceState({
+  active = false,
+  elapsedMs = 0,
+  scrollProgress = 0,
+  reducedMotion = false,
+} = {}) {
+  if (!active) return { reveal: 0, opacity: 0, complete: true };
+  const scroll = clamp(scrollProgress);
+  if (reducedMotion) {
+    return {
+      reveal: Math.max(PATH_ENTRANCE_REVEAL, scroll),
+      opacity: 1,
+      complete: true,
+    };
+  }
+
+  const phase = clamp(elapsedMs / PATH_ENTRANCE_DURATION);
+  const eased = 1 - ((1 - phase) ** 3);
+  return {
+    reveal: Math.max(scroll, PATH_ENTRANCE_REVEAL * eased),
+    opacity: eased,
+    complete: phase >= 1,
+  };
+}
+
+/** Interpola a câmera e a ponta para a rolagem não criar saltos na curva. */
+export function advanceHomePathProgress(current = 0, target = 0, factor = 0.13) {
+  const from = clamp(current);
+  const to = clamp(target);
+  if (Math.abs(to - from) <= 0.0001) return to;
+  return clamp(from + ((to - from) * clamp(factor, 0.01, 1)));
+}
 
 const CAMERA_FOV = 38;
 const CAMERA_DISTANCE = 3.75;
@@ -88,6 +127,10 @@ void main() {
   float distance = eixo / estreita;
   float core = 1.0 - smoothstep(0.55, 0.93, distance);
   float glow = exp(-distance * distance / 5.0) * 0.19;
+  // Uma segunda queda, bem mais larga e fraca, separa luz de linha pintada.
+  // Ela varia ao longo do arco com a rolagem, sem criar animação contínua.
+  float aura = exp(-eixo * eixo / 15.0) * 0.11;
+  float corrente = 0.9 + 0.1 * cos(vArc * 34.0 - uReveal * 18.0);
 
   /*
    * O núcleo já satura em 255 no meio da fita, então "mais brilho" na cabeça
@@ -107,6 +150,7 @@ void main() {
   float brasa = exp(-eixo * eixo / 5.0) * 0.19
     * exp(-(atras * atras) / (lamina * lamina * 0.42)) * uHeadGlow;
   float alpha = clamp(core * 0.94 + glow + brasa, 0.0, 1.0) * corte * cauda;
+  alpha = clamp(alpha + aura * corrente * corte * cauda, 0.0, 1.0);
 
   /*
    * A cor não é uma só: o coração é quase branco e o halo é dourado.
@@ -202,6 +246,25 @@ export function worldShiftForPixels({
   return (Number(pixels) || 0) / Math.max(1, viewportWidth) * larguraVisivel;
 }
 
+export function pathVisualProfile({ width = 1440, height = 900 } = {}) {
+  const safeWidth = Math.max(320, Number(width) || 1440);
+  const safeHeight = Math.max(480, Number(height) || 900);
+  const mobile = safeWidth <= 720;
+  const ribbonPixels = mobile
+    ? clamp(safeWidth * 0.085, 28, 36)
+    : clamp(safeWidth * 0.037, 46, 56);
+  const offsetPixels = mobile ? -clamp(safeWidth * 0.26, 82, 112) : 0;
+  const visibleHeight = 2 * CAMERA_DISTANCE * Math.tan((CAMERA_FOV * Math.PI) / 360);
+
+  return {
+    ribbonPixels,
+    offsetPixels,
+    worldWidth: ribbonPixels * 0.5 * visibleHeight / safeHeight,
+    tipFade: mobile ? 0.052 : 0.062,
+    headGlow: mobile ? 5.2 : 6.4,
+  };
+}
+
 export function qualityForViewport({
   width = 1440,
   devicePixelRatio = 1,
@@ -248,11 +311,29 @@ export function createHomePath(canvas, {
     devicePixelRatio: globalThis.devicePixelRatio,
     reducedMotion,
   });
+  let visualProfile = pathVisualProfile({
+    width: canvas.clientWidth || globalThis.innerWidth,
+    height: canvas.clientHeight || globalThis.innerHeight,
+  });
   let progress = 0;
+  let targetProgress = 0;
   let paused = false;
   let destroyed = false;
+  let frame = 0;
+  const clock = () => globalThis.performance?.now?.() ?? Date.now();
+  let active = false;
+  let entranceStartedAt = null;
+  const requestFrame = globalThis.requestAnimationFrame?.bind(globalThis)
+    || ((callback) => globalThis.setTimeout(() => callback(clock()), 16));
+  const cancelFrame = globalThis.cancelAnimationFrame?.bind(globalThis)
+    || globalThis.clearTimeout?.bind(globalThis);
   // Deslocamento lateral em unidades do mundo, positivo = linha para a direita.
   let lateral = 0;
+  let responsiveLateral = worldShiftForPixels({
+    pixels: visualProfile.offsetPixels,
+    viewportWidth: canvas.clientWidth || globalThis.innerWidth || 1,
+    viewportHeight: canvas.clientHeight || globalThis.innerHeight || 1,
+  });
 
   const atributos = buildRibbonAttributes((t) => curve.getPointAt(t), quality.segments);
   const geometry = new THREE.BufferGeometry();
@@ -268,12 +349,12 @@ export function createHomePath(canvas, {
       uOpacity: { value: 1 },
       // Comprimento da lâmina em fração do arco. Curto demais e volta a parecer
       // corte; longo demais e a ponta some antes de chegar ao bloco seguinte.
-      uTipFade: { value: 0.06 },
+      uTipFade: { value: visualProfile.tipFade },
       // Quanto o halo incha na cabeça, em múltiplos dele mesmo.
-      uHeadGlow: { value: 6.0 },
+      uHeadGlow: { value: visualProfile.headGlow },
       // A meia-largura da fita em unidades do mundo. O núcleo aceso ocupa cerca
       // de 13% dela (0,93 de 7 no shader); o resto é o halo se apagando.
-      uWidth: { value: 0.1 },
+      uWidth: { value: visualProfile.worldWidth },
       // O halo, e é ele que dá o dourado. Chapada em 0xf3e2c2 a fita inteira
       // lia clara demais; em 0xe6bd78, que veio antes, lia como fio de metal.
       // Aqui só a queda lateral carrega a cor, e o coração continua claro.
@@ -295,11 +376,12 @@ export function createHomePath(canvas, {
   const ribbon = new THREE.Mesh(geometry, material);
   scene.add(ribbon);
 
-  function render() {
+  function render(timestamp = clock()) {
     if (paused || destroyed) return;
     const point = curve.getPointAt(clamp(progress));
     // A câmera anda para o lado CONTRÁRIO ao que se quer ver a linha andar.
-    camera.position.set(point.x * 0.12 - lateral, point.y, CAMERA_DISTANCE);
+    const totalLateral = lateral + responsiveLateral;
+    camera.position.set(point.x * 0.12 - totalLateral, point.y, CAMERA_DISTANCE);
     /*
      * A câmera mira ACIMA da cabeça, e é isso que dá altura à descida.
      *
@@ -309,9 +391,33 @@ export function createHomePath(canvas, {
      * e terminava logo ali. Com a mira acima, a cabeça desce para perto de 60%
      * e o rastro ocupa o quadro.
      */
-    camera.lookAt(point.x * 0.22 - lateral, point.y + 0.2, 0);
-    material.uniforms.uReveal.value = clamp(progress);
+    camera.lookAt(point.x * 0.22 - totalLateral, point.y + 0.2, 0);
+    const entrance = pathEntranceState({
+      active,
+      elapsedMs: entranceStartedAt === null ? 0 : timestamp - entranceStartedAt,
+      scrollProgress: progress,
+      reducedMotion,
+    });
+    material.uniforms.uReveal.value = entrance.reveal;
+    material.uniforms.uOpacity.value = entrance.opacity;
     renderer.render(scene, camera);
+    return entrance;
+  }
+
+  function animate(timestamp) {
+    frame = 0;
+    if (paused || destroyed) return;
+    progress = reducedMotion
+      ? targetProgress
+      : advanceHomePathProgress(progress, targetProgress);
+    const entrance = render(timestamp);
+    if (!entrance?.complete || Math.abs(progress - targetProgress) > 0.0001) {
+      frame = requestFrame(animate);
+    }
+  }
+
+  function requestRender() {
+    if (!frame && !paused && !destroyed) frame = requestFrame(animate);
   }
 
   function resize() {
@@ -319,11 +425,21 @@ export function createHomePath(canvas, {
     const width = Math.max(1, canvas.clientWidth || globalThis.innerWidth || 1);
     const height = Math.max(1, canvas.clientHeight || globalThis.innerHeight || 1);
     quality = qualityForViewport({ width, devicePixelRatio: globalThis.devicePixelRatio, reducedMotion });
+    visualProfile = pathVisualProfile({ width, height });
     renderer.setPixelRatio(quality.dpr);
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+    material.uniforms.uWidth.value = visualProfile.worldWidth;
+    material.uniforms.uTipFade.value = visualProfile.tipFade;
+    material.uniforms.uHeadGlow.value = visualProfile.headGlow;
+    responsiveLateral = worldShiftForPixels({
+      pixels: visualProfile.offsetPixels,
+      viewportWidth: width,
+      viewportHeight: height,
+    });
     render();
+    requestRender();
   }
 
   resize();
@@ -331,9 +447,20 @@ export function createHomePath(canvas, {
   return {
     mode: "three",
     layout,
+    setActive(value) {
+      const next = Boolean(value);
+      if (next === active) return;
+      active = next;
+      entranceStartedAt = active ? clock() : null;
+      if (!active) {
+        progress = 0;
+        targetProgress = 0;
+      }
+      requestRender();
+    },
     setProgress(value) {
-      progress = clamp(value);
-      render();
+      targetProgress = clamp(value);
+      requestRender();
     },
     /** Move a linha na horizontal, em pixels de tela. */
     setLateralShift(pixels = 0) {
@@ -342,14 +469,23 @@ export function createHomePath(canvas, {
         viewportWidth: canvas.clientWidth || globalThis.innerWidth || 1,
         viewportHeight: canvas.clientHeight || globalThis.innerHeight || 1,
       });
-      render();
+      requestRender();
     },
     resize,
-    pause() { paused = true; },
-    resume() { paused = false; render(); },
+    pause() {
+      paused = true;
+      if (frame) cancelFrame?.(frame);
+      frame = 0;
+    },
+    resume() {
+      paused = false;
+      requestRender();
+    },
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      if (frame) cancelFrame?.(frame);
+      frame = 0;
       geometry.dispose();
       material.dispose();
       renderer.dispose();

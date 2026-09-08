@@ -192,6 +192,26 @@ test("títulos longos recebem escala que cabe na área editorial", () => {
   assert.match(markup, /data-title-scale="compact"/);
 });
 
+test("somente títulos de uma palavra recebem composição em uma linha", () => {
+  const umaPalavra = homeScenes.renderRegion({
+    id: "atividades",
+    title: "Atividades",
+    category: "O movimento",
+    summary: "Práticas para o corpo.",
+    side: "left",
+  }, 0, null, new Map());
+  const frase = homeScenes.renderRegion({
+    id: "quem-somos",
+    title: "Quem somos",
+    category: "A entrada",
+    summary: "Conheça o Instituto.",
+    side: "right",
+  }, 1, null, new Map());
+
+  assert.match(umaPalavra, /data-title-flow="single"/);
+  assert.match(frase, /data-title-flow="phrase"/);
+});
+
 test("regiões laterais não exibem a instrução Explore os arredores", () => {
   const markup = homeScenes.renderRegion({
     id: "atendimentos",

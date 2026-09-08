@@ -38,10 +38,22 @@ test("a página oferece todos os destaques permanentes da Recepção", async () 
 
 test("a Home e a navegação conduzem para a nova Recepção", async () => {
   const journey = await readFile(new URL("../../outputs/js/home/journey-data.js", import.meta.url), "utf8");
-  const navigation = await readFile(new URL("../../outputs/secoes.js", import.meta.url), "utf8");
+  const home = await readFile(new URL("../../outputs/transcendido.html", import.meta.url), "utf8");
 
+  /*
+   * A CHECAGEM MUDOU DE LUGAR, e não de propósito.
+   *
+   * Ela olhava o menu de treze seções de `secoes.js`, que saiu do ar: as
+   * páginas de seção passaram a ter uma barra fina com as portas que a
+   * Travessia não oferece (especialistas, workshops, mentorias), e o índice das
+   * seções ficou onde sempre esteve de verdade — na jornada da Home.
+   *
+   * O que o teste protege continua igual: uma seção que existe e não está
+   * listada em lugar nenhum é uma página órfã, alcançável só por quem souber a
+   * URL de cor.
+   */
   assert.match(journey, /id:\s*"recepcao"[\s\S]*?href:\s*"recepcao\.html"/);
-  assert.match(navigation, /key:\s*"recepcao"[^\n]*href:\s*"recepcao\.html"/);
+  assert.match(home, /recepcao\.html/);
 });
 
 test("a imagem da Recepção possui resolução suficiente para o hero", async () => {

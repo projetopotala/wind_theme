@@ -20,9 +20,19 @@ test("a Chegada preserva o canvas sem expor um controle de drag", () => {
   assert.doesNotMatch(chegada, /arrival-transition-road/);
 });
 
-test("as duas etapas compartilham o indicador vertical de progresso", () => {
+test("o indicador vertical de progresso ficou só na Chegada", () => {
+  /*
+   * As duas etapas o compartilhavam. Na Home ele saiu: ali a barra lateral já
+   * conta a mesma coisa, e com mais precisão — a roleta diz em qual bloco se
+   * está, e o contador diz o número. Um fio vertical dizendo "você está mais ou
+   * menos aqui" ao lado disso era a terceira resposta para a mesma pergunta, e
+   * atravessava a paisagem para dá-la.
+   *
+   * Na Chegada ele fica: lá não há barra lateral nem contador, e ele é o único
+   * sinal de que a página continua abaixo.
+   */
   assert.match(chegada, /class="journey-scroll-cue"/);
-  assert.match(home, /class="journey-scroll-cue"/);
+  assert.doesNotMatch(home, /class="journey-scroll-cue"/);
 });
 
 test("home mantém fallback e não intercepta wheel", () => {

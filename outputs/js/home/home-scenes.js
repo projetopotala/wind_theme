@@ -1,3 +1,5 @@
+import { arteDaCapa } from "../blog/blog-arte.js";
+import { ehNovidade, temasVisiveis } from "./home-novidades.js";
 import { invitationsFor } from "./invitations.js";
 import { renderRestrictedMarkdown } from "../shared/markdown.js";
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
@@ -40,34 +42,65 @@ export function presenceForRegionBounds({ top, bottom, viewportHeight }) {
 // O silêncio não é só pausa: é o trecho de rolagem em que a curva inteira passa.
 // Com 10svh a estrada virava 90° sete vezes mais rápido do que corria na reta, e
 // a virada dava solavanco. O silêncio volta a ser proporcional ao arco.
-const regionHeights = [198, 194, 192, 195, 202, 192, 195, 202, 196, 192];
-const silenceHeights = [45, 44, 48, 42, 46, 43, 50, 44, 46];
+/*
+ * ONZE alturas e DEZ silêncios: uma região nova exige as duas coisas.
+ *
+ * `journeyRhythmForIndex` prende o índice ao fim da tabela, então uma região a
+ * mais não estoura nada — ela herda a altura da anterior e um silêncio zero, e
+ * o último trecho encolhe para 192svh contra os 225 mínimos que o ritmo exige.
+ * Não quebra: só fica apressado, e apressado é invisível em teste que não meça.
+ */
+const regionHeights = [198, 194, 192, 195, 202, 192, 195, 202, 196, 192, 196];
+/* Um silêncio por altura, e não um a menos: com o ritmo ciclando, o último
+   trecho é o que volta da última região para a primeira, e ele existe. */
+const silenceHeights = [45, 44, 48, 42, 46, 43, 50, 44, 46, 46, 45];
 
 /** Rolagem da subida final, em svh. Sem informação: só caminho. */
 export const ASCENT_HEIGHT = 120;
 
+/*
+ * O ritmo CICLA, e antes ele grudava no fim da tabela.
+ *
+ * Enquanto as regiões eram dez fixas no código, prender o índice à última
+ * entrada nunca aparecia. Agora os blocos vêm do painel: quem adicionar o
+ * décimo segundo faz todos os seguintes herdarem a mesma altura e silêncio
+ * zero — a jornada acelera no fim, e ninguém liga uma coisa à outra.
+ *
+ * Ciclando, a tabela vira um COMPASSO em vez de uma lista: qualquer quantidade
+ * de blocos recebe um ritmo, e a única exigência passa a ser que o compasso
+ * feche — que a volta da última para a primeira também respeite a distância
+ * mínima entre encontros. É o que o teste do percurso mede.
+ */
 export function journeyRhythmForIndex(index) {
-  const safeIndex = Math.max(0, Math.min(regionHeights.length - 1, Math.trunc(index)));
+  const total = regionHeights.length;
+  const inteiro = Math.trunc(Number(index) || 0);
+  const passo = ((inteiro % total) + total) % total;
   return {
-    regionHeight: regionHeights[safeIndex],
-    silenceHeight: silenceHeights[safeIndex] || 0,
+    regionHeight: regionHeights[passo],
+    silenceHeight: silenceHeights[passo] || 0,
   };
 }
 
 /* Indexada por POSIÇÃO da região, não por id: uma região nova no meio empurra
    todas as seguintes, e sem acompanhar aqui cada seção passa a receber a
-   descoberta da vizinha. */
+   descoberta da vizinha. Cicla pelo mesmo motivo que o ritmo: a contagem de
+   blocos é editável, e uma lista de tamanho fixo deixaria os últimos sem nada. */
 const featuredDiscoveries = [
   "acao-social",
   "atendimento-online",
   "recepcao",
-  "blog",
+  /* Era "blog" aqui. O Blog virou REGIÃO, e uma região não se apresenta como
+     descoberta de outra — Cursos passaria a oferecer, como novidade lateral, um
+     bloco que a própria jornada mostra inteiro poucos rolares adiante. */
+  "empresas",
   "saude-integrativa",
   "novos-profissionais",
   "eventos",
   "revista",
   "loja",
   "sono-reflexao",
+  /* A décima primeira, do Blog: a Revista é a vizinha editorial dele. */
+  "revista",
 ];
 
 /*
@@ -219,14 +252,40 @@ export function renderRegion(region, index, discovery, discoveriesById) {
   const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
   const layoutVariant = safeToken(region.layoutVariant, "editorial");
   const titleScale = Array.from(title).length >= 11 ? "compact" : "display";
+  const titleFlow = title.trim().split(/\s+/u).filter(Boolean).length === 1 ? "single" : "phrase";
   const { regionHeight } = journeyRhythmForIndex(index);
+
+  /*
+   * A CAPA APARECE COM O CARTÃO FECHADO — só nas novidades.
+   *
+   * Nas seções permanentes a imagem vive dentro do bloco expandido, porque ali
+   * ela ilustra um texto que já se está lendo. Uma novidade é outra coisa: ela
+   * precisa se anunciar antes de qualquer clique, e a figura é o que a
+   * distingue das vizinhas num relance.
+   *
+   * A fotografia do artigo tem prioridade porque liga visualmente a Home ao
+   * Caderno de Travessia. O motivo abstrato continua como fallback para blocos
+   * antigos que ainda não tenham capa.
+   */
+  const novidade = ehNovidade(region);
+  const coverSource = safeMediaSource(region.image || region.media);
+  const capaFechada = novidade
+    ? (coverSource
+      ? `<span class="region-capa" aria-hidden="true"><img src="${coverSource}" alt="" loading="lazy" decoding="async"></span>`
+      : (region.motivo
+        ? `<span class="region-capa" aria-hidden="true">${arteDaCapa(region.motivo)}</span>`
+        : ""))
+    : "";
+  const newsMeta = novidade
+    ? `<span class="region-news-meta" aria-hidden="true"><small>${escapeHtml(region.category || "Caderno")}</small><span>${escapeHtml(title)}</span></span>`
+    : "";
 
 
   return `
     <div class="journey-region region--${layoutVariant}" id="${id}"
       data-region-id="${id}" data-layout-variant="${layoutVariant}"
       data-side="${side}" data-road-side="${roadSide}" data-content-placement="${safeToken(region.contentPlacement, "side")}"
-      data-title-scale="${titleScale}"
+      data-title-scale="${titleScale}" data-title-flow="${titleFlow}" data-card-kind="${novidade ? "novidade" : "fixo"}"
       style="--region-index:${index};--region-height:${regionHeight}svh">
         <article class="region-content" aria-labelledby="${id}-title">
           <!--
@@ -245,6 +304,8 @@ export function renderRegion(region, index, discovery, discoveriesById) {
           <button class="region-close" type="button" data-region-close tabindex="-1"
             aria-label="Voltar para a jornada"><span aria-hidden="true">←</span></button>
           <button class="region-summary" type="button" aria-expanded="false" aria-controls="${id}-details">
+            ${capaFechada}
+            ${newsMeta}
             <span class="region-category">
               <span>${String(index + 1).padStart(2, "0")}</span>${escapeHtml(region.category)}
               <span class="region-rule" aria-hidden="true"></span>
@@ -258,7 +319,7 @@ export function renderRegion(region, index, discovery, discoveriesById) {
               <span class="region-divider" aria-hidden="true"></span>
               <p class="region-lead-label">Encontre o que faz sentido para você</p>
               ${renderRestrictedMarkdown(body)}
-              <ul class="region-tags" aria-label="Temas desta região">${renderTags(region.tags)}</ul>
+              <ul class="region-tags" aria-label="Temas desta região">${renderTags(temasVisiveis(region.tags))}</ul>
             </section>
             <aside class="region-details-aside">
               ${renderRelated(region, discoveriesById, discovery)}
@@ -266,7 +327,7 @@ export function renderRegion(region, index, discovery, discoveriesById) {
               <div class="region-actions">
                 <a class="region-link" href="${safeHref(region.href)}" tabindex="-1"${
                   region.metaDescription ? ` aria-description="${escapeHtml(region.metaDescription)}"` : ""
-                }>Explorar ${escapeHtml(title.toLowerCase())} <span aria-hidden="true">→</span></a>
+                }>${novidade ? "Ler a notícia completa" : `Explorar ${escapeHtml(title.toLowerCase())}`} <span aria-hidden="true">→</span></a>
               </div>
             </aside>
           </div>
@@ -287,11 +348,11 @@ export function renderRegion(region, index, discovery, discoveriesById) {
  * um palco por bloco, os dois vãos se sobreporiam e cada bloco reservaria um
  * espaço que o outro já estava usando.
  */
-export function renderPair(markups, pairIndex, pairHeight) {
+export function renderPair(markups, pairIndex, pairHeight, rotulo = "") {
   return `
     <section class="journey-pair" data-pair-index="${pairIndex}"
       style="--pair-height:${pairHeight}svh">
-      <div class="region-stage">${markups.join("")}</div>
+      <div class="region-stage">${rotulo}${markups.join("")}</div>
     </section>
   `;
 }
@@ -326,26 +387,190 @@ export function renderInvitation(invitations = []) {
     </button>`;
 }
 
+/*
+ * A ROLETA SEPARA NOVIDADES DE SEÇÕES.
+ *
+ * Numa lista só, as quatro notícias tomavam as posições 01 a 04 e empurravam
+ * "Quem somos" para a quinta. A roleta é o MAPA do portal, e ali isso lia como
+ * se o Instituto tivesse quinze seções — quatro delas com nome de manchete.
+ *
+ * Cada grupo se numera por conta própria: a numeração de um índice conta
+ * quantos itens daquele tipo existem, e uma contagem contínua entre coisas de
+ * naturezas diferentes não conta nada.
+ *
+ * Os títulos de grupo são `<li>` sem `data-menu-target`. O controlador coleta
+ * os itens da roleta por esse atributo, então eles não entram na conta de qual
+ * bloco está ativo — e o leitor de tela recebe a divisão junto com a lista.
+ */
 export function renderJourneyMenu(regions = []) {
-  const itens = regions.map((region, index) => {
+  const novidades = regions.filter(ehNovidade);
+  const secoes = regions.filter((region) => !ehNovidade(region));
+
+  /*
+   * As novidades ocupam UMA linha, e não uma cada.
+   *
+   * Listadas uma a uma, as manchetes tomavam as primeiras posições e a roleta
+   * lia como se o Instituto tivesse quinze seções — quatro delas com nome de
+   * notícia. A roleta é o mapa do portal, e o que ela precisa dizer sobre as
+   * novidades é só que existem e que você está nelas.
+   *
+   * O marcador circular é o que informa: ele acende enquanto o visitante
+   * percorre qualquer um dos cartões de novidade, como acende nas seções.
+   */
+  const linhaRecentes = novidades.length
+    ? `<li class="journey-menu-marco" data-menu-recentes>Recentes</li>`
+    : "";
+
+  /*
+   * "DESTACADO" existe porque "Recentes" sozinho contaminava a lista inteira.
+   *
+   * Com um único rótulo no topo, tudo que vinha abaixo dele parecia pertencer a
+   * ele: "Quem somos" e "Recepção" liam como notícias recentes. Um marco só
+   * marca um começo — são precisos dois para marcar uma fronteira.
+   */
+  const linhaDestacado = secoes.length
+    ? `<li class="journey-menu-marco" data-menu-destacado>Destacado</li>`
+    : "";
+
+  /* As seções continuam numeradas de 01 em diante. */
+  const itens = linhaRecentes + linhaDestacado + secoes.map((region, index) => {
     const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
+    const href = escapeHtml(String(region.href || "#"));
+    const current = index === 0 && !novidades.length ? ' aria-current="true"' : "";
     return `
       <li>
-        <button type="button" data-menu-target="${id}">
+        <a href="${href}" data-menu-target="${id}"${current}>
           <span aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
           ${escapeHtml(String(region.title || ""))}
-        </button>
+        </a>
       </li>`;
   }).join("");
+  const total = String(Math.max(1, regions.length)).padStart(2, "0");
 
   return `
     <button class="journey-menu-toggle" type="button" data-menu-toggle
-      aria-expanded="false" aria-controls="journey-menu" aria-label="Abrir o menu de seções"
+      aria-expanded="false" aria-controls="journey-menu" aria-label="Abrir navegação"
       data-keeps-expansion>
-      <span class="journey-menu-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+      <img src="media/potala-mark-transparent.png" alt="" aria-hidden="true">
     </button>
-    <nav class="journey-menu" id="journey-menu" aria-label="Seções da travessia" data-keeps-expansion inert>
-      <ul>${itens}</ul>
+    <nav class="journey-menu" id="journey-menu" aria-label="Seções da travessia"
+      data-keeps-expansion data-journey-sidebar inert>
+      <a class="journey-sidebar-brand" href="transcendido.html" aria-label="Início da Travessia">
+        <img src="media/potala-mark-transparent.png" alt="Instituto Potala">
+        <span>Instituto <strong>Potala</strong></span>
+      </a>
+      <div class="journey-sidebar-heading">
+        <p>Travessia</p>
+        <span>Ecossistema Digital</span>
+      </div>
+      <div class="journey-sidebar-progress" aria-label="Progresso na jornada">
+        <span><strong data-journey-current>01</strong> / <span data-journey-total>${total}</span></span>
+        <i aria-hidden="true"></i>
+      </div>
+      <a class="journey-sidebar-back" href="transcender.html" aria-label="Voltar à Chegada">
+        <span aria-hidden="true">←</span>
+      </a>
+      <div class="journey-menu-viewport">
+        <ul>${itens}</ul>
+      </div>
+      <!--
+        O rodapé da barra virou um BOTÃO REDONDO que abre duas opções.
+
+        Era uma pílula larga escrita "Painel editorial" — o item mais destacado
+        do rodapé, e o único que o visitante nunca vai usar: o painel é de quem
+        mantém o site. Reduzido a um ícone, ele deixa de disputar espaço com o
+        que interessa a quem chega, e abre espaço para o "Contate-nos", que é o
+        que um visitante de fato procura ali embaixo.
+
+        Elemento details com summary, em vez de um botão com JavaScript: abrir e
+        fechar já é comportamento nativo dele, e vem com teclado e leitor de
+        tela prontos. Um botão nosso precisaria reimplementar os três — e este
+        comentário não usa crase porque está DENTRO de um template literal, onde
+        uma crase fecha a string e derruba o arquivo inteiro.
+      -->
+      <!--
+        A BUSCA MORA FORA DO MENU, e é o menu que a revela.
+
+        Dentro do elemento details, ela fecharia junto com ele no primeiro clique fora
+        — e clicar fora é exatamente o que se faz para alcançar o teclado no
+        telefone. Aqui ela abre acima do botão e só sai quando encontra algo ou
+        quando alguém a fecha.
+      -->
+      <form class="journey-busca" data-journey-busca role="search" hidden>
+        <label class="journey-sr" for="journey-busca-campo">Buscar na jornada</label>
+        <input id="journey-busca-campo" data-journey-busca-campo type="search"
+          placeholder="tai chi, oráculo, cursos…" autocomplete="off">
+        <button type="submit" aria-label="Buscar">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"/>
+          </svg>
+        </button>
+        <p class="journey-busca-aviso" data-journey-busca-aviso role="status" aria-live="polite"></p>
+      </form>
+
+      <details class="journey-sidebar-mais">
+        <summary aria-label="Mais opções">
+          <span aria-hidden="true"></span>
+        </summary>
+        <div class="journey-sidebar-opcoes">
+          <button type="button" data-journey-abrir-busca>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"/>
+            </svg>
+            <span>Pesquisar</span>
+          </button>
+          <a href="recepcao.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"/>
+            </svg>
+            <span>Contate-nos</span>
+          </a>
+          <a href="admin.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25Zm15.7-10.4a.73.73 0 0 0 0-1.03l-1.52-1.52a.73.73 0 0 0-1.03 0l-1.19 1.19 2.75 2.75 1.19-1.19Z"/>
+            </svg>
+            <span>Painel editorial</span>
+          </a>
+          <!--
+            AS PORTAS QUE NÃO SÃO SEÇÃO.
+
+            Especialistas, workshops, grupos, mentorias e eventos moram na barra
+            do topo das páginas de seção. A Home não tem essa barra — ela tem a
+            roleta — e sem estes cinco links a única forma de chegar lá a partir
+            do começo seria entrar numa seção qualquer primeiro.
+          -->
+          <a href="especialistas.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3Zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5Zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5Z"/>
+            </svg>
+            <span>Especialistas</span>
+          </a>
+          <a href="workshops.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2 2 7l10 5 10-5-10-5Zm0 7.2L5.6 6 12 2.8 18.4 6 12 9.2ZM2 17l10 5 10-5-2.2-1.1L12 19.6l-7.8-3.7L2 17Zm0-5 10 5 10-5-2.2-1.1L12 14.6l-7.8-3.7L2 12Z"/>
+            </svg>
+            <span>Workshops</span>
+          </a>
+          <a href="grupos-de-estudo.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 5c-1.9-.6-3.9-1-6-1-1.8 0-3.5.3-5 .8v14.4c1.5-.5 3.2-.8 5-.8 2.1 0 4.1.4 6 1V5ZM9 4.8C7.5 4.3 5.8 4 4 4c-.7 0-1.4 0-2 .1v14.4c.6-.1 1.3-.1 2-.1 1.8 0 3.5.3 5 .8V4.8Z"/>
+            </svg>
+            <span>Grupos de estudo</span>
+          </a>
+          <a href="mentorias.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3 1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3Zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9ZM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72Z"/>
+            </svg>
+            <span>Mentorias</span>
+          </a>
+          <a href="eventos.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10Zm0-12H5V6h14v2Zm-8 4H7v4h4v-4Z"/>
+            </svg>
+            <span>Eventos futuros</span>
+          </a>
+        </div>
+      </details>
     </nav>`;
 }
 
@@ -355,21 +580,83 @@ export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
   const blocos = regions.map((region, index) => renderRegion(
     region,
     index,
-    discoveriesById.get(featuredDiscoveries[index]),
+    discoveriesById.get(featuredDiscoveries[index % featuredDiscoveries.length]),
     discoveriesById,
   ));
 
   const pares = [];
+  /*
+   * O RÓTULO DO GRUPO ENTRA NO FLUXO, no começo dos cartões a que se refere.
+   *
+   * Ele já morou fixo no alto da tela. Ali estava sempre visível e sempre longe
+   * do que descrevia: quem olhava os cartões não olhava o canto, e a palavra
+   * mudava sem que ninguém visse.
+   *
+   * No começo do grupo ele é lido uma vez, no lugar certo — e `sticky` o mantém
+   * à vista enquanto aquele grupo passa, de modo que a resposta continua
+   * disponível sem precisar voltar.
+   */
+  let grupoAnterior = null;
   for (let inicio = 0; inicio < blocos.length; inicio += 2) {
+    const grupo = ehNovidade(regions[inicio] || {}) ? "novidade" : "fixo";
+    /*
+     * O rótulo entra DENTRO do palco do primeiro par do grupo.
+     *
+     * Fora dele, como irmão do par, ele ficava a quase quatrocentos pixels
+     * acima dos cartões: o palco é `sticky` com a altura da tela e os cartões
+     * ficam centrados nele, então quando eles param no meio da tela o rótulo já
+     * saiu por cima havia muito tempo. Ele nomeava o grupo de um lugar em que
+     * não dava para vê-lo junto do que nomeava.
+     *
+     * Dentro do palco ele acompanha os cartões: chega com eles, para com eles
+     * e sai com eles.
+     */
+    let rotulo = "";
+    if (grupo !== grupoAnterior) {
+      grupoAnterior = grupo;
+      const editorial = grupo === "novidade"
+        ? { eyebrow:"Caderno de Travessia", title:"Acontece no Potala" }
+        : { eyebrow:"Ecossistema Potala", title:"Caminhos para conhecer" };
+      rotulo = `<header class="journey-trecho" data-grupo="${grupo}">
+        <span>${editorial.eyebrow}</span>
+        <strong>${editorial.title}</strong>
+        <i aria-hidden="true"></i>
+      </header>`;
+    }
     const pairIndex = pares.length;
     // A altura do par vem do ritmo do primeiro dos dois: é a mesma passagem
     // que uma seção sozinha ocupava, agora carregando duas.
     const { regionHeight, silenceHeight } = journeyRhythmForIndex(inicio);
-    pares.push(renderPair(blocos.slice(inicio, inicio + 2), pairIndex, regionHeight));
+    pares.push(renderPair(blocos.slice(inicio, inicio + 2), pairIndex, regionHeight, rotulo));
     if (inicio + 2 < blocos.length) {
-      // Os silêncios continuam existindo como pausa e como trecho de estrada;
-      // só não carregam mais texto.
-      pares.push(`<div class="journey-silence" aria-hidden="true" style="--silence-height:${silenceHeight}svh"></div>`);
+      /*
+       * A FRONTEIRA ENTRE NOVIDADES E SEÇÕES ganha uma marca no silêncio.
+       *
+       * O rótulo lá no alto troca de palavra, mas ele está no canto e a troca é
+       * discreta de propósito — quem estiver olhando os cartões não vê. Sem
+       * nada no caminho, a jornada passa de notícia para seção sem que nada
+       * aconteça, e a divisão só existe para quem reparou no canto da tela.
+       *
+       * A marca vai no silêncio porque o silêncio JÁ É a passagem: o trecho de
+       * estrada sem conteúdo entre dois encontros. Marcar o cartão seria pôr a
+       * fronteira dentro de um dos lados; marcar o vão a põe entre os dois.
+       */
+      const fronteira = ehNovidade(regions[inicio + 1] || {}) !== ehNovidade(regions[inicio + 2] || {});
+      /*
+       * O SILÊNCIO DA FRONTEIRA É MAIS CURTO que os outros.
+       *
+       * Um silêncio comum é pausa: estrada sem informação, para o encontro
+       * seguinte não colar no anterior. O da fronteira não está vazio — ele tem
+       * a linha, o losango e, logo abaixo, o rótulo do grupo novo. Com a
+       * duração cheia, essas três coisas ficavam espalhadas por quase meia tela
+       * cada uma, e o que devia ser uma passagem virava um intervalo.
+       *
+       * 45% da duração normal: continua havendo pausa, mas curta o bastante
+       * para a marca, o rótulo e o primeiro cartão serem lidos como uma coisa
+       * só — a virada de assunto.
+       */
+      const alturaDoSilencio = fronteira ? Math.round(silenceHeight * 0.45) : silenceHeight;
+      pares.push(`<div class="journey-silence"${fronteira ? ' data-fronteira="true"' : ""} aria-hidden="true" style="--silence-height:${alturaDoSilencio}svh"></div>`);
     }
   }
 

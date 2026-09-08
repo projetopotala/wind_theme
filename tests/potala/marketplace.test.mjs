@@ -13,19 +13,44 @@ test("Marketplace é uma região da travessia", () => {
   assert.ok(marketplace.description);
 });
 
-test("cada região tem direção e ritmo próprios", () => {
+test("toda regiao recebe direcao e ritmo, quantas forem", () => {
+  /*
+   * A contagem de regioes deixou de ser fixa: as novidades sao marcadas por tag
+   * e podem ser criadas pelo painel. Exigir uma tabela MAIOR que a lista deixou
+   * de fazer sentido — as tabelas passaram a ciclar, e o que precisa ser
+   * garantido e que nenhum indice caia num buraco.
+   *
+   * O teste vai bem alem da contagem atual de proposito: e ali, depois do fim
+   * das tabelas, que o defeito antigo morava — o indice grudava na ultima
+   * entrada e a jornada acelerava sem que nada acusasse.
+   */
   const regioes = JOURNEY_REGIONS.filter((region) => region.type === "region");
-  assert.equal(regioes.length, 11);
-  assert.ok(DIRECTIONS.length >= regioes.length, `DIRECTIONS tem ${DIRECTIONS.length} para ${regioes.length} regiões`);
-  for (let index = 0; index < regioes.length; index += 1) {
+  assert.ok(regioes.length >= 11, `so ${regioes.length} regioes`);
+  assert.ok(DIRECTIONS.length >= 8, "o compasso da estrada ficou curto demais para nao se repetir");
+
+  for (let index = 0; index < regioes.length + 12; index += 1) {
     const ritmo = journeyRhythmForIndex(index);
-    assert.ok(ritmo.regionHeight > 100, `região ${index} sem altura própria`);
+    assert.ok(ritmo.regionHeight > 100, `indice ${index} sem altura propria`);
+    assert.ok(ritmo.silenceHeight > 0, `indice ${index} sem silencio`);
+    assert.ok(DIRECTIONS[index % DIRECTIONS.length], `indice ${index} sem direcao`);
   }
 });
 
-test("Marketplace aparece na navegação e no fallback sem script", async () => {
-  const secoes = await readFile("outputs/secoes.js", "utf8");
-  assert.match(secoes, /marketplace\.html/);
+test("Marketplace aparece no indice das secoes e no fallback sem script", async () => {
+  /*
+   * A CHECAGEM MUDOU DE LUGAR, e nao de propósito.
+   *
+   * Ela olhava o menu de treze seções de `seções.js`, que saiu do ar: as
+   * páginas de seção passaram a ter uma barra fina com as portas que a
+   * Travessia nao oferece (especialistas, workshops, mentorias), e o índice das
+   * seções ficou onde sempre esteve de verdade — na jornada da Home.
+   *
+   * O que o teste protege continua igual: uma seção que existe e não ésta
+   * listada em lugar nenhum é uma página órfã, alcançável só por quem souber a
+   * URL de cor.
+   */
+  const jornada = await readFile("outputs/js/home/journey-data.js", "utf8");
+  assert.match(jornada, /id: "marketplace"[\s\S]*?href: "marketplace\.html"/);
   const home = await readFile("outputs/transcendido.html", "utf8");
   assert.match(home, /marketplace\.html/);
 });

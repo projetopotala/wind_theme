@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { DEFAULT_BLOG_POSTS } from "../../outputs/js/blog/blog-data.js";
+import { ehNovidade } from "../../outputs/js/home/home-novidades.js";
 import {
   JOURNEY_DISCOVERIES,
   JOURNEY_REGIONS,
@@ -23,6 +25,7 @@ const expected = [
   "arte-cultura",
   "marketplace",
   "inspiracao",
+  "revista",
   /*
    * O Blog fecha a jornada, e chegou aqui vindo das DESCOBERTAS.
    *
@@ -33,9 +36,56 @@ const expected = [
   "blog",
 ];
 
-test("define exatamente as onze regiões na ordem narrativa", () => {
-  assert.deepEqual(JOURNEY_REGIONS.map((region) => region.id), expected);
+test("as secoes permanentes mantem a ordem narrativa", () => {
+  /*
+   * A jornada deixou de ser uma lista fechada: as NOVIDADES abrem a Home, e
+   * quantas sao depende do que estiver marcado no painel. O que continua fixo e
+   * a ordem das secoes permanentes entre si — e e essa a narrativa que o teste
+   * protege. Comparar a lista inteira voltaria a quebrar a cada noticia.
+   */
+  const permanentes = JOURNEY_REGIONS
+    .filter((region) => !ehNovidade(region))
+    .map((region) => region.id);
+  assert.deepEqual(permanentes, expected);
   assert.ok(JOURNEY_REGIONS.every((region) => region.href && region.href !== "#"));
+});
+
+test("as novidades vem antes de qualquer secao permanente", () => {
+  /*
+   * Quem chega precisa ver primeiro o que MUDOU. Uma novidade depois de "Quem
+   * somos" ficaria a nove rolares da abertura, que e o mesmo que nao existir.
+   */
+  const ids = JOURNEY_REGIONS.map((region) => region.id);
+  const ultimaNovidade = ids.reduce(
+    (ultimo, id, i) => (ehNovidade(JOURNEY_REGIONS[i]) ? i : ultimo), -1,
+  );
+  const primeiraPermanente = JOURNEY_REGIONS.findIndex((region) => !ehNovidade(region));
+  assert.ok(ultimaNovidade >= 0, "nenhuma novidade na jornada");
+  assert.ok(ultimaNovidade < primeiraPermanente, "novidade solta no meio das secoes");
+});
+
+test("toda novidade leva a um texto do Blog que existe", () => {
+  /*
+   * O cartao da Home promete uma noticia. Um id trocado no `href` levaria ao
+   * blog e nao acharia o texto: a pagina abre, nada acontece, e ninguem sabe
+   * dizer se o problema foi o link ou o texto.
+   */
+  for (const novidade of JOURNEY_REGIONS.filter(ehNovidade)) {
+    const destino = new URL(novidade.href, "https://potala.local/");
+    const slug = destino.searchParams.get("post");
+    assert.equal(destino.pathname, "/artigo.html", `${novidade.id}: novidade que nao aponta para o artigo`);
+    assert.ok(DEFAULT_BLOG_POSTS.some((post) => post.slug === slug), `${novidade.id}: post "${slug}" nao existe`);
+  }
+});
+
+test("a capa da novidade e a mesma que o post usa no Blog", () => {
+  /* O visitante reconhece o texto ao chegar la pela figura. Desenhos diferentes
+     nos dois lugares fariam o clique parecer ter levado a outro artigo. */
+  for (const novidade of JOURNEY_REGIONS.filter(ehNovidade)) {
+    const slug = new URL(novidade.href, "https://potala.local/").searchParams.get("post");
+    const post = DEFAULT_BLOG_POSTS.find((item) => item.slug === slug);
+    assert.equal(novidade.image, post?.cover, `${novidade.id}: capa diferente da do post`);
+  }
 });
 
 test("drag lateral existe somente em duas regiões", () => {
@@ -74,9 +124,13 @@ test("cada região leva a uma página local própria", async () => {
     "cultura.html",
     "marketplace.html",
     "inspiracao.html",
+    "revista.html",
     "blog.html",
   ];
-  assert.deepEqual(JOURNEY_REGIONS.map((region) => region.href), expectedDestinations);
+  /* So as permanentes: as novidades apontam para uma ancora dentro do Blog, e
+     sao conferidas pelo teste que casa cada uma com o seu post. */
+  const permanentes = JOURNEY_REGIONS.filter((region) => !ehNovidade(region));
+  assert.deepEqual(permanentes.map((region) => region.href), expectedDestinations);
   for (const destination of expectedDestinations) {
     const html = await readFile(new URL(`../../outputs/${destination}`, import.meta.url), "utf8").catch(() => null);
     assert.ok(html, destination);

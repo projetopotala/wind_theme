@@ -298,6 +298,34 @@ function setExpanded(entry, expanded, { visual = true } = {}) {
   setFocusable(entry.details, expanded);
 }
 
+/**
+ * Quanto o palco de um bloco está fora do lugar, em pixels.
+ *
+ * O palco é `sticky` com `top: 0`: enquanto o par atravessa a tela, ele fica
+ * ESTACIONADO no topo e os cartões param no centro. Entrando ou saindo, ele
+ * ainda se move — e é aí que o bloco aberto não cobre a tela inteira, deixando
+ * faixas de paisagem em cima ou embaixo do painel.
+ *
+ * Zero quer dizer estacionado. Positivo, o par ainda está subindo; negativo, já
+ * está saindo por cima.
+ *
+ * Separada e pura porque é a regra, e não o gesto: o mesmo número decide se o
+ * clique abre agora ou se primeiro centraliza.
+ */
+export function desvioDoPalco(secao) {
+  const palco = secao?.closest?.(".region-stage");
+  if (!palco?.getBoundingClientRect) return 0;
+  return Math.round(palco.getBoundingClientRect().top);
+}
+
+/** A folga que ainda conta como centralizado. Um par de pixels de arredondamento
+ *  de layout não é um bloco fora do lugar. */
+export const FOLGA_DE_CENTRO = 4;
+
+export function estaCentralizado(secao) {
+  return Math.abs(desvioDoPalco(secao)) <= FOLGA_DE_CENTRO;
+}
+
 export function createBlockExpansion(root, {
   /*
    * O Escape escuta o DOCUMENTO, não a jornada.
@@ -380,6 +408,9 @@ export function createBlockExpansion(root, {
   const documento = root.ownerDocument || globalThis.document;
   const corpo = documento?.body;
   const reduzido = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+  /* O laço que espera a centralização roda por quadro e sobrevive ao desmonte:
+     sem esta bandeira, ele continuaria rodando sobre um DOM que já foi embora. */
+  let destruido = false;
   const duracao = reduzido ? DURACAO_REDUZIDA : DURACAO;
   const travessia = createTravessiaState();
 
@@ -686,7 +717,57 @@ export function createBlockExpansion(root, {
       return;
     }
 
+    /*
+     * UM BLOCO FORA DO CENTRO É CENTRALIZADO ANTES DE ABRIR.
+     *
+     * O painel aberto ocupa o palco, e o palco só cobre a tela inteira quando
+     * está estacionado. Abrindo com o par a meio caminho, sobravam faixas de
+     * paisagem em cima e embaixo do painel — e elas não somem sozinhas, porque
+     * ao abrir a rolagem trava.
+     *
+     * O clique não é recusado: ele passa a ter dois tempos. A página leva o
+     * bloco ao centro e ele abre em seguida. Recusar seria pedir que a pessoa
+     * acertasse a rolagem antes de clicar, o que ninguém faz.
+     */
+    if (!estaCentralizado(entry.section)) {
+      centralizarEntao(entry.section, () => open(entry.id));
+      return;
+    }
+
     open(entry.id);
+  }
+
+  /*
+   * Leva o par ao centro e chama de volta quando ele chegar.
+   *
+   * Espera pelo RESULTADO, e não por um tempo fixo: a rolagem suave leva o que
+   * levar, e um `setTimeout` de meio segundo abriria cedo demais numa página
+   * longa e tarde demais numa curta. O laço observa o próprio desvio, que é a
+   * medida que interessa.
+   *
+   * O teto de tentativas existe porque a rolagem pode nunca chegar a zero — o
+   * primeiro e o último par não têm curso completo, e sem o teto o clique
+   * ficaria sem resposta para sempre. Estourando o teto, abre assim mesmo:
+   * um bloco aberto meio torto é melhor que um clique que não fez nada.
+   */
+  function centralizarEntao(secao, aoChegar) {
+    const palco = secao?.closest?.(".region-stage");
+    const par = palco?.parentElement;
+    if (!par?.getBoundingClientRect) return aoChegar();
+
+    const alvo = par.getBoundingClientRect().top + (globalThis.scrollY || 0);
+    globalThis.scrollTo?.({ top: alvo, behavior: reduzido ? "auto" : "smooth" });
+
+    let tentativas = 0;
+    const conferir = () => {
+      if (destruido) return;
+      if (estaCentralizado(secao) || (tentativas += 1) > 90) {
+        aoChegar();
+        return;
+      }
+      globalThis.requestAnimationFrame?.(conferir);
+    };
+    globalThis.requestAnimationFrame?.(conferir);
   }
 
   function onKeydown(event) {
@@ -700,8 +781,22 @@ export function createBlockExpansion(root, {
 
   return {
     open,
+    /*
+     * Centraliza e ABRE — o mesmo caminho de dois tempos do clique.
+     *
+     * Existe para quem abre um bloco de fora: o menu da barra lateral e a
+     * busca. Sem isto, os dois chamavam `open` direto e o painel abria com o
+     * par a meio caminho, deixando faixas de paisagem em cima e embaixo — o
+     * defeito que o clique já não tem.
+     */
+    abrirCentralizado(id) {
+      const alvo = entries.find((entrada) => entrada.id === id);
+      if (!alvo) return;
+      centralizarEntao(alvo.section, () => open(id));
+    },
     close,
     destroy() {
+      destruido = true;
       root.removeEventListener("click", onClick);
       keyboardTarget.removeEventListener("keydown", onKeydown);
       globalThis.removeEventListener?.("resize", aoRedimensionar);

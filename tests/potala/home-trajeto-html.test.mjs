@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { mountHomeJourney } from "../../outputs/js/home/home-controller.js";
-import { mountJourney } from "../../outputs/js/home/home-scenes.js";
+import {
+  mountHomeJourney,
+  regionIndexWithinPair,
+} from "../../outputs/js/home/home-controller.js";
+import { mountJourney, renderJourneyMenu } from "../../outputs/js/home/home-scenes.js";
 
 test("Home aponta o navegador para o módulo Three.js local", async () => {
   const html = await readFile(new URL("../../outputs/transcendido.html", import.meta.url), "utf8");
@@ -205,88 +208,116 @@ test("a prévia compacta mantém os dois blocos em colunas separadas", async () 
   );
 });
 
-test("o menu das seções lista a jornada e é tocável no dedo", async () => {
-  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
-  const cenas = await readFile(new URL("../../outputs/js/home/home-scenes.js", import.meta.url), "utf8");
-  const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
+test("a barra lateral oferece marca, progresso, páginas e painel administrativo", () => {
+  const markup = renderJourneyMenu([
+    { id: "quem-somos", title: "Quem somos", href: "quem-somos.html" },
+    { id: "atendimentos", title: "Atendimentos", href: "atendimentos.html" },
+  ]);
 
-  assert.match(cenas, /export function renderJourneyMenu/);
-  assert.match(cenas, /aria-label="Seções da travessia"/);
-
-  /*
-   * São botões, e não âncoras: as regiões viraram `display: contents` dentro do
-   * palco do par, e um elemento sem caixa própria não é destino de âncora — o
-   * navegador não teria para onde rolar. O controlador leva ao par e abre o
-   * bloco pedido.
-   */
-  assert.match(cenas, /<button type="button" data-menu-target=/);
-  assert.match(controlador, /closest\("\.journey-pair"\)/);
-  assert.match(controlador, /expansion\.open\(id\)/);
-
-  // Alvo de toque de 44px: medido, o botão tinha 32px — passa no mouse e falha
-  // no dedo. Fica atrás de `pointer: coarse` para não engordar a barra de quem
-  // usa mouse.
-  assert.match(css, /@media \(pointer: coarse\)[^{]*\{[^}]*\.journey-menu button \{ min-height: 44px/);
-
-  // A seção atual se distingue por FUNDO, não só por cor de texto — e
-  // `aria-current` conta o mesmo a quem usa leitor de tela.
-  const atual = css.slice(
-    css.indexOf('.journey-menu button[aria-current="true"] {'),
-    css.indexOf("}", css.indexOf('.journey-menu button[aria-current="true"] {')),
-  );
-  assert.match(atual, /background:/);
-  assert.match(controlador, /setAttribute\("aria-current"/);
+  assert.match(markup, /class="journey-sidebar-brand"/);
+  assert.match(markup, /src="media\/potala-mark-transparent\.png"/);
+  assert.match(markup, /data-journey-current>01</);
+  assert.match(markup, /data-journey-total>02</);
+  assert.match(markup, /href="quem-somos\.html"[^>]*data-menu-target="quem-somos"/);
+  assert.match(markup, /href="atendimentos\.html"[^>]*data-menu-target="atendimentos"/);
+  /* O painel virou uma opcao do botao redondo do rodape, ao lado de
+     "Contate-nos" — que e o que um visitante de fato procura ali embaixo. */
+  assert.match(markup, /journey-sidebar-opcoes[\s\S]*?href="admin\.html"/);
+  assert.match(markup, /Contate-nos/);
 });
 
-test("o menu abre como painel compacto de duas colunas sem rolagem horizontal", async () => {
+test("a barra fica permanente no desktop e recolhida no celular", async () => {
   const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
-  const painel = css.slice(
-    css.indexOf(".journey-menu {"),
-    css.indexOf("}", css.indexOf(".journey-menu {")),
-  );
-  const lista = css.slice(
-    css.indexOf(".journey-menu ul {"),
-    css.indexOf("}", css.indexOf(".journey-menu ul {")),
-  );
-
-  assert.match(painel, /left:\s*max\(14px,\s*env\(safe-area-inset-left\)\)/);
-  assert.match(painel, /width:\s*min\(480px,\s*calc\(100vw - 28px\)\)/);
-  assert.match(lista, /display:\s*grid/);
-  assert.match(lista, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
-  assert.match(lista, /overflow:\s*visible/);
-});
-
-test("o menu nasce recolhido e o ícone o traz e o leva", async () => {
-  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
-  const cenas = await readFile(new URL("../../outputs/js/home/home-scenes.js", import.meta.url), "utf8");
   const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
 
-  // Nasce recolhido e fora da ordem de tabulação.
-  assert.match(cenas, /<nav class="journey-menu"[^>]*inert>/);
-  assert.match(cenas, /aria-expanded="false" aria-controls="journey-menu"/);
-
-  /*
-   * `inert` acompanha a visibilidade porque opacidade zero não tira nada da
-   * ordem de tabulação: recolhido sem ele, o menu continuaria recebendo foco —
-   * nove paradas invisíveis antes de qualquer coisa visível na tela.
-   */
+  assert.match(css, /--journey-sidebar-width:/);
+  assert.match(css, /--journey-sidebar-surface:\s*rgba\(94,\s*69,\s*41,\s*\.76\)/);
+  assert.match(css, /\.journey-menu\s*\{[\s\S]*backdrop-filter:\s*blur\(/);
+  assert.match(css, /@media \(min-width:\s*901px\)[\s\S]*\.journey-menu\s*\{[\s\S]*visibility:\s*visible/);
+  assert.match(css, /@media \(max-width:\s*900px\)[\s\S]*\.journey-menu\s*\{[\s\S]*transform:\s*translateX\(-/);
+  assert.match(css, /body\.is-journey-menu-open\s*\{[^}]*overflow:\s*hidden/);
+  assert.match(controlador, /matchMedia\("\(min-width: 901px\)"\)/);
   assert.match(controlador, /menuNav\.removeAttribute\("inert"\)/);
   assert.match(controlador, /menuNav\.setAttribute\("inert", ""\)/);
+});
 
-  // O rótulo do botão conta o estado a quem não vê o ícone virar X.
-  assert.match(controlador, /"Fechar o menu de seções" : "Abrir o menu de seções"/);
+test("o card fechado mantém títulos de uma palavra em uma linha", async () => {
+  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
 
-  /*
-   * A saída é animada: sem a `visibility` atrasada na transição, o elemento
-   * some no primeiro quadro e a animação de saída não chega a ser vista.
-   */
-  const recolhido = css.slice(
-    css.indexOf(".journey-menu {"),
-    css.indexOf("}", css.indexOf(".journey-menu {")),
+  assert.match(
+    css,
+    /\.journey-region\[data-title-flow="single"\]:not\(\.is-expanded\) \.region-title\s*\{[^}]*white-space:\s*nowrap/s,
   );
-  assert.match(recolhido, /transition:[\s\S]*visibility 0s linear \.42s/);
-  assert.match(recolhido, /transform:\s*translateY\(14px\) scale\(\.97\)/);
+  assert.match(css, /data-title-flow="single"[\s\S]*@media \(max-width:\s*720px\)/);
+});
 
-  // E o ícone é o mesmo objeto mudando: as linhas giram, não trocam de ícone.
-  assert.match(css, /\[aria-expanded="true"\] \.journey-menu-icon i:first-child \{\s*transform:[^}]*rotate\(45deg\)/);
+test("os dois cards fechados de cada etapa compartilham a altura do maior", async () => {
+  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
+  const seletor = ".region-stage:not(:has(.journey-region.is-expanded))";
+  const inicio = css.indexOf(`${seletor} {`);
+
+  assert.ok(inicio >= 0, "faltou a regra que iguala o par sem afetar o card aberto");
+  const regra = css.slice(inicio, css.indexOf("}", inicio));
+  assert.match(regra, /align-items:\s*stretch/, "o card menor precisa ocupar a altura da linha definida pelo maior");
+  assert.match(regra, /align-content:\s*center/, "o par igualado precisa continuar centralizado na tela");
+});
+
+test("o botão móvel usa a marca e descreve abertura e fechamento", async () => {
+  const markup = renderJourneyMenu([{ id: "cursos", title: "Cursos", href: "cursos.html" }]);
+  const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
+
+  assert.match(markup, /class="journey-menu-toggle"/);
+  assert.match(markup, /aria-expanded="false" aria-controls="journey-menu"/);
+  assert.match(markup, /<img[^>]*potala-mark-transparent\.png/);
+  assert.match(controlador, /"Fechar navegação" : "Abrir navegação"/);
+});
+
+test("o índice lateral funciona como roleta linear de cinco seções", async () => {
+  const markup = renderJourneyMenu(Array.from({ length: 8 }, (_, index) => ({
+    id: `secao-${index + 1}`,
+    title: `Seção ${index + 1}`,
+    href: `secao-${index + 1}.html`,
+  })));
+  const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
+  const controlador = await readFile(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
+
+  assert.match(markup, /class="journey-menu-viewport"/);
+  assert.match(css, /--journey-menu-visible:\s*5/);
+  /*
+   * `hidden`, e nao `auto`: a roleta e um INDICADOR, e quem a move e a rolagem
+   * da pagina. Rolavel pela mao, ela discordava da pagina — a pessoa arrastava
+   * a lista, soltava, e ficava com uma secao destacada que nao tinha nada a ver
+   * com o que estava na tela. `scrollTo` por codigo continua funcionando.
+   */
+  assert.match(css, /\.journey-menu-viewport\s*\{[^}]*overflow-y:\s*hidden/);
+  assert.match(css, /\.journey-menu-viewport\s*\{[^}]*mask-image:\s*linear-gradient/);
+  /*
+   * O encaixe por rolagem SAIU junto com a rolagem manual.
+   *
+   * `scroll-snap-type` só age sobre quem rola a caixa com a mão, e a roleta
+   * deixou de aceitar isso: ela é um indicador, e quem a move é a rolagem da
+   * página, por `scrollTo`. A propriedade virava uma promessa sem efeito, e uma
+   * promessa dessas custa a próxima pessoa lendo o CSS e procurando o encaixe
+   * que nunca acontece.
+   *
+   * `scroll-snap-align` fica nas linhas: é ele que o `scrollTo` usa para pousar
+   * o item ativo no centro em vez de no topo.
+   */
+  assert.ok(!/scroll-snap-type/.test(css), "o encaixe voltou sem a rolagem manual");
+  assert.match(css, /scroll-snap-align:\s*center/);
+  assert.match(controlador, /menuViewport\.scrollTo\?\.\(\{/);
+  assert.match(controlador, /menuViewport\?\.addEventListener\("focusin"/);
+});
+
+test("a roleta troca do bloco esquerdo para o direito na metade do par", () => {
+  const geometry = {
+    pairTop: 1000,
+    pairHeight: 1600,
+    viewportHeight: 800,
+    regionCount: 2,
+  };
+
+  assert.equal(regionIndexWithinPair({ ...geometry, scrollY: 700 }), 0);
+  assert.equal(regionIndexWithinPair({ ...geometry, scrollY: 1400 }), 1);
+  assert.equal(regionIndexWithinPair({ ...geometry, scrollY: 2400 }), 1);
 });
