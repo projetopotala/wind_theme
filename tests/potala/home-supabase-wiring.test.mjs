@@ -7,14 +7,14 @@ const read = (path) => readFile(new URL(`../../${path}`, import.meta.url), "utf8
 test("Home carrega o SDK público antes do módulo de entrada", async () => {
   const html = await read("outputs/transcendido.html");
   const sdkIndex = html.indexOf('src="vendor/supabase.js"');
-  const entryIndex = html.indexOf('src="secoes.js"');
+  const entryIndex = html.indexOf('src="js/secoes.js"');
 
   assert.ok(sdkIndex >= 0, "Home precisa carregar o SDK vendorizado");
   assert.ok(entryIndex > sdkIndex, "SDK precisa existir antes do entrypoint da Home");
 });
 
 test("entrypoint monta repositório Supabase com fallback empacotado", async () => {
-  const entry = await read("outputs/secoes.js");
+  const entry = await read("outputs/js/secoes.js");
   assert.match(entry, /createSupabaseContentRepository/);
   assert.match(entry, /createHomeContentSource/);
   assert.match(entry, /createLocalContentRepository/);

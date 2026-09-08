@@ -1,9 +1,9 @@
-import { createHomeContentSource } from "./js/home/content-source.js";
-import { createLocalContentRepository } from "./js/home/content-repository.js";
-import { DEFAULT_HOME_BLOCKS } from "./js/home/journey-data.js";
-import { withRequiredDefaultSections } from "./js/home/default-section-bridge.js";
-import { createSupabaseContentRepository } from "./js/home/supabase-content-repository.js";
-import { getSupabaseClient } from "./js/supabase/client.js";
+import { createHomeContentSource } from "./home/content-source.js";
+import { createLocalContentRepository } from "./home/content-repository.js";
+import { DEFAULT_HOME_BLOCKS } from "./home/journey-data.js";
+import { withRequiredDefaultSections } from "./home/default-section-bridge.js";
+import { createSupabaseContentRepository } from "./home/supabase-content-repository.js";
+import { getSupabaseClient } from "./supabase/client.js";
 
 (() => {
   "use strict";
@@ -62,13 +62,13 @@ import { getSupabaseClient } from "./js/supabase/client.js";
     }
 
     if (current === "quem-somos") {
-      import("./js/about/about-closing-controller.js")
+      import("./about/about-closing-controller.js")
         .then(({ mountAboutClosing }) => mountAboutClosing())
         .catch((error) => console.warn("Encerramento do Quem Somos indisponível.", error));
     }
 
     if (document.querySelector("[data-section-closing-trigger]")) {
-      import("./js/shared/closing-transition-controller.js")
+      import("./shared/closing-transition-controller.js")
         .then(({ mountClosingTransition }) => mountClosingTransition())
         .catch((error) => console.warn("Transição de encerramento indisponível.", error));
     }
@@ -77,7 +77,7 @@ import { getSupabaseClient } from "./js/supabase/client.js";
   }
 
   if (body.dataset.storyPage === "true") {
-    import("./js/home/home-controller.js")
+    import("./home/home-controller.js")
       .then(async ({ mountHomeJourney }) => {
         const snapshot = createLocalContentRepository({
           defaults: DEFAULT_HOME_BLOCKS,

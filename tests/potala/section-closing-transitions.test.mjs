@@ -44,7 +44,7 @@ for (const scenario of cases) {
 
 test("encerramentos compartilhados preservam clique imediato e scroll após 4,5 segundos", async () => {
   const [entrypoint, controller, css] = await Promise.all([
-    readFile(new URL("../../outputs/secoes.js", import.meta.url), "utf8"),
+    readFile(new URL("../../outputs/js/secoes.js", import.meta.url), "utf8"),
     readFile(new URL("../../outputs/js/shared/closing-transition-controller.js", import.meta.url), "utf8"),
     readFile(new URL("../../outputs/css/section-transition.css", import.meta.url), "utf8"),
   ]);

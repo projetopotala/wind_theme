@@ -8,7 +8,7 @@ import { montarIndice } from "../../scripts/prepare-busca-indice.mjs";
 import { DEFAULT_HOME_BLOCKS } from "../../outputs/js/home/journey-data.js";
 
 const indice = JSON.parse(
-  await readFile(new URL("../../outputs/busca-indice.json", import.meta.url), "utf8"),
+  await readFile(new URL("../../outputs/js/home/busca-indice.json", import.meta.url), "utf8"),
 );
 
 /* ------------------------------------------------------------------

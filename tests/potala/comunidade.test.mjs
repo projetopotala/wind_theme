@@ -10,7 +10,7 @@ const ler = (arquivo) => readFile(new URL(arquivo, outputs), "utf8");
 const home = await ler("transcendido.html");
 const profissionais = await ler("profissionais.html");
 const especialistas = await ler("especialistas.html");
-const secoes = await ler("secoes.js");
+const secoes = await ler("js/secoes.js");
 
 const PAGINAS = [
   ["especialistas.html", "especialistas"],
@@ -25,7 +25,7 @@ const PAGINAS = [
  * ------------------------------------------------------------------ */
 
 test("a barra do topo oferece os cinco destinos e o caminho de volta", async () => {
-  const secoes = await ler("secoes.js");
+  const secoes = await ler("js/secoes.js");
 
   for (const [arquivo] of PAGINAS) {
     assert.match(secoes, new RegExp(`href: "${arquivo}"`), `a barra perdeu ${arquivo}`);
@@ -44,7 +44,7 @@ test("o menu das treze secoes nao voltou para a barra", async () => {
    * O índice das seções é a jornada da Home, e duplicá-lo numa faixa de dez
    * pixels com rolagem horizontal foi exatamente o que se desfez.
    */
-  const secoes = await ler("secoes.js");
+  const secoes = await ler("js/secoes.js");
   for (const secao of ["cursos.html", "atividades.html", "cultura.html", "marketplace.html"]) {
     assert.doesNotMatch(secoes, new RegExp(`href: "${secao}"`), `${secao} voltou para a barra`);
   }
@@ -55,7 +55,7 @@ test("a barra nao aparece nas paginas de secao", async () => {
    * Nas seções a faixa era um menu de outro site: quem está lendo a Programação
    * não está a caminho de uma mentoria. Ela vale só nas cinco páginas da área.
    */
-  const secoes = await ler("secoes.js");
+  const secoes = await ler("js/secoes.js");
   assert.match(secoes, /const temBarra = \(secao\) => barLinks\.some/);
   assert.match(secoes, /if \(temBarra\(current\)\) \{/);
 });
@@ -137,7 +137,7 @@ for (const [arquivo, secao] of PAGINAS) {
 
     assert.match(html, new RegExp(`<body data-section="${secao}"`));
     assert.match(html, /<link rel="stylesheet" href="css\/comunidade\.css">/);
-    assert.match(html, /<script type="module" src="secoes\.js"><\/script>/);
+    assert.match(html, /<script type="module" src="js\/secoes\.js"><\/script>/);
     /* O revelar ao rolar mora no front-demo. Sem ele, `[data-reveal]` fica em
        opacity 0 para sempre e a página inteira nasce invisível. */
     assert.match(html, /front-demo\.js/);

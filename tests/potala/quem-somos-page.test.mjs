@@ -29,7 +29,7 @@ test("a página evita catálogo de cards e mantém a navegação compartilhada",
   const html = await readFile(pageUrl, "utf8");
 
   assert.doesNotMatch(html, /article-group|card-grid|class="card/);
-  assert.match(html, /<script type="module" src="secoes\.js"><\/script>/);
+  assert.match(html, /<script type="module" src="js\/secoes\.js"><\/script>/);
   assert.match(html, /css\/quem-somos\.css/);
 });
 

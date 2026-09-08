@@ -62,7 +62,7 @@ test("todo elemento que nasce hidden e ganha display no CSS tem guard [hidden]",
   const [html, sceneCss, breathCss] = await Promise.all([
     read("../../outputs/transcender.html"),
     read("../../outputs/css/chegada-scene.css"),
-    read("../../outputs/respiracao.css"),
+    read("../../outputs/css/respiracao.css"),
   ]);
   const css = stripComments(`${sceneCss}\n${breathCss}`);
 

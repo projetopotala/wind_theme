@@ -272,6 +272,6 @@ test("todas as seções carregam o entrypoint compartilhado como módulo", async
 
   for (const file of files) {
     const html = await readFile(new URL(file, outputs), "utf8");
-    assert.match(html, /<script\s+type="module"\s+src="secoes\.js"><\/script>/, file);
+    assert.match(html, /<script\s+type="module"\s+src="js\/secoes\.js"><\/script>/, file);
   }
 });

@@ -20,7 +20,7 @@ import {
  */
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const destino = path.join(raiz, "outputs", "busca-indice.json");
+const destino = path.join(raiz, "outputs", "js", "home", "busca-indice.json");
 
 export async function montarIndice(lerArquivo = readFile) {
   const paginas = {};

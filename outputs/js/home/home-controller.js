@@ -94,7 +94,7 @@ export function motionOffsetForRegion({
 function mountSoundResume(root, enabled) {
   if (!enabled) return () => {};
   const audio = document.createElement("audio");
-  audio.src = "musica-fundo.mp3";
+  audio.src = "media/musica-fundo.mp3";
   audio.loop = true;
   audio.preload = "none";
   const button = document.createElement("button");
@@ -606,7 +606,7 @@ export function createHomeController({
 
   function carregarIndice() {
     if (!indiceDasSecoes) {
-      indiceDasSecoes = fetch("busca-indice.json")
+      indiceDasSecoes = fetch("js/home/busca-indice.json")
         .then((resposta) => (resposta.ok ? resposta.json() : null))
         /*
          * Falhar aqui NÃO pode quebrar a busca.

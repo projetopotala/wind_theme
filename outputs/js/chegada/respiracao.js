@@ -1,5 +1,5 @@
-import { getBreathFrame } from "./js/chegada/breathing-timeline.js";
-import { planSoundToggle } from "./js/chegada/ambient-sound.js";
+import { getBreathFrame } from "./breathing-timeline.js";
+import { planSoundToggle } from "./ambient-sound.js";
 
 const totalCycles = 8;
 const guide = document.getElementById("breathing-guide");
