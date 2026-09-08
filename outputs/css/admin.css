@@ -305,6 +305,70 @@ button {
 
 .admin-status { grid-area: status; margin: 0; padding: 0 24px; color: var(--admin-gold); min-height: 1.2em; font-size: .85rem; }
 
+.admin-workspace {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  overflow: auto;
+  padding: 28px 28px 40px;
+}
+
+.admin-workspace-head h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 500;
+}
+
+.admin-workspace-head p {
+  margin: 6px 0 0;
+  color: var(--admin-muted);
+}
+
+.admin-workspace-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 22px 0 14px;
+}
+
+.admin-workspace-toolbar button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--admin-gold);
+  color: #1a160f;
+  font: inherit;
+  font-weight: 650;
+}
+
+.admin-workspace-toolbar button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.admin-sheet {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+
+.admin-sheet caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.admin-sheet th,
+.admin-sheet td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--admin-line);
+  text-align: left;
+}
+
+.admin-sheet th { color: var(--admin-muted); font-weight: 600; }
+.admin-sheet td[colspan] { color: var(--admin-muted); }
+
 .admin-columns {
   display: grid;
   grid-area: columns;
@@ -628,6 +692,7 @@ button {
     grid-template-areas: "nav" "head" "status" "columns";
   }
 
+  .admin-workspace { grid-column: 1; grid-row: 2 / -1; }
   .admin-nav { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--admin-line); }
   .admin-nav ul { grid-auto-flow: column; overflow-x: auto; }
   .admin-user { margin-top: 0; border-top: 0; padding-top: 0; }

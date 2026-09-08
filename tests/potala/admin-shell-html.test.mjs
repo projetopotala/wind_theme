@@ -4,24 +4,20 @@ import test from "node:test";
 
 const html = await readFile(new URL("../../outputs/admin.html", import.meta.url), "utf8");
 
-test("a navegação traz as sete seções do mockup", () => {
+test("a navegação traz a jornada e as áreas de operação", () => {
   for (const secao of [
-    "Visão geral", "Jornada", "Páginas", "Mídia",
-    "Programação", "Profissionais", "Configurações",
+    "Jornada", "Financeiro", "Atendimentos", "Salas físicas",
+    "Atendimentos virtuais", "Usuários",
   ]) {
     assert.ok(html.includes(secao), `seção ausente: ${secao}`);
   }
 });
 
-/*
- * As seis que não existem têm de ser inertes de verdade, não só apagadas.
- * Um item apenas esmaecido continua clicável e alcançável pelo Tab, e quem
- * seguisse um deles cairia numa tela vazia sem entender por quê.
- */
-test("as seis seções sem implementação são inertes e dizem por quê", () => {
-  const inertes = html.match(/<[^>]*aria-disabled="true"[^>]*>/g) || [];
-  assert.equal(inertes.length, 6);
-  assert.ok(html.includes("em breve"));
+test("cada área de operação tem a própria tela, fora do editor", () => {
+  for (const secao of ["financeiro", "atendimentos", "salas", "virtuais", "usuarios"]) {
+    assert.match(html, new RegExp(`data-admin-workspace="${secao}" hidden`));
+  }
+  assert.match(html, /data-admin-workspace="jornada"/);
 });
 
 test("a seção ativa é a Jornada", () => {

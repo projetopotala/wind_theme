@@ -93,6 +93,24 @@ test("clique numa seção inerte não muda a seção ativa", () => {
   assert.equal(evento.impedido, true, "o clique recusado precisa ser impedido");
 });
 
+test("clique numa seção viva troca a tela, não só a marca", () => {
+  const jornada = no({ "data-admin-workspace": "jornada" });
+  const financeiro = no({ "data-admin-workspace": "financeiro" });
+  financeiro.hidden = true;
+  const { root, nav, secoes } = montar();
+  root.dataset = {};
+  root.querySelectorAll = () => [jornada, financeiro];
+  const viva = no({ "data-section": "financeiro" });
+  nav.querySelectorAll = () => [secoes.jornada, viva];
+  createAdminShell({ root });
+
+  nav.disparar("click", clique(viva));
+
+  assert.equal(root.dataset.adminSection, "financeiro");
+  assert.equal(jornada.hidden, true);
+  assert.equal(financeiro.hidden, false);
+});
+
 test("clique numa seção viva move a marca de ativa", () => {
   const { root, nav, secoes } = montar();
   /* A jornada continua marcada de propósito: o que este teste precisa provar é

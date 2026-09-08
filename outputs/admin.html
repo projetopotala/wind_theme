@@ -38,27 +38,20 @@
       <p class="admin-entry-links"><a href="transcendido.html">Ver a Home</a></p>
     </section>
 
-    <section class="admin-panel" id="admin-panel" aria-labelledby="admin-panel-title" hidden>
-      <!--
-        As seis seções sem implementação aparecem porque o mockup as mostra, e
-        são inertes porque não existem. Apenas esmaecidas, elas continuariam
-        clicáveis e alcançáveis pelo Tab, e quem seguisse uma cairia numa tela
-        vazia sem entender por quê.
-      -->
+    <section class="admin-panel" id="admin-panel" data-admin-section="jornada" aria-labelledby="admin-panel-title" hidden>
       <nav class="admin-nav" data-admin-nav aria-label="Seções do painel">
         <p class="admin-brand">
           <img class="admin-brand-logo" src="media/potala-mark-transparent.png" alt="">
           <span>Potala <small>Instituto</small></span>
         </p>
         <ul>
-          <li><button type="button" data-section="visao" aria-disabled="true">Visão geral <small>em breve</small></button></li>
           <li><button type="button" data-section="jornada" aria-current="page">Jornada</button></li>
+          <li><button type="button" data-section="financeiro">Financeiro</button></li>
+          <li><button type="button" data-section="atendimentos">Atendimentos</button></li>
+          <li><button type="button" data-section="salas">Salas físicas</button></li>
+          <li><button type="button" data-section="virtuais">Atendimentos virtuais</button></li>
+          <li><button type="button" data-section="usuarios">Usuários</button></li>
           <li><a class="admin-nav-link" href="blog-admin.html">Blog</a></li>
-          <li><button type="button" data-section="paginas" aria-disabled="true">Páginas <small>em breve</small></button></li>
-          <li><button type="button" data-section="midia" aria-disabled="true">Mídia <small>em breve</small></button></li>
-          <li><button type="button" data-section="programacao" aria-disabled="true">Programação <small>em breve</small></button></li>
-          <li><button type="button" data-section="profissionais" aria-disabled="true">Profissionais <small>em breve</small></button></li>
-          <li><button type="button" data-section="config" aria-disabled="true">Configurações <small>em breve</small></button></li>
         </ul>
 
         <div class="admin-user" data-admin-user>
@@ -88,7 +81,7 @@
         </div>
       </nav>
 
-      <header class="admin-head">
+      <header class="admin-head" data-admin-workspace="jornada">
         <div class="admin-head-title">
           <h2 id="admin-panel-title" tabindex="-1">Editor da jornada</h2>
           <p>Organize, edite e publique a experiência do portal</p>
@@ -123,7 +116,7 @@
       <!-- A faixa de status é a única confirmação de que a ação valeu, e vive
            fora da lista de propósito: a lista é redesenhada a cada mudança, e um
            aviso dentro dela seria destruído antes de ser lido em voz alta. -->
-      <p class="admin-status" data-admin-status role="status" aria-live="polite"></p>
+      <p class="admin-status" data-admin-status data-admin-workspace="jornada" role="status" aria-live="polite"></p>
 
       <!--
         A notificação de que a ação deu certo — ou não.
@@ -138,7 +131,7 @@
         <small data-admin-confirm-detail></small>
       </div>
 
-      <div class="admin-columns">
+      <div class="admin-columns" data-admin-workspace="jornada">
         <div class="admin-list-wrap">
           <p class="admin-counts" data-admin-counts></p>
           <div class="admin-tabs" data-admin-tabs role="tablist" aria-label="Filtrar blocos">
@@ -311,6 +304,101 @@
           <div class="admin-media-grid" data-admin-media-grid hidden></div>
         </aside>
       </div>
+
+      <section class="admin-workspace" data-admin-workspace="financeiro" hidden aria-labelledby="admin-financeiro-title">
+        <header class="admin-workspace-head">
+          <h2 id="admin-financeiro-title">Controle financeiro</h2>
+          <p>Lançamentos, recebimentos e o que ainda está em aberto.</p>
+        </header>
+        <div class="admin-workspace-toolbar">
+          <button type="button" disabled>Novo lançamento</button>
+        </div>
+        <table class="admin-sheet">
+          <caption>Lançamentos</caption>
+          <thead>
+            <tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Situação</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="5">Nenhum lançamento cadastrado.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="admin-workspace" data-admin-workspace="atendimentos" hidden aria-labelledby="admin-atendimentos-title">
+        <header class="admin-workspace-head">
+          <h2 id="admin-atendimentos-title">Controle de atendimentos</h2>
+          <p>A agenda do instituto: quem atende, quando e em qual sala.</p>
+        </header>
+        <div class="admin-workspace-toolbar">
+          <button type="button" disabled>Novo atendimento</button>
+        </div>
+        <table class="admin-sheet">
+          <caption>Atendimentos</caption>
+          <thead>
+            <tr><th>Data</th><th>Horário</th><th>Pessoa</th><th>Profissional</th><th>Sala</th><th>Situação</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="6">Nenhum atendimento cadastrado.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="admin-workspace" data-admin-workspace="salas" hidden aria-labelledby="admin-salas-title">
+        <header class="admin-workspace-head">
+          <h2 id="admin-salas-title">Cadastro de salas físicas</h2>
+          <p>As salas do instituto, com capacidade e o que cada uma recebe.</p>
+        </header>
+        <div class="admin-workspace-toolbar">
+          <button type="button" disabled>Nova sala</button>
+        </div>
+        <table class="admin-sheet">
+          <caption>Salas físicas</caption>
+          <thead>
+            <tr><th>Nome</th><th>Capacidade</th><th>Uso</th><th>Situação</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="4">Nenhuma sala cadastrada.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="admin-workspace" data-admin-workspace="virtuais" hidden aria-labelledby="admin-virtuais-title">
+        <header class="admin-workspace-head">
+          <h2 id="admin-virtuais-title">Controle de atendimentos virtuais</h2>
+          <p>Encontros à distância, com o link e o horário de cada um.</p>
+        </header>
+        <div class="admin-workspace-toolbar">
+          <button type="button" disabled>Novo atendimento virtual</button>
+        </div>
+        <table class="admin-sheet">
+          <caption>Atendimentos virtuais</caption>
+          <thead>
+            <tr><th>Data</th><th>Horário</th><th>Pessoa</th><th>Profissional</th><th>Canal</th><th>Situação</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="6">Nenhum atendimento virtual cadastrado.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="admin-workspace" data-admin-workspace="usuarios" hidden aria-labelledby="admin-usuarios-title">
+        <header class="admin-workspace-head">
+          <h2 id="admin-usuarios-title">Cadastro de usuários</h2>
+          <p>Quem entra no painel. O cadastro vive em <code>public.users</code>.</p>
+        </header>
+        <div class="admin-workspace-toolbar">
+          <button type="button" disabled>Novo usuário</button>
+        </div>
+        <table class="admin-sheet">
+          <caption>Usuários do painel</caption>
+          <thead>
+            <tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Situação</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="4">Nenhum usuário listado ainda.</td></tr>
+          </tbody>
+        </table>
+      </section>
     </section>
   </main>
 </body>

@@ -1,11 +1,9 @@
 /*
  * Navegação lateral e menu do usuário.
  *
- * A parte que mais importa aqui é a recusa: seis das sete seções não existem, e
- * o painel tem de se comportar como se elas não fossem clicáveis mesmo quando
- * alguém insiste — por clique, por Enter ou por espaço. `aria-disabled` conta a
- * história para o leitor de tela, mas não impede nada sozinho; é este módulo
- * que impede.
+ * A Jornada é uma aba entre as outras. Trocar a marca de ativa sem esconder o
+ * editor deixaria o financeiro escrito por cima da lista de blocos, e o
+ * contrário também. `aria-disabled` continua recusando o que ainda não abre.
  */
 
 export function isInerte(botao) {
@@ -19,12 +17,21 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
   const menuBotao = root.querySelector("[data-admin-user-toggle]");
   const menu = root.querySelector("[data-admin-user-menu]");
 
+  function mostrar(secao) {
+    if (!secao || !root.dataset) return;
+    root.dataset.adminSection = secao;
+    for (const painel of root.querySelectorAll?.("[data-admin-workspace]") || []) {
+      painel.hidden = painel.getAttribute("data-admin-workspace") !== secao;
+    }
+  }
+
   function selecionar(botao) {
     if (!botao || isInerte(botao)) return;
     for (const item of nav?.querySelectorAll("[data-section]") || []) {
       if (item === botao) item.setAttribute("aria-current", "page");
       else item.removeAttribute("aria-current");
     }
+    mostrar(botao.getAttribute("data-section"));
   }
 
   function onNavClick(evento) {
