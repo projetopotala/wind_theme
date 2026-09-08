@@ -156,7 +156,7 @@ function authMessage(state, error = null) {
   return "";
 }
 
-export function createAdminAuth({ client, root, onAuthorized = () => {} } = {}) {
+export function createAdminAuth({ client, root, onAuthorized = () => {}, onState = () => {}, managePanel = true } = {}) {
   if (!root) throw new TypeError("root é obrigatório para autenticação administrativa.");
   const form = root.querySelector("[data-admin-auth-form]");
   const loginView = root.querySelector("[data-admin-auth-view]");
@@ -170,12 +170,15 @@ export function createAdminAuth({ client, root, onAuthorized = () => {} } = {}) 
 
   function showState(state, error = null) {
     root.dataset.authState = state;
-    const allowed = state === "authorized";
-    loginView?.toggleAttribute("hidden", allowed);
-    panel?.toggleAttribute("hidden", !allowed);
-    form?.toggleAttribute("hidden", state === "checking" || state === "forbidden");
+    if (managePanel) {
+      const allowed = state === "authorized";
+      loginView?.toggleAttribute("hidden", allowed);
+      panel?.toggleAttribute("hidden", !allowed);
+    }
+    form?.toggleAttribute("hidden", state === "checking" || state === "forbidden" || (!managePanel && state === "authorized"));
     forbidden?.toggleAttribute("hidden", state !== "forbidden");
     if (status) status.textContent = authMessage(state, error);
+    onState(state, error);
   }
 
   async function applyAccess(access) {

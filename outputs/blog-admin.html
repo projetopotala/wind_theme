@@ -15,26 +15,59 @@
     <section class="blog-admin-login" data-admin-auth-view aria-labelledby="login-title">
       <img src="media/potala-mark-transparent.png" alt="Instituto Potala">
       <p>Caderno de Travessia</p>
-      <h1 id="login-title">Painel do blogueiro</h1>
-      <p>Escreva e ajuste os seus textos. O endereço desta mesa é /blog.</p>
+      <h1 id="login-title">Entrar na mesa</h1>
+      <p>Escreva, acompanhe quem leu e responda quem comentou.</p>
       <form data-admin-auth-form hidden>
         <label>E-mail<input name="email" type="email" autocomplete="username" required></label>
         <label>Senha<input name="password" type="password" autocomplete="current-password" required></label>
-        <button type="submit">Entrar</button>
+        <button class="blog-admin-login-primary" type="submit">Entrar</button>
         <button type="button" data-admin-recovery>Primeiro acesso ou esqueci a senha</button>
       </form>
+      <button class="blog-admin-login-primary" type="button" data-blog-continue hidden>Continuar para a mesa</button>
       <p data-admin-forbidden hidden>Esta conta não possui acesso administrativo.</p>
       <p data-admin-auth-status role="status" aria-live="polite">Verificando acesso…</p>
-      <a href="/blog?acesso=teste">Ver o acesso de teste</a>
+      <button type="button" data-blog-teste>Ver o acesso de teste</button>
       <a href="blog.html">Ver o Blog público</a>
     </section>
 
-    <section class="blog-editor" id="admin-panel" hidden aria-labelledby="blog-editor-title" data-preview-device="desktop">
-      <header class="blog-editor-topbar">
+    <section id="admin-panel" hidden>
+    <section class="blog-desk" data-blog-desk aria-labelledby="blog-desk-title">
+      <header class="blog-desk-top">
         <div class="blog-editor-brand"><img src="media/potala-mark-transparent.png" alt=""><span>Instituto Potala<small>Caderno de Travessia</small></span></div>
-        <nav aria-label="Painéis administrativos"><a href="/admin">Jornada</a><a href="/blog" aria-current="page">Blog</a></nav>
         <a href="blog.html" target="_blank" rel="noopener">Visualizar</a>
         <button type="button" data-admin-sign-out>Encerrar sessão</button>
+      </header>
+      <div class="blog-desk-hero">
+        <div>
+          <p>Mesa do blogueiro</p>
+          <h2 id="blog-desk-title">Seus textos e quem chegou até eles</h2>
+        </div>
+        <button type="button" class="blog-desk-write" data-blog-write>Escrever novo artigo</button>
+      </div>
+      <p class="blog-desk-note">Os acessos abaixo são de demonstração, no formato que a mesa terá quando a medição estiver ligada.</p>
+      <div class="blog-desk-metrics" data-blog-metrics></div>
+      <div class="blog-desk-grid">
+        <section aria-labelledby="blog-posts-title">
+          <h3 id="blog-posts-title">Publicações</h3>
+          <table>
+            <caption>Alcance de cada texto</caption>
+            <thead><tr><th>Texto</th><th>Viram</th><th>Curtidas</th><th>Comentários</th><th></th></tr></thead>
+            <tbody data-blog-desk-list></tbody>
+          </table>
+        </section>
+        <section aria-labelledby="blog-comments-title">
+          <h3 id="blog-comments-title">Comentários recentes</h3>
+          <ul data-blog-comments></ul>
+        </section>
+      </div>
+    </section>
+
+    <section class="blog-editor" data-blog-editor hidden aria-labelledby="blog-editor-title" data-preview-device="desktop">
+      <header class="blog-editor-topbar">
+        <div class="blog-editor-brand"><img src="media/potala-mark-transparent.png" alt=""><span>Instituto Potala<small>Caderno de Travessia</small></span></div>
+        <button type="button" data-blog-leave>Voltar à mesa</button>
+        <a href="blog.html" target="_blank" rel="noopener">Visualizar</a>
+        <button type="button" data-blog-sign-out>Encerrar sessão</button>
       </header>
 
       <aside class="blog-editor-library">
@@ -94,6 +127,7 @@
           <p data-blog-editor-status role="status" aria-live="polite"></p>
         </form>
       </aside>
+    </section>
     </section>
   </main>
 </body>

@@ -160,5 +160,18 @@ export function createBlogEditor({ root, repository, previewWindow } = {}) {
   iframe?.addEventListener("load", sendPreview);
 
   renderList(); fillForm();
-  return { getDraft:() => clone(draft), getPosts:() => clone(posts), destroy() {} };
+  return {
+    getDraft:() => clone(draft),
+    getPosts:() => clone(posts),
+    open(id) { select(id); },
+    startNew() {
+      selectedId = null;
+      draft = createBlankPost();
+      fillForm();
+      renderList();
+      announce("Novo rascunho iniciado.");
+      form.elements.title?.focus();
+    },
+    destroy() {},
+  };
 }

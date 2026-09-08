@@ -26,9 +26,11 @@ test("o shell tem lista, prévia e opções sem permitir layout livre", () => {
 
 test("os dois painéis se conectam", () => {
   assert.match(homeAdmin, /href="\/blog"/);
-  assert.match(html, /href="\/admin"/);
-  assert.match(html, /acesso=teste/);
-  assert.match(entry, /acesso"\) === "teste"/);
+  assert.match(html, /data-blog-teste/);
+  assert.match(html, /data-blog-write/);
+  assert.match(html, /data-blog-metrics/);
+  assert.match(entry, /abrirMesa/);
+  assert.doesNotMatch(entry, /acesso"\) === "teste"/);
 });
 
 test("a prévia pode alternar Blog, artigo e dispositivo", () => {
