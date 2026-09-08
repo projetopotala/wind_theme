@@ -15,7 +15,12 @@ function clientFor({ session = null, sessionError = null, role = null, roleError
   const query = {
     select() { return this; },
     eq(column, value) { calls.userIds.push([column, value]); return this; },
-    async maybeSingle() { return { data: role ? { role } : null, error: roleError }; },
+    async maybeSingle() {
+      return {
+        data: role ? { id: "user-row", email: "admin@example.com", name: "Admin", role, active: true } : null,
+        error: roleError,
+      };
+    },
   };
   return {
     calls,
@@ -29,7 +34,7 @@ function clientFor({ session = null, sessionError = null, role = null, roleError
         async signOut() { calls.signOut += 1; return { error: null }; },
       },
       from(table) {
-        assert.equal(table, "admin_users");
+        assert.equal(table, "users");
         return query;
       },
     },
@@ -42,6 +47,7 @@ test("sessão inexistente exige login sem consultar papéis", async () => {
     state: "signed-out",
     session: null,
     role: null,
+    user: null,
   });
   assert.deepEqual(calls.userIds, []);
 });
@@ -55,6 +61,7 @@ test("usuário autenticado sem registro administrativo é recusado", async () =>
   assert.equal(access.state, "forbidden");
   assert.equal(access.session, session);
   assert.equal(access.role, null);
+  assert.equal(access.user, null);
 });
 
 test("owner e admin recebem acesso com o papel confirmado pelo banco", async () => {
@@ -65,7 +72,9 @@ test("owner e admin recebem acesso com o papel confirmado pelo banco", async () 
 
     assert.equal(access.state, "authorized");
     assert.equal(access.role, role);
-    assert.deepEqual(calls.userIds, [["user_id", session.user.id]]);
+    assert.equal(access.user.email, "admin@example.com");
+    assert.equal(access.user.name, "Admin");
+    assert.deepEqual(calls.userIds, [["id", session.user.id]]);
   }
 });
 

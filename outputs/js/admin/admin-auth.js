@@ -22,20 +22,23 @@ export async function getAdminAccess(client) {
   const { data, error } = await client.auth.getSession();
   if (error) throw new AdminAuthError("getSession", error);
   const session = data?.session || null;
-  if (!session?.user?.id) return { state: "signed-out", session: null, role: null };
+  if (!session?.user?.id) return { state: "signed-out", session: null, role: null, user: null };
 
-  const { data: membership, error: membershipError } = await client
-    .from("admin_users")
-    .select("role")
-    .eq("user_id", session.user.id)
+  const { data: user, error: membershipError } = await client
+    .from("users")
+    .select("id, email, name, role, active")
+    .eq("id", session.user.id)
     .maybeSingle();
   if (membershipError) throw new AdminAuthError("getRole", membershipError);
 
-  const role = ["owner", "admin"].includes(membership?.role) ? membership.role : null;
+  const role = user?.active === true && ["owner", "admin"].includes(user.role)
+    ? user.role
+    : null;
   return {
     state: role ? "authorized" : "forbidden",
     session,
     role,
+    user: role ? user : null,
   };
 }
 

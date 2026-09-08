@@ -23,7 +23,7 @@ Os endereços das páginas não mudam. O que mudou foi só onde o casco vive.
 
 - `transcender.html` — Chegada. O casco dela está em `css/respiracao.css` e `js/chegada/respiracao.js`.
 - `transcendido.html` — Home, a travessia. O casco compartilhado das páginas está em `css/secoes.css` e `js/secoes.js`.
-- `admin.html` — editor da jornada. Exige conta do Supabase em `admin_users` (`owner` ou `admin`).
+- `admin.html` — editor da jornada. A senha fica no Auth; o cadastro que libera o painel é `public.users` (`owner` ou `admin`, `active`).
 - `blog-admin.html` — editor do blog, com a mesma autorização.
 
 ## Onde olhar
@@ -44,24 +44,31 @@ A Home lê os blocos de `public.home_blocks`. Se a leitura remota falhar, usa os
 ### Preparar o projeto
 
 1. Execute `npm install` e `npm run vendor:supabase`.
-2. Aplique `supabase/migrations/202609020001_portal_home_content.sql` no SQL Editor do projeto `gotrumwuimpoeggwamut`.
+2. Aplique `supabase/migrations/202609020001_portal_home_content.sql` e depois `supabase/migrations/202609080004_portal_users.sql` no SQL Editor do projeto `gotrumwuimpoeggwamut`.
 3. Em Authentication → Users, crie o primeiro usuário com e-mail e senha.
-4. Copie o UUID do usuário e execute no SQL Editor:
+4. Cadastre essa conta em `public.users`:
 
 ```sql
-insert into public.admin_users (user_id, role)
-values ('UUID_COPIADO_DO_AUTH', 'owner')
-on conflict (user_id) do update
-set role = excluded.role, updated_at = now();
+insert into public.users (id, email, name, role, active)
+select id, email, 'Instituto Potala', 'owner', true
+from auth.users
+where email = 'projetopotala@gmail.com'
+on conflict (id) do update
+set
+  email = excluded.email,
+  name = excluded.name,
+  role = excluded.role,
+  active = true,
+  updated_at = now();
 ```
 
 O navegador recebe apenas a chave `sb_publishable_...`, que é pública por definição. A proteção real está nos grants e nas políticas RLS da migração. Nunca coloque `service_role`, `sb_secret_...`, senha do banco ou access token em `outputs/`, no Git ou em uma variável exposta ao cliente.
 
 ### Administradores
 
-- Para autorizar um usuário existente, insira seu UUID em `admin_users` com o papel `admin` ou `owner`.
-- Para trocar o papel, atualize somente `admin_users.role`.
-- Para revogar o painel sem apagar a conta Auth, remova a linha correspondente de `admin_users`.
+- Para autorizar um usuário que já existe no Auth, insira a linha correspondente em `public.users` com o papel `admin` ou `owner`.
+- Para trocar o papel, atualize somente `public.users.role`.
+- Para revogar o painel sem apagar a conta Auth, marque `public.users.active = false`.
 - Cadastro público não faz parte do painel. Novos usuários são criados pelo Dashboard do Supabase nesta entrega.
 
 ### Rollback e recuperação
