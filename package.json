@@ -14,6 +14,7 @@
     "prepare:arrival-plate": "node scripts/prepare-arrival-plate-assets.mjs",
     "prepare:atendimentos": "node scripts/prepare-atendimentos-panes.mjs",
     "preview:portal": "node scripts/serve-outputs.mjs",
+    "logs": "vercel logs --follow",
     "prepare:arrival-v2": "node scripts/prepare-arrival-v2-assets.mjs",
     "prepare:palace": "node scripts/prepare-palace-assets.mjs",
     "prepare:home-travessia": "node scripts/prepare-home-travessia-assets.mjs",
@@ -52,6 +53,7 @@
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "typescript-eslint": "8.59.3",
+    "vercel": "^59.11.7",
     "vinext": "1.0.0-beta.2",
     "vite": "8.0.13",
     "wrangler": "4.92.0"

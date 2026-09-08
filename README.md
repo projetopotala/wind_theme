@@ -13,6 +13,8 @@ npm install
 npm run preview:portal
 ```
 
+O log da Vercel, no projeto já ligado, fica em `npm run logs`. Precisa da conta dona do projeto Potala. A sessão atual do CLI é `newstoresorteios-3937`, no time NewStore's projects, e esse time não tem o portal.
+
 Abre em http://127.0.0.1:4173/. A raiz cai na Chegada.
 
 ## Entradas
