@@ -407,7 +407,7 @@ test("id repetido entre relacionados e laterais aparece uma vez só", () => {
  * uma linha de estilo — apareceu como texto cru sobre a imagem assim que o mapa
  * de descobertas foi ligado. Dentro do painel ela tem lugar e forma.
  */
-test("a descoberta em destaque entra na lista, não flutua ao lado", () => {
+test("descobertas arbitrárias não substituem relações editoriais", () => {
   const destaque = { id: "acao-social", title: "Cuidado que circula", description: "d", href: "a.html" };
   const markup = homeScenes.renderRegion(
     { id: "x", title: "X", summary: "r", side: "left" },
@@ -417,6 +417,6 @@ test("a descoberta em destaque entra na lista, não flutua ao lado", () => {
   );
 
   assert.doesNotMatch(markup, /journey-discovery/, "nada de cartão solto na paisagem");
-  assert.match(markup, /Cuidado que circula/);
-  assert.match(markup, /region-related-item/);
+  assert.doesNotMatch(markup, /Cuidado que circula/);
+  assert.doesNotMatch(markup, /region-related-item/);
 });

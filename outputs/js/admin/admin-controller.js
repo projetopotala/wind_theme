@@ -1,6 +1,6 @@
 import { normalizeHomeBlock, normalizeHomeBlocks } from "../home/content-model.js";
 import { createLocalContentRepository } from "../home/content-repository.js";
-import { DEFAULT_HOME_BLOCKS } from "../home/journey-data.js";
+import { DEFAULT_HOME_BLOCKS, JOURNEY_DISCOVERIES } from "../home/journey-data.js";
 import { mergeBlocks, motivoDaFalha, pendingCount } from "./admin-draft.js";
 import { comMarcacao, ehNovidade } from "../home/home-novidades.js";
 import { countEntries, filterEntries } from "./admin-filters.js";
@@ -11,6 +11,7 @@ import { createAdminEditor } from "./admin-editor.js";
 
 const SIDES = new Set(["left", "right"]);
 export const ADMIN_PREVIEW_MESSAGE = "potala:admin-preview";
+export const ADMIN_PREVIEW_EDIT = "potala:admin-preview-edit";
 
 export function previewBlocksForDraft(blocks, draft = {}) {
   const current = normalizeHomeBlocks(blocks);
@@ -24,11 +25,12 @@ export function previewBlocksForDraft(blocks, draft = {}) {
   return applyDraft(current, previewDraft).filter((block) => block.published);
 }
 
-export function createPreviewMessage(blocks, focusId = "") {
+export function createPreviewMessage(blocks, focusId = "", extras = {}) {
   return {
     type: ADMIN_PREVIEW_MESSAGE,
     blocks,
     focusId,
+    ...extras,
   };
 }
 /**
@@ -103,9 +105,12 @@ export function draftFromBlock(block = null, index = 0) {
       href: "",
       side: index % 2 === 0 ? "left" : "right",
       published: true,
+      editorialVariant: "standard",
+      relatedMode: "automatic",
+      relatedContent: "",
     };
   }
-  return { ...block, tags: (block.tags || []).join(", ") };
+  return { ...block, tags: (block.tags || []).join(", "), relatedContent: (block.relatedContent || []).join(", ") };
 }
 
 /**
@@ -210,6 +215,8 @@ export function createAdminController({
     ? globalThis.cancelAnimationFrame.bind(globalThis)
     : globalThis.clearTimeout.bind(globalThis);
 
+  let pedirRolagem = false;
+
   function publicarPreview() {
     previewFrameId = 0;
     const draft = form ? lerFormulario() : {};
@@ -218,12 +225,14 @@ export function createAdminController({
       ? draft.id || "admin-preview-draft"
       : previewFocusId;
     previewFrame?.contentWindow?.postMessage(
-      createPreviewMessage(previewBlocks, focusId),
+      createPreviewMessage(previewBlocks, focusId, pedirRolagem ? { scroll: true } : {}),
       previewOrigin === "null" ? "*" : previewOrigin,
     );
+    pedirRolagem = false;
   }
 
-  function agendarPreview() {
+  function agendarPreview(opcoes = {}) {
+    if (opcoes.scroll) pedirRolagem = true;
     if (previewFrameId) cancelPreview(previewFrameId);
     previewFrameId = schedulePreview(publicarPreview);
   }
@@ -281,6 +290,11 @@ export function createAdminController({
     botaoPublicar.textContent = pendentes
       ? `Publicar alterações (${pendentes})`
       : "Publicar alterações";
+    const publicarPrevia = root.querySelector("[data-admin-preview-publish]");
+    if (publicarPrevia) {
+      publicarPrevia.disabled = pendentes === 0;
+      publicarPrevia.textContent = "Publicar";
+    }
   }
 
   function desenhar() {
@@ -324,6 +338,15 @@ export function createAdminController({
 
   function preencher(draft) {
     if (!form) return;
+    const relatedOptions = form.querySelector("[data-related-options]");
+    if (relatedOptions) {
+      const selected = new Set(separarTags(draft.relatedContent));
+      const catalog = new Map([...JOURNEY_DISCOVERIES, ...blocks].map((block) => [block.id, block]));
+      for (const id of selected) if (!catalog.has(id)) catalog.set(id, { id, title: `${id} (indisponível)` });
+      relatedOptions.innerHTML = [...catalog.values()].filter((block) => block.id !== draft.id).map((block) =>
+        `<label><input type="checkbox" data-related-choice value="${escapeHtml(block.id)}"${selected.has(block.id) ? " checked" : ""}> ${escapeHtml(block.title)}</label>`
+      ).join("");
+    }
     for (const [campo, valor] of Object.entries(draft)) {
       const controle = form.elements[campo];
       if (!controle) continue;
@@ -356,6 +379,7 @@ export function createAdminController({
       if (!controle.name) continue;
       draft[controle.name] = controle.type === "checkbox" ? controle.checked : controle.value;
     }
+    draft.relatedContent = [...form.querySelectorAll("[data-related-choice]:checked")].map((choice) => choice.value);
     /*
      * A caixa de novidade não tem `name`, então não entra pelo laço acima: ela
      * não é um campo do bloco, é um atalho para escrever uma tag.
@@ -574,6 +598,25 @@ export function createAdminController({
   const onFormInput = () => agendarPreview();
   const onPreviewLoad = () => agendarPreview();
 
+  function aplicarEdicaoDaPrevia(event) {
+    if (event.source !== previewFrame?.contentWindow) return;
+    if (event.data?.type !== ADMIN_PREVIEW_EDIT) return;
+    const { id, field, value } = event.data;
+    if (!form || !field) return;
+    if (id && form.elements.id?.value && form.elements.id.value !== id) {
+      const bloco = blocks.find((item) => item.id === id);
+      if (!bloco) return;
+      ativoId = id;
+      previewFocusId = id;
+      preencher(draftFromBlock(bloco));
+    }
+    const campo = form.elements[field];
+    if (!campo) return;
+    if (campo.type === "checkbox") campo.checked = Boolean(value);
+    else campo.value = value ?? "";
+    agendarPreview();
+  }
+
   const listaUI = createBlocksList({
     root,
     onAction: (acao, id) => {
@@ -590,7 +633,7 @@ export function createAdminController({
       agendarPreview();
     },
   });
-  const previaUI = createAdminPreview({ root, onPublish: () => agendarPreview() });
+  const previaUI = createAdminPreview({ root, onPublish: (opcoes) => agendarPreview(opcoes || {}) });
   /*
    * O editor precisa ser MONTADO, não só existir.
    *
@@ -615,6 +658,13 @@ export function createAdminController({
   form?.addEventListener("input", onFormInput);
   form?.addEventListener("change", onFormInput);
   previewFrame?.addEventListener("load", onPreviewLoad);
+  root.querySelector("[data-admin-preview-save]")?.addEventListener("click", () => {
+    form?.requestSubmit?.();
+  });
+  root.querySelector("[data-admin-preview-publish]")?.addEventListener("click", () => {
+    onPublish();
+  });
+  globalThis.addEventListener?.("message", aplicarEdicaoDaPrevia);
   root.querySelector("[data-admin-reset]")?.addEventListener("click", onReset);
   root.querySelector("[data-admin-new]")?.addEventListener("click", onNew);
 
@@ -681,6 +731,7 @@ export function createAdminController({
       form?.removeEventListener("input", onFormInput);
       form?.removeEventListener("change", onFormInput);
       previewFrame?.removeEventListener("load", onPreviewLoad);
+      globalThis.removeEventListener?.("message", aplicarEdicaoDaPrevia);
       buscaCampo?.removeEventListener("input", onBusca);
       abasFiltro?.removeEventListener("click", onAba);
       botaoPublicar?.removeEventListener("click", onPublish);

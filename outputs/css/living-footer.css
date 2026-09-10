@@ -1,0 +1,47 @@
+.living-footer { position: relative; z-index: 2; padding: clamp(72px, 10vw, 144px) max(24px, calc((100vw - 1120px) / 2)) 90px; background: #f4eddf; color: #392f27; line-height: 1.7; }
+.living-footer { width: calc(100% + var(--journey-sidebar-width, 0px)); margin-left: calc(var(--journey-sidebar-width, 0px) * -1); }
+.living-footer [hidden] { display: none !important; }
+.living-footer h2, .living-footer h3 { font-family: Georgia, serif; font-weight: 400; line-height: 1.18; text-wrap: balance; }
+.living-footer h2 { font-size: clamp(34px, 5vw, 64px); margin: 20px auto 32px; max-width: 760px; }
+.living-footer h3 { font-size: clamp(25px, 3vw, 36px); margin: 12px 0 24px; }
+.living-farewell { text-align: center; max-width: 780px; margin: 0 auto 88px; }
+.living-kicker { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #655840; }
+.living-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(32px, 7vw, 96px); margin: 72px 0; }
+.living-footer button, .living-footer select { font: inherit; color: inherit; background: transparent; border: 1px solid #897b65; border-radius: 6px; padding: 12px 18px; max-width: 100%; }
+.living-footer button { cursor: pointer; min-height: 44px; }
+.living-footer button:hover { background: #e7dfce; }
+.living-footer button:disabled { cursor: default; opacity: .65; }
+.living-footer :focus-visible { outline: 3px solid #647c4d; outline-offset: 5px; }
+.living-footer a { text-underline-offset: 5px; }
+.living-footer label { display: block; margin: 24px 0 8px; }
+.living-footer select { display: block; width: 100%; margin-bottom: 16px; }
+.living-note { font-size: 13px; color: #665b4e; }
+.gift-message { white-space: pre-line; font-family: Georgia, serif; font-size: clamp(20px, 2.3vw, 26px); min-height: 2em; margin-top: 28px; }
+.living-return-links { display: flex; flex-wrap: wrap; gap: 12px 22px; margin-bottom: 24px; }
+.living-dialogue { padding-top: 48px; border-top: 1px solid #d3c7b3; }
+.living-dialogue section > a { display: block; padding: 8px 0; }
+.living-contact { border-top: 1px solid #d3c7b3; padding-top: 36px; }
+.living-contact address { font-style: normal; font-size: 14px; }
+.plant-drawing { max-width: 220px; margin: 0 auto; }
+.plant-drawing svg { width: 100%; overflow: visible; }
+.plant-ground, .plant-stem { fill: none; stroke: #68784b; stroke-width: 4; stroke-linecap: round; }
+.plant-seed { fill: #8a6544; }
+.plant-leaf, .plant-crown { fill: #7a8b5b; }
+.plant-flower { fill: #c09572; }
+.plant-stem, .plant-leaf, .plant-flower, .plant-crown { opacity: 0; }
+[data-plant-stage="Broto"] .plant-stem, [data-plant-stage="Broto"] .leaf-two,
+[data-plant-stage="Folhas"] .plant-stem, [data-plant-stage="Folhas"] .plant-leaf,
+[data-plant-stage="Flores"] .plant-stem, [data-plant-stage="Flores"] .plant-leaf, [data-plant-stage="Flores"] .plant-flower,
+[data-plant-stage="Árvore"] .plant-stem, [data-plant-stage="Árvore"] .plant-crown { opacity: 1; }
+/* Formatos editoriais compartilham a navegação, mas têm composição própria. */
+.journey-region[data-editorial-variant="reflection"]:not(.is-expanded) .region-content { background: #e9e0cd; color: #3e342a; }
+.journey-region[data-editorial-variant="reflection"]:not(.is-expanded) .region-title { color: #3e342a; font-family: Georgia, serif; font-style: italic; }
+.journey-region[data-editorial-variant="reflection"]:not(.is-expanded) .region-category,
+.journey-region[data-editorial-variant="reflection"]:not(.is-expanded) .region-expand-label { color: #65533d; }
+.journey-region[data-editorial-variant="reflection"]:not(.is-expanded) .region-description { color: #544836; }
+.journey-region[data-editorial-variant="portrait"] .region-capa, .journey-region[data-editorial-variant="feature"] .region-capa { display: block; position: relative; width: 100%; overflow: hidden; margin-bottom: 16px; }
+.journey-region[data-editorial-variant] .region-capa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.journey-region[data-editorial-variant="portrait"] .region-capa { aspect-ratio: 1; max-width: 150px; border-radius: 50%; margin-inline: auto; overflow: hidden; }
+.journey-region[data-editorial-variant="feature"] .region-capa { aspect-ratio: 16 / 9; max-height: 160px; }
+.journey-region.is-expanded[data-editorial-variant] .region-capa { display: none; }
+@media (max-width: 720px) { .living-grid { grid-template-columns: minmax(0, 1fr); gap: 56px; margin: 48px 0; } .living-farewell { margin-bottom: 48px; } }

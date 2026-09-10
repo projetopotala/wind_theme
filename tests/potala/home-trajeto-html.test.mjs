@@ -18,7 +18,7 @@ test("fim editorial não contém subida nem destino automático", () => {
   const root = { innerHTML: "", querySelectorAll() { return []; } };
   mountJourney(root, { regions: [], discoveries: [] });
   assert.doesNotMatch(root.innerHTML, /journey-ascent|palacio\.html/i);
-  assert.match(root.innerHTML, /journey-continuation/);
+  assert.match(root.innerHTML, /living-footer/);
 });
 
 test("montagem solicita somente blocos publicados e os entrega ao controlador", async () => {

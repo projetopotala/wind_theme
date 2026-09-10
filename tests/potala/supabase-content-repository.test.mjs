@@ -73,7 +73,7 @@ test("replaceAll envia uma única RPC atômica e devolve blocos normalizados", a
   }]);
 
   assert.equal(calls.rpc.length, 1);
-  assert.equal(calls.rpc[0][0], "replace_home_blocks");
+  assert.equal(calls.rpc[0][0], "replace_home_blocks_editorial");
   assert.equal(calls.rpc[0][1].payload[0].updated_at, databaseRow.updated_at);
   assert.equal(calls.rpc[0][1].payload[0].updatedAt, undefined);
   assert.equal(result[0].title, "Quem somos");

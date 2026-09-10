@@ -2,6 +2,8 @@ import { arteDaCapa } from "../blog/blog-arte.js";
 import { ehNovidade, temasVisiveis } from "./home-novidades.js";
 import { invitationsFor } from "./invitations.js";
 import { renderRestrictedMarkdown } from "../shared/markdown.js";
+import { renderLivingFooter } from "./living-footer.js";
+import { renderPortalDiscovery, renderCommunityInvitation, renderNarrativeBridge } from "./portal-discovery.js";
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
 const smoothstep = (value) => {
   const t = clamp(value);
@@ -124,7 +126,7 @@ function renderTags(tags = []) {
  * destino de verdade, com endereço próprio. Inventar itens aqui daria à
  * referência uma fidelidade que o conteúdo não sustenta.
  */
-function renderRelated(region, discoveriesById, destaque) {
+function renderRelated(region, discoveriesById) {
   /*
    * Relacionados E laterais, na mesma lista.
    *
@@ -143,7 +145,6 @@ function renderRelated(region, discoveriesById, destaque) {
     /* A descoberta em destaque também. Ela era desenhada como um cartão solto
        na paisagem, e esse cartão nunca teve estilo — apareceu como texto cru
        assim que o mapa de descobertas foi ligado. */
-    ...(destaque?.id ? [destaque.id] : []),
   ];
   const vistos = new Set();
   const itens = ids
@@ -236,7 +237,7 @@ export function buildLookup(regions = [], discoveries = []) {
   ]);
 }
 
-export function renderRegion(region, index, discovery, discoveriesById) {
+export function renderRegion(region, index, _discovery, discoveriesById) {
   const side = region.side === "left" || region.side === "right"
     ? region.side
     : region.roadPlacement === "right" ? "left"
@@ -269,7 +270,7 @@ export function renderRegion(region, index, discovery, discoveriesById) {
    */
   const novidade = ehNovidade(region);
   const coverSource = safeMediaSource(region.image || region.media);
-  const capaFechada = novidade
+  const capaFechada = (novidade || ["feature", "portrait"].includes(region.editorialVariant))
     ? (coverSource
       ? `<span class="region-capa" aria-hidden="true"><img src="${coverSource}" alt="" loading="lazy" decoding="async"></span>`
       : (region.motivo
@@ -283,7 +284,7 @@ export function renderRegion(region, index, discovery, discoveriesById) {
 
   return `
     <div class="journey-region region--${layoutVariant}" id="${id}"
-      data-region-id="${id}" data-layout-variant="${layoutVariant}"
+      data-region-id="${id}" data-layout-variant="${layoutVariant}" data-editorial-variant="${safeToken(region.editorialVariant, "standard")}"
       data-side="${side}" data-road-side="${roadSide}" data-content-placement="${safeToken(region.contentPlacement, "side")}"
       data-title-scale="${titleScale}" data-title-flow="${titleFlow}" data-card-kind="${novidade ? "novidade" : "fixo"}"
       style="--region-index:${index};--region-height:${regionHeight}svh">
@@ -306,13 +307,14 @@ export function renderRegion(region, index, discovery, discoveriesById) {
           <button class="region-summary" type="button" aria-expanded="false" aria-controls="${id}-details">
             ${capaFechada}
             ${newsMeta}
+            <span class="region-node" aria-hidden="true"></span>
             <span class="region-category">
-              <span>${String(index + 1).padStart(2, "0")}</span>${escapeHtml(region.category)}
+              <span>${String((Number.isInteger(region.chapter) ? region.chapter : index) + 1).padStart(2, "0")}</span>${escapeHtml(region.category)}
               <span class="region-rule" aria-hidden="true"></span>
             </span>
             <span class="region-title" id="${id}-title">${escapeHtml(title)}</span>
             <span class="region-description">${escapeHtml(summary)}</span>
-            <span class="region-expand-label" aria-hidden="true">Descobrir <span>＋</span></span>
+            <span class="region-expand-label" aria-hidden="true">Olhar de perto</span>
           </button>
           <div class="region-details" id="${id}-details" aria-hidden="true" inert>
             <section class="region-details-main">
@@ -322,12 +324,12 @@ export function renderRegion(region, index, discovery, discoveriesById) {
               <ul class="region-tags" aria-label="Temas desta região">${renderTags(temasVisiveis(region.tags))}</ul>
             </section>
             <aside class="region-details-aside">
-              ${renderRelated(region, discoveriesById, discovery)}
+              ${renderRelated(region, discoveriesById)}
               ${media}
               <div class="region-actions">
                 <a class="region-link" href="${safeHref(region.href)}" tabindex="-1"${
                   region.metaDescription ? ` aria-description="${escapeHtml(region.metaDescription)}"` : ""
-                }>${novidade ? "Ler a notícia completa" : `Explorar ${escapeHtml(title.toLowerCase())}`} <span aria-hidden="true">→</span></a>
+                }>${novidade ? "Continuar a leitura" : "Seguir este caminho"} <span aria-hidden="true">→</span></a>
               </div>
             </aside>
           </div>
@@ -348,11 +350,32 @@ export function renderRegion(region, index, discovery, discoveriesById) {
  * um palco por bloco, os dois vãos se sobreporiam e cada bloco reservaria um
  * espaço que o outro já estava usando.
  */
-export function renderPair(markups, pairIndex, pairHeight, rotulo = "") {
+function textoCurto(valor, limite = 110) {
+  const texto = String(valor || "").replace(/\s+/g, " ").trim();
+  if (texto.length <= limite) return texto;
+  return `${texto.slice(0, limite - 1).trim()}…`;
+}
+
+function renderEntre(pairRegions = []) {
+  const linhas = pairRegions.filter(Boolean).slice(0, 2).map((region) => {
+    const categoria = String(region.category || "").trim();
+    const resumo = textoCurto(region.summary || region.description || "", 92);
+    const temas = (region.tags || []).filter((tag) => tag && tag !== "recente").slice(0, 2);
+    if (!resumo && !temas.length) return "";
+    return `<p>
+      ${categoria ? `<small>${escapeHtml(categoria)}</small>` : ""}
+      ${resumo ? escapeHtml(resumo) : escapeHtml(temas.join(" · "))}
+    </p>`;
+  }).filter(Boolean);
+  if (!linhas.length) return "";
+  return `<div class="journey-entre" aria-hidden="true">${linhas.join("")}</div>`;
+}
+
+export function renderPair(markups, pairIndex, pairHeight, rotulo = "", pairRegions = []) {
   return `
     <section class="journey-pair" data-pair-index="${pairIndex}"
       style="--pair-height:${pairHeight}svh">
-      <div class="region-stage">${rotulo}${markups.join("")}</div>
+      <div class="region-stage">${rotulo}${markups.join("")}${renderEntre(pairRegions)}</div>
     </section>
   `;
 }
@@ -421,7 +444,24 @@ export function renderInvitation(invitations = []) {
  * Especialistas, e dali a barra daquelas páginas leva às outras quatro. Nada
  * ficou órfão; o caminho ficou mais fundo.
  */
-export function renderJourneyMenu() {
+function renderProgressNav(regions = []) {
+  const capitulos = regions.filter((region) => !ehNovidade(region));
+  if (!capitulos.length) return "";
+  const total = String(capitulos.length).padStart(2, "0");
+  const dots = capitulos.map((region, index) => {
+    const numero = String(index + 1).padStart(2, "0");
+    const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
+    return `<li><button type="button" data-progress-target="${id}" aria-label="${numero} — ${escapeHtml(region.title)}"><span aria-hidden="true">${numero} — ${escapeHtml(region.title)}</span></button></li>`;
+  }).join("");
+  return `
+    <nav class="journey-progress" aria-label="Capítulos da travessia">
+      <p class="journey-progress-count"><span data-journey-current>01</span><span data-journey-total>${total}</span></p>
+      <ol>${dots}</ol>
+      <p class="journey-progress-label" data-journey-progress-label>01 — ${escapeHtml(capitulos[0].title)}</p>
+    </nav>`;
+}
+
+export function renderJourneyMenu(regions = []) {
   return `
     <button class="journey-canto journey-lupa" type="button" data-journey-abrir-busca
       data-keeps-expansion aria-label="Pesquisar na travessia">
@@ -465,6 +505,7 @@ export function renderJourneyMenu() {
       um link já faz de graça: abrir em outra aba, copiar o endereço, aparecer
       como link para quem usa leitor de tela.
     -->
+    ${renderProgressNav(regions)}
     <a class="journey-canto journey-lapis" href="/admin"
       data-keeps-expansion aria-label="Painel editorial">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -476,86 +517,22 @@ export function renderJourneyMenu() {
 export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
   if (!root) throw new TypeError("root é obrigatório para montar a jornada");
   const discoveriesById = buildLookup(regions, discoveries);
+  let chapter = 0;
   const blocos = regions.map((region, index) => renderRegion(
-    region,
+    ehNovidade(region) ? region : { ...region, chapter: chapter++ },
     index,
     discoveriesById.get(featuredDiscoveries[index % featuredDiscoveries.length]),
     discoveriesById,
   ));
 
   const pares = [];
-  /*
-   * O RÓTULO DO GRUPO ENTRA NO FLUXO, no começo dos cartões a que se refere.
-   *
-   * Ele já morou fixo no alto da tela. Ali estava sempre visível e sempre longe
-   * do que descrevia: quem olhava os cartões não olhava o canto, e a palavra
-   * mudava sem que ninguém visse.
-   *
-   * No começo do grupo ele é lido uma vez, no lugar certo — e `sticky` o mantém
-   * à vista enquanto aquele grupo passa, de modo que a resposta continua
-   * disponível sem precisar voltar.
-   */
-  let grupoAnterior = null;
   for (let inicio = 0; inicio < blocos.length; inicio += 2) {
-    const grupo = ehNovidade(regions[inicio] || {}) ? "novidade" : "fixo";
-    /*
-     * O rótulo entra DENTRO do palco do primeiro par do grupo.
-     *
-     * Fora dele, como irmão do par, ele ficava a quase quatrocentos pixels
-     * acima dos cartões: o palco é `sticky` com a altura da tela e os cartões
-     * ficam centrados nele, então quando eles param no meio da tela o rótulo já
-     * saiu por cima havia muito tempo. Ele nomeava o grupo de um lugar em que
-     * não dava para vê-lo junto do que nomeava.
-     *
-     * Dentro do palco ele acompanha os cartões: chega com eles, para com eles
-     * e sai com eles.
-     */
-    let rotulo = "";
-    if (grupo !== grupoAnterior) {
-      grupoAnterior = grupo;
-      const editorial = grupo === "novidade"
-        ? { eyebrow:"Caderno de Travessia", title:"Acontece no Potala" }
-        : { eyebrow:"Ecossistema Potala", title:"Caminhos para conhecer" };
-      rotulo = `<header class="journey-trecho" data-grupo="${grupo}">
-        <span>${editorial.eyebrow}</span>
-        <strong>${editorial.title}</strong>
-        <i aria-hidden="true"></i>
-      </header>`;
-    }
-    const pairIndex = pares.length;
-    // A altura do par vem do ritmo do primeiro dos dois: é a mesma passagem
-    // que uma seção sozinha ocupava, agora carregando duas.
     const { regionHeight, silenceHeight } = journeyRhythmForIndex(inicio);
-    pares.push(renderPair(blocos.slice(inicio, inicio + 2), pairIndex, regionHeight, rotulo));
+    const rotulo = inicio === 0 ? '<header class="journey-trecho" data-grupo="editorial"><span>Ecossistema Potala</span><strong>Encontros, ideias e caminhos</strong><i aria-hidden="true"></i></header>' : '';
+    pares.push(renderPair(blocos.slice(inicio, inicio + 2), inicio / 2, regionHeight, rotulo, regions.slice(inicio, inicio + 2)));
     if (inicio + 2 < blocos.length) {
-      /*
-       * A FRONTEIRA ENTRE NOVIDADES E SEÇÕES ganha uma marca no silêncio.
-       *
-       * O rótulo lá no alto troca de palavra, mas ele está no canto e a troca é
-       * discreta de propósito — quem estiver olhando os cartões não vê. Sem
-       * nada no caminho, a jornada passa de notícia para seção sem que nada
-       * aconteça, e a divisão só existe para quem reparou no canto da tela.
-       *
-       * A marca vai no silêncio porque o silêncio JÁ É a passagem: o trecho de
-       * estrada sem conteúdo entre dois encontros. Marcar o cartão seria pôr a
-       * fronteira dentro de um dos lados; marcar o vão a põe entre os dois.
-       */
-      const fronteira = ehNovidade(regions[inicio + 1] || {}) !== ehNovidade(regions[inicio + 2] || {});
-      /*
-       * O SILÊNCIO DA FRONTEIRA É MAIS CURTO que os outros.
-       *
-       * Um silêncio comum é pausa: estrada sem informação, para o encontro
-       * seguinte não colar no anterior. O da fronteira não está vazio — ele tem
-       * a linha, o losango e, logo abaixo, o rótulo do grupo novo. Com a
-       * duração cheia, essas três coisas ficavam espalhadas por quase meia tela
-       * cada uma, e o que devia ser uma passagem virava um intervalo.
-       *
-       * 45% da duração normal: continua havendo pausa, mas curta o bastante
-       * para a marca, o rótulo e o primeiro cartão serem lidos como uma coisa
-       * só — a virada de assunto.
-       */
-      const alturaDoSilencio = fronteira ? Math.round(silenceHeight * 0.45) : silenceHeight;
-      pares.push(`<div class="journey-silence"${fronteira ? ' data-fronteira="true"' : ""} aria-hidden="true" style="--silence-height:${alturaDoSilencio}svh"></div>`);
+      const bridge = renderNarrativeBridge(regions[inicio + 2]);
+      pares.push('<div class="journey-silence"' + (bridge ? '' : ' aria-hidden="true"') + ' style="--silence-height:' + silenceHeight + 'svh">' + bridge + '</div>');
     }
   }
 
@@ -567,22 +544,15 @@ export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
         <p>Ecossistema Digital Potala</p>
         <h1 id="journey-title">Bem-vindo.</h1>
         <span>O caminho continua.</span>
+        <p class="home-welcome-context">Cuidado, conhecimento, cultura e pessoas.<br>Encontre novas possibilidades para o seu momento.</p>
       </div>
     </section>
+    ${renderPortalDiscovery()}
     <div class="journey-regions">${regionMarkup}</div>
     ${renderInvitation(invitationsFor(regions))}
     ${renderJourneyMenu(regions)}
-    <section class="journey-continuation" aria-labelledby="continuation-title">
-      <div>
-        <p>Uma jornada não precisa terminar aqui.</p>
-        <h2 id="continuation-title">Há sempre outro caminho para descobrir.</h2>
-        <a href="https://www.institutopotala.com/">Continuar no Instituto Potala <span aria-hidden="true">↗</span></a>
-      </div>
-    </section>
-    <footer class="journey-footer">
-      <p>Instituto Cultural Potala · Indaiatuba, SP</p>
-      <a href="transcender.html">Voltar à Chegada</a>
-    </footer>
+    ${renderCommunityInvitation()}
+    ${renderLivingFooter(regions)}
   `;
 
   return {

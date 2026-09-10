@@ -5,7 +5,7 @@ import test from "node:test";
 import { NOVIDADES_PADRAO } from "../../outputs/js/home/journey-data.js";
 import { mountJourney, renderRegion } from "../../outputs/js/home/home-scenes.js";
 
-test("a Home abre com as quatro notícias mais recentes do Caderno", () => {
+test("a composição inicial inclui quatro notícias do Caderno", () => {
   assert.deepEqual(NOVIDADES_PADRAO.map(({ title }) => title), [
     "Oráculo de hoje: a carta da Ponte",
     "Novos profissionais chegaram ao Instituto",
@@ -30,7 +30,7 @@ test("as notícias usam as capas fotográficas e abrem o artigo completo", () =>
   assert.match(card, /class="region-news-meta"/);
 });
 
-test("os grupos recebem uma entrada editorial curta, não um título solto", () => {
+test("a capa recebe uma entrada editorial contínua", () => {
   const target = { innerHTML:"", querySelectorAll:() => [], querySelector:() => null };
   mountJourney(target, {
     regions:[
@@ -41,10 +41,10 @@ test("os grupos recebem uma entrada editorial curta, não um título solto", () 
     ],
     discoveries:[],
   });
-  assert.match(target.innerHTML, /Caderno de Travessia/);
-  assert.match(target.innerHTML, /Acontece no Potala/);
+
+
   assert.match(target.innerHTML, /Ecossistema Potala/);
-  assert.match(target.innerHTML, /Caminhos para conhecer/);
+  assert.match(target.innerHTML, /Encontros, ideias e caminhos/);
 });
 
 test("no celular o cabeçalho e os dois cards ocupam três linhas distintas", async () => {

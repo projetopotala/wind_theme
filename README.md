@@ -67,6 +67,18 @@ O navegador recebe apenas a chave `sb_publishable_...`, que é pública por defi
 - Antes de qualquer remoção futura de tabela, exporte `home_blocks`. Esta migração não contém `drop table`, `truncate` nem outra contração destrutiva.
 - Falha de escrita no painel é exibida como erro e não altera a lista em memória nem anuncia publicação.
 
+## Composição editorial e Rodapé Vivo
+
+A Home respeita a ordem publicada no painel, intercalando notícias e seções conforme a escolha do editor. O marcador de novidade não muda a posição. Blocos removidos ou ocultos não são reinseridos pelo código quando o banco responde; o conteúdo empacotado só é usado na recuperação de falhas de leitura.
+
+Na aba Aparência do editor, os formatos Editorial, Imagem em destaque, Retrato e Reflexão compartilham a mesma navegação. Os caminhos relacionados podem ser selecionados pelo nome; no modo automático, temas em comum completam as sugestões. No modo manual, uma seleção vazia suprime os relacionados.
+
+Antes de usar a escrita editorial, aplique `supabase/migrations/202609100001_home_editorial_composition.sql` depois das migrações anteriores. Ela adiciona `editorial_variant`, `related_mode` e `related_content` às tabelas de conteúdo e rascunhos, cria `replace_home_blocks_editorial` e atualiza a publicação de rascunhos. Preserva as políticas de acesso e o conteúdo existente. A nova RPC impede que um banco antigo descarte silenciosamente os campos. Nesta entrega, a aplicação remota não foi possível: o conector recusou o acesso por permissão.
+
+O Rodapé Vivo oferece retorno às seções, contato por e-mail e WhatsApp, poemas/reflexões/perguntas para baixar como texto e a plantinha. O progresso da planta fica apenas no `localStorage` deste navegador (`potala.plantinha.v1`), com um cuidado por dia local; não é enviado ao Instituto e pode desaparecer ao limpar os dados do navegador. Sem armazenamento, a experiência continua durante a visita. Os links sobre Mural de Luz e novidades abrem uma conversa com a Recepção, sem registrar nomes ou inscrições automaticamente.
+
+Validação específica: `node --test tests/potala/editorial-composition.test.mjs`. A migração também precisa ser verificada no projeto Supabase quando o acesso estiver disponível.
+
 ## Sobra: starter vinext
 
 `app/`, `worker/`, `db/`, `examples/` e `public/` são o starter [vinext](https://github.com/cloudflare/vinext) que originou o repositório. Não é o portal. `npm run dev` e `npm run build` falam com esse app, não com `outputs/`.

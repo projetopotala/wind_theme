@@ -291,12 +291,11 @@ test("o selo some quando o bloco abre", () => {
   assert.match(css, /\.journey-region\.is-expanded \.region-selo \{[^}]*display: none/);
 });
 
-test("a novidade convida a LER, e nao a explorar o proprio titulo", () => {
-  /* "Explorar novos profissionais chegaram ao Instituto" e o que a formula
-     "Explorar " + titulo produz com uma manchete no lugar de um nome de secao. */
+test("a novidade abre ao lado da estrada, sem o botão de sair da jornada", () => {
   const marcacao = renderRegion(NOVIDADE, 0, null, new Map());
-  assert.match(marcacao, /Ler a notícia completa/);
+  assert.ok(!/Ler a notícia completa/.test(marcacao));
   assert.ok(!/Explorar novos profissionais/i.test(marcacao));
+  assert.doesNotMatch(marcacao, /class="region-nota"/);
 });
 
 /* ------------------------------------------------------------------
@@ -323,7 +322,7 @@ test("a Home tem dois controles de canto, e nenhuma barra lateral", () => {
      de quem mantem o site. Nenhum dos dois e substituivel pela rolagem, que e
      o que justificou os dois terem ficado. */
   assert.match(menu, /class="journey-canto journey-lupa"[\s\S]*?data-journey-abrir-busca/);
-  assert.match(menu, /class="journey-canto journey-lapis" href="admin\.html"/);
+  assert.match(menu, /class="journey-canto journey-lapis" href="\/admin"/);
 
   /* E a barra nao voltou por descuido: ela era a maior peca da Home, e o custo
      de re-introduzi-la sem querer e uma coluna de tela a menos para a paisagem. */
@@ -492,78 +491,20 @@ test("o rotulo do grupo gruda no comeco dos cartoes dele", () => {
   assert.match(css, /\.journey-trecho strong \{[\s\S]*?Georgia/);
 });
 
-test("cada grupo recebe UM rotulo, no comeco dele", () => {
-  const regioes = [
+test("a composição usa um único título editorial mesmo ao intercalar novidades", () => {
+  const regions = [
     { id: "n1", tags: ["recente"], title: "N1", href: "#" },
-    { id: "n2", tags: ["recente"], title: "N2", href: "#" },
     { id: "s1", tags: [], title: "S1", href: "#" },
+    { id: "n2", tags: ["recente"], title: "N2", href: "#" },
     { id: "s2", tags: [], title: "S2", href: "#" },
   ];
-  const alvo = { innerHTML: "", querySelectorAll: () => [], querySelector: () => null };
-  mountJourney(alvo, { regions: regioes, discoveries: [] });
-
-  const rotulos = [...alvo.innerHTML.matchAll(/<header class="journey-trecho" data-grupo="([^"]+)">[\s\S]*?<strong>([^<]*)<\/strong>/g)];
-  assert.deepEqual(rotulos.map((m) => [m[1], m[2]]), [["novidade", "Acontece no Potala"], ["fixo", "Caminhos para conhecer"]]);
-  /* E vem DENTRO do palco, antes dos cartoes que ele nomeia. */
-  const palco = alvo.innerHTML.indexOf('class="region-stage"');
-  assert.ok(alvo.innerHTML.indexOf('data-grupo="novidade"') > palco, "o rotulo caiu fora do palco");
-  /* `journey-region` sozinho casa com o container `journey-regions`, que vem
-     bem antes — o token precisa ser o do bloco. */
-  assert.ok(alvo.innerHTML.indexOf('data-grupo="novidade"') < alvo.innerHTML.indexOf('class="journey-region '));
+  const root = { innerHTML: "", querySelectorAll: () => [], querySelector: () => null };
+  mountJourney(root, { regions });
+  assert.equal((root.innerHTML.match(/data-grupo="editorial"/g) || []).length, 1);
+  assert.doesNotMatch(root.innerHTML, /data-fronteira="true"/);
+  const ids = [...root.innerHTML.matchAll(/data-region-id="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(ids, ["n1", "s1", "n2", "s2"]);
 });
-
-test("sem novidade nenhuma, so o rotulo das secoes aparece", () => {
-  const alvo = { innerHTML: "", querySelectorAll: () => [], querySelector: () => null };
-  mountJourney(alvo, {
-    regions: [{ id: "s1", tags: [], title: "S1", href: "#" }, { id: "s2", tags: [], title: "S2", href: "#" }],
-    discoveries: [],
-  });
-  const rotulos = [...alvo.innerHTML.matchAll(/data-grupo="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(rotulos, ["fixo"]);
-});
-
-test("a fronteira entre novidades e secoes e marcada no caminho", () => {
-  /*
-   * O rotulo la no alto troca de palavra, mas ele esta no canto e a troca e
-   * discreta de proposito — quem estiver olhando os cartoes nao ve. Sem nada no
-   * caminho, a jornada passa de noticia para secao sem que nada aconteca.
-   *
-   * A marca vai no SILENCIO porque o silencio ja e a passagem: o trecho de
-   * estrada sem conteudo entre dois encontros. Marcar um cartao poria a
-   * fronteira dentro de um dos lados; marcar o vao a poe entre os dois.
-   */
-  const regioes = [
-    { id: "n1", tags: ["recente"], title: "N1", href: "#" },
-    { id: "n2", tags: ["recente"], title: "N2", href: "#" },
-    { id: "s1", tags: [], title: "S1", href: "#" },
-    { id: "s2", tags: [], title: "S2", href: "#" },
-  ];
-  const alvo = { innerHTML: "", querySelectorAll: () => [], querySelector: () => null };
-  mountJourney(alvo, { regions: regioes, discoveries: [] });
-
-  const silencios = [...alvo.innerHTML.matchAll(/<div class="journey-silence"([^>]*)>/g)];
-  const comFronteira = silencios.filter(([, atributos]) => atributos.includes('data-fronteira="true"'));
-  assert.equal(comFronteira.length, 1, "a fronteira precisa ser uma so");
-
-  /*
-   * E o silencio dela e MAIS CURTO que o dos outros trechos.
-   *
-   * Um silencio comum e pausa: estrada sem informacao. O da fronteira nao esta
-   * vazio — tem a linha, o losango e o rotulo do grupo novo logo abaixo. Com a
-   * duracao cheia, as tres coisas ficavam espalhadas por quase meia tela cada
-   * uma, e o que devia ser uma passagem virava um intervalo.
-   */
-  const altura = (linha) => Number(/--silence-height:(\d+)svh/.exec(linha)?.[1]);
-  const marcado = altura(comFronteira[0][0]);
-  const comum = altura(silencios.find(([, a]) => !a.includes("fronteira"))?.[0] || "");
-  if (comum) assert.ok(marcado < comum, `a fronteira (${marcado}) devia ser mais curta que ${comum}`);
-
-  /* E ela e sutil: uma linha que apaga nas pontas, nao um corte na tela. */
-  assert.match(css, /\.journey-silence\[data-fronteira="true"\]::before \{[\s\S]*?linear-gradient\(to right, transparent/);
-});
-
-
-
 
 /* ------------------------------------------------------------------
  * Abrir so com o bloco centralizado

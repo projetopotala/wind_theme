@@ -1,0 +1,70 @@
+.portal-discovery, .home-community { position: relative; z-index: 3; width: min(1140px, calc(100% - 64px)); margin: 0 auto 100px; color: #f4ead8; line-height: 1.7; }
+.portal-discovery { padding: clamp(28px, 4vw, 58px); border: 1px solid #c2a66b50; border-radius: 26px; background: linear-gradient(145deg, #383526fa, #232b25fa); box-shadow: 0 32px 80px #18221b30; overflow: hidden; }
+.portal-discovery::before { content: ""; position: absolute; pointer-events: none; width: 500px; height: 500px; right: -250px; top: -330px; border-radius: 50%; background: radial-gradient(circle, #caa75c36, transparent 68%); }
+.discovery-heading { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: end; margin-bottom: 42px; }
+.discovery-heading h2, .home-community h2 { font: 400 clamp(32px, 4.2vw, 54px)/1.12 Georgia, serif; letter-spacing: -.025em; margin: 12px 0; text-wrap: balance; }
+.discovery-heading > p { color: #d3cbbb; font-size: 15px; margin: 0 0 12px; max-width: 46ch; }
+.discovery-eyebrow { color: #d8bd83; letter-spacing: .15em; text-transform: uppercase; font-size: 10px; font-weight: 600; }
+.discovery-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid #d9caa533; gap: 12px; margin: 0 0 32px; }
+.discovery-tabs button { cursor: pointer; font: inherit; font-size: 13px; color: #c9c4b4; background: transparent; border: 0; border-bottom: 2px solid transparent; min-height: 64px; text-align: left; padding: 10px 6px 16px; }
+.discovery-tabs button > span { display: block; font-size: 10px; letter-spacing: .12em; color: #b9a477; }
+.discovery-tabs button[aria-selected="true"] { color: #fff2d5; border-bottom-color: #dac189; }
+.discovery-tabs button:hover { color: white; }
+.discovery-panel { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 40px; align-items: stretch; }
+.portal-discovery [hidden] { display: none !important; }
+.discovery-figure { position: relative; margin: 0; border-radius: 16px; overflow: hidden; min-height: 370px; background: #465043; isolation: isolate; }
+.discovery-figure img { position: absolute; width: 100%; height: 100%; object-fit: cover; }
+.discovery-figure::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, #162219d9); z-index: 1; pointer-events: none; }
+.discovery-figure figcaption { position: absolute; z-index: 2; bottom: 24px; left: 24px; right: 24px; font: italic 22px/1.3 Georgia, serif; color: #fff4df; }
+.discovery-copy h3 { font: 400 clamp(25px, 2.8vw, 36px)/1.2 Georgia, serif; margin: 12px 0 18px; text-wrap: balance; }
+.discovery-copy > p:not(.discovery-eyebrow) { font-size: 14px; color: #d4cebf; }
+.discovery-links { list-style: none; padding: 0; margin: 24px 0 0; }
+.discovery-links li { border-top: 1px solid #d9caa526; }
+.discovery-links a { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #f6eddc; text-decoration: none; padding: 14px 0; }
+.discovery-links strong { display: block; font-size: 14px; font-weight: 500; }
+.discovery-links small { display: block; font-size: 12px; color: #c9c4b6; }
+.discovery-links a > span:last-child { color: #d9c28e; font-size: 20px; }
+.discovery-footnote { border-top: 1px solid #d9caa526; margin: 28px 0 0; padding-top: 20px; font: italic 14px/1.5 Georgia, serif; color: #d8ceb8; }
+.discovery-footnote > span { margin-right: 12px; color: #d8bd83; }
+.portal-discovery :focus-visible, .home-community :focus-visible { outline: 2px solid #e8c986; outline-offset: 5px; }
+.home-narrative-bridge { position: relative; z-index: 3; width: min(460px, calc(100% - 48px)); padding: 12px 22px; margin: 0 auto; text-align: center; color: #f5ebd4; background: #2c332ad9; border-radius: 12px; line-height: 1.5; }
+.journey-silence:has(.home-narrative-bridge) { display: grid; place-items: center; }
+.home-narrative-bridge > span { color: #dec68e; }
+.home-narrative-bridge p { font: 400 clamp(18px, 2.2vw, 25px)/1.25 Georgia, serif; margin: 6px 0 10px; text-wrap: balance; }
+.home-narrative-bridge small { font-size: 12px; }
+.home-community { padding: clamp(28px, 5vw, 64px); background: #303629f5; border-radius: 24px; border: 1px solid #baa87840; margin-top: 80px; }
+.home-community header { max-width: 720px; margin-bottom: 44px; }
+.home-community header > p:last-child { color: #d3cbbb; max-width: 65ch; font-size: 15px; }
+.community-paths { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.community-paths article { border-top: 1px solid #bca47766; padding-top: 24px; }
+.community-symbol { color: #d1b982; font: italic 26px Georgia, serif; }
+.community-paths h3 { font: 400 23px/1.25 Georgia, serif; }
+.community-paths p { color: #d3cbbb; font-size: 14px; }
+.community-paths a { display: inline-block; font-size: 13px; color: #edcf96; text-decoration-thickness: 1px; text-underline-offset: 6px; padding: 8px 0; }
+.prologue-copy .home-welcome-context { font: 400 clamp(14px, 1.4vw, 18px)/1.7 Arial, sans-serif; color: inherit; max-width: 44ch; margin: 22px auto 0; letter-spacing: 0; text-transform: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .home-revealed { animation: home-emerge 850ms cubic-bezier(.22, .7, .2, 1) both; }
+  .discovery-panel:not([hidden]) .discovery-copy { animation: home-emerge 500ms ease-out both; }
+  .discovery-panel:not([hidden]) .discovery-figure img { animation: discovery-image 900ms ease-out both; }
+  .portal-discovery::before { animation: discovery-light 16s ease-in-out infinite alternate; }
+  .discovery-links a { transition: transform 180ms ease, color 180ms ease; }
+  .discovery-links a:hover { transform: translateX(5px); color: #f6d895; }
+  @keyframes home-emerge { from { opacity: .15; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes discovery-image { from { opacity: .3; transform: scale(1.055); } to { opacity: 1; transform: scale(1); } }
+  @keyframes discovery-light { to { transform: translate(-120px, 100px); opacity: .45; } }
+}
+@media (max-width: 900px) {
+  .discovery-heading { grid-template-columns: 1fr; gap: 12px; }
+  .discovery-panel { gap: 24px; }
+  .community-paths { gap: 20px; }
+}
+@media (max-width: 640px) {
+  .portal-discovery, .home-community { width: calc(100% - 28px); border-radius: 18px; padding: 24px 20px; margin-bottom: 56px; }
+  .discovery-heading { margin-bottom: 22px; }
+  .discovery-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+  .discovery-panel, .community-paths { grid-template-columns: 1fr; }
+  .discovery-figure { min-height: 210px; }
+  .discovery-panel { min-height: 760px; align-content: start; }
+  .community-paths { gap: 28px; }
+  .home-narrative-bridge { padding: 10px 16px; }
+}

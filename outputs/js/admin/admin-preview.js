@@ -186,11 +186,54 @@ export function createAdminPreview({ root, onPublish } = {}) {
     if (frame) frame.src = enderecoInicial;
   }
 
+  const palco = root.querySelector("[data-admin-stage]");
+  const efeitos = { caption: true, offset: true };
+
+  function origemDaPrevia() {
+    return globalThis.location?.origin && globalThis.location.origin !== "null"
+      ? globalThis.location.origin
+      : "*";
+  }
+
+  function enviarPalco(extra = {}) {
+    frame?.contentWindow?.postMessage({
+      type: "potala:admin-stage",
+      effects: efeitos,
+      ...extra,
+    }, origemDaPrevia());
+  }
+
+  function onRoda(evento) {
+    if (!frame?.contentWindow || !caixa?.contains(evento.target)) return;
+    evento.preventDefault();
+    frame.contentWindow.scrollBy(0, evento.deltaY);
+  }
+
+  function onPalco(evento) {
+    const efeito = evento.target?.closest?.("[data-stage-effect]");
+    if (efeito) {
+      efeitos[efeito.dataset.stageEffect] = efeito.checked;
+      enviarPalco();
+      return;
+    }
+    const botao = evento.target?.closest?.("[data-stage]");
+    if (!botao || !frame?.contentWindow) return;
+    if (botao.dataset.stage === "up") frame.contentWindow.scrollBy({ top: -420, behavior: "smooth" });
+    if (botao.dataset.stage === "down") frame.contentWindow.scrollBy({ top: 420, behavior: "smooth" });
+    if (botao.dataset.stage === "follow") {
+      onPublish?.({ scroll: true });
+      enviarPalco({ scroll: true });
+    }
+  }
+
   frame?.addEventListener?.("error", onErro);
   frame?.addEventListener?.("load", onCarregou);
   dispositivos?.addEventListener?.("click", onDevice);
   zoomGrupo?.addEventListener?.("click", onZoom);
   recarregar?.addEventListener?.("click", onRecarregar);
+  palco?.addEventListener?.("click", onPalco);
+  palco?.addEventListener?.("change", onPalco);
+  caixa?.addEventListener?.("wheel", onRoda, { passive: false });
 
   /*
    * A ESCALA SAI DO TAMANHO DA CAIXA, ENTÃO PRECISA SER REFEITA QUANDO ELE MUDA.
@@ -229,6 +272,9 @@ export function createAdminPreview({ root, onPublish } = {}) {
       dispositivos?.removeEventListener?.("click", onDevice);
       zoomGrupo?.removeEventListener?.("click", onZoom);
       recarregar?.removeEventListener?.("click", onRecarregar);
+      palco?.removeEventListener?.("click", onPalco);
+      palco?.removeEventListener?.("change", onPalco);
+      caixa?.removeEventListener?.("wheel", onRoda);
       observador?.disconnect();
     },
   };

@@ -49,11 +49,15 @@ export function normalizeHomeBlock(input = {}, index = 0) {
     titleScale: input.titleScale === "compact" ? "compact" : "normal",
     allowPanel: input.allowPanel !== false,
     metaDescription: cleanString(input.metaDescription),
+    editorialVariant: ["feature", "portrait", "reflection"].includes(input.editorialVariant) ? input.editorialVariant : "standard",
+    relatedMode: input.relatedMode === "manual" ? "manual" : "automatic",
     /* Os caminhos relacionados do bloco, por id. O painel ainda não os edita e
        o banco ainda não tem coluna para eles; o que existe hoje vem dos dados
        da jornada, e um bloco sem eles simplesmente não mostra a lista. */
-    relatedContent: Array.isArray(input.relatedContent)
-      ? input.relatedContent.map(cleanString).filter(Boolean)
+    relatedContent: [...new Set((Array.isArray(input.relatedContent) ? input.relatedContent : cleanString(input.relatedContent).split(","))
+      .map(cleanString).filter((value) => /^[a-z0-9-]+$/.test(value)))].slice(0, 12),
+    notes: Array.isArray(input.notes)
+      ? input.notes.map(cleanString).filter(Boolean).slice(0, 4)
       : [],
     /*
      * O desenho da capa do cartão, quando o bloco é uma novidade do Blog.

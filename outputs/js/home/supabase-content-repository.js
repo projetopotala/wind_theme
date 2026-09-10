@@ -35,6 +35,9 @@ export function homeBlockFromDatabase(row = {}, index = 0) {
     titleScale: row.title_scale,
     allowPanel: row.allow_panel,
     metaDescription: row.meta_description,
+    editorialVariant: row.editorial_variant,
+    relatedMode: row.related_mode,
+    relatedContent: row.related_content,
   }, index);
 }
 
@@ -58,6 +61,9 @@ export function homeBlockToDatabase(block = {}, index = 0) {
     title_scale: normalized.titleScale,
     allow_panel: normalized.allowPanel,
     meta_description: normalized.metaDescription,
+    editorial_variant: normalized.editorialVariant,
+    related_mode: normalized.relatedMode,
+    related_content: normalized.relatedContent,
     updated_at: normalized.updatedAt || new Date().toISOString(),
   };
 }
@@ -87,7 +93,7 @@ export function createSupabaseContentRepository({ client, defaults = [] } = {}) 
     const payload = normalizeHomeBlocks(blocks)
       .map(homeBlockToDatabase)
       .filter(Boolean);
-    const { data, error } = await client.rpc("replace_home_blocks", { payload });
+    const { data, error } = await client.rpc("replace_home_blocks_editorial", { payload });
     throwIfError("replaceAll", error);
     return rowsToBlocks(data || []);
   }

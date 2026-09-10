@@ -125,11 +125,11 @@ void main() {
 
   float eixo = abs(vSide) * 7.0;
   float distance = eixo / estreita;
-  float core = 1.0 - smoothstep(0.55, 0.93, distance);
-  float glow = exp(-distance * distance / 5.0) * 0.19;
+  float core = 1.0 - smoothstep(0.48, 0.9, distance);
+  float glow = exp(-distance * distance / 4.2) * 0.32;
   // Uma segunda queda, bem mais larga e fraca, separa luz de linha pintada.
   // Ela varia ao longo do arco com a rolagem, sem criar animação contínua.
-  float aura = exp(-eixo * eixo / 15.0) * 0.11;
+  float aura = exp(-eixo * eixo / 12.0) * 0.18;
   float corrente = 0.9 + 0.1 * cos(vArc * 34.0 - uReveal * 18.0);
 
   /*
@@ -251,8 +251,8 @@ export function pathVisualProfile({ width = 1440, height = 900 } = {}) {
   const safeHeight = Math.max(480, Number(height) || 900);
   const mobile = safeWidth <= 720;
   const ribbonPixels = mobile
-    ? clamp(safeWidth * 0.085, 28, 36)
-    : clamp(safeWidth * 0.037, 46, 56);
+    ? clamp(safeWidth * 0.09, 30, 38)
+    : clamp(safeWidth * 0.042, 52, 60);
   const offsetPixels = mobile ? -clamp(safeWidth * 0.26, 82, 112) : 0;
   const visibleHeight = 2 * CAMERA_DISTANCE * Math.tan((CAMERA_FOV * Math.PI) / 360);
 
@@ -358,12 +358,12 @@ export function createHomePath(canvas, {
       // O halo, e é ele que dá o dourado. Chapada em 0xf3e2c2 a fita inteira
       // lia clara demais; em 0xe6bd78, que veio antes, lia como fio de metal.
       // Aqui só a queda lateral carrega a cor, e o coração continua claro.
-      uGold: { value: new THREE.Color(0xd6a355) },
+      uGold: { value: new THREE.Color(0xf0d7a0) },
       // O coração. Claro, mas não branco: quem carrega a impressão de cor é
       // ele, porque é o único trecho com alfa cheio — medido, o halo fica em
       // 41 de alfa a 4px do eixo e some em 12px. Um coração branco com halo
       // dourado continuava lendo como fio branco.
-      uCore: { value: new THREE.Color(0xf0d49c) },
+      uCore: { value: new THREE.Color(0xfff6df) },
     },
     vertexShader: RIBBON_VERTEX,
     fragmentShader: RIBBON_FRAGMENT,

@@ -77,6 +77,10 @@ export function motivoDaFalha(erro) {
   const codigo = String(erro?.code || "");
   const texto = String(erro?.message || "");
 
+  if (codigo === "PGRST202" || codigo === "PGRST204" || /editorial_variant|related_content|replace_home_blocks_editorial/i.test(texto)) {
+    return "O banco ainda precisa da atualização da composição editorial. Seu conteúdo não foi publicado. Aplique a migração 202609100001_home_editorial_composition.";
+  }
+
   /* 42P01 undefined_table, e o PGRST205 do PostgREST quando a tabela não está
      no cache de schema: na prática, a mesma migração faltando. */
   if (codigo === "42P01" || codigo === "PGRST205" || /home_block_drafts.*does not exist/i.test(texto)) {

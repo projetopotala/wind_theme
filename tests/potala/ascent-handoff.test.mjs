@@ -7,7 +7,7 @@ test("a Home termina em conteúdo legível sem uma subida automática", () => {
   const root = { innerHTML: "", querySelectorAll() { return []; } };
   mountJourney(root, { regions: [], discoveries: [] });
 
-  assert.match(root.innerHTML, /Há sempre outro caminho/);
+  assert.match(root.innerHTML, /Obrigado por caminhar conosco/);
   assert.doesNotMatch(root.innerHTML, /journey-ascent|palacio\.html/);
 });
 

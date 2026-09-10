@@ -80,6 +80,7 @@ export function createAdminEditor({ root, onChange, onSaveDraft } = {}) {
       if (!controle.name) continue;
       draft[controle.name] = controle.type === "checkbox" ? controle.checked : controle.value;
     }
+    draft.relatedContent = [...(form?.querySelectorAll?.("[data-related-choice]:checked") || [])].map((choice) => choice.value);
     return draft;
   }
 

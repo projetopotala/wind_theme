@@ -8,8 +8,11 @@ import {
 } from "./admin-preview.js";
 import { invitationsFor, nextInvitationIndex } from "./invitations.js";
 import { createLocalContentRepository } from "./content-repository.js";
-import { DEFAULT_HOME_BLOCKS, JOURNEY_DISCOVERIES, NOVIDADES_PADRAO } from "./journey-data.js";
-import { comNovidadesDoCodigo, ehNovidade, novidadesPrimeiro } from "./home-novidades.js";
+import { DEFAULT_HOME_BLOCKS, JOURNEY_DISCOVERIES } from "./journey-data.js";
+import { ehNovidade } from "./home-novidades.js";
+import { composeEditorial, relatedFor } from "./editorial-composition.js";
+import { mountLivingFooter } from "./living-footer.js";
+import { mountPortalDiscovery } from "./portal-discovery.js";
 import { procurarBloco } from "./home-busca.js";
 import { criarPainelDeBusca } from "./busca-painel.js";
 import { createHomePath } from "./home-path-three.js";
@@ -190,7 +193,8 @@ export function comRelacoes(blocks = []) {
     if (!padrao) return bloco;
     return {
       ...bloco,
-      relatedContent: bloco.relatedContent?.length ? bloco.relatedContent : padrao.relatedContent,
+      relatedContent: bloco.relatedMode === "manual" ? bloco.relatedContent : (bloco.relatedContent?.length ? bloco.relatedContent : padrao.relatedContent),
+      notes: bloco.notes?.length ? bloco.notes : padrao.notes,
     };
   });
 }
@@ -204,32 +208,17 @@ export function createHomeController({
   if (!root || !canvas) throw new TypeError("root e canvas são obrigatórios");
 
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  /*
-   * As descobertas precisam CHEGAR aqui.
-   *
-   * A lista estava fixa em vazia, e com ela o mapa de descobertas nascia vazio:
-   * os caminhos laterais e a lista de "caminhos a partir daqui" nunca tinham de
-   * onde tirar título, descrição ou endereço, e simplesmente não apareciam — sem
-   * erro, sem espaço vazio, sem nada que indicasse a ausência.
-   */
-  /*
-   * AS NOVIDADES SOBEM AO TOPO, e a reordenação acontece AQUI.
-   *
-   * Não no banco e não no painel: lá a ordem é a que o editor arrastou, e ela
-   * precisa continuar sendo dele. O que a Home faz é uma leitura — mostrar
-   * primeiro o que mudou — e uma leitura não deve reescrever a fonte.
-   *
-   * Fazer isso na montagem também é o que permite marcar um bloco pelo painel e
-   * vê-lo subir sem tocar em código: `novidadesPrimeiro` só olha as tags.
-   *
-   * `path` recebe a MESMA lista, e não a original. A estrada é desenhada a
-   * partir das posições dos blocos; com duas ordens diferentes, os cartões
-   * apareceriam num lugar e a curva da estrada em outro.
-   */
-  /* As novidades do código entram ANTES de ordenar: elas não estão no banco, e
-     sem isto a Home e a prévia mostrariam só as onze linhas de lá. */
-  const emOrdem = novidadesPrimeiro(comNovidadesDoCodigo(blocks, NOVIDADES_PADRAO));
-  const mounted = mountJourney(root, { regions: comRelacoes(emOrdem), discoveries: JOURNEY_DISCOVERIES });
+  // A capa e o caminho compartilham a ordem publicada pelo editor.
+  const emOrdem = composeEditorial(blocks);
+  const linked = comRelacoes(emOrdem).map((block) => ({
+    ...block, relatedContent: relatedFor(block, emOrdem, JOURNEY_DISCOVERIES),
+  }));
+  const mounted = mountJourney(root, { regions: linked, discoveries: JOURNEY_DISCOVERIES });
+  const removeLivingFooter = mountLivingFooter(root);
+  const removePortalDiscovery = mountPortalDiscovery(root, {
+    reducedMotion,
+    onLayoutChange: () => { measureMenuPairs(); requestUpdate(); },
+  });
   const path = pathFactory(canvas, { blocks: emOrdem, reducedMotion });
   /**
    * Quanto o vão do trajeto saiu do centro da tela, em pixels.
@@ -389,9 +378,6 @@ export function createHomeController({
    */
   /* A posição do bloco na jornada inteira, para o contador "05 / 15" continuar
      contando blocos e não linhas da roleta — que agora são menos. */
-  function indiceDoBloco(id) {
-    return emOrdem.findIndex((bloco) => bloco.id === id);
-  }
 
   function rolarRoletaAte(linha) {
     if (!menuViewport || !linha) return;
@@ -478,6 +464,7 @@ export function createHomeController({
 
   let menuPairBounds = [];
   let pathJourneyStart = 0;
+  let pathJourneyEnd = 0;
 
   function measureMenuPairs() {
     menuPairBounds = mounted.pairs.map((pair) => {
@@ -493,6 +480,8 @@ export function createHomeController({
       };
     });
     pathJourneyStart = menuPairBounds[0]?.top ?? 0;
+    const lastPair = menuPairBounds.at(-1);
+    pathJourneyEnd = lastPair ? lastPair.top + lastPair.height : 0;
   }
 
   function updateCurrentMenuItem() {
@@ -543,8 +532,23 @@ export function createHomeController({
     mounted.menuItems.forEach((item, index) => {
       item.setAttribute("aria-current", index === activeIndex ? "true" : "false");
     });
+    const capitulos = emOrdem.filter((bloco) => !ehNovidade(bloco));
+    const capituloIndex = capitulos.findIndex((bloco) => bloco.id === activeId);
     const counter = root.querySelector("[data-journey-current]");
-    if (counter) counter.textContent = String(indiceDoBloco(activeId) + 1).padStart(2, "0");
+    const total = root.querySelector("[data-journey-total]");
+    const rotulo = root.querySelector("[data-journey-progress-label]");
+    if (counter) {
+      counter.textContent = capituloIndex >= 0
+        ? String(capituloIndex + 1).padStart(2, "0")
+        : "·";
+    }
+    if (total) total.textContent = String(capitulos.length).padStart(2, "0");
+    root.querySelectorAll("[data-progress-target]").forEach((item) => {
+      item.setAttribute("aria-current", item.dataset.progressTarget === activeId ? "true" : "false");
+    });
+    if (rotulo && blocoAtivo && !emNovidades) {
+      rotulo.textContent = `${String(capituloIndex + 1).padStart(2, "0")} — ${blocoAtivo.title}`;
+    }
 
     /* Nas novidades a roleta para na linha "Recentes"; nas seções, na linha da
        seção. Sem isto ela ficava presa onde estava quando a jornada abriu. */
@@ -591,6 +595,12 @@ export function createHomeController({
      tenta para dispensá-la, depois do X. */
   const onAbrirBusca = () => painelDeBusca.alternar();
   abrirBusca?.addEventListener("click", onAbrirBusca);
+  const onProgresso = (event) => {
+    const alvo = event.target.closest?.("[data-progress-target]");
+    if (!alvo) return;
+    goToSection(alvo.dataset.progressTarget);
+  };
+  root.querySelector(".journey-progress")?.addEventListener("click", onProgresso);
 
   /*
    * O ÍNDICE DAS SEÇÕES chega na PRIMEIRA busca, e não no carregamento.
@@ -743,10 +753,10 @@ export function createHomeController({
     const pathState = pathProgressAfterPrologue({
       scrollTop: scrollY,
       journeyStart: pathJourneyStart,
-      scrollHeight: document.documentElement.scrollHeight,
+      scrollHeight: pathJourneyEnd || document.documentElement.scrollHeight,
       viewportHeight: innerHeight,
     });
-    path.setActive?.(pathState.active);
+    path.setActive?.(pathState.active && scrollY < pathJourneyEnd);
     path.setProgress(pathState.progress);
     /* O fundo anda pelo MESMO número que move o trajeto — daí os dois nunca
        saírem de sincronia. */
@@ -809,10 +819,13 @@ export function createHomeController({
       invite?.removeEventListener("blur", resumeInvitation);
       invite?.removeEventListener("click", onInviteClick);
       abrirBusca?.removeEventListener("click", onAbrirBusca);
+      root.querySelector(".journey-progress")?.removeEventListener("click", onProgresso);
       formaDeBusca?.removeEventListener("submit", onBuscar);
       painelDeBusca.destroy();
       expansion.destroy();
       landscapeVideo.destroy();
+      removeLivingFooter();
+      removePortalDiscovery();
       path.destroy();
       removeSound();
       window.removeEventListener("scroll", requestUpdate);

@@ -230,7 +230,33 @@ html.is-crossing .journey-entry-veil {
  * Só na prévia: no navegador de verdade a barra é o que diz que a página
  * continua abaixo, e escondê-la esconderia isso de quem visita.
  */
-.is-admin-preview { scrollbar-width: none; }
+.is-admin-preview { scrollbar-width: thin; }
+.is-admin-preview .region-content.is-preview-focus,
+.is-admin-preview .journey-region.is-preview-focus .region-content {
+  outline: 2px solid #f0d7a0;
+  outline-offset: 5px;
+  box-shadow: 0 0 0 8px rgba(240, 215, 160, .22);
+}
+.is-admin-preview [data-preview-field] {
+  cursor: text;
+  pointer-events: auto;
+}
+.is-admin-preview .journey-region[data-side="left"] .region-content {
+  grid-column: 1;
+  justify-self: end;
+  max-width: 100%;
+}
+.is-admin-preview .journey-region[data-side="right"] .region-content {
+  grid-column: 3;
+  justify-self: start;
+  max-width: 100%;
+}
+.is-admin-preview .region-content { cursor: grab; }
+.is-admin-preview .region-content.is-preview-dragging { cursor: grabbing; z-index: 6; }
+.is-admin-preview.is-hide-caption .journey-entre { display: none; }
+.is-admin-preview.is-flat-cards .journey-region:not(.is-expanded) .region-content {
+  transform: none;
+}
 .is-admin-preview::-webkit-scrollbar { display: none; }
 
 .journey-scroll-cue span {
@@ -397,6 +423,7 @@ html.is-crossing .journey-entry-veil {
 
 .region-content {
   position: relative;
+  z-index: 4;
   width: min(35vw, 500px);
   max-height: min(78svh, 720px);
   overflow: auto;
@@ -433,20 +460,33 @@ html.is-crossing .journey-entry-veil {
 }
 
 .journey-pair.is-present .region-content {
-  /*
-   * O bloco fica CHEIO quase o tempo todo; a presença só desenha as pontas.
-   *
-   * Antes a opacidade seguia a presença linearmente, então um bloco a meio
-   * caminho do centro ficava a meia opacidade — e é justamente aí que se lê.
-   * A paisagem atravessava o painel enquanto o texto estava sendo lido, que é
-   * o oposto do que um painel de leitura serve para fazer.
-   *
-   * O fator 2.2 satura a curva: a opacidade chega a 1 com ~45% de presença e
-   * fica lá. O aparecer e o desaparecer continuam existindo — nas bordas da
-   * tela, onde são efeito — mas somem do meio, onde eram estorvo.
-   */
   opacity: clamp(.32, calc(var(--region-presence, 1) * 2.2), 1);
-  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.journey-region:not(.is-expanded) .region-content {
+  overflow: hidden;
+  border-color: rgba(231, 202, 143, .28);
+  background: rgba(28, 20, 14, .78);
+}
+
+.journey-pair.is-present .journey-region[data-side="left"]:not(.is-expanded) .region-content {
+  transform: translate3d(0, 0, 0);
+}
+
+.journey-pair.is-present .journey-region[data-side="right"]:not(.is-expanded) .region-content {
+  transform: translate3d(0, 6vh, 0);
+}
+
+.journey-region[data-card-kind="novidade"]:not(.is-expanded) .region-content {
+  max-height: min(42svh, 380px);
+}
+
+.journey-region[data-card-kind="novidade"][data-side="left"]:not(.is-expanded) .region-content {
+  width: min(31vw, 430px);
+}
+
+.journey-region[data-card-kind="novidade"][data-side="right"]:not(.is-expanded) .region-content {
+  width: min(27vw, 360px);
 }
 
 /*
@@ -507,9 +547,84 @@ html.is-crossing .journey-entry-veil {
 
 .journey-region.is-expanded .region-content {
   width: 100%;
-  justify-self: center;
-  background: var(--journey-panel-open);
+  justify-self: stretch;
+  background: rgba(28, 20, 14, .92);
 }
+
+.journey-region.is-expanded .region-description,
+.journey-region.is-expanded .region-details p {
+  color: #f7edda;
+}
+
+.region-nota { display: none; }
+
+.journey-entre {
+  position: absolute;
+  z-index: 5;
+  right: clamp(36px, 5vw, 84px);
+  bottom: clamp(16px, 3.5vh, 32px);
+  left: clamp(36px, 5vw, 84px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--journey-line-gutter) minmax(0, 1fr);
+  align-items: start;
+  pointer-events: none;
+}
+
+.journey-entre p:first-child {
+  grid-column: 1;
+  justify-self: end;
+  width: min(31vw, 430px);
+  text-align: left;
+}
+
+.journey-entre p:last-child {
+  grid-column: 3;
+  justify-self: start;
+  width: min(27vw, 360px);
+  text-align: left;
+}
+
+.journey-entre p {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(231, 202, 143, .32);
+  border-radius: 12px;
+  background: rgba(22, 16, 11, .92);
+  color: #fff6ea;
+  font: 500 .78rem/1.35 Georgia, "Times New Roman", serif;
+  text-wrap: balance;
+}
+
+.journey-entre small {
+  display: block;
+  margin-bottom: 4px;
+  color: #f0d7a0;
+  font: 700 .58rem/1.2 system-ui, sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.journey-pair:has(.journey-region.is-expanded) .journey-entre { display: none; }
+
+@media (max-width: 720px) {
+  .journey-entre {
+    display: none;
+  }
+}
+
+.region-node {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fff6df;
+  box-shadow: 0 0 0 4px rgba(240, 215, 160, .18), 0 0 18px rgba(240, 215, 160, .7);
+  transform: translateY(-50%);
+}
+
+.journey-region[data-side="left"] .region-node { right: -22px; }
+.journey-region[data-side="right"] .region-node { left: -22px; }
 
 .region-summary {
   display: block;
@@ -883,8 +998,15 @@ html.is-crossing .journey-entry-veil {
     transform-origin: left center;
   }
 
+  .is-admin-preview .journey-region[data-card-kind="novidade"][data-side="left"]:not(.is-expanded) .region-content {
+    width: min(31vw, 430px);
+  }
+
+  .is-admin-preview .journey-region[data-card-kind="novidade"][data-side="right"]:not(.is-expanded) .region-content {
+    width: min(27vw, 360px);
+  }
+
   .is-admin-preview .region-content {
-    width: 100%;
     max-height: 74svh;
     border-radius: 20px;
   }
@@ -1689,12 +1811,13 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 .journey-region.is-expanded .region-summary { padding: 0; }
 .journey-region.is-expanded .region-details {
   display: grid;
-  grid-template-columns: minmax(0, 1.16fr) minmax(220px, .84fr);
-  gap: clamp(18px, 2vw, 30px);
-  align-items: start;
+  grid-template-columns: minmax(0, 1.1fr) minmax(240px, .9fr);
+  gap: clamp(22px, 2.4vw, 36px);
+  align-items: stretch;
   max-height: none;
   overflow: visible;
   padding: 0;
+  min-height: 42vh;
 }
 
 .region-details-main,
@@ -1703,7 +1826,19 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 .region-details-aside {
   display: grid;
   gap: 12px;
+  align-content: start;
   padding-top: 16px;
+}
+
+.journey-region.is-expanded .region-media {
+  margin: 0;
+}
+
+.journey-region.is-expanded .region-media img {
+  width: 100%;
+  height: min(34vh, 280px);
+  aspect-ratio: auto;
+  object-fit: cover;
 }
 
 /* O título cede altura, não presença: ele continua sendo a maior coisa do
@@ -2086,21 +2221,14 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
   background: var(--journey-veu);
   box-shadow: none;
   /*
-   * Vertical: o conteúdo fica no MEIO do véu, não pendurado no topo.
+   * Vertical: o texto começa no alto do véu.
    *
-   * Com o painel ocupando 900px de altura e o texto pedindo uns 300, ele ficava
-   * encostado na borda de cima com dois terços de véu vazio embaixo — o que
-   * lia como uma página que não terminou de carregar.
-   *
-   * `safe` não é enfeite. Centrar conteúdo MAIOR que a caixa empurra metade do
-   * transbordo para CIMA da borda de cima, e aquilo não se alcança rolando:
-   * medido a 320×568 com um texto longo, as primeiras linhas ficavam em -63px,
-   * fora de alcance para sempre. Com `safe`, assim que o conteúdo passa da
-   * caixa o alinhamento volta para o topo e nada se perde. De quebra, é o que
-   * faz `scrollHeight` voltar a contar a altura real — a conta do ajuste em
-   * block-expansion.js depende disso.
+   * Centrar no meio deixava uma faixa vazia acima do título — o espaço que
+   * incomodava no cartão detalhado. O que sobra fica embaixo, onde se lê como
+   * folga, e não como um buraco antes da notícia.
    */
-  align-content: safe center;
+  align-content: start;
+  padding-top: clamp(18px, 3vh, 28px);
 }
 
 /*
@@ -2936,8 +3064,10 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 
 .journey-region[data-card-kind="novidade"] .region-news-meta > span {
   max-width: 18ch;
+  color: #fff8ea;
   font: 500 clamp(1.08rem, 1.8vw, 1.48rem)/1.05 Georgia, "Times New Roman", serif;
   text-wrap: balance;
+  text-shadow: 0 2px 18px rgba(12, 8, 5, .95);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -3428,6 +3558,83 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  * Sobraram os dois que a rolagem NÃO substitui: procurar algo específico, e
  * entrar no painel de quem mantém o site.
  * ================================================================== */
+
+.journey-progress {
+  position: fixed;
+  z-index: 40;
+  right: max(16px, env(safe-area-inset-right));
+  top: 50%;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  transform: translateY(-50%);
+  color: rgba(247, 237, 218, .72);
+}
+
+.journey-progress-count {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  font: 600 .62rem/1 system-ui, sans-serif;
+  letter-spacing: .16em;
+}
+
+.journey-progress-count [data-journey-total]::before { content: "/"; margin-right: 6px; opacity: .55; }
+
+.journey-progress ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journey-progress button {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(247, 237, 218, .28);
+  cursor: pointer;
+}
+
+.journey-progress button[aria-current="true"] {
+  background: #fff6df;
+  box-shadow: 0 0 10px rgba(240, 215, 160, .85);
+}
+
+.journey-progress button span,
+.journey-progress-label {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  width: max-content;
+  max-width: 180px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(23, 16, 12, .72);
+  color: #f7edda;
+  font: 600 .68rem/1.2 system-ui, sans-serif;
+  letter-spacing: .04em;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.journey-progress button:hover span,
+.journey-progress button:focus-visible span,
+.journey-progress:hover .journey-progress-label,
+.journey-progress:focus-within .journey-progress-label { opacity: 1; }
+
+body:has(.journey-region.is-expanded) .journey-progress { opacity: 0; pointer-events: none; }
+
+@media (max-width: 820px) {
+  .journey-progress { top: auto; bottom: max(18px, env(safe-area-inset-bottom)); right: 50%; transform: translateX(50%); }
+  .journey-progress ol { grid-auto-flow: column; }
+  .journey-progress-count, .journey-progress-label { display: none; }
+}
 
 .journey-canto {
   position: fixed;

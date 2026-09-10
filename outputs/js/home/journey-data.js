@@ -1,26 +1,8 @@
 import { normalizeHomeBlocks } from "./content-model.js";
 import { DEFAULT_BLOG_POSTS, POSTS } from "../blog/blog-data.js";
 
-/*
- * AS NOVIDADES ABREM A JORNADA.
- *
- * Quem chega precisa ver primeiro o que MUDOU no Instituto, e só depois as
- * seções permanentes: sem isso a Home conta sempre a mesma história, e quem
- * volta na semana seguinte não tem como saber que algo aconteceu.
- *
- * Elas são regiões como as outras — não um carrossel à parte — porque o que as
- * distingue é conteúdo, não mecânica: cada uma leva a um texto do Blog em vez
- * de a uma seção. Tratá-las como um componente separado duplicaria expansão,
- * teclado, foco e ritmo para ganhar nada.
- *
- * A ordem NÃO vem daqui. É `novidadesPrimeiro`, em `home-novidades.js`, que sobe
- * ao topo tudo que carrega a tag — inclusive o que for marcado pelo painel
- * depois, sem passar por este arquivo.
- *
- * O conteúdo vem do acervo do Blog. Assim a Home não mantém uma segunda cópia
- * de manchetes e resumos que poderia ficar desatualizada. A composição escolhe
- * somente quais quatro textos abrem a jornada e em que lado aparecem.
- */
+// Conteúdo inicial do Blog para a composição de demonstração e recuperação.
+// Uma leitura remota bem-sucedida nunca recebe blocos extras do código.
 const CATEGORIAS_DO_BLOG = {
   artigos: "Artigo",
   oraculos: "Oráculo",
@@ -278,6 +260,21 @@ export const JOURNEY_REGIONS = [
   },
 ];
 
+const NOTAS = {
+  "quem-somos": ["Mais que um lugar, um propósito vivo.", "Pessoas, ideias e cuidado no mesmo caminho."],
+  recepcao: ["A conversa vem antes da escolha.", "Ninguém precisa chegar sabendo o que procura."],
+  atendimentos: ["Cuidar de pessoas em toda a sua dimensão.", "O acolhimento vem antes da técnica."],
+  cursos: ["Aprender também transforma.", "Estudo e experiência no mesmo gesto."],
+  atividades: ["Experiências que precisam ser vividas.", "Corpo, expressão e convivência."],
+  profissionais: ["Trajetórias diferentes, a mesma escuta.", "Quem acompanha também faz parte da casa."],
+  programacao: ["A casa está em movimento.", "Encontros, práticas e cursos abertos."],
+  "arte-cultura": ["Cinema, música, livros e conversa.", "A criação amplia o modo de encontrar o mundo."],
+  marketplace: ["O que a casa reúne para levar junto.", "Livros, aromas e objetos de prática."],
+  inspiracao: ["Nem todo encontro pede uma decisão.", "Alguns apenas devolvem espaço."],
+  revista: ["O presente lido com cuidado.", "Informação que abre caminho."],
+  blog: ["O pensamento vivo da casa.", "Textos de quem atende, ensina e convive."],
+};
+
 const EXPANDED_COPY = {
   "quem-somos": "Conheça a visão que reúne cuidado, conhecimento, cultura e convivência em um mesmo ecossistema humano.",
   recepcao: "Ninguém precisa saber de antemão o que procura. A conversa inicial existe para escutar o momento e apresentar os caminhos possíveis, sem pressa e sem compromisso.",
@@ -293,9 +290,20 @@ const EXPANDED_COPY = {
   blog: "Artigos, oráculos, colunas e entrevistas produzidos por quem atende, ensina e convive no Instituto.",
 };
 
-export const DEFAULT_HOME_BLOCKS = normalizeHomeBlocks(JOURNEY_REGIONS.map((region, position) => ({
+// A composição inicial alterna acontecimentos e portas do Instituto.
+// Depois de publicada, a sequência passa a pertencer exclusivamente ao editor.
+const editorialDefaults = [];
+const permanent = JOURNEY_REGIONS.filter((region) => !NOVIDADES.some((news) => news.id === region.id));
+permanent.forEach((region, index) => {
+  editorialDefaults.push(region);
+  if (index % 3 === 0 && NOVIDADES[Math.floor(index / 3)]) editorialDefaults.push(NOVIDADES[Math.floor(index / 3)]);
+});
+for (const news of NOVIDADES) if (!editorialDefaults.includes(news)) editorialDefaults.push(news);
+
+export const DEFAULT_HOME_BLOCKS = normalizeHomeBlocks(editorialDefaults.map((region, position) => ({
   id: region.id,
   slug: region.id,
+  editorialVariant: region.id === "inspiracao" ? "reflection" : region.id === "profissionais" ? "portrait" : ["arte-cultura", "revista"].includes(region.id) ? "feature" : "standard",
   category: region.category,
   title: region.title,
   summary: region.description,
@@ -311,6 +319,7 @@ export const DEFAULT_HOME_BLOCKS = normalizeHomeBlocks(JOURNEY_REGIONS.map((regi
      elas: a lista de caminhos do painel do bloco ficava vazia sem erro, sem
      espaço em branco e sem nada que indicasse a falta. */
   relatedContent: region.relatedContent,
+  notes: NOTAS[region.id] || [],
   /* O desenho da capa viaja junto: é ele que o cartão fechado mostra. Blocos
      vindos do banco não o têm, e ali a capa vem do campo `image`. */
   motivo: region.motivo,

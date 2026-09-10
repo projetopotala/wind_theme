@@ -268,7 +268,7 @@
                 -->
                 <label class="admin-check">
                   <input id="admin-novidade" data-admin-novidade type="checkbox">
-                  <span><strong>Novidade recente</strong><small>Abre a Home com as outras novidades, com o selo “Recentes”</small></span>
+                  <span><strong>Novidade recente</strong><small>Identifica o conteúdo como recente, preservando a posição escolhida</small></span>
                 </label>
                 <label class="admin-check">
                   <input id="admin-allow-panel" name="allowPanel" type="checkbox" checked>
@@ -291,6 +291,23 @@
 
             <label for="admin-tags">Temas (separados por vírgula)</label>
             <input id="admin-tags" name="tags" type="text" autocomplete="off">
+            <label for="admin-editorial-variant">Composição do destaque</label>
+            <select id="admin-editorial-variant" name="editorialVariant">
+              <option value="standard">Editorial</option>
+              <option value="feature">Imagem em destaque</option>
+              <option value="portrait">Retrato</option>
+              <option value="reflection">Reflexão</option>
+            </select>
+            <label for="admin-related-mode">Caminhos relacionados</label>
+            <select id="admin-related-mode" name="relatedMode">
+              <option value="automatic">Completar com conteúdos do mesmo tema</option>
+              <option value="manual">Usar apenas minha seleção</option>
+            </select>
+            <fieldset class="admin-related-options"><legend>Destinos relacionados</legend>
+              <div data-related-options></div>
+              <p class="admin-hint">São mostrados os três primeiros caminhos selecionados. A seleção manual vazia não mostra caminhos.</p>
+            </fieldset>
+            <p class="admin-hint">A Home respeita a ordem da lista. Você pode intercalar novidades, cursos, pessoas e reflexões.</p>
           </div>
 
           <div role="tabpanel" data-panel="seo" hidden>
@@ -329,6 +346,21 @@
             </div>
           </header>
 
+          <div class="admin-stage" data-admin-stage>
+            <button type="button" data-stage="follow">Acompanhar rolagem</button>
+            <button type="button" data-stage="up" aria-label="Rolar a prévia para cima">↑</button>
+            <button type="button" data-stage="down" aria-label="Rolar a prévia para baixo">↓</button>
+            <label class="admin-check">
+              <input type="checkbox" data-stage-effect="caption" checked>
+              <span>Texto abaixo</span>
+            </label>
+            <label class="admin-check">
+              <input type="checkbox" data-stage-effect="offset" checked>
+              <span>Deslocar cards</span>
+            </label>
+          </div>
+          <p class="admin-stage-hint">Clique no cartão para abrir como na página. Arraste para mudar o lado. Com o bloco aberto, o título, o resumo e o texto podem ser editados.</p>
+
           <div class="admin-preview-frame" data-admin-preview-frame>
             <iframe data-admin-preview src="transcendido.html?admin-preview=1"
               title="Prévia ao vivo da Home do Portal Potala"></iframe>
@@ -340,6 +372,10 @@
 
           <ul class="admin-checklist" data-admin-checklist></ul>
           <div class="admin-media-grid" data-admin-media-grid hidden></div>
+          <footer class="admin-preview-actions">
+            <button type="button" data-admin-preview-save>Salvar</button>
+            <button class="admin-publish" type="button" data-admin-preview-publish>Publicar</button>
+          </footer>
         </aside>
       </div>
 
