@@ -109,12 +109,16 @@ test("rodapé recupera a planta, muda lembranças, tolera armazenamento bloquead
     fire("[data-water-plant]");
     assert.equal(elements.get("[data-water-plant]").disabled, true);
     assert.equal(JSON.parse(saved.get("potala.plantinha.v1")).visits, 1);
+    assert.equal(elements.get("[data-plant-stage]").dataset.watering, "true");
+    fire("[data-water-plant]");
+    assert.equal(JSON.parse(saved.get("potala.plantinha.v1")).visits, 1);
     fire("[data-choose-gift]");
     const first = elements.get("[data-gift-message]").textContent;
     fire("[data-choose-gift]");
     assert.notEqual(elements.get("[data-gift-message]").textContent, first);
     assert.equal(elements.get("[data-save-gift]").hidden, false);
     cleanup();
+    assert.equal(elements.get("[data-plant-stage]").dataset.watering, undefined);
     assert.equal(events.size, 0);
     assert.equal(pageEvents.size, 0);
     cleanup = mountLivingFooter({ querySelector: () => footer });

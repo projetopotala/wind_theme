@@ -45,3 +45,20 @@
 }
 @media (prefers-reduced-motion:no-preference) { .article-hero__copy { animation:article-in .9s ease both; } @keyframes article-in { from { opacity:0; transform:translateY(18px); } } }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important; } }
+
+/*
+ * Salvar e Acompanhar, sob o título.
+ *
+ * Aqui, e não em css/conta.css, porque os botões nascem com o artigo e a folha
+ * da conta chega depois: sem estas regras eles piscariam sem estilo no topo do
+ * texto. Contorno claro sobre a foto; preenchidos quando ligados.
+ */
+.article-acoes { display:flex; flex-wrap:wrap; gap:10px; margin-top:26px; }
+.conta-alternar { display:inline-flex; align-items:center; gap:9px; min-height:40px; padding:0 16px 0 13px; border:1px solid rgba(247,237,218,.42); border-radius:999px; color:var(--ivory); background:rgba(35,24,15,.32); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); font:700 .64rem/1 Arial,sans-serif; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; transition:background .2s ease,color .2s ease,border-color .2s ease; }
+.conta-alternar:hover { border-color:rgba(247,237,218,.8); }
+.conta-alternar svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.6; }
+.conta-alternar[aria-pressed="true"] { border-color:var(--ivory); color:var(--ink); background:var(--ivory); }
+.conta-alternar[aria-pressed="true"] svg { fill:currentColor; }
+.conta-alternar[aria-busy="true"] { opacity:.6; cursor:progress; }
+.conta-alternar-tema { font:400 .8rem/1 Georgia,serif; letter-spacing:.01em; text-transform:none; opacity:.86; }
+@media (prefers-reduced-motion:reduce) { .conta-alternar { transition:none; } }

@@ -318,10 +318,10 @@ test("a novidade abre ao lado da estrada, sem o botão de sair da jornada", () =
 test("a Home tem dois controles de canto, e nenhuma barra lateral", () => {
   const menu = renderJourneyMenu();
 
-  /* A lupa e para quem procura algo especifico em vez de percorrer; o lapis e
-     de quem mantem o site. Nenhum dos dois e substituivel pela rolagem, que e
-     o que justificou os dois terem ficado. */
-  assert.match(menu, /class="journey-canto journey-lupa"[\s\S]*?data-journey-abrir-busca/);
+  /* A conta e de quem visita e quer guardar o caminho; o lapis e de quem mantem
+     o site. Nenhum dos dois e substituivel pela rolagem, que e o que justificou
+     os dois terem ficado. */
+  assert.match(menu, /class="journey-canto journey-conta"[\s\S]*?data-conta-gatilho/);
   assert.match(menu, /class="journey-canto journey-lapis" href="\/admin"/);
 
   /* E a barra nao voltou por descuido: ela era a maior peca da Home, e o custo
@@ -331,15 +331,24 @@ test("a Home tem dois controles de canto, e nenhuma barra lateral", () => {
   }
 });
 
-test("a busca continua na Home, agora presa a tela", () => {
-  /* Ela era a ultima linha de uma coluna e vivia de `margin-top: auto`. Sem a
-     coluna, solta no comeco do documento, sumiria na primeira rolagem —
-     justamente quando alguem acabou de pedi-la. */
+test("a busca saiu da Home, e a conta ocupou o canto dela", () => {
+  /*
+   * A busca foi removida a pedido. O teste trava as duas metades: a marcacao nao
+   * volta por descuido, e o CSS dela nao fica orfao — regra sem elemento e o
+   * tipo de sobra que alguem, meses depois, "conserta" devolvendo a marcacao.
+   */
   const menu = renderJourneyMenu();
-  assert.match(menu, /data-journey-busca role="search"/);
-  assert.match(menu, /data-journey-fechar-busca/);
-  assert.match(css, /\.journey-busca \{[\s\S]*?position: fixed/);
-  assert.match(css, /\.journey-lupa \{[\s\S]*?top:/);
+  for (const sobra of ["journey-lupa", "data-journey-busca", "data-journey-abrir-busca", "data-journey-fechar-busca"]) {
+    assert.ok(!menu.includes(sobra), `a busca voltou: ${sobra}`);
+  }
+  assert.ok(!css.includes(".journey-busca"), "sobrou CSS da busca");
+  assert.ok(!css.includes(".journey-lupa"), "sobrou CSS da lupa");
+
+  /* E BOTAO, e nao link: abre o painel da conta sem sair da paisagem. E um
+     clique nele nao pode fechar um bloco aberto da jornada. */
+  assert.match(menu, /<button class="journey-canto journey-conta" type="button"[\s\S]*?aria-haspopup="dialog"/);
+  assert.match(menu, /journey-conta"[\s\S]*?data-keeps-expansion/);
+  assert.match(css, /\.journey-conta \{[\s\S]*?top:/);
   assert.match(css, /\.journey-lapis \{[\s\S]*?bottom:/);
 });
 
@@ -353,21 +362,18 @@ test("os cantos somem enquanto um bloco esta aberto, e voltam quando ele fecha",
    * descendentes do bloco que muda de estado, e nenhum seletor de dentro do
    * palco os alcanca.
    */
-  const regra = /body:has\(\.journey-region\.is-expanded\) \.journey-canto,[\s\S]*?\}/.exec(css);
+  const regra = /body:has\(\.journey-region\.is-expanded\) \.journey-canto \{[\s\S]*?\}/.exec(css);
   assert.ok(regra, "os cantos nao somem com o bloco aberto");
 
   /*
    * `visibility: hidden`, e nao so `opacity: 0`.
    *
-   * Invisivel mas focalizavel, a lupa continuaria recebendo o Tab de quem le o
+   * Invisivel mas focalizavel, a conta continuaria recebendo o Tab de quem le o
    * bloco pelo teclado — e o foco sumiria num controle que ninguem ve.
    */
   assert.match(regra[0], /visibility: hidden/);
   assert.match(regra[0], /pointer-events: none/);
 
-  /* A busca some junto: o gatilho dela desapareceu, e um painel aberto sem o
-     controle que o abriu e uma sobra na tela. */
-  assert.match(regra[0], /\.journey-busca/);
 
   /* E a visibilidade so troca no FIM da transicao de volta, para o controle nao
      voltar a ser clicavel antes de estar visivel. */

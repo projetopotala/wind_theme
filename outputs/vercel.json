@@ -1,8 +1,28 @@
 {
   "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/admin/", "destination": "/admin.html" },
-    { "source": "/blog", "destination": "/blog-admin.html" },
-    { "source": "/blog/", "destination": "/blog-admin.html" }
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/admin/",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/blog",
+      "destination": "/blog-admin.html"
+    },
+    {
+      "source": "/blog/",
+      "destination": "/blog-admin.html"
+    },
+    {
+      "source": "/meu-potala",
+      "destination": "/meu-potala.html"
+    },
+    {
+      "source": "/meu-potala/:path*",
+      "destination": "/meu-potala.html"
+    }
   ]
 }

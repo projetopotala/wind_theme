@@ -3537,17 +3537,6 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  * A busca da jornada
  * ================================================================== */
 
-/* Só para leitor de tela: a lupa diz o que o campo faz para quem vê, e este
-   rótulo diz o mesmo para quem ouve. */
-.journey-sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* ==================================================================
  * OS DOIS CONTROLES DE CANTO
  *
@@ -3555,8 +3544,8 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
  * oito atalhos ocupavam uma coluna da tela sobre a paisagem, e quase tudo o que
  * ofereciam a própria jornada já oferece — cada cartão leva à sua seção.
  *
- * Sobraram os dois que a rolagem NÃO substitui: procurar algo específico, e
- * entrar no painel de quem mantém o site.
+ * Sobraram os dois que a rolagem NÃO substitui: o espaço pessoal de quem
+ * visita, e o painel de quem mantém o site.
  * ================================================================== */
 
 .journey-progress {
@@ -3664,12 +3653,19 @@ body:has(.journey-region.is-expanded) .journey-progress { opacity: 0; pointer-ev
 .journey-canto:hover { border-color: rgba(231, 202, 143, .6); color: var(--journey-ivory); }
 .journey-canto:focus-visible { outline: 2px solid var(--journey-gold); outline-offset: 3px; }
 
-.journey-lupa { top: max(18px, env(safe-area-inset-top)); }
+/*
+ * A CONTA, NO CANTO QUE ERA DA LUPA.
+ *
+ * O disco é o dos cantos; o miolo — ícone, iniciais, ponto de aviso — vive em
+ * css/conta.css, porque o mesmo botão existe nas outras páginas.
+ */
+.journey-conta { top: max(18px, env(safe-area-inset-top)); }
+.journey-conta[aria-expanded="true"] { border-color: rgba(231, 202, 143, .7); color: var(--journey-ivory); }
 
 /*
- * O lápis é mais discreto que a lupa, de propósito.
+ * O lápis é mais discreto que a conta, de propósito.
  *
- * A lupa é para quem visita; o lápis é para quem mantém o site, e é uma pessoa
+ * A conta é de quem visita; o lápis é para quem mantém o site, e é uma pessoa
  * só. Com o mesmo peso, ele disputaria atenção com o único controle que
  * interessa a quem chega.
  */
@@ -3689,19 +3685,15 @@ body:has(.journey-region.is-expanded) .journey-progress { opacity: 0; pointer-ev
  * — dois discos escuros flutuando sobre um texto que ocupa tudo, sem relação
  * nenhuma com o que está sendo lido.
  *
- * Some também a busca: o gatilho dela desapareceu, e um painel aberto sem o
- * controle que o abriu é uma sobra na tela.
- *
  * `visibility: hidden`, e não só `opacity: 0` — invisível mas focalizável, a
- * lupa continuaria recebendo o Tab de quem lê o bloco pelo teclado, e o foco
+ * conta continuaria recebendo o Tab de quem lê o bloco pelo teclado, e o foco
  * sumiria num controle que ninguém vê.
  *
  * `body:has(...)` porque os controles vivem FORA da jornada: presos à tela, eles
  * não são descendentes do bloco que muda de estado, e nenhum seletor de dentro
  * do palco os alcança.
  */
-body:has(.journey-region.is-expanded) .journey-canto,
-body:has(.journey-region.is-expanded) .journey-busca {
+body:has(.journey-region.is-expanded) .journey-canto {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -3710,84 +3702,10 @@ body:has(.journey-region.is-expanded) .journey-busca {
 @media (prefers-reduced-motion: no-preference) {
   /* Só a opacidade faz o percurso; a visibilidade troca no fim, para que o
      controle não volte a ser clicável antes de estar visível de novo. */
-  .journey-canto,
-  .journey-busca { transition: opacity .28s ease, visibility 0s linear .28s; }
-  body:has(.journey-region.is-expanded) .journey-canto,
-  body:has(.journey-region.is-expanded) .journey-busca { transition-delay: 0s, .28s; }
+  .journey-canto { transition: opacity .28s ease, visibility 0s linear .28s; }
+  body:has(.journey-region.is-expanded) .journey-canto { transition-delay: 0s, .28s; }
 }
 
-/*
- * A busca abre PRESA À TELA, embaixo da lupa.
- *
- * Ela era a última linha de uma coluna e por isso vivia de `margin-top: auto`.
- * Sem a coluna, ficaria solta no começo do documento e sumiria na primeira
- * rolagem — justamente quando alguém acabou de pedi-la.
- */
-.journey-busca {
-  position: fixed;
-  z-index: 43;
-  top: calc(max(18px, env(safe-area-inset-top)) + 56px);
-  left: max(18px, env(safe-area-inset-left));
-  display: grid;
-  gap: 6px;
-  width: min(320px, calc(100vw - 36px));
-  padding: 10px;
-  border: 1px solid rgba(231, 202, 143, .2);
-  border-radius: 14px;
-  background: rgba(24, 17, 11, .8);
-  box-shadow: 0 18px 42px rgba(12, 8, 5, .45);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  /* Três colunas: campo, buscar e fechar. O X entrou depois, e sem esta coluna
-     ele caía na linha de baixo e empurrava o aviso para fora do lugar. */
-  grid-template-columns: minmax(0, 1fr) auto auto;
-}
-
-.journey-busca[hidden] { display: none; }
-
-.journey-busca input {
-  min-width: 0;
-  padding: 9px 12px;
-  border: 1px solid rgba(231, 202, 143, .26);
-  border-radius: 10px;
-  color: var(--journey-ivory);
-  font: 400 .78rem/1 system-ui, sans-serif;
-  background: rgba(24, 17, 11, .72);
-}
-
-.journey-busca input::placeholder { color: rgba(247, 237, 218, .4); }
-.journey-busca input:focus-visible { outline: 2px solid var(--journey-gold); outline-offset: 1px; }
-
-.journey-busca button {
-  display: grid;
-  width: 34px;
-  border: 1px solid rgba(231, 202, 143, .26);
-  border-radius: 10px;
-  color: rgba(247, 237, 218, .82);
-  background: rgba(24, 17, 11, .72);
-  cursor: pointer;
-  place-items: center;
-}
-
-.journey-busca button:hover { border-color: rgba(231, 202, 143, .5); }
-.journey-busca button:focus-visible { outline: 2px solid var(--journey-gold); outline-offset: 2px; }
-.journey-busca svg { width: 15px; height: 15px; fill: currentColor; }
-
-/*
- * O aviso ocupa a linha inteira e só existe quando tem o que dizer.
- *
- * `:empty` para não reservar espaço à toa: um vão permanente embaixo do campo
- * empurraria o botão do menu e faria a barra parecer desalinhada o tempo todo
- * por causa de uma mensagem que aparece raramente.
- */
-.journey-busca-aviso {
-  grid-column: 1 / -1;
-  margin: 0;
-  color: rgba(247, 237, 218, .62);
-  font: 400 .68rem/1.4 system-ui, sans-serif;
-}
-
-.journey-busca-aviso:empty { display: none; }
 
 /* O botão de pesquisar do menu é um `button`, e o resto são links: sem isto
    ele herdaria a aparência do navegador no meio de dois links iguais. */

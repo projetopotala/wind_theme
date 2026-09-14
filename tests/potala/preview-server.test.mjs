@@ -53,3 +53,24 @@ test("a prévia atende pedidos de trecho, senão vídeo nenhum pode ser rebobina
     await new Promise((pronto) => servidor.close(pronto));
   }
 });
+
+test("a area pessoal e uma SPA: toda rota /meu-potala devolve o mesmo documento", async () => {
+  /*
+   * /meu-potala/salvos nao e um arquivo, e uma rota resolvida no navegador. Sem
+   * esta regra, um link direto para Salvos — ou recarregar a pagina ali — daria
+   * 404, e a SPA so funcionaria para quem chegasse pela porta da frente.
+   */
+  for (const rota of ["/meu-potala", "/meu-potala/", "/meu-potala/salvos", "/meu-potala/perfil?aba=cursos"]) {
+    assert.match(resolveRequestPath(rota).replaceAll("\\", "/"), /outputs\/meu-potala\.html$/, rota);
+  }
+  /* A regra nao pode virar porta para fora de outputs. */
+  assert.equal(resolveRequestPath("/meu-potala/../../package.json"), null);
+  /* E nao engole paginas vizinhas de nome parecido. */
+  assert.match(resolveRequestPath("/meu-potala-antigo.html").replaceAll("\\", "/"), /outputs\/meu-potala-antigo\.html$/);
+
+  const { readFile } = await import("node:fs/promises");
+  const vercel = JSON.parse(await readFile(new URL("../../outputs/vercel.json", import.meta.url), "utf8"));
+  const regras = vercel.rewrites.map((regra) => `${regra.source} -> ${regra.destination}`);
+  assert.ok(regras.includes("/meu-potala -> /meu-potala.html"), "a Vercel nao entrega a SPA na raiz");
+  assert.ok(regras.includes("/meu-potala/:path* -> /meu-potala.html"), "a Vercel nao entrega a SPA nas rotas internas");
+});

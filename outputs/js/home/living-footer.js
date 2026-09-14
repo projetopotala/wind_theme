@@ -40,14 +40,22 @@ export function renderLivingFooter(regions = []) {
         <p class="living-kicker">Aquilo que cuidamos cresce</p>
         <h3 id="plant-title">Quero regar minha plantinha</h3>
         <div class="plant-drawing" data-plant-stage="Semente" aria-hidden="true">
-          <svg viewBox="0 0 200 180"><path class="plant-ground" d="M30 158 Q100 140 170 158"/>
+          <svg viewBox="0 0 200 180" focusable="false">
+          <ellipse class="plant-halo" cx="100" cy="98" rx="69" ry="65"/>
+          <ellipse class="plant-soil" cx="100" cy="155" rx="61" ry="8"/>
+          <ellipse class="plant-ripple" cx="100" cy="153" rx="24" ry="5"/>
+          <path class="plant-ground" d="M30 158 Q100 140 170 158"/>
           <ellipse class="plant-seed" cx="100" cy="145" rx="6" ry="9"/>
-          <path class="plant-stem" d="M100 148 Q94 113 104 58"/>
+          <g class="plant-sway"><g class="plant-growth">
+          <path class="plant-stem" pathLength="1" d="M100 148 Q94 113 104 48"/>
           <path class="plant-leaf leaf-one" d="M100 118 Q55 117 63 86 Q95 85 100 118"/>
           <path class="plant-leaf leaf-two" d="M101 98 Q140 99 142 66 Q108 63 101 98"/>
           <path class="plant-leaf leaf-three" d="M102 70 Q70 64 79 40 Q104 41 102 70"/>
-          <circle class="plant-flower" cx="105" cy="43" r="14"/>
-          <path class="plant-crown" d="M60 104 C13 80 48 40 67 48 C66 0 133 4 136 42 C177 35 189 91 147 102Z"/></svg>
+          <g class="plant-flower"><path d="M105 43 C80 38 85 19 98 28 C92 6 115 6 112 28 C132 15 140 38 119 43 C141 53 124 72 112 55 C111 78 89 70 98 54 C76 64 72 41 105 43Z"/><circle cx="106" cy="43" r="7"/></g>
+          <g class="plant-crown"><path d="M60 104 C13 80 48 40 67 48 C66 0 133 4 136 42 C177 35 189 91 147 102Z"/><path class="plant-branches" d="M100 112 L100 53 M100 91 L73 70 M100 80 L128 57"/></g>
+          </g></g>
+          <g class="plant-rain"><path style="--drop-delay:0ms" d="M76 43 q-7 11 0 11 q7 0 0-11"/><path style="--drop-delay:160ms" d="M104 28 q-7 11 0 11 q7 0 0-11"/><path style="--drop-delay:320ms" d="M128 48 q-7 11 0 11 q7 0 0-11"/></g>
+          </svg>
         </div>
         <p data-plant-status role="status">Uma semente para acompanhar suas visitas.</p>
         <button type="button" data-water-plant>Regar minha plantinha</button>
@@ -89,6 +97,8 @@ export function mountLivingFooter(root) {
   try { storage = globalThis.localStorage; state = plantState(JSON.parse(storage.getItem(PLANT_KEY) || "{}")); } catch { storage = null; }
   const water = footer.querySelector("[data-water-plant]");
   const status = footer.querySelector("[data-plant-status]");
+  const drawing = footer.querySelector("[data-plant-stage]");
+  let wateringTimer;
   const paint = () => {
     const stage = plantStage(state.visits);
     footer.querySelector("[data-plant-stage]").dataset.plantStage = stage;
@@ -101,7 +111,11 @@ export function mountLivingFooter(root) {
   const counters = {};
   const onClick = (event) => {
     if (event.target.closest("[data-water-plant]")) {
+      if (state.lastDay >= localDay()) return;
       state = waterPlant(state);
+      drawing.dataset.watering = "true";
+      clearTimeout(wateringTimer);
+      wateringTimer = setTimeout(() => { delete drawing.dataset.watering; }, 2400);
       try { storage?.setItem(PLANT_KEY, JSON.stringify(state)); } catch { storage = null; }
       paint();
     }
@@ -127,5 +141,5 @@ export function mountLivingFooter(root) {
   paint(); footer.addEventListener("click", onClick);
   window.addEventListener("storage", onStorage);
   window.addEventListener("pageshow", paint);
-  return () => { footer.removeEventListener("click", onClick); window.removeEventListener("storage", onStorage); window.removeEventListener("pageshow", paint); };
+  return () => { clearTimeout(wateringTimer); delete drawing.dataset.watering; footer.removeEventListener("click", onClick); window.removeEventListener("storage", onStorage); window.removeEventListener("pageshow", paint); };
 }

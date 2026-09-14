@@ -22,17 +22,48 @@
 .living-dialogue section > a { display: block; padding: 8px 0; }
 .living-contact { border-top: 1px solid #d3c7b3; padding-top: 36px; }
 .living-contact address { font-style: normal; font-size: 14px; }
-.plant-drawing { max-width: 220px; margin: 0 auto; }
-.plant-drawing svg { width: 100%; overflow: visible; }
+.plant-drawing { width: min(100%, 260px); margin: 0 auto 12px; }
+.plant-drawing svg { display: block; width: 100%; overflow: visible; }
+.plant-halo { fill: #e8e4cc; opacity: .48; }
+.plant-soil { fill: #b5a17b; opacity: .18; }
+.plant-ripple { fill: none; stroke: #8aa5a0; stroke-width: 1.5; opacity: 0; transform-origin: 100px 153px; }
 .plant-ground, .plant-stem { fill: none; stroke: #68784b; stroke-width: 4; stroke-linecap: round; }
-.plant-seed { fill: #8a6544; }
+.plant-seed { fill: #8a6544; transform-origin: 100px 150px; transition: opacity .65s, transform 1s; }
+.plant-sway, .plant-growth { transform-origin: 100px 148px; }
+.plant-growth { transition: transform 1.7s cubic-bezier(.22, 1, .36, 1); }
+.plant-sway { animation: plant-breeze 6s ease-in-out infinite; }
+.plant-stem { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.5s ease, opacity .6s; }
 .plant-leaf, .plant-crown { fill: #7a8b5b; }
-.plant-flower { fill: #c09572; }
+.leaf-two { fill: #8c9d6d; }
+.plant-flower { fill: #c09572; transform-origin: 106px 43px; }
+.plant-flower circle { fill: #e4c685; }
+.plant-branches { fill: none; stroke: #5e734c; stroke-width: 2; stroke-linecap: round; }
 .plant-stem, .plant-leaf, .plant-flower, .plant-crown { opacity: 0; }
+.plant-leaf, .plant-flower, .plant-crown { transform: scale(.05); transition: opacity .8s ease, transform 1.6s cubic-bezier(.22, 1, .36, 1); }
+.leaf-one { transform-origin: 100px 118px; transition-delay: .15s; }
+.leaf-two { transform-origin: 101px 98px; transition-delay: .3s; }
+.leaf-three { transform-origin: 102px 70px; transition-delay: .45s; }
+.plant-crown { transform-origin: 100px 104px; }
+[data-plant-stage="Semente"] .plant-growth { transform: scale(.35); }
+[data-plant-stage="Semente"] .plant-seed { animation: plant-seed-breathe 4s ease-in-out infinite; }
+[data-plant-stage="Broto"] .plant-growth { transform: scale(.65); }
+[data-plant-stage]:not([data-plant-stage="Semente"]) .plant-seed { opacity: 0; transform: translateY(5px) scale(.5); }
+[data-plant-stage]:not([data-plant-stage="Semente"]) .plant-stem { stroke-dashoffset: 0; }
 [data-plant-stage="Broto"] .plant-stem, [data-plant-stage="Broto"] .leaf-two,
 [data-plant-stage="Folhas"] .plant-stem, [data-plant-stage="Folhas"] .plant-leaf,
 [data-plant-stage="Flores"] .plant-stem, [data-plant-stage="Flores"] .plant-leaf, [data-plant-stage="Flores"] .plant-flower,
-[data-plant-stage="Árvore"] .plant-stem, [data-plant-stage="Árvore"] .plant-crown { opacity: 1; }
+[data-plant-stage="Árvore"] .plant-stem, [data-plant-stage="Árvore"] .plant-crown { opacity: 1; transform: scale(1); }
+.plant-rain path { fill: #7faaa7; opacity: 0; }
+[data-watering="true"] .plant-rain path { animation: plant-drop 1s ease-in var(--drop-delay) 2 both; }
+[data-watering="true"] .plant-ripple { animation: plant-water-ring 1.7s ease-out .5s both; }
+[data-watering="true"] .plant-growth { transition-delay: .45s; }
+@keyframes plant-breeze { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+@keyframes plant-seed-breathe { 0%, 100% { transform: scale(1); } 50% { transform: translateY(-2px) rotate(5deg); } }
+@keyframes plant-drop { 0% { opacity: 0; transform: translateY(-8px); } 15% { opacity: .8; } 85% { opacity: .65; } 100% { opacity: 0; transform: translateY(99px); } }
+@keyframes plant-water-ring { 0% { opacity: .6; transform: scale(.4); } 100% { opacity: 0; transform: scale(2.3); } }
+@media (prefers-reduced-motion: reduce) {
+  .plant-drawing svg * { animation: none !important; transition: none !important; }
+}
 /* Formatos editoriais compartilham a navegação, mas têm composição própria. */
 .journey-region[data-editorial-variant="reflection"]:not(.is-expanded) .region-content { background: #e9e0cd; color: #3e342a; }
 .journey-region[data-editorial-variant="reflection"]:not(.is-expanded) .region-title { color: #3e342a; font-family: Georgia, serif; font-style: italic; }

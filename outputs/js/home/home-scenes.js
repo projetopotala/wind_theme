@@ -3,6 +3,9 @@ import { ehNovidade, temasVisiveis } from "./home-novidades.js";
 import { invitationsFor } from "./invitations.js";
 import { renderRestrictedMarkdown } from "../shared/markdown.js";
 import { renderLivingFooter } from "./living-footer.js";
+import { sectionResourcesFor } from "./section-resources.js";
+import { renderSectionPanel } from "./section-panel.js";
+import { sectionIcon } from "./section-icons.js";
 import { renderPortalDiscovery, renderCommunityInvitation, renderNarrativeBridge } from "./portal-discovery.js";
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
 const smoothstep = (value) => {
@@ -157,7 +160,7 @@ function renderRelated(region, discoveriesById) {
   const linhas = itens.map((item) => `
     <li>
       <a class="region-related-item" href="${safeHref(item.href)}" tabindex="-1">
-        <span class="region-related-mark" aria-hidden="true">${escapeHtml((item.category || item.title || "•").slice(0, 1))}</span>
+        <span class="region-related-mark" aria-hidden="true">${sectionIcon("compass")}</span>
         <span class="region-related-text">
           <strong>${escapeHtml(item.title)}</strong>
           <small>${escapeHtml(item.description ?? item.summary ?? "")}</small>
@@ -269,6 +272,7 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
    * antigos que ainda não tenham capa.
    */
   const novidade = ehNovidade(region);
+  const resourceConfig = !novidade && sectionResourcesFor(region);
   const coverSource = safeMediaSource(region.image || region.media);
   const capaFechada = (novidade || ["feature", "portrait"].includes(region.editorialVariant))
     ? (coverSource
@@ -284,7 +288,7 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
 
   return `
     <div class="journey-region region--${layoutVariant}" id="${id}"
-      data-region-id="${id}" data-layout-variant="${layoutVariant}" data-editorial-variant="${safeToken(region.editorialVariant, "standard")}"
+      data-region-id="${id}" ${resourceConfig ? `data-resource-section="${escapeHtml(region.id)}"` : ""} data-layout-variant="${layoutVariant}" data-editorial-variant="${safeToken(region.editorialVariant, "standard")}"
       data-side="${side}" data-road-side="${roadSide}" data-content-placement="${safeToken(region.contentPlacement, "side")}"
       data-title-scale="${titleScale}" data-title-flow="${titleFlow}" data-card-kind="${novidade ? "novidade" : "fixo"}"
       style="--region-index:${index};--region-height:${regionHeight}svh">
@@ -303,7 +307,7 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
             botão precisa saber para onde vai, e "Fechar" não conta isso.
           -->
           <button class="region-close" type="button" data-region-close tabindex="-1"
-            aria-label="Voltar para a jornada"><span aria-hidden="true">←</span></button>
+            aria-label="Voltar para a jornada"><span aria-hidden="true">${resourceConfig ? sectionIcon("back") : "←"}</span>${resourceConfig ? '<span class="section-back-label">Voltar à jornada</span>' : ""}</button>
           <button class="region-summary" type="button" aria-expanded="false" aria-controls="${id}-details">
             ${capaFechada}
             ${newsMeta}
@@ -317,6 +321,7 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
             <span class="region-expand-label" aria-hidden="true">Olhar de perto</span>
           </button>
           <div class="region-details" id="${id}-details" aria-hidden="true" inert>
+            ${resourceConfig ? renderSectionPanel({ id, region, config: resourceConfig, bodyHtml: region.body && region.body !== summary ? renderRestrictedMarkdown(region.body) : "", lookup: discoveriesById }) : `
             <section class="region-details-main">
               <span class="region-divider" aria-hidden="true"></span>
               <p class="region-lead-label">Encontre o que faz sentido para você</p>
@@ -332,6 +337,7 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
                 }>${novidade ? "Continuar a leitura" : "Seguir este caminho"} <span aria-hidden="true">→</span></a>
               </div>
             </aside>
+            `}
           </div>
         </article>
     </div>
@@ -434,8 +440,10 @@ export function renderInvitation(invitations = []) {
  * jornada já oferece — cada cartão leva à sua seção, e rolar é o gesto que a
  * Home ensina desde o prólogo.
  *
- * Ficam dois: a lupa no alto à esquerda e o lápis embaixo. Um é para quem
- * procura algo específico em vez de percorrer; o outro é de quem mantém o site.
+ * Ficam dois: a conta no alto à esquerda e o lápis embaixo. A conta é de quem
+ * visita e quer guardar o caminho; o lápis é de quem mantém o site. A busca, que
+ * morava numa lupa nesse mesmo canto, saiu a pedido: a Travessia se percorre, e
+ * cada cartão já leva à sua seção.
  *
  * O QUE SAIU E PARA ONDE FOI: a roleta era um índice das seções, e as seções
  * continuam nos cartões. Contate-nos era a Recepção, que é um cartão. Os cinco
@@ -463,40 +471,23 @@ function renderProgressNav(regions = []) {
 
 export function renderJourneyMenu(regions = []) {
   return `
-    <button class="journey-canto journey-lupa" type="button" data-journey-abrir-busca
-      data-keeps-expansion aria-label="Pesquisar na travessia">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"/>
-      </svg>
-    </button>
-
     <!--
-      A BUSCA ABRE ABAIXO DA LUPA, presa na tela.
+      A CONTA MORA ONDE MORAVA A LUPA.
 
-      Ela morava no pé da barra lateral. Sem a barra, precisa de lugar próprio —
-      e o lugar é junto do controle que a revela, para que a relação entre os
-      dois seja óbvia sem ninguém explicar.
-
-      Fechar clicando fora continua descartado de propósito: clicar fora é
-      exatamente o que se faz para alcançar o teclado no telefone. Sai pelo X,
-      pelo Escape ou clicando na lupa de novo.
+      Não é um "Entrar": é a porta do espaço de quem visita, onde se guarda o que
+      se encontra pelo caminho. O painel abre aqui mesmo, sobre a paisagem — ir
+      para uma página de login interromperia justamente o gesto de guardar. Quem
+      desenha o painel é js/conta/painel-conta.js; este botão só se anuncia pelo
+      atributo data-conta-gatilho, e as iniciais entram no span quando a pessoa
+      está dentro.
     -->
-    <form class="journey-busca" data-journey-busca role="search" data-keeps-expansion hidden>
-      <label class="journey-sr" for="journey-busca-campo">Buscar na jornada</label>
-      <input id="journey-busca-campo" data-journey-busca-campo type="search"
-        placeholder="tai chi, oráculo, cursos…" autocomplete="off">
-      <button type="submit" aria-label="Buscar">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"/>
-        </svg>
-      </button>
-      <button type="button" data-journey-fechar-busca aria-label="Fechar busca">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/>
-        </svg>
-      </button>
-      <p class="journey-busca-aviso" data-journey-busca-aviso role="status" aria-live="polite"></p>
-    </form>
+    <button class="journey-canto journey-conta" type="button" data-conta-gatilho
+      data-keeps-expansion aria-haspopup="dialog" aria-expanded="false" aria-label="Seu espaço no Potala">
+      <svg class="conta-icone" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Zm0 1.8c-3.6 0-7.4 1.8-7.4 4.6V20h14.8v-1.4c0-2.8-3.8-4.6-7.4-4.6Z"/>
+      </svg>
+      <span class="conta-iniciais" aria-hidden="true"></span>
+    </button>
 
     <!--
       O lápis é um LINK, e não um botão com script.

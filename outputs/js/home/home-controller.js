@@ -12,9 +12,8 @@ import { DEFAULT_HOME_BLOCKS, JOURNEY_DISCOVERIES } from "./journey-data.js";
 import { ehNovidade } from "./home-novidades.js";
 import { composeEditorial, relatedFor } from "./editorial-composition.js";
 import { mountLivingFooter } from "./living-footer.js";
+import { mountSectionPanels } from "./section-panel.js";
 import { mountPortalDiscovery } from "./portal-discovery.js";
-import { procurarBloco } from "./home-busca.js";
-import { criarPainelDeBusca } from "./busca-painel.js";
 import { createHomePath } from "./home-path-three.js";
 import { createLandscapeVideo } from "./landscape-video.js";
 import { mountJourney } from "./home-scenes.js";
@@ -215,6 +214,7 @@ export function createHomeController({
   }));
   const mounted = mountJourney(root, { regions: linked, discoveries: JOURNEY_DISCOVERIES });
   const removeLivingFooter = mountLivingFooter(root);
+  const removeSectionPanels = mountSectionPanels(root);
   const removePortalDiscovery = mountPortalDiscovery(root, {
     reducedMotion,
     onLayoutChange: () => { measureMenuPairs(); requestUpdate(); },
@@ -556,106 +556,13 @@ export function createHomeController({
     else if (activeIndex >= 0) setMenuWheelIndex(activeIndex);
   }
 
-  /* ---------------------------------------------------------------
-   * A busca da barra lateral
-   *
-   * Ela NÃO redireciona. Encontra o bloco que responde ao que foi digitado,
-   * desce até ele e o abre — e para por aí. Buscar "tai chi" e ser jogado para
-   * outra página tiraria da pessoa a chance de ver que ao lado há as práticas
-   * orientais, adiante os cursos e depois a programação. A busca abre uma porta
-   * na jornada; não atravessa a porta por ninguém.
-   * --------------------------------------------------------------- */
-  const formaDeBusca = root.querySelector("[data-journey-busca]");
-  const campoDeBusca = root.querySelector("[data-journey-busca-campo]");
-  const avisoDeBusca = root.querySelector("[data-journey-busca-aviso]");
-  const abrirBusca = root.querySelector("[data-journey-abrir-busca]");
-  const fecharBusca = root.querySelector("[data-journey-fechar-busca]");
-
-  /*
-   * O painel sabe abrir E fechar, o que antes faltava.
-   *
-   * A busca só se fechava sozinha ao encontrar alguma coisa: quem abrisse por
-   * curiosidade, ou procurasse o que a jornada não tem, ficava com o campo na
-   * tela sem saída. No telefone, onde não há Escape, era um beco.
-   *
-   * O foco volta para a LUPA ao fechar. Ele já foi para o `summary` de um menu
-   * recolhível, porque a lupa morava dentro dele; esse menu saiu com a barra
-   * lateral, e o alvo antigo passou a não existir — fechar deixava o foco no
-   * corpo da página, e quem navega por teclado recomeçava do topo.
-   */
-  const painelDeBusca = criarPainelDeBusca({
-    forma: formaDeBusca,
-    campo: campoDeBusca,
-    aviso: avisoDeBusca,
-    fechar: fecharBusca,
-    foco: abrirBusca,
-  });
-
-  /* A lupa ALTERNA. Clicar nela com a busca aberta é o segundo gesto que se
-     tenta para dispensá-la, depois do X. */
-  const onAbrirBusca = () => painelDeBusca.alternar();
-  abrirBusca?.addEventListener("click", onAbrirBusca);
+  /* Os pontos de capítulo levam direto à seção que cada um representa. */
   const onProgresso = (event) => {
     const alvo = event.target.closest?.("[data-progress-target]");
     if (!alvo) return;
     goToSection(alvo.dataset.progressTarget);
   };
   root.querySelector(".journey-progress")?.addEventListener("click", onProgresso);
-
-  /*
-   * O ÍNDICE DAS SEÇÕES chega na PRIMEIRA busca, e não no carregamento.
-   *
-   * São 22 KB que a esmagadora maioria das visitas nunca vai usar: quem percorre
-   * a jornada não abre a busca. Baixá-lo junto com a Home cobraria isso de todo
-   * mundo pelo benefício de alguns.
-   *
-   * A promessa é guardada, não o resultado: duas buscas seguidas antes de a
-   * primeira responder pediriam o arquivo duas vezes.
-   */
-  let indiceDasSecoes = null;
-
-  function carregarIndice() {
-    if (!indiceDasSecoes) {
-      indiceDasSecoes = fetch("js/home/busca-indice.json")
-        .then((resposta) => (resposta.ok ? resposta.json() : null))
-        /*
-         * Falhar aqui NÃO pode quebrar a busca.
-         *
-         * Sem o índice ela continua encontrando pelo texto dos blocos, que é o
-         * que ela sempre soube fazer. Uma busca que responde menos é melhor que
-         * uma que não responde.
-         */
-        .catch(() => null);
-    }
-    return indiceDasSecoes;
-  }
-
-  const onBuscar = async (evento) => {
-    evento.preventDefault?.();
-    const termo = campoDeBusca?.value ?? "";
-    const indice = await carregarIndice();
-    const achado = procurarBloco(emOrdem, termo, indice);
-
-    if (!achado) {
-      /*
-       * Dizer que não achou, em vez de abrir um bloco qualquer.
-       *
-       * Levar a pessoa ao primeiro da lista faria o site parecer ter entendido
-       * — e ela leria o bloco errado procurando o que pediu.
-       */
-      if (avisoDeBusca) {
-        avisoDeBusca.textContent = termo.trim()
-          ? "Nada na jornada responde a isso."
-          : "Escreva o que procura.";
-      }
-      return;
-    }
-
-    painelDeBusca.esconder({ devolverFoco: false });
-    goToSection(achado.id);
-  };
-
-  formaDeBusca?.addEventListener("submit", onBuscar);
 
   const handoff = consumeHandoff();
   const removeSound = mountSoundResume(root, handoff.soundEnabled === true);
@@ -818,13 +725,11 @@ export function createHomeController({
       invite?.removeEventListener("focus", pauseInvitation);
       invite?.removeEventListener("blur", resumeInvitation);
       invite?.removeEventListener("click", onInviteClick);
-      abrirBusca?.removeEventListener("click", onAbrirBusca);
       root.querySelector(".journey-progress")?.removeEventListener("click", onProgresso);
-      formaDeBusca?.removeEventListener("submit", onBuscar);
-      painelDeBusca.destroy();
       expansion.destroy();
       landscapeVideo.destroy();
       removeLivingFooter();
+      removeSectionPanels();
       removePortalDiscovery();
       path.destroy();
       removeSound();

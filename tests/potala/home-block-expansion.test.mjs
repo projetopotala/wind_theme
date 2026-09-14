@@ -85,6 +85,22 @@ test("abrir um bloco fecha o anterior", () => {
   assert.equal(root.sections[1].details.getAttribute("aria-hidden"), "false");
 });
 
+test("recursos nativos ficam acessíveis ao teclado somente no painel aberto", () => {
+  const root = createRoot(["atendimentos"]);
+  const control = createAttributeNode();
+  control.dataset = {};
+  root.sections[0].details.querySelectorAll = () => [control];
+  const expansion = createBlockExpansion(root);
+  assert.equal(control.getAttribute("tabindex"), "-1");
+  expansion.open("atendimentos");
+  assert.equal(control.getAttribute("tabindex"), null);
+  expansion.close();
+  assert.equal(control.getAttribute("tabindex"), "-1");
+  expansion.open("atendimentos");
+  assert.equal(control.getAttribute("tabindex"), null);
+  expansion.destroy();
+});
+
 test("Escape fecha o bloco ativo e devolve o foco ao resumo", () => {
   const root = createRoot(["quem-somos"]);
   const expansion = createBlockExpansion(root);

@@ -167,6 +167,13 @@ function ajustePadrao(entry, aberto) {
     return;
   }
 
+  // Catálogos têm conteúdo variável. Mantém leitura e alvos de toque no tamanho
+  // natural; o painel já oferece rolagem para busca e lista completa.
+  if (entry.section.dataset?.resourceSection) {
+    painel.style.removeProperty("zoom");
+    return;
+  }
+
   /*
    * Mede-se o CONTEÚDO, não a caixa.
    *

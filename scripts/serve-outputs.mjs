@@ -32,7 +32,15 @@ export function resolveRequestPath(requestUrl) {
   if (segments.includes("..")) return null;
   const stripped = pathname.replace(/\/+$/, "") || "/";
   const alias = aliases[stripped.replace(/^\/+/, "")];
-  const relative = pathname === "/" ? "transcender.html" : (alias || pathname.replace(/^[/\\]+/, ""));
+  /*
+   * O Meu Potala é uma SPA: /meu-potala/salvos não é arquivo, é rota resolvida no
+   * navegador. Todas devolvem o mesmo documento — sem isso, recarregar ou abrir um
+   * link direto para Salvos daria 404. Os ".." já foram barrados acima.
+   */
+  const spa = stripped === "/meu-potala" || stripped.startsWith("/meu-potala/");
+  const relative = pathname === "/"
+    ? "transcender.html"
+    : (alias || (spa ? "meu-potala.html" : pathname.replace(/^[/\\]+/, "")));
   const target = resolve(root, relative);
   if (target !== root && !target.startsWith(root + sep)) return null;
   return target;

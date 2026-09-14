@@ -108,4 +108,15 @@ import { getSupabaseClient } from "./supabase/client.js";
   } else {
     mountLegacyNavigation();
   }
+
+  /*
+   * A CONTA, EM TODAS AS PÁGINAS.
+   *
+   * Carregada à parte e por último: nenhuma página espera por ela para aparecer,
+   * e uma falha aqui não derruba a Travessia nem a seção. Na Home o botão vem na
+   * marcação da jornada; nas outras páginas a própria conta o cria.
+   */
+  import("./conta/conta.js")
+    .then(({ montarConta }) => montarConta())
+    .catch((error) => console.warn("Conta indisponível.", error));
 })();

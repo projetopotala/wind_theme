@@ -223,8 +223,8 @@ test("a Home nao tem barra lateral: dois controles de canto no lugar dela", asyn
   const markup = renderJourneyMenu();
   const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
 
-  assert.match(markup, /class="journey-canto journey-lupa"/);
-  assert.match(markup, /class="journey-canto journey-lapis" href="admin\.html"/);
+  assert.match(markup, /class="journey-canto journey-conta"/);
+  assert.match(markup, /class="journey-canto journey-lapis" href="\/admin"/);
 
   for (const sobra of [
     "journey-menu-toggle", "journey-menu-viewport", "journey-sidebar-brand",

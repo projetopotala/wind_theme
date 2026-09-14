@@ -72,9 +72,9 @@ test("bloco fechado controla detalhes expansíveis e não possui imagem própria
   assert.doesNotMatch(markup, /<figure|<img/);
 });
 
-test("imagem opcional aparece somente nos detalhes e carrega sob demanda", () => {
+test("bloco editorial sem catálogo mantém imagem opcional nos detalhes sob demanda", () => {
   const markup = homeScenes.renderRegion({
-    id: "cursos",
+    id: "curso-editorial",
     title: "Cursos",
     category: "Conhecimento",
     summary: "Aprender também é cuidar.",
@@ -94,7 +94,7 @@ test("imagem opcional aparece somente nos detalhes e carrega sob demanda", () =>
   assert.match(details, /<span class="region-icon" aria-hidden="true">C<\/span>/);
 });
 
-test("detalhes separam leitura e apoios para o painel aberto caber inteiro", () => {
+test("catálogo mantém leitura editorial, busca e ações ao lado dos recursos", () => {
   const descobertas = new Map([
     ["recepcao", {
       id: "recepcao",
@@ -117,14 +117,15 @@ test("detalhes separam leitura e apoios para o painel aberto caber inteiro", () 
     side: "left",
   }, 2, null, descobertas);
 
-  const principal = markup.match(/<section class="region-details-main">[\s\S]*?<\/section>/)?.[0] ?? "";
-  const apoio = markup.match(/<aside class="region-details-aside">[\s\S]*?<\/aside>/)?.[0] ?? "";
+  const principal = markup.match(/<section class="region-details-main section-panel-main">[\s\S]*?<\/section>/)?.[0] ?? "";
+  const apoio = markup.match(/<aside class="region-details-aside section-panel-aside">[\s\S]*?<\/aside>/)?.[0] ?? "";
 
   assert.match(principal, /Escuta e orientação/);
-  assert.match(principal, /class="region-tags"/);
-  assert.match(apoio, /class="region-related"/);
-  assert.match(apoio, /class="region-media"/);
-  assert.match(apoio, /class="region-actions"/);
+  assert.match(principal, /data-section-search/);
+  assert.match(principal, /data-section-filter/);
+  assert.match(principal, /section-panel-actions region-actions/);
+  assert.match(apoio, /section-resource-list/);
+  assert.match(apoio, /Como você deseja começar/);
 });
 
 test("fonte de imagem insegura é descartada sem deixar espaço vazio", () => {
