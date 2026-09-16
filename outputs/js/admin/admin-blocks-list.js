@@ -74,7 +74,7 @@ export function createBlocksList({ root, onAction } = {}) {
     if (!botao) return;
     const { action, id } = botao.dataset || {};
     if (action === "grip") return;
-    onAction?.(action, id);
+    return onAction?.(action, id);
   }
 
   lista?.addEventListener?.("click", onClick);

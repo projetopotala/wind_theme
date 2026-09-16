@@ -413,7 +413,7 @@ export function createAdminController({
     const botao = event.target.closest("[data-action]");
     if (!botao) return;
     const { action, id } = botao.dataset;
-    const bloco = blocks.find((item) => item.id === id);
+    const bloco = drafts.find((item) => item.id === id) || blocks.find((item) => item.id === id);
     if (!bloco) return;
 
     if (action === "up" || action === "down") {
@@ -443,11 +443,26 @@ export function createAdminController({
     }
 
     if (action === "edit") {
+      ativoId = bloco.id;
       previewFocusId = bloco.id;
       preencher(draftFromBlock(bloco));
+      desenhar();
       form?.querySelector("[name=title]")?.focus();
       anunciar(`Editando "${bloco.title}".`);
       agendarPreview();
+      return;
+    }
+
+    if (action === "duplicate") {
+      const base = `${bloco.slug || bloco.id}-copia`;
+      const existentes = [...blocks, ...drafts];
+      let identity = base;
+      let suffix = 2;
+      while (existentes.some((item) => item.id === identity || item.slug === identity)) {
+        identity = `${base}-${suffix++}`;
+      }
+      await onSaveDraft({ ...bloco, id: identity, slug: identity, title: `${bloco.title} (cópia)` });
+      form?.querySelector("[name=title]")?.focus();
       return;
     }
 
@@ -517,20 +532,41 @@ export function createAdminController({
     }
 
     const anteriores = drafts.map((item) => ({ ...item }));
-    const [normalizado] = applyDraft([], draft);
+    const anteriorAtivo = ativoId;
+    const existente = [...blocks, ...drafts].find((item) => item.id === draft.id);
+    const normalizado = normalizeHomeBlock({
+      ...draft,
+      position: existente?.position ?? blocks.length + drafts.length,
+      updatedAt: new Date().toISOString(),
+    });
+    if (!draft.id) {
+      const base = normalizado.slug;
+      let identity = base;
+      let suffix = 2;
+      while ([...blocks, ...drafts].some((item) => item.id === identity || item.slug === identity)) {
+        identity = `${base}-${suffix++}`;
+      }
+      normalizado.id = identity;
+      normalizado.slug = identity;
+    }
     drafts = [...drafts.filter((item) => item.id !== normalizado.id), normalizado];
     ativoId = normalizado.id;
     desenhar();
     agendarPreview();
 
     try {
-      await repository.saveDraft(draft);
+      const saved = await repository.saveDraft(normalizado) || normalizado;
+      drafts = drafts.map((item) => item.id === normalizado.id ? saved : item);
+      previewFocusId = saved.id;
+      preencher(draftFromBlock(saved));
+      desenhar();
       marcarSalvo();
       anunciar(`Rascunho de "${draft.title}" guardado. A Home não mudou.`);
       notificar(`Rascunho de "${draft.title}" guardado`, "A Home ainda não mudou: publique para colocar no ar.");
     } catch (error) {
       console.error("Não foi possível guardar o rascunho.", error);
       drafts = anteriores;
+      ativoId = anteriorAtivo;
       desenhar();
       agendarPreview();
       anunciar("Não foi possível guardar o rascunho. Nada foi alterado.");
@@ -650,7 +686,6 @@ export function createAdminController({
   buscaCampo?.addEventListener("input", onBusca);
   abasFiltro?.addEventListener("click", onAba);
   botaoPublicar?.addEventListener("click", onPublish);
-  lista?.addEventListener("click", onListClick);
   lista?.addEventListener("dragstart", onDragStart);
   lista?.addEventListener("dragover", onDragOver);
   lista?.addEventListener("drop", onDrop);
@@ -723,7 +758,6 @@ export function createAdminController({
       return blocks.map((block) => ({ ...block }));
     },
     destroy() {
-      lista?.removeEventListener("click", onListClick);
       lista?.removeEventListener("dragstart", onDragStart);
       lista?.removeEventListener("dragover", onDragOver);
       lista?.removeEventListener("drop", onDrop);

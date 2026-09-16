@@ -6,29 +6,30 @@ const html = await readFile(new URL("../../outputs/admin.html", import.meta.url)
 
 test("a navegação traz a jornada e as áreas de operação", () => {
   for (const secao of [
-    "Jornada", "Financeiro", "Atendimentos", "Salas físicas",
-    "Atendimentos virtuais", "Usuários", "Blog",
+    "Visão geral", "Agenda", "Salas", "Cursos e atividades", "Pessoas",
+    "Inventário", "Movimentações", "Manutenção", "Financeiro", "Relatórios",
+    "Jornada", "Blog", "Configurações",
   ]) {
     assert.ok(html.includes(secao), `seção ausente: ${secao}`);
   }
 });
 
 test("cada área de operação tem a própria tela, fora do editor", () => {
-  for (const secao of ["financeiro", "atendimentos", "salas", "virtuais", "usuarios", "blog"]) {
-    assert.match(html, new RegExp(`data-admin-workspace="${secao}" hidden`));
+  for (const secao of ["agenda", "salas", "ofertas", "pessoas", "inventario", "movimentacoes", "manutencao", "financeiro", "relatorios", "configuracoes", "blog"]) {
+    assert.match(html, new RegExp(`data-admin-workspace="${secao}"[^>]*hidden`));
   }
   assert.match(html, /data-admin-workspace="jornada"/);
-  assert.match(html, /Helena Vasconcelos/);
-  assert.match(html, /Marina Alves/);
+  assert.match(html, /data-op-dialog/);
+  assert.match(html, /data-op-status/);
 });
 
-test("a abertura é a grade de atalhos, não o editor", () => {
+test("a abertura é a visão geral operacional, não o editor", () => {
   assert.match(html, /data-admin-section="inicio"/);
   assert.match(html, /data-section="inicio" aria-current="page"/);
-  assert.match(html, /data-admin-atalhos/);
+  assert.match(html, /data-admin-workspace="inicio"[^>]*data-op-view="dashboard"/);
   assert.match(html, /data-admin-workspace="jornada"[^>]*hidden/);
-  for (const secao of ["jornada", "financeiro", "atendimentos", "salas", "virtuais", "usuarios", "blog"]) {
-    assert.match(html, new RegExp(`data-admin-atalhos[\\s\\S]*data-section="${secao}"`));
+  for (const secao of ["agenda", "salas", "ofertas", "pessoas", "inventario", "financeiro", "jornada", "blog"]) {
+    assert.match(html, new RegExp(`data-section="${secao}"`));
   }
 });
 

@@ -27,7 +27,7 @@ test("Home oferece acesso discreto ao painel e o painel contém a prévia real",
    * inferior esquerdo: discreto, e o único controle da Home que não é para
    * quem chega.
    */
-  assert.match(homeScenes, /journey-lapis[\s\S]*?href="admin\.html"/);
+  assert.match(homeScenes, /journey-lapis[\s\S]*?href="(?:\/admin|admin\.html)"/);
   assert.match(admin, /<iframe[^>]+data-admin-preview/);
   assert.match(admin, /src="transcendido\.html\?admin-preview=1"/);
 });

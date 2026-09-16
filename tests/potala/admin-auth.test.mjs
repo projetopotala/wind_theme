@@ -98,23 +98,25 @@ test("login usa Supabase Auth e encerra sessão se o usuário não é admin", as
   });
 
   assert.equal(access.state, "forbidden");
-  assert.deepEqual(calls.rpc, [[
-    "verify_portal_password",
-    { p_email: "sem-acesso@example.com", p_password: "senha-segura" },
-  ]]);
+  assert.deepEqual(calls.rpc, [], "a senha pertence exclusivamente ao Supabase Auth");
   assert.deepEqual(calls.signIn, [{ email: "sem-acesso@example.com", password: "senha-segura" }]);
   assert.equal(calls.signOut, 1);
 });
 
-test("senha que não confere com o hash da tabela não chega ao Auth", async () => {
+test("senha atualizada no Auth funciona mesmo com hash legado divergente", async () => {
   const session = { user: { id: "user-3", email: "admin@example.com" } };
-  const { client, calls } = clientFor({ session, passwordOk: false });
+  const { client, calls } = clientFor({ session, role: "admin", passwordOk: false });
+  // Recuperação altera Auth; o hash legado não deve bloquear a nova senha.
+  const access = await signInAsAdmin(client, { email: "admin@example.com", password: "senha-recuperada" });
+  assert.equal(access.state, "authorized");
+  assert.equal(calls.signIn.length, 1);
+  assert.deepEqual(calls.rpc, []);
+});
 
-  await assert.rejects(
-    signInAsAdmin(client, { email: "admin@example.com", password: "errada" }),
-    /não foi possível entrar/i,
-  );
-  assert.equal(calls.signIn.length, 0);
+test("erro de senha do Auth impede consulta de autorização", async () => {
+  const { client, calls } = clientFor({ sessionError: { message: "Invalid login credentials" } });
+  await assert.rejects(signInAsAdmin(client, { email: "admin@example.com", password: "errada" }), /Invalid login/);
+  assert.deepEqual(calls.userIds, []);
 });
 
 test("primeiro acesso define uma senha somente quando a confirmação coincide", async () => {

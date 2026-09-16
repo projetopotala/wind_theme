@@ -14,6 +14,7 @@
     "prepare:arrival-plate": "node scripts/prepare-arrival-plate-assets.mjs",
     "prepare:atendimentos": "node scripts/prepare-atendimentos-panes.mjs",
     "preview:portal": "node scripts/serve-outputs.mjs",
+    "seed:operations-demo": "node scripts/seed-operations-demo.mjs",
     "logs": "vercel logs --follow",
     "prepare:arrival-v2": "node scripts/prepare-arrival-v2-assets.mjs",
     "prepare:palace": "node scripts/prepare-palace-assets.mjs",

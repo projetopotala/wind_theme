@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createAdminController } from "../../outputs/js/admin/admin-controller.js";
+import { createLocalContentRepository } from "../../outputs/js/home/content-repository.js";
 
 /*
  * Um repositório falso que conta o que foi chamado e pode falhar sob comando.
@@ -60,6 +61,8 @@ function montar() {
     campo("summary", "Um resumo"),
     campo("side", "left"),
   ];
+  elementos.push(campo("slug"));
+  for (const element of elementos) elementos[element.name] = element;
   elementos.image = campo("image");
   elementos.title = elementos[1];
   elementos.summary = elementos[2];
@@ -77,7 +80,13 @@ function montar() {
     src: "",
     value: "",
     dataset: {},
-    addEventListener(tipo, fn) { ouvintes.set(`${chave}:${tipo}`, fn); },
+    addEventListener(tipo, fn) {
+      const previous = ouvintes.get(`${chave}:${tipo}`);
+      ouvintes.set(`${chave}:${tipo}`, async (event) => {
+        if (previous) await previous(event);
+        return fn(event);
+      });
+    },
     removeEventListener(tipo) { ouvintes.delete(`${chave}:${tipo}`); },
     querySelector: () => null,
     querySelectorAll: () => [],
@@ -284,4 +293,93 @@ test("falha ao ler os blocos publicados vira aviso, não tela muda", async () =>
   await painel.pronto;
 
   assert.match(nos["[data-admin-status]"].textContent, /Não foi possível carregar os blocos/i);
+});
+
+const listEvent = (action, id) => ({ target: { closest: () => ({ dataset: { action, id } }) } });
+
+test("um clique em mover grava a ordem somente uma vez", async () => {
+  const repo = repositorioFalso();
+  const { root, ouvintes } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+  await ouvintes.get("lista:click")(listEvent("down", "a"));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(repo.chamadas.filter(([action]) => action === "replaceAll").length, 1);
+  painel.destroy();
+});
+
+test("duplicar repetidamente cria identidades distintas em rascunhos e reabre a cópia", async () => {
+  const repo = repositorioFalso();
+  const { root, ouvintes, nos } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+  await ouvintes.get("lista:click")(listEvent("duplicate", "a"));
+  await ouvintes.get("lista:click")(listEvent("duplicate", "a"));
+  const drafts = await repo.listDrafts();
+  assert.equal(drafts.length, 2);
+  assert.equal(new Set(drafts.map((item) => item.id)).size, 2);
+  assert.equal(new Set(drafts.map((item) => item.slug)).size, 2);
+  assert.ok(drafts.every((item) => item.id !== "a" && item.slug !== "a"));
+  assert.equal(repo.publicados.length, 1);
+  assert.equal(repo.publicados[0].title, "Original");
+  assert.equal(nos["[data-admin-form]"].elements.id.value, drafts[1].id);
+  await ouvintes.get("lista:click")(listEvent("edit", drafts[0].id));
+  assert.equal(nos["[data-admin-form]"].elements.id.value, drafts[0].id);
+  assert.equal(nos["[data-admin-form]"].elements.title.value, drafts[0].title);
+  painel.destroy();
+});
+
+test("novo rascunho mantém identidade depois de renomear e editar abre conteúdo pendente", async () => {
+  const repo = repositorioFalso();
+  const { root, ouvintes, nos, preencherFormulario } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+  preencherFormulario({ ...RASCUNHO, id: "", title: "Novo" });
+  await ouvintes.get("savedraft:click")();
+  const id = nos["[data-admin-form]"].elements.id.value;
+  assert.ok(id);
+  preencherFormulario({ title: "Renomeado" });
+  await ouvintes.get("savedraft:click")();
+  assert.equal((await repo.listDrafts()).length, 1);
+  await ouvintes.get("lista:click")(listEvent("edit", id));
+  assert.equal(nos["[data-admin-form]"].elements.title.value, "Renomeado");
+  preencherFormulario(RASCUNHO);
+  await ouvintes.get("savedraft:click")();
+  await ouvintes.get("lista:click")(listEvent("edit", "a"));
+  assert.equal(nos["[data-admin-form]"].elements.title.value, "Editado");
+  painel.destroy();
+});
+
+test("cópia local só entra na Home depois de publicar e preserva o original", async () => {
+  const repo = createLocalContentRepository({ storage: null, defaults: [
+    { id: "a", slug: "a", title: "Original", summary: "Resumo", side: "left", published: true },
+  ] });
+  const { root, ouvintes, nos, preencherFormulario } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+  await ouvintes.get("lista:click")(listEvent("duplicate", "a"));
+  const id = nos["[data-admin-form]"].elements.id.value;
+  preencherFormulario({ title: "Cópia revisada" });
+  await ouvintes.get("savedraft:click")();
+  assert.deepEqual((await repo.list({ publishedOnly: true })).map((item) => item.title), ["Original"]);
+  await ouvintes.get("publish:click")();
+  assert.deepEqual((await repo.list({ publishedOnly: true })).map((item) => item.title), ["Original", "Cópia revisada"]);
+  assert.equal((await repo.listDrafts()).length, 0);
+  await ouvintes.get("lista:click")(listEvent("edit", id));
+  assert.equal(nos["[data-admin-form]"].elements.title.value, "Cópia revisada");
+  painel.destroy();
+});
+
+test("falha ao duplicar não deixa rascunho fantasma nem troca o editor", async () => {
+  const repo = repositorioFalso({ falharSalvar: true });
+  const { root, ouvintes, nos } = montar();
+  const painel = createAdminController({ root, repository: repo });
+  await painel.pronto;
+  await ouvintes.get("lista:click")(listEvent("edit", "a"));
+  await ouvintes.get("lista:click")(listEvent("duplicate", "a"));
+  assert.equal((await repo.listDrafts()).length, 0);
+  assert.equal(nos["[data-admin-publish]"].disabled, true);
+  assert.equal(nos["[data-admin-form]"].elements.id.value, "a");
+  assert.equal(repo.publicados.length, 1);
+  painel.destroy();
 });

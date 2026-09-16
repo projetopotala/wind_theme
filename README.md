@@ -23,7 +23,7 @@ Os endereços das páginas não mudam. O que mudou foi só onde o casco vive.
 
 - `transcender.html` — Chegada. O casco dela está em `css/respiracao.css` e `js/chegada/respiracao.js`.
 - `transcendido.html` — Home, a travessia. O casco compartilhado das páginas está em `css/secoes.css` e `js/secoes.js`.
-- `/admin` — editor da jornada. A senha fica no Auth; o cadastro que libera o painel é `public.users` (`owner` ou `admin`, `active`).
+- `/admin` — central operacional e editor da jornada. A senha fica no Auth; o cadastro que libera o painel é `public.users` (`owner` ou `admin`, `active`).
 - `/blog` — mesa do blogueiro. A entrada é o login; o acesso de teste fica no próprio formulário.
 
 ## Onde olhar
@@ -49,8 +49,10 @@ A Home lê os blocos de `public.home_blocks`. Se a leitura remota falhar, usa os
 4. Cadastre essa conta e grave a senha só como hash bcrypt, na tabela e no Auth:
 
 ```sql
-select public.set_portal_user_password('projetopotala@gmail.com', '123456');
+select public.set_portal_user_password('projetopotala@gmail.com', '<SENHA_FORTE_E_EXCLUSIVA>');
 ```
+
+Substitua o segundo argumento pelo valor real, sem os sinais de menor e maior.
 
 O navegador recebe apenas a chave `sb_publishable_...`, que é pública por definição. A proteção real está nos grants e nas políticas RLS da migração. Nunca coloque `service_role`, `sb_secret_...`, senha do banco ou access token em `outputs/`, no Git ou em uma variável exposta ao cliente.
 
@@ -66,6 +68,23 @@ O navegador recebe apenas a chave `sb_publishable_...`, que é pública por defi
 - O repositório anterior de `localStorage` permanece em `outputs/js/home/content-repository.js` e pode voltar a ser injetado sem mudar os componentes visuais.
 - Antes de qualquer remoção futura de tabela, exporte `home_blocks`. Esta migração não contém `drop table`, `truncate` nem outra contração destrutiva.
 - Falha de escrita no painel é exibida como erro e não altera a lista em memória nem anuncia publicação.
+
+## Central operacional local
+
+Ao executar `npm run preview:portal`, o `/admin` também inicia a operação local em SQLite. A base fica em `.local/potala-operations.sqlite`, não entra no Git e não é enviada ao Supabase. O editor da jornada continua usando as tabelas editoriais existentes no Supabase; assim, conteúdo e operação não mantêm cópias concorrentes.
+
+Na primeira entrada, use **Preparar as 10 salas** e revise cada cadastro antes de liberar reservas. Os registros provisórios começam indisponíveis, sem capacidade ou acessibilidade presumidas. Depois disso, o painel permite cadastrar pessoas com múltiplos papéis, catálogo e turmas, agenda presencial ou online, recorrência, participantes, inventário por quantidade, patrimônio individual, movimentações, manutenção, lançamentos, pagamentos, estornos e regras configuráveis de repasse.
+
+As reservas bloqueiam conflitos de sala e profissional, consideram preparação e desmontagem e registram histórico. Movimentações não alteram reservas automaticamente; quando houver impacto futuro, o painel exige uma confirmação explícita. Valores e repasses guardam a regra aplicada no momento da transação para preservar o histórico.
+
+Para copiar os dados, acesse **Configurações → Exportar cópia dos dados**. O arquivo JSON serve como cópia de consulta; a restauração automática ainda não faz parte desta entrega. Para iniciar uma base vazia durante o desenvolvimento, pare o preview, mova o arquivo SQLite para um local seguro e inicie o servidor novamente.
+
+Validação da operação:
+
+```bash
+npm run test:portal
+npm run validate:portal
+```
 
 ## Composição editorial e Rodapé Vivo
 

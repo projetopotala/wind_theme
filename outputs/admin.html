@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#12100e">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Painel editorial protegido da Travessia Potala.">
-  <title>Potala — Editor da jornada</title>
+  <meta name="description" content="Central operacional protegida do Instituto Potala.">
+  <title>Potala — Central operacional</title>
   <link rel="stylesheet" href="css/admin.css">
   <script src="vendor/supabase.js"></script>
   <script type="module" src="js/admin/admin-entry.js"></script>
@@ -16,8 +16,8 @@
     <section class="admin-entry" data-admin-auth-view aria-labelledby="admin-entry-title">
       <img class="admin-entry-logo" src="media/potala-mark-transparent.png" alt="Instituto Potala">
       <p class="admin-kicker">Instituto Potala</p>
-      <h1 id="admin-entry-title">Painel editorial</h1>
-      <p class="admin-intro">Entre com a conta autorizada para editar a jornada da Home.</p>
+      <h1 id="admin-entry-title">Central operacional</h1>
+      <p class="admin-intro">Entre com a conta autorizada para administrar a operação e o conteúdo do Portal Potala.</p>
       <form class="admin-login" data-admin-auth-form hidden>
         <label for="admin-email">E-mail</label>
         <input id="admin-email" name="email" type="email" autocomplete="username" required>
@@ -38,21 +38,35 @@
       <p class="admin-entry-links"><a href="transcendido.html">Ver a Home</a></p>
     </section>
 
-    <section class="admin-panel" id="admin-panel" data-admin-section="inicio" aria-labelledby="admin-inicio-title" hidden>
+    <section class="admin-panel" id="admin-panel" data-admin-section="inicio" aria-label="Central operacional do Instituto Potala" hidden>
       <nav class="admin-nav" data-admin-nav aria-label="Seções do painel">
         <p class="admin-brand">
           <img class="admin-brand-logo" src="media/potala-mark-transparent.png" alt="">
           <span>Potala <small>Instituto</small></span>
         </p>
         <ul>
-          <li><button type="button" data-section="inicio" aria-current="page">Início</button></li>
-          <li><button type="button" data-section="jornada">Jornada</button></li>
-          <li><button type="button" data-section="financeiro">Financeiro</button></li>
-          <li><button type="button" data-section="atendimentos">Atendimentos</button></li>
-          <li><button type="button" data-section="salas">Salas físicas</button></li>
-          <li><button type="button" data-section="virtuais">Atendimentos virtuais</button></li>
-          <li><button type="button" data-section="usuarios">Usuários</button></li>
-          <li><button type="button" data-section="blog">Blog</button></li>
+          <li><button type="button" data-section="inicio" aria-current="page"><span aria-hidden="true">⌂</span> Visão geral</button></li>
+        </ul>
+        <p class="admin-nav-group">Operação</p>
+        <ul>
+          <li><button type="button" data-section="agenda"><span aria-hidden="true">▦</span> Agenda</button></li>
+          <li><button type="button" data-section="salas"><span aria-hidden="true">□</span> Salas</button></li>
+          <li><button type="button" data-section="ofertas"><span aria-hidden="true">◇</span> Cursos e atividades</button></li>
+        </ul>
+        <p class="admin-nav-group">Pessoas e patrimônio</p>
+        <ul>
+          <li><button type="button" data-section="pessoas"><span aria-hidden="true">♙</span> Pessoas</button></li>
+          <li><button type="button" data-section="inventario"><span aria-hidden="true">▣</span> Inventário</button></li>
+          <li><button type="button" data-section="movimentacoes"><span aria-hidden="true">⇄</span> Movimentações</button></li>
+          <li><button type="button" data-section="manutencao"><span aria-hidden="true">⌁</span> Manutenção</button></li>
+        </ul>
+        <p class="admin-nav-group">Gestão</p>
+        <ul>
+          <li><button type="button" data-section="financeiro"><span aria-hidden="true">◉</span> Financeiro</button></li>
+          <li><button type="button" data-section="relatorios"><span aria-hidden="true">↗</span> Relatórios</button></li>
+          <li><button type="button" data-section="jornada"><span aria-hidden="true">✦</span> Jornada</button></li>
+          <li><button type="button" data-section="blog"><span aria-hidden="true">✎</span> Blog</button></li>
+          <li><button type="button" data-section="configuracoes"><span aria-hidden="true">⚙</span> Configurações</button></li>
         </ul>
 
         <div class="admin-user" data-admin-user>
@@ -83,41 +97,8 @@
         <button class="admin-sair" type="button" data-admin-sign-out>Sair</button>
       </nav>
 
-      <section class="admin-workspace admin-home" data-admin-workspace="inicio" data-admin-atalhos aria-labelledby="admin-inicio-title">
-        <header class="admin-workspace-head">
-          <h2 id="admin-inicio-title" tabindex="-1">Painel</h2>
-          <p>Escolha uma área para continuar.</p>
-        </header>
-        <div class="admin-atalhos">
-          <button type="button" data-section="jornada">
-            <strong>Jornada</strong>
-            <small>Organize e publique os blocos do portal</small>
-          </button>
-          <button type="button" data-section="financeiro">
-            <strong>Financeiro</strong>
-            <small>Lançamentos, recebimentos e o que está em aberto</small>
-          </button>
-          <button type="button" data-section="atendimentos">
-            <strong>Atendimentos</strong>
-            <small>Agenda, quem atende e em qual sala</small>
-          </button>
-          <button type="button" data-section="salas">
-            <strong>Salas físicas</strong>
-            <small>Cadastro, capacidade e uso das salas</small>
-          </button>
-          <button type="button" data-section="virtuais">
-            <strong>Atendimentos virtuais</strong>
-            <small>Encontros à distância, link e horário</small>
-          </button>
-          <button type="button" data-section="usuarios">
-            <strong>Usuários</strong>
-            <small>Quem entra no painel e com qual papel</small>
-          </button>
-          <button type="button" data-section="blog">
-            <strong>Blog</strong>
-            <small>Textos no ar e o que os colaboradores escrevem</small>
-          </button>
-        </div>
+      <section class="admin-workspace admin-home" data-admin-workspace="inicio" data-op-view="dashboard" aria-label="Visão geral operacional">
+        <p class="op-loading" role="status">Abrindo a operação local…</p>
       </section>
 
       <header class="admin-head" data-admin-workspace="jornada" hidden>
@@ -474,124 +455,26 @@
         </div>
       </section>
 
-      <section class="admin-workspace" data-admin-workspace="financeiro" hidden aria-labelledby="admin-financeiro-title">
-        <header class="admin-workspace-head">
-          <h2 id="admin-financeiro-title">Controle financeiro</h2>
-          <p>Lançamentos, recebimentos e o que ainda está em aberto.</p>
-        </header>
-        <div class="admin-stats">
-          <p><small>A receber</small><strong>R$ 4.280</strong></p>
-          <p><small>Recebido no mês</small><strong>R$ 12.640</strong></p>
-          <p><small>Em aberto</small><strong>6 lançamentos</strong></p>
-        </div>
-        <div class="admin-workspace-toolbar">
-          <button type="button">Novo lançamento</button>
-        </div>
-        <table class="admin-sheet">
-          <caption>Lançamentos</caption>
-          <thead>
-            <tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Situação</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>8 set</td><td>Consulta · Clara Mendes</td><td>Receita</td><td>R$ 220</td><td><span class="admin-badge">Recebido</span></td></tr>
-            <tr><td>8 set</td><td>Mensalidade da sala Lótus</td><td>Despesa</td><td>R$ 1.800</td><td><span class="admin-badge">Pago</span></td></tr>
-            <tr><td>7 set</td><td>Roda de oráculos · quarta</td><td>Receita</td><td>R$ 480</td><td><span class="admin-badge is-wait">A receber</span></td></tr>
-            <tr><td>5 set</td><td>Pacote de 4 sessões · Anita Luz</td><td>Receita</td><td>R$ 760</td><td><span class="admin-badge is-wait">Parcial</span></td></tr>
-          </tbody>
-        </table>
-      </section>
+      <section class="admin-workspace" data-admin-workspace="agenda" data-op-view="agenda" hidden></section>
+      <section class="admin-workspace" data-admin-workspace="salas" data-op-view="rooms" hidden></section>
+      <section class="admin-workspace" data-admin-workspace="ofertas" data-op-view="offers" hidden></section>
+      <section class="admin-workspace" data-admin-workspace="pessoas" data-op-view="people" hidden></section>
+      <section class="admin-workspace" data-admin-workspace="inventario" data-op-view="inventory" hidden></section>
+      <section class="admin-workspace" data-admin-workspace="movimentacoes" data-op-view="movements" hidden></section>
+      <section class="admin-workspace" data-admin-workspace="manutencao" data-op-view="maintenance" hidden></section>
+      <section class="admin-workspace" data-admin-workspace="financeiro" data-op-view="finance" hidden></section>
+      <section class="admin-workspace" data-admin-workspace="relatorios" data-op-view="reports" hidden></section>
+      <section class="admin-workspace" data-admin-workspace="configuracoes" data-op-view="settings" hidden></section>
 
-      <section class="admin-workspace" data-admin-workspace="atendimentos" hidden aria-labelledby="admin-atendimentos-title">
-        <header class="admin-workspace-head">
-          <h2 id="admin-atendimentos-title">Controle de atendimentos</h2>
-          <p>A agenda do instituto: quem atende, quando e em qual sala.</p>
-        </header>
-        <div class="admin-workspace-toolbar">
-          <button type="button">Novo atendimento</button>
-        </div>
-        <table class="admin-sheet">
-          <caption>Atendimentos</caption>
-          <thead>
-            <tr><th>Data</th><th>Horário</th><th>Pessoa</th><th>Profissional</th><th>Sala</th><th>Situação</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>8 set</td><td>09:00</td><td>Anita Luz</td><td>Clara Mendes</td><td>Lótus</td><td><span class="admin-badge">Confirmado</span></td></tr>
-            <tr><td>8 set</td><td>11:30</td><td>Pedro Ianni</td><td>Lin Watanabe</td><td>Ponte</td><td><span class="admin-badge is-wait">Aguardando</span></td></tr>
-            <tr><td>8 set</td><td>15:00</td><td>Grupo de práticas</td><td>Rita Okada</td><td>Silêncio</td><td><span class="admin-badge">Em sala</span></td></tr>
-            <tr><td>9 set</td><td>10:00</td><td>Helena V.</td><td>Marina Alves</td><td>Lótus</td><td><span class="admin-badge is-wait">A confirmar</span></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section class="admin-workspace" data-admin-workspace="salas" hidden aria-labelledby="admin-salas-title">
-        <header class="admin-workspace-head">
-          <h2 id="admin-salas-title">Cadastro de salas físicas</h2>
-          <p>As salas do instituto, com capacidade e o que cada uma recebe.</p>
-        </header>
-        <div class="admin-workspace-toolbar">
-          <button type="button">Nova sala</button>
-        </div>
-        <ul class="admin-room-list">
-          <li>
-            <strong>Sala Lótus</strong>
-            <span>2 pessoas · atendimento individual</span>
-            <span class="admin-badge">Livre agora</span>
-          </li>
-          <li>
-            <strong>Sala Ponte</strong>
-            <span>4 pessoas · sessão em dupla</span>
-            <span class="admin-badge is-wait">Ocupada até 12:30</span>
-          </li>
-          <li>
-            <strong>Sala Silêncio</strong>
-            <span>12 pessoas · práticas e rodas</span>
-            <span class="admin-badge">Em uso · grupo</span>
-          </li>
-        </ul>
-      </section>
-
-      <section class="admin-workspace" data-admin-workspace="virtuais" hidden aria-labelledby="admin-virtuais-title">
-        <header class="admin-workspace-head">
-          <h2 id="admin-virtuais-title">Controle de atendimentos virtuais</h2>
-          <p>Encontros à distância, com o link e o horário de cada um.</p>
-        </header>
-        <div class="admin-workspace-toolbar">
-          <button type="button">Novo atendimento virtual</button>
-        </div>
-        <table class="admin-sheet">
-          <caption>Atendimentos virtuais</caption>
-          <thead>
-            <tr><th>Data</th><th>Horário</th><th>Pessoa</th><th>Profissional</th><th>Canal</th><th>Situação</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>8 set</td><td>18:00</td><td>João Ferreira</td><td>Clara Mendes</td><td>Vídeo</td><td><span class="admin-badge">Link enviado</span></td></tr>
-            <tr><td>8 set</td><td>19:30</td><td>Casa de Ana</td><td>Lin Watanabe</td><td>Vídeo</td><td><span class="admin-badge is-wait">Aguardando entrada</span></td></tr>
-            <tr><td>9 set</td><td>08:30</td><td>Marina R.</td><td>Rita Okada</td><td>Vídeo</td><td><span class="admin-badge">Confirmado</span></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section class="admin-workspace" data-admin-workspace="usuarios" hidden aria-labelledby="admin-usuarios-title">
-        <header class="admin-workspace-head">
-          <h2 id="admin-usuarios-title">Cadastro de usuários</h2>
-          <p>Quem entra no painel. O cadastro vive em <code>public.users</code>.</p>
-        </header>
-        <div class="admin-workspace-toolbar">
-          <button type="button">Novo usuário</button>
-        </div>
-        <table class="admin-sheet">
-          <caption>Usuários do painel</caption>
-          <thead>
-            <tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Situação</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Instituto Potala</td><td>projetopotala@gmail.com</td><td>Dono</td><td><span class="admin-badge">Ativo</span></td></tr>
-            <tr><td>Helena Vasconcelos</td><td>helena@potala.org</td><td>Colaboradora · oráculos</td><td><span class="admin-badge">Ativo</span></td></tr>
-            <tr><td>Marina Alves</td><td>marina@potala.org</td><td>Colaboradora · blog</td><td><span class="admin-badge">Ativo</span></td></tr>
-            <tr><td>Lin Watanabe</td><td>lin@potala.org</td><td>Colaborador · terapias</td><td><span class="admin-badge is-wait">Convite enviado</span></td></tr>
-          </tbody>
-        </table>
-      </section>
+      <p class="op-service-status" data-op-status role="status" aria-live="polite"></p>
+      <dialog class="op-dialog" data-op-dialog aria-labelledby="op-dialog-title">
+        <form data-op-form>
+          <header><div><p class="op-eyebrow" data-op-dialog-kicker>Operação</p><h2 id="op-dialog-title" data-op-dialog-title>Editar</h2></div><button type="button" class="op-close" data-op-close aria-label="Fechar">×</button></header>
+          <div class="op-form-body" data-op-form-body></div>
+          <p class="op-form-error" data-op-form-error role="alert"></p>
+          <footer><button type="button" data-op-close>Cancelar</button><button type="submit" class="op-primary">Salvar</button></footer>
+        </form>
+      </dialog>
     </section>
   </main>
 </body>

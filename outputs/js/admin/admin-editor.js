@@ -64,6 +64,7 @@ export function createAdminEditor({ root, onChange, onSaveDraft } = {}) {
   const checklist = root.querySelector("[data-admin-checklist]");
   const titulo = root.querySelector("[data-admin-form-title]");
   const migalha = root.querySelector("[data-admin-breadcrumb-title]");
+  const toolbar = root.querySelector("[data-admin-toolbar]");
 
   function trocarAba(painel) {
     for (const botao of abas?.querySelectorAll("[data-panel]") || []) {
@@ -113,9 +114,38 @@ export function createAdminEditor({ root, onChange, onSaveDraft } = {}) {
   }
 
   function onRascunho() {
-    onSaveDraft?.(read());
+    return onSaveDraft?.(read());
   }
 
+  function onMark(event) {
+    const button = event.target?.closest?.("[data-mark]");
+    const body = form?.elements?.body;
+    if (!button || !body) return;
+    const mark = button.dataset.mark;
+    if (!["bold", "italic", "link", "ul", "ol", "quote"].includes(mark)) return;
+    event.preventDefault();
+    let start = body.selectionStart ?? body.value.length;
+    let end = body.selectionEnd ?? start;
+    if (["ul", "ol", "quote"].includes(mark)) {
+      // Marcas de bloco pertencem ao início da linha para o renderer reconhecê-las.
+      start = body.value.lastIndexOf("\n", start - 1) + 1;
+      const lineEnd = body.value.indexOf("\n", Math.max(start, end - 1));
+      end = lineEnd < 0 ? body.value.length : lineEnd;
+    }
+    const selected = body.value.slice(start, end) || "texto";
+    let replacement;
+    if (mark === "bold") replacement = `**${selected}**`;
+    else if (mark === "italic") replacement = `*${selected}*`;
+    else if (mark === "link") replacement = `[${selected}](https://)`;
+    else replacement = selected.split("\n").map((line, index) =>
+      `${mark === "ol" ? `${index + 1}. ` : mark === "ul" ? "- " : "> "}${line}`).join("\n");
+    body.value = body.value.slice(0, start) + replacement + body.value.slice(end);
+    body.focus();
+    body.setSelectionRange(start, start + replacement.length);
+    refletir();
+  }
+
+  toolbar?.addEventListener?.("click", onMark);
   abas?.addEventListener?.("click", onAbaClick);
   form?.addEventListener?.("input", refletir);
   const botaoRascunho = root.querySelector("[data-admin-save-draft]");
@@ -135,6 +165,7 @@ export function createAdminEditor({ root, onChange, onSaveDraft } = {}) {
     },
     refresh: refletir,
     destroy() {
+      toolbar?.removeEventListener?.("click", onMark);
       abas?.removeEventListener?.("click", onAbaClick);
       form?.removeEventListener?.("input", refletir);
       botaoRascunho?.removeEventListener?.("click", onRascunho);

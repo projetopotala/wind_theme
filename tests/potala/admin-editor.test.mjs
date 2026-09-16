@@ -93,6 +93,10 @@ function montar(campos) {
     addEventListener(tipo, fn) { ouvintes.set(`rascunho:${tipo}`, fn); },
     removeEventListener(tipo) { ouvintes.delete(`rascunho:${tipo}`); },
   };
+  const toolbar = {
+    addEventListener(tipo, fn) { ouvintes.set(`toolbar:${tipo}`, fn); },
+    removeEventListener(tipo) { ouvintes.delete(`toolbar:${tipo}`); },
+  };
 
   const root = {
     querySelector(seletor) {
@@ -103,6 +107,7 @@ function montar(campos) {
       if (seletor === "[data-admin-form-title]") return titulo;
       if (seletor === "[data-admin-breadcrumb-title]") return migalha;
       if (seletor === "[data-admin-save-draft]") return rascunho;
+      if (seletor === "[data-admin-toolbar]") return toolbar;
       return null;
     },
   };
@@ -180,3 +185,25 @@ test("destroy solta os ouvintes", () => {
   createAdminEditor({ root }).destroy();
   assert.equal(ouvintes.size, 0);
 });
+
+for (const [mark, expected] of [
+  ["bold", "**texto**"], ["italic", "*texto*"], ["link", "[texto](https://)"],
+  ["ul", "- texto"], ["ol", "1. texto"], ["quote", "> texto"],
+]) {
+  test(`toolbar ${mark} formata a seleção e atualiza o rascunho`, () => {
+    const body = { ...campo("body", "antes texto depois"), selectionStart: 6, selectionEnd: 11,
+      focus() {}, setSelectionRange(start, end) { this.selectionStart = start; this.selectionEnd = end; } };
+    const fields = [body];
+    fields.body = body;
+    const { root, ouvintes } = montar(fields);
+    const changes = [];
+    const editor = createAdminEditor({ root, onChange: (draft) => changes.push(draft) });
+    ouvintes.get("toolbar:click")?.({ preventDefault() {}, target: { closest: () => ({ dataset: { mark } }) } });
+    assert.equal(body.value, ["ul", "ol", "quote"].includes(mark)
+      ? `${expected.replace("texto", "")}antes texto depois`
+      : `antes ${expected} depois`);
+    assert.equal(changes.at(-1)?.body, body.value);
+    editor.destroy();
+    assert.equal(ouvintes.size, 0);
+  });
+}

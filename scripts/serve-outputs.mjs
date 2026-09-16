@@ -46,8 +46,27 @@ export function resolveRequestPath(requestUrl) {
   return target;
 }
 
-export function createPreviewServer() {
-  return createServer(async (request, response) => {
+export function createPreviewServer({ databasePath = resolve('.local/potala-operations.sqlite') } = {}) {
+  let operationPromise;
+  let operationStore;
+  const server = createServer(async (request, response) => {
+    if ((request.url || '').startsWith('/api/operations/')) {
+      try {
+        operationPromise ||= (async () => {
+          const [{createOperationalStore},{createOperationsApi},{applyScheduleCommand},{applyResourceCommand}] = await Promise.all([
+            import('./operations-store.mjs'),import('./operations-api.mjs'),
+            import('../outputs/js/admin/operations/schedule.js'),import('../outputs/js/admin/operations/resources.js'),
+          ]);
+          operationStore=createOperationalStore({path:databasePath,handlers:[applyScheduleCommand,applyResourceCommand]});
+          return createOperationsApi({store:operationStore});
+        })();
+        await (await operationPromise)(request,response);
+      } catch {
+        response.writeHead(503,{'Content-Type':'application/json'});
+        response.end(JSON.stringify({error:'Não foi possível abrir a base local. Verifique a versão do Node e a pasta .local.'}));
+      }
+      return;
+    }
     const target = resolveRequestPath(request.url || "/");
     if (!target) {
       response.writeHead(403);
@@ -113,6 +132,8 @@ export function createPreviewServer() {
       response.end("Not found");
     }
   });
+  server.on('close',()=>operationStore?.close());
+  return server;
 }
 
 const isEntryPoint = process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url;
