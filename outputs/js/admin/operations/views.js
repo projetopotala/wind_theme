@@ -1,42 +1,32 @@
-import {occupancy} from './schedule.js';
-import {resourceNeeds,financialSummary} from './resources.js';
+import {occupancy} from "./schedule.js";
+import {resourceNeeds,financialSummary} from "./resources.js";
+import {esc,money,dateLocal,today,time,day,translate,badge,action,table,cell,lookup,roomName,personName,heading,dateBounds,addDays,active} from "./comum.js";
+import {renderAgenda,tabelaDaAgenda} from "./agenda-views.js";
 
-export const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export const money=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((value||0)/100);
-export const dateLocal=value=>new Date(new Date(value).getTime()-10800000).toISOString().slice(0,16);
-export const today=()=>dateLocal(new Date()).slice(0,10);
-const time=value=>dateLocal(value).slice(11,16);
-const day=value=>dateLocal(value).slice(0,10);
-const label={available:'Disponível',unconfirmed:'A confirmar',maintenance:'Manutenção',unavailable:'Indisponível',booked:'Agendada',completed:'Concluída',cancelled:'Cancelada',presencial:'Presencial',online:'Online',appointment:'Atendimento',course:'Curso',activity:'Atividade',event:'Evento',rental:'Locação',workshop:'Workshop',lecture:'Palestra',group:'Grupo',cultural:'Cultural',individual:'Individual',multiuso:'Multiuso',quantity:'Quantidade',asset:'Patrimônio',damaged:'Danificado',lost:'Perdido',retired:'Baixado',receivable:'Receita',payable:'Despesa',professional:'Profissional',client:'Cliente',student:'Aluno',participant:'Participante',open:'Aberta',confirmed:'Confirmada',present:'Presente',absent:'Ausente',active:'Ativa',waitlist:'Lista de espera'};
-export const translate=value=>label[value]||value||'—';
-const badge=value=>`<span class="op-badge is-${esc(value)}">${esc(translate(value))}</span>`;
-export const action=(text,kind,id='',extra='')=>`<button type="button" class="op-button" data-op-action="${esc(kind)}" data-id="${esc(id)}" ${extra}>${esc(text)}</button>`;
-const table=(heads,rows,empty='Nenhum registro por enquanto.')=>`<div class="op-table-scroll"><table class="op-table"><thead><tr>${heads.map(h=>`<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${heads.length}" class="op-empty">${esc(empty)}</td></tr>`}</tbody></table></div>`;
-const cell=(...items)=>`<tr>${items.map(item=>`<td>${item}</td>`).join('')}</tr>`;
-const lookup=(s,collection,id,field='name')=>s[collection].find(row=>row.id===id)?.[field]||'—';
-const roomName=(s,id)=>id==='storage'?'Depósito':lookup(s,'rooms',id);
-const personName=(s,id)=>lookup(s,'profiles',id,'display_name');
-const stats=items=>`<div class="op-stats">${items.map(([title,value,detail])=>`<article><p>${esc(title)}</p><strong>${esc(value)}</strong><small>${esc(detail||'')}</small></article>`).join('')}</div>`;
-const heading=(kicker,title,description,buttons='')=>`<header class="op-header"><div><p class="op-eyebrow">${esc(kicker)}</p><h2 tabindex="-1">${esc(title)}</h2><p>${esc(description)}</p></div><div class="op-actions">${buttons}</div></header>`;
-const dateBounds=date=>({from:`${date}T00:00:00-03:00`,to:`${date}T23:59:59-03:00`});
-const addDays=(date,n)=>new Date(Date.parse(`${date}T12:00:00Z`)+n*86400000).toISOString().slice(0,10);
-const active=item=>item.status!=='cancelled';
-function eventRows(s,items){return items.map(item=>cell(
- `${esc(day(item.starts_at).split('-').reverse().join('/'))}<small>${esc(time(item.starts_at))}–${esc(time(item.ends_at))}</small>`,
- `<strong>${esc(item.title)}</strong><small>${esc(translate(item.kind))} · ${esc(personName(s,item.professional_id))}</small>`,
- `${esc(item.mode==='online'?'Online':roomName(s,item.room_id))}<small>${esc(item.participants)} participantes</small>`,badge(item.status),
- `${action('Abrir','schedule',item.id)} ${item.status==='booked'?action('Concluir','complete',item.id):''}`));}
-function scheduleTable(s,items){return table(['Quando','Atividade','Local','Situação','Ações'],eventRows(s,items),'Nenhuma atividade neste período.');}
+export {esc,money,dateLocal,today,translate,action};
+const stats=items=>`<div class="op-stats">${items.map(([title,value,detail])=>`<article><p>${esc(title)}</p><strong>${esc(value)}</strong><small>${esc(detail||"")}</small></article>`).join("")}</div>`;
+const scheduleTable=(s,items)=>tabelaDaAgenda(s,items,{agora:Date.now()});
 function dashboard(s,o){
  const list=s.schedule_items.filter(item=>day(item.starts_at)===o.date&&active(item)).sort((a,b)=>a.starts_at.localeCompare(b.starts_at));
  const now=Date.now();const busy=new Set(list.filter(item=>item.room_id&&Date.parse(item.starts_at)<=now&&Date.parse(item.ends_at)>now).map(item=>item.room_id));
  const shortages=list.flatMap(item=>resourceNeeds(s,item).filter(n=>n.shortage).map(n=>`<li><strong>${esc(item.title)}</strong>: faltam ${esc(n.shortage)} ${esc(lookup(s,'inventory_items',n.item_id))}. ${action('Planejar recursos','schedule',item.id)}</li>`));
  const pending=s.rooms.filter(row=>row.status==='unconfirmed').length;
  return heading('Central operacional','Um olhar para o Instituto','Agenda, espaços e cuidado — todos conectados.',action('Nova reserva','schedule'))+
- `<div class="op-local-note"><span class="op-dot"></span> Ambiente local · dados desta máquina · ${esc(o.date.split('-').reverse().join('/'))}</div>`+
+ `<div class="op-local-note"><span class="op-dot"></span> Banco do Portal · ${esc(o.date.split('-').reverse().join('/'))}</div>`+
  stats([['Salas em uso agora',busy.size,'Neste instante'],['Salas disponíveis',s.rooms.filter(r=>r.status==='available'&&!busy.has(r.id)&&!s.maintenance_orders.some(m=>m.room_id===r.id&&m.status==='open')).length,'Com cadastro confirmado'],['Atividades hoje',list.length,'Exclui cancelamentos'],['Participações previstas',list.reduce((n,r)=>n+r.participants,0),'Soma por atividade']])+
  (!s.rooms.length?`<article class="op-welcome"><span class="op-eyebrow">Vamos organizar a casa</span><h3>Comece pelos espaços do Potala</h3><p>Prepare os dez cadastros e confirme os nomes, capacidades, acessibilidade e horários antes de reservar.</p>${action('Preparar as 10 salas','setup')}</article>`:'')+
- `<div class="op-columns"><section class="op-card"><h3>Próximas atividades</h3>${scheduleTable(s,s.schedule_items.filter(row=>active(row)&&Date.parse(row.ends_at)>now).sort((a,b)=>a.starts_at.localeCompare(b.starts_at)).slice(0,6))}</section><section class="op-card"><h3>Precisa de atenção</h3><ul class="op-alerts">${pending?`<li>${pending} salas aguardam confirmação do cadastro. ${action('Revisar','goto-rooms')}</li>`:''}${shortages.join('')}${s.maintenance_orders.filter(row=>row.status==='open').map(row=>`<li>Manutenção: ${esc(row.description)}</li>`).join('')}${!pending&&!shortages.length&&!s.maintenance_orders.some(row=>row.status==='open')?'<li>Nenhuma pendência identificada.</li>':''}</ul></section></div>`;
+ `<div class="op-columns"><section class="op-card"><h3>Próximas atividades</h3>${scheduleTable(s,s.schedule_items.filter(row=>active(row)&&Date.parse(row.ends_at)>now).sort((a,b)=>a.starts_at.localeCompare(b.starts_at)).slice(0,6))}</section><section class="op-card"><h3>Precisa de atenção</h3><ul class="op-alerts">${pending?`<li>${pending} salas aguardam confirmação do cadastro. ${action('Revisar','goto-rooms')}</li>`:''}${shortages.join('')}${s.maintenance_orders.filter(row=>row.status==='open').map(row=>`<li>Manutenção: ${esc(row.description)}</li>`).join('')}${novosDoSite(o)?`<li>${esc(novosDoSite(o))} ${novosDoSite(o)===1?'mensagem nova':'mensagens novas'} pelo site nos últimos 7 dias. ${action('Ver','goto-reports')}</li>`:''}${!pending&&!shortages.length&&!s.maintenance_orders.some(row=>row.status==='open')&&!novosDoSite(o)?'<li>Nenhuma pendência identificada.</li>':''}</ul></section></div>`;
+}
+const DIA=86400000;
+const TIPO_RECEBIDO={curso:'Interesse em curso','experiencia-cultural':'Interesse cultural','retorno-recepcao':'Retorno da Recepção'};
+function novosDoSite(o){return (o.recebidos?.interesses||[]).filter(row=>Date.now()-Date.parse(row.created_at)<7*DIA).length;}
+/* O que visitantes enviaram pelas seções. Vem de public.site_interests, carregado à parte da operação. */
+function recebidosDoSite(o){
+ const r=o.recebidos;
+ if(!r)return '';
+ if(r.erro)return `<section class="op-card"><h3>Recebido pelo site</h3><p class="op-muted">${esc(r.erro)}</p></section>`;
+ const detalhe=row=>{const d=row.details||{};if(row.kind==='curso')return [d.modality,(d.availability||[]).join(', '),d.goal,d.contact?`Contato: ${d.contact}`:''].filter(Boolean).join(' · ');return '';};
+ return `<section class="op-card"><h3>Recebido pelo site</h3><p class="op-muted">${esc(r.inscritos)} ${r.inscritos===1?'pessoa inscrita':'pessoas inscritas'} nas inspirações do Blog. Comentários são moderados na <a href="/blog">mesa do Blog</a>.</p>${table(['Quando','Tipo','Assunto','Detalhes'],(r.interesses||[]).map(row=>cell(esc(new Date(row.created_at).toLocaleString('pt-BR')),esc(TIPO_RECEBIDO[row.kind]||row.kind),`<strong>${esc(row.subject)}</strong>`,esc(detalhe(row)))))}</section>`;
 }
 function rooms(s,o){
  const measures=occupancy(s,dateBounds(o.date));
@@ -50,30 +40,7 @@ function rooms(s,o){
   return `<article class="op-room"><div class="op-room-top"><span>${esc(room.code)}</span>${badge(room.status)}</div><h3>${esc(room.name)}</h3><p>${esc(room.floor||'Localização a confirmar')} · ${esc(translate(room.type))}</p><p class="op-current">${current?`Em uso agora: <strong>${esc(current.title)}</strong> até ${esc(time(current.ends_at))}`:room.status==='available'?'Livre agora':'Sem uso enquanto estiver indisponível'}</p><div class="op-room-metrics"><strong>${capacity==null?'—':esc(capacity)}<small>lugares livres agora</small></strong><strong>${m?.rate!=null?Math.round(m.rate*100)+'%':'—'}<small>ocupação hoje</small></strong><strong>${w?.rate!=null?Math.round(w.rate*100)+'%':'—'}<small>ocupação em 7 dias</small></strong><strong>${room.accessible==null?'—':room.accessible?'Sim':'Não'}<small>acessibilidade</small></strong></div><div class="op-meter"><span style="width:${Math.min(100,Math.round((m?.rate||0)*100))}%"></span></div><p class="op-next">${upcoming?`Próxima: ${esc(upcoming.title)} · ${esc(day(upcoming.starts_at).split('-').reverse().join('/'))} ${esc(time(upcoming.starts_at))}`:'Sem utilização futura agendada'}</p><details><summary>Equipamentos e materiais (${items.length})</summary><ul>${items.map(text=>`<li>${esc(text)}</li>`).join('')||'<li>Nenhum item alocado.</li>'}</ul>${action('Movimentar itens','move','',`data-destination="${esc(room.id)}"`)}</details><footer>${action('Editar sala','room',room.id)}${room.status==='available'?action('Reservar','schedule','',`data-room="${esc(room.id)}"`):''}</footer></article>`;
  }).join('')||'<p class="op-empty">Prepare os cadastros na Visão geral ou cadastre uma sala.</p>'}</div>`;
 }
-function agenda(s,o){
- const views=[['today','Hoje'],['day','Dia'],['week','Semana'],['month','Mês'],['list','Lista'],['room','Por sala'],['occupancy','Ocupação']];
- const start=o.view==='month'?o.date.slice(0,7)+'-01':o.date;
- const end=o.view==='week'?addDays(start,7):o.view==='month'?addDays(o.date.slice(0,7)+'-01',32).slice(0,7)+'-01':addDays(start,1);
- const query=(o.search||'').toLocaleLowerCase('pt-BR');
- const items=s.schedule_items.filter(row=>(o.view==='list'||(day(row.starts_at)>=start&&day(row.starts_at)<end))&&(!o.room||row.room_id===o.room)&&(!o.kind||row.kind===o.kind)&&`${row.title} ${personName(s,row.professional_id)}`.toLocaleLowerCase('pt-BR').includes(query)).sort((a,b)=>a.starts_at.localeCompare(b.starts_at));
- const toolbar=`<div class="op-toolbar"><div class="op-tabs" role="group" aria-label="Visualização">${views.map(([key,name])=>`<button type="button" data-op-calendar-view="${key}" aria-pressed="${o.view===key}">${name}</button>`).join('')}</div><label>Data<input type="date" data-op-filter="date" value="${esc(o.date)}"></label><label>Sala<select data-op-filter="room"><option value="">Todas</option>${s.rooms.map(r=>`<option value="${esc(r.id)}" ${o.room===r.id?'selected':''}>${esc(r.name)}</option>`).join('')}</select></label><label>Buscar<input type="search" data-op-filter="search" value="${esc(o.search||'')}" placeholder="Atividade ou profissional"></label></div>`;
- let content;
- if(o.view==='occupancy'){
-  const hours=Array.from({length:15},(_,i)=>i+7);
-  content=`<p class="op-hint">Cada coluna representa uma hora. Clique em um intervalo para consultar ou reservar. Horários de preparação e manutenção também bloqueiam a sala.</p>`+table(['Sala',...hours.map(h=>`${h}h`)],s.rooms.filter(r=>!o.room||r.id===o.room).map(room=>cell(`<strong>${esc(room.name)}</strong>`,...hours.map(h=>{
-   const a=Date.parse(`${o.date}T${String(h).padStart(2,'0')}:00:00-03:00`),b=a+3600000;
-   const found=items.find(row=>active(row)&&row.room_id===room.id&&Date.parse(row.starts_at)-(row.setup_minutes||0)*60000<b&&Date.parse(row.ends_at)+(row.teardown_minutes||0)*60000>a);
-   const closed=room.status!=='available'||!room.opens_at||h<Number(room.opens_at.split(':')[0])||h>=Number(room.closes_at.split(':')[0])||s.maintenance_orders.some(m=>m.room_id===room.id&&m.status==='open');
-   return found?`<button class="op-slot busy" data-op-action="schedule" data-id="${esc(found.id)}">${esc(found.title)}</button>`:closed?'<span class="op-slot closed">—</span>':`<button class="op-slot" data-op-action="schedule" data-room="${esc(room.id)}" data-hour="${h}">Livre</button>`;
-  }))));
- }else if(o.view==='month'){
-  const days=[];for(let d=start;d<end;d=addDays(d,1))days.push(d);
-  content=`<div class="op-month">${days.map(d=>`<article><button data-op-day="${d}" type="button">${Number(d.slice(-2))} <small>${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][new Date(d+'T12:00Z').getUTCDay()]}</small></button>${items.filter(r=>day(r.starts_at)===d).map(row=>`<button type="button" class="op-calendar-item" data-op-action="schedule" data-id="${esc(row.id)}">${esc(time(row.starts_at))} ${esc(row.title)} ${row.status==='cancelled'?'· cancelada':''}</button>`).join('')}</article>`).join('')}</div>`;
- }else if(o.view==='room')content=s.rooms.map(room=>`<section class="op-card"><h3>${esc(room.name)}</h3>${scheduleTable(s,items.filter(row=>row.room_id===room.id))}</section>`).join('');
- else if(o.view==='week')content=`<div class="op-week">${Array.from({length:7},(_,i)=>{const d=addDays(start,i);return `<section class="op-card"><h3>${esc(d.split('-').reverse().join('/'))}</h3>${items.filter(row=>day(row.starts_at)===d).map(row=>`<button class="op-calendar-item" data-op-action="schedule" data-id="${esc(row.id)}">${esc(time(row.starts_at))} · ${esc(row.title)}<small>${esc(roomName(s,row.room_id))}</small></button>`).join('')||'<p class="op-muted">Sem atividades</p>'}</section>`;}).join('')}</div>`;
- else content=scheduleTable(s,items.slice(0,200));
- return heading('Operação','Agenda do Instituto','Uma agenda para atendimentos, turmas, eventos e locações.',action('Nova reserva','schedule'))+toolbar+content;
-}
+function agenda(s,o){return renderAgenda(s,o);}
 function people(s){return heading('Pessoas','Pessoas e profissionais','Um cadastro por pessoa, com diferentes papéis.',action('Cadastrar pessoa','person'))+table(['Pessoa','Contato','Papéis','Ações'],s.profiles.map(row=>cell(`<strong>${esc(row.display_name)}</strong>`,`${esc(row.email)}<small>${esc(row.phone)}</small>`,(row.roles||[]).map(badge).join(' '),action('Editar','person',row.id))));}
 function offers(s){return heading('Operação','Cursos, atividades e serviços','O catálogo descreve o serviço. Cada turma ou edição é uma oferta.',action('Novo tipo de atividade','definition')+action('Nova turma / oferta','offering'))+
  `<section class="op-card"><h3>Catálogo</h3>${table(['Atividade','Tipo',''],s.activity_definitions.map(row=>cell(esc(row.title),badge(row.kind),action('Editar','definition',row.id))))}</section>`+
@@ -94,15 +61,15 @@ function finance(s,o){const sum=financialSummary(s);const entries=s.financial_en
  `<section class="op-card"><h3>Regras de repasse</h3><p class="op-muted">Aplicadas aos próximos recebimentos. Repasses anteriores preservam a regra utilizada.</p>${table(['Regra','Profissional','Profissional / Potala',''],s.split_rules.map(row=>cell(esc(row.name),esc(personName(s,row.professional_id)),`${row.professional_basis_points/100}% / ${100-row.professional_basis_points/100}%`,action('Editar','rule',row.id))))}</section>`;
 }
 function reports(s,o){const from=o.date.slice(0,7)+'-01';const to=addDays(from,32).slice(0,7)+'-01';const rows=occupancy(s,{from:from+'T00:00:00-03:00',to:to+'T00:00:00-03:00'});const ranked=rows.filter(row=>row.rate!=null).sort((a,b)=>b.rate-a.rate);const monthly=s.schedule_items.filter(row=>active(row)&&day(row.starts_at)>=from&&day(row.starts_at)<to);const hours=Array.from({length:15},(_,index)=>({hour:index+7,count:0}));for(const item of monthly){for(const slot of hours){const a=Date.parse(`${day(item.starts_at)}T${String(slot.hour).padStart(2,'0')}:00:00-03:00`),b=a+3600000;if(Date.parse(item.starts_at)<b&&Date.parse(item.ends_at)>a)slot.count++;}}const peak=[...hours].sort((a,b)=>b.count-a.count)[0],idle=[...hours].sort((a,b)=>a.count-b.count)[0];
- return heading('Relatórios','Ocupação e histórico','Planejamento e realização separados. O horário de funcionamento define a capacidade disponível.',action('Exportar dados locais','export'))+
+ return heading('Relatórios','Ocupação e histórico','Planejamento e realização separados. O horário de funcionamento define a capacidade disponível.',action('Exportar dados','export'))+
  `<div class="op-toolbar"><label>Mês de referência<input type="date" data-op-filter="date" value="${esc(o.date)}"></label></div>`+
  stats([['Sala mais utilizada',ranked[0]?roomName(s,ranked[0].room_id):'—',ranked[0]?`${Math.round(ranked[0].rate*100)}% de ocupação`:'Sem base confirmada'],['Sala menos utilizada',ranked.at(-1)?roomName(s,ranked.at(-1).room_id):'—',ranked.at(-1)?`${Math.round(ranked.at(-1).rate*100)}% de ocupação`:'Sem base confirmada'],['Horário mais procurado',peak?.count?`${String(peak.hour).padStart(2,'0')}:00`:'—',peak?.count?`${peak.count} usos no mês`:'Sem reservas'],['Faixa mais ociosa',idle?`${String(idle.hour).padStart(2,'0')}:00`:'—',idle?.count?`${idle.count} usos no mês`:'Sem uso registrado']])+
  table(['Sala','Horas disponíveis','Horas reservadas','Horas realizadas','Ocupação'],rows.map(row=>cell(esc(roomName(s,row.room_id)),(row.available_minutes/60).toFixed(1),(row.reserved_minutes/60).toFixed(1),(row.completed_minutes/60).toFixed(1),row.rate==null?'Não se aplica':`${Math.round(row.rate*100)}%`)))+
- `<section class="op-card"><h3>Auditoria operacional</h3>${table(['Quando','Responsável','Operação','Detalhes'],[...s.audit_events].reverse().slice(0,100).map(row=>cell(esc(new Date(row.at).toLocaleString('pt-BR')),esc(row.actor),esc(row.action),`<details><summary>Ver alterações</summary><pre>${esc(JSON.stringify(row.changes,null,2))}</pre></details>`)))}</section>`;
+ recebidosDoSite(o)+`<section class="op-card"><h3>Auditoria operacional</h3>${table(['Quando','Responsável','Operação','Detalhes'],[...s.audit_events].reverse().slice(0,100).map(row=>cell(esc(new Date(row.at).toLocaleString('pt-BR')),esc(row.actor),esc(row.action),`<details><summary>Ver alterações</summary><pre>${esc(JSON.stringify(row.changes,null,2))}</pre></details>`)))}</section>`;
 }
 export function renderView(view,state,options={}){
  const o={date:today(),view:'day',...options};
  const renderers={dashboard,rooms,agenda,people,offers,inventory,movements,maintenance,finance,reports,
- settings:()=>heading('Configurações','Operação local','Ambiente exclusivo desta máquina.')+`<section class="op-card"><h3>Acesso e armazenamento</h3><p>Os comandos deste ambiente usam o administrador local. Dados operacionais são persistidos no computador; não são sincronizados com o Supabase.</p><p>Fuso do Instituto: São Paulo. Percentuais são definidos nas regras de repasse, e funcionamento e tarifas no cadastro de cada sala.</p><p>Profissionais cadastrados não recebem acesso administrativo automaticamente. Recepção, Financeiro e Editor são papéis futuros.</p>${action('Exportar cópia dos dados','export')}</section>`};
+ settings:()=>heading('Configurações','Operação do Instituto','Os dados ficam no banco do Portal.')+`<section class="op-card"><h3>Acesso e armazenamento</h3><p>Só contas de administração ativas abrem e alteram a operação; quem pode gravar é decidido pelo banco, não pela tela. Cada alteração registra quem fez, quando e o antes e depois.</p><p>Se duas janelas gravarem ao mesmo tempo, a segunda é recusada e pede para conferir os dados novos, em vez de apagar o que a primeira salvou.</p><p>Fuso do Instituto: São Paulo. Percentuais são definidos nas regras de repasse, e funcionamento e tarifas no cadastro de cada sala.</p><p>Profissionais cadastrados não recebem acesso administrativo automaticamente. Recepção, Financeiro e Editor são papéis futuros.</p>${action('Exportar cópia dos dados','export')}</section>`};
  return (renderers[view]||dashboard)(state,o);
 }

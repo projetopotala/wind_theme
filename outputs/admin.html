@@ -8,6 +8,7 @@
   <meta name="description" content="Central operacional protegida do Instituto Potala.">
   <title>Potala — Central operacional</title>
   <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin-agenda.css">
   <script src="vendor/supabase.js"></script>
   <script type="module" src="js/admin/admin-entry.js"></script>
 </head>
@@ -39,66 +40,98 @@
     </section>
 
     <section class="admin-panel" id="admin-panel" data-admin-section="inicio" aria-label="Central operacional do Instituto Potala" hidden>
-      <nav class="admin-nav" data-admin-nav aria-label="Seções do painel">
-        <p class="admin-brand">
-          <img class="admin-brand-logo" src="media/potala-mark-transparent.png" alt="">
-          <span>Potala <small>Instituto</small></span>
-        </p>
+      <!--
+        BARRA SUPERIOR — só no telefone. Ali a barra lateral vira gaveta, e este
+        botão é a porta dela; o nome da seção diz onde a pessoa está.
+      -->
+      <header class="admin-topo">
+        <button type="button" class="admin-icone-botao" data-admin-nav-toggle aria-controls="admin-nav" aria-expanded="false" aria-label="Abrir menu"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#menu"></use></svg></button>
+        <strong data-admin-secao-atual>Visão geral</strong>
+      </header>
+
+      <!--
+        A BARRA LATERAL EM TRÊS FAIXAS: marca, lista e rodapé.
+
+        Só a lista rola, e só quando a tela for baixa demais para ela. A marca e
+        o rodapé (quem está usando, configurações e sair) ficam sempre à vista —
+        antes o Sair morava no fim de uma lista de 1008px, abaixo da dobra.
+
+        Ícones: um sprite Lucide (media/icones-admin.svg), gerado por
+        `npm run vendor:lucide`. `data-dica` é o texto da dica quando a barra
+        está recolhida em ícones (tablet); na barra aberta o rótulo já está escrito.
+      -->
+      <nav class="admin-nav" id="admin-nav" data-admin-nav aria-label="Seções do painel">
+        <div class="admin-nav-topo">
+          <p class="admin-brand">
+            <img class="admin-brand-logo" src="media/potala-mark-transparent.png" alt="">
+            <span>Potala <small>Instituto</small></span>
+          </p>
+          <button type="button" class="admin-icone-botao admin-nav-recolher" data-admin-nav-toggle aria-controls="admin-nav" aria-expanded="false" aria-label="Expandir menu" data-dica="Expandir menu"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#panel-left-open"></use></svg></button>
+        </div>
+        <div class="admin-nav-lista">
+        <p class="admin-nav-group">Visão geral</p>
         <ul>
-          <li><button type="button" data-section="inicio" aria-current="page"><span aria-hidden="true">⌂</span> Visão geral</button></li>
+          <li><button type="button" data-section="inicio" aria-current="page" data-dica="Visão geral"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#layout-dashboard"></use></svg><span>Visão geral</span></button></li>
         </ul>
         <p class="admin-nav-group">Operação</p>
         <ul>
-          <li><button type="button" data-section="agenda"><span aria-hidden="true">▦</span> Agenda</button></li>
-          <li><button type="button" data-section="salas"><span aria-hidden="true">□</span> Salas</button></li>
-          <li><button type="button" data-section="ofertas"><span aria-hidden="true">◇</span> Cursos e atividades</button></li>
+          <li><button type="button" data-section="agenda" data-dica="Agenda"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#calendar-days"></use></svg><span>Agenda</span></button></li>
+          <li><button type="button" data-section="salas" data-dica="Salas"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#door-open"></use></svg><span>Salas</span></button></li>
+          <li><button type="button" data-section="ofertas" data-dica="Cursos e atividades"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#book-open"></use></svg><span>Cursos e atividades</span></button></li>
         </ul>
         <p class="admin-nav-group">Pessoas e patrimônio</p>
         <ul>
-          <li><button type="button" data-section="pessoas"><span aria-hidden="true">♙</span> Pessoas</button></li>
-          <li><button type="button" data-section="inventario"><span aria-hidden="true">▣</span> Inventário</button></li>
-          <li><button type="button" data-section="movimentacoes"><span aria-hidden="true">⇄</span> Movimentações</button></li>
-          <li><button type="button" data-section="manutencao"><span aria-hidden="true">⌁</span> Manutenção</button></li>
+          <li><button type="button" data-section="pessoas" data-dica="Pessoas"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#users"></use></svg><span>Pessoas</span></button></li>
+          <li><button type="button" data-section="inventario" data-dica="Inventário"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#package"></use></svg><span>Inventário</span></button></li>
+          <li><button type="button" data-section="movimentacoes" data-dica="Movimentações"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#arrow-left-right"></use></svg><span>Movimentações</span></button></li>
+          <li><button type="button" data-section="manutencao" data-dica="Manutenção"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#wrench"></use></svg><span>Manutenção</span></button></li>
         </ul>
         <p class="admin-nav-group">Gestão</p>
         <ul>
-          <li><button type="button" data-section="financeiro"><span aria-hidden="true">◉</span> Financeiro</button></li>
-          <li><button type="button" data-section="relatorios"><span aria-hidden="true">↗</span> Relatórios</button></li>
-          <li><button type="button" data-section="jornada"><span aria-hidden="true">✦</span> Jornada</button></li>
-          <li><button type="button" data-section="blog"><span aria-hidden="true">✎</span> Blog</button></li>
-          <li><button type="button" data-section="configuracoes"><span aria-hidden="true">⚙</span> Configurações</button></li>
+          <li><button type="button" data-section="financeiro" data-dica="Financeiro"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#wallet"></use></svg><span>Financeiro</span></button></li>
+          <li><button type="button" data-section="relatorios" data-dica="Relatórios"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#chart-no-axes-combined"></use></svg><span>Relatórios</span></button></li>
         </ul>
-
-        <div class="admin-user" data-admin-user>
-          <button type="button" data-admin-user-toggle aria-expanded="false">
-            <span class="admin-avatar" data-admin-avatar aria-hidden="true">··</span>
-            <span>
-              <strong data-admin-user-name>Editor</strong>
-              <small data-admin-user-role>Administradora</small>
-            </span>
-          </button>
-          <div class="admin-user-menu" data-admin-user-menu hidden>
-            <details class="admin-password-setup" data-admin-password-setup>
-              <summary>Definir ou alterar minha senha</summary>
-              <form data-admin-password-form>
-                <label for="admin-new-password">Nova senha</label>
-                <input id="admin-new-password" name="password" type="password"
-                  autocomplete="new-password" minlength="8" required>
-                <label for="admin-confirm-password">Confirmar nova senha</label>
-                <input id="admin-confirm-password" name="confirmation" type="password"
-                  autocomplete="new-password" minlength="8" required>
-                <button type="submit">Salvar senha</button>
-              </form>
-              <p data-admin-password-status role="status" aria-live="polite"></p>
-            </details>
-            <button type="button" data-admin-reset>Restaurar conteúdo original</button>
-          </div>
+        <p class="admin-nav-group">Conteúdo do portal</p>
+        <ul>
+          <li><button type="button" data-section="jornada" data-dica="Jornada"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#route"></use></svg><span>Jornada</span></button></li>
+          <li><button type="button" data-section="blog" data-dica="Blog"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#pen-line"></use></svg><span>Blog</span></button></li>
+        </ul>
         </div>
-        <button class="admin-sair" type="button" data-admin-sign-out>Sair</button>
+
+        <div class="admin-nav-rodape">
+          <div class="admin-user" data-admin-user>
+            <button type="button" data-admin-user-toggle aria-expanded="false" data-dica="Minha conta">
+              <span class="admin-avatar" data-admin-avatar aria-hidden="true">··</span>
+              <span class="admin-user-texto">
+                <strong data-admin-user-name>Editor</strong>
+                <small data-admin-user-role>Administradora</small>
+              </span>
+            </button>
+            <div class="admin-user-menu" data-admin-user-menu hidden>
+              <details class="admin-password-setup" data-admin-password-setup>
+                <summary>Definir ou alterar minha senha</summary>
+                <form data-admin-password-form>
+                  <label for="admin-new-password">Nova senha</label>
+                  <input id="admin-new-password" name="password" type="password"
+                    autocomplete="new-password" minlength="8" required>
+                  <label for="admin-confirm-password">Confirmar nova senha</label>
+                  <input id="admin-confirm-password" name="confirmation" type="password"
+                    autocomplete="new-password" minlength="8" required>
+                  <button type="submit">Salvar senha</button>
+                </form>
+                <p data-admin-password-status role="status" aria-live="polite"></p>
+              </details>
+              <button type="button" data-admin-reset>Restaurar conteúdo original</button>
+            </div>
+          </div>
+          <button type="button" class="admin-icone-botao" data-section="configuracoes" aria-label="Configurações" data-dica="Configurações"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#settings"></use></svg></button>
+          <button class="admin-sair" type="button" data-admin-sign-out data-dica="Sair">Sair<svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#log-out"></use></svg></button>
+        </div>
       </nav>
+      <button type="button" class="admin-nav-veu" data-admin-nav-fechar aria-label="Fechar menu" tabindex="-1" hidden></button>
 
       <section class="admin-workspace admin-home" data-admin-workspace="inicio" data-op-view="dashboard" aria-label="Visão geral operacional">
-        <p class="op-loading" role="status">Abrindo a operação local…</p>
+        <p class="op-loading" role="status">Abrindo a operação…</p>
       </section>
 
       <header class="admin-head" data-admin-workspace="jornada" hidden>
@@ -466,6 +499,16 @@
       <section class="admin-workspace" data-admin-workspace="relatorios" data-op-view="reports" hidden></section>
       <section class="admin-workspace" data-admin-workspace="configuracoes" data-op-view="settings" hidden></section>
 
+      <!--
+        DETALHES DE UM AGENDAMENTO — painel lateral, e não página nova: consultar
+        um evento não tira a pessoa do calendário. Não é modal (o calendário
+        continua clicável); Escape fecha e devolve o foco ao evento.
+      -->
+      <aside class="op-drawer" data-op-drawer aria-labelledby="op-drawer-titulo" hidden>
+        <div data-op-drawer-corpo></div>
+      </aside>
+      <div class="op-menu" data-op-menu-painel role="menu" aria-label="Ações do agendamento" hidden></div>
+      <div class="admin-dica" data-admin-dica aria-hidden="true" hidden></div>
       <p class="op-service-status" data-op-status role="status" aria-live="polite"></p>
       <dialog class="op-dialog" data-op-dialog aria-labelledby="op-dialog-title">
         <form data-op-form>

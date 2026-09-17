@@ -1,5 +1,7 @@
-import {createOperationsClient} from './client.js';
 import {renderView,esc,dateLocal,today} from './views.js';
+import {icone} from '../icones.js';
+import {CAMPOS_POR_FAMILIA,PREDEFINICOES,renderConflito,renderDetalhes,renderEscolhaDeTipo,renderMenuDeAcoes,visaoEfetiva} from './agenda-views.js';
+import {FAMILIAS,JANELA,deslocarData,familiaDe,verificarReserva} from './agenda-layout.js';
 
 export function moneyToCents(value){
   if(value==null||value==='')return null;
@@ -82,31 +84,239 @@ const commandFor={room:'room.save',person:'person.save',definition:'definition.s
 const collections={room:'rooms',person:'profiles',definition:'activity_definitions',offering:'activity_offerings',enrollment:'enrollments',participant:'schedule_participants',schedule:'schedule_items',cancel:'schedule_items',item:'inventory_items',maintenance:'maintenance_orders',entry:'financial_entries',refund:'payments',rule:'split_rules'};
 const titles={room:'Sala',person:'Pessoa',definition:'Tipo de atividade',offering:'Turma ou oferta',enrollment:'Inscrição',participant:'Participante',schedule:'Atividade na agenda',cancel:'Cancelar atividade',item:'Item de inventário',receive:'Entrada de item',move:'Movimentação',condition:'Condição do recurso',maintenance:'Manutenção',entry:'Lançamento financeiro',payment:'Pagamento',refund:'Estorno',rule:'Regra de repasse',recurring:'Despesas recorrentes'};
 
-export async function connectOperations({fetchImpl=globalThis.fetch}={}){
-  const response=await fetchImpl('/api/operations/session',{method:'GET'});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'A operação local requer o servidor de prévia.');
-  const client=createOperationsClient({token:data.token,fetchImpl});await client.refresh();return client;
+const titulosDaAgenda={novo:'Novo agendamento',reagendar:'Reagendar atividade',duplicar:'Duplicar atividade'};
+const CAMPOS_COPIAVEIS=['title','kind','offering_id','room_id','professional_id','client_id','mode','starts_at','ends_at','participants','online_url','price_cents','setup_minutes','teardown_minutes','notes','requirements','extras'];
+
+/*
+ * Qual parte do formulário de agenda cada bloco representa. Os blocos são os
+ * filhos diretos do corpo do diálogo, na ordem em que formHtml os escreve.
+ */
+function chaveDoBloco(bloco){
+  if(bloco.matches('input[type="hidden"]'))return null;
+  if(bloco.classList.contains('op-requirements'))return 'recursos';
+  if(bloco.classList.contains('op-extras'))return 'extras';
+  if(bloco.querySelector('[name="recurrence_frequency"]'))return 'recorrencia';
+  if(bloco.classList.contains('op-dialog-commands')||bloco.dataset.opFixo!=null)return null;
+  const nome=bloco.querySelector('[name]')?.getAttribute('name');
+  return nome==='scope'?null:nome||null;
 }
-export function createOperationsController({root,client,onNavigate=()=>{}}={}){
+
+export function createOperationsController({root,client,onNavigate=()=>{},janela=globalThis.window}={}){
   if(!root||!client)throw new TypeError('Painel e cliente operacional são obrigatórios.');
   const dialog=root.querySelector('[data-op-dialog]'),form=root.querySelector('[data-op-form]'),body=root.querySelector('[data-op-form-body]'),title=root.querySelector('[data-op-dialog-title]'),error=root.querySelector('[data-op-form-error]'),status=root.querySelector('[data-op-status]');
-  const filters={date:today(),view:'day',room:'',kind:'',search:'',direction:''};let currentKind='';
-  function render(){const state=client.snapshot;for(const node of root.querySelectorAll('[data-op-view]'))node.innerHTML=renderView(node.dataset.opView,state,filters);}
-  function open(kind,id='',seed={}){const rows=client.snapshot?.[collections[kind]]||[];const row=id?rows.find(item=>item.id===id)||{}:{};currentKind=kind;title.textContent=titles[kind]||'Editar';body.innerHTML=formHtml(kind,client.snapshot,row,seed);error.textContent='';if(!dialog.open)dialog.showModal();body.querySelector('input:not([type="hidden"]),select,textarea')?.focus();}
-  function close(){dialog.close();currentKind='';}
+  const drawer=root.querySelector('[data-op-drawer]'),drawerBody=root.querySelector('[data-op-drawer-corpo]'),menu=root.querySelector('[data-op-menu-painel]');
+  const consulta=query=>janela?.matchMedia?.(query);
+  const estreita=()=>Boolean(consulta('(max-width: 819px)')?.matches);
+  const filters={date:today(),view:consulta('(min-width: 1024px)')?.matches===false?'day':'week',room:'',familia:'',situacao:'',profissional:'',search:'',direction:'',selecionado:''};
+  let currentKind='',detalheId='',origemDetalhe=null,menuId='',origemMenu=null,buscaEspera=0,sementeNova={},recebidos=null;
+
+  /* O mesmo evento aparece em mais de uma tela (Visão geral e Agenda): o foco volta para o que está à vista. */
+  const visivel=seletor=>[...root.querySelectorAll(seletor)].find(elemento=>elemento.offsetParent!==null)||null;
+
+  /* ------------------------------------------------------------ desenho */
+
+  /*
+   * Redesenhar troca o HTML inteiro da tela. Sem isto, quem digitava na busca
+   * perdia o campo a cada letra, e o teclado voltava ao começo da página.
+   */
+  function render(){
+    const ativo=root.ownerDocument?.activeElement;
+    const filtroAtivo=ativo?.dataset?.opFilter;
+    const cursor=filtroAtivo&&typeof ativo.selectionStart==='number'?[ativo.selectionStart,ativo.selectionEnd]:null;
+    const state=client.snapshot;
+    const opcoes={...filters,agora:Date.now(),estreito:estreita(),recebidos};
+    for(const node of root.querySelectorAll('[data-op-view]'))node.innerHTML=renderView(node.dataset.opView,state,opcoes);
+    if(filtroAtivo){
+      const alvo=[...root.querySelectorAll(`[data-op-filter="${filtroAtivo}"]`)].find(campo=>!campo.closest('[hidden]'));
+      if(alvo){alvo.focus({preventScroll:true});if(cursor)try{alvo.setSelectionRange(...cursor);}catch{/* campos de data não têm cursor */}}
+    }
+    if(detalheId){
+      const conteudo=renderDetalhes(state,detalheId,{agora:Date.now()});
+      if(conteudo)drawerBody.innerHTML=conteudo;else fecharDetalhes();
+    }
+  }
+
+  /* ------------------------------------------------------------ diálogo */
+
+  function open(kind,id='',seed={}){
+    const rows=client.snapshot?.[collections[kind]]||[];const row=id?rows.find(item=>item.id===id)||{}:{};
+    currentKind=kind;title.textContent=titles[kind]||'Editar';body.innerHTML=formHtml(kind,client.snapshot,row,seed);error.textContent='';
+    fecharMenu();
+    if(!dialog.open)dialog.showModal();
+    body.querySelector('input:not([type="hidden"]),select,textarea')?.focus();
+    return row;
+  }
+  function close(){if(dialog.open)dialog.close();currentKind='';}
+
+  function abrirEscolhaDeTipo(semente={}){
+    sementeNova=semente;currentKind='';fecharMenu();
+    title.textContent=titulosDaAgenda.novo;body.innerHTML=renderEscolhaDeTipo();error.textContent='';
+    form.dataset.opEtapa='tipo';
+    if(!dialog.open)dialog.showModal();
+    body.querySelector('[data-op-novo-tipo]')?.focus();
+  }
+
+  /*
+   * Cada tipo mostra só os campos que usa. Os outros continuam no formulário,
+   * com seus valores, atrás de "Mostrar todos os campos": nada se perde.
+   */
+  function aplicarPerfil(familia,{novo=false}={}){
+    delete form.dataset.opEtapa;
+    const campos=new Set(CAMPOS_POR_FAMILIA[familia]||[]);
+    for(const bloco of [...body.children]){const chave=chaveDoBloco(bloco);if(chave)bloco.hidden=!campos.has(chave);}
+    const predefinicao=PREDEFINICOES[familia]||{};
+    for(const [nome,valor] of Object.entries(predefinicao)){const campo=body.querySelector(`[name="${nome}"]`);if(campo&&(novo||!campo.value))campo.value=valor;}
+    const {rotulo,icone:nomeIcone}=FAMILIAS[familia];
+    body.insertAdjacentHTML('afterbegin',`<div class="op-span ag-form-tipo" data-op-fixo>${icone(nomeIcone)}<strong>${esc(rotulo)}</strong>${novo?'<button type="button" class="ag-botao" data-op-trocar-tipo>Trocar tipo</button>':''}<button type="button" class="ag-botao ag-botao-leve" data-op-mostrar-campos aria-expanded="false">Mostrar todos os campos</button></div><div class="op-span ag-conflito-form" data-op-conflito data-op-fixo role="status" aria-live="polite" hidden></div>`);
+    atualizarConflito();
+  }
+
+  function abrirAgendamento(familia,{id='',semente={},modo='novo'}={}){
+    const row=open('schedule',id,semente);
+    if(modo!=='editar')title.textContent=titulosDaAgenda[modo]||titles.schedule;
+    aplicarPerfil(familia||familiaDe({...row,...semente}),{novo:modo==='novo'});
+    if(modo==='reagendar')body.querySelector('[name="starts_at"]')?.focus();
+    else body.querySelector('[data-op-fixo] ~ label:not([hidden]) :is(input,select,textarea)')?.focus();
+  }
+
+  function atualizarConflito(){
+    const regiao=body.querySelector('[data-op-conflito]');if(!regiao)return;
+    const dados=Object.fromEntries(new FormData(form));
+    const resultado=verificarReserva(client.snapshot,{id:dados.id,room_id:dados.room_id,professional_id:dados.professional_id,mode:dados.mode,starts_at:dados.starts_at,ends_at:dados.ends_at,setup_minutes:dados.setup_minutes,teardown_minutes:dados.teardown_minutes,participants:dados.participants});
+    regiao.innerHTML=renderConflito(resultado);regiao.hidden=!resultado.mensagens.length;
+  }
+
   async function run(type,payload,message='Alteração salva.') {status.textContent='Salvando…';try{const result=await client.command(type,payload);status.textContent=message;render();return result;}catch(cause){status.textContent=cause.message;throw cause;}}
-  async function onSubmit(event){event.preventDefault();const submit=form.querySelector('[type="submit"]');submit.disabled=true;error.textContent='';try{await run(commandFor[currentKind],payloadFromForm(currentKind,new FormData(form)));close();}catch(cause){error.textContent=cause.message;}finally{submit.disabled=false;}}
+  async function onSubmit(event){event.preventDefault();if(!currentKind)return;const submit=form.querySelector('[type="submit"]');submit.disabled=true;error.textContent='';try{await run(commandFor[currentKind],payloadFromForm(currentKind,new FormData(form)));close();}catch(cause){error.textContent=cause.message;}finally{submit.disabled=false;}}
+
+  /* ------------------------------------------------------------ detalhes (painel lateral) */
+
+  function abrirDetalhes(id,origem){
+    const conteudo=renderDetalhes(client.snapshot,id,{agora:Date.now()});if(!conteudo||!drawer)return;
+    detalheId=id;filters.selecionado=id;origemDetalhe=origem||null;
+    drawerBody.innerHTML=conteudo;drawer.hidden=false;root.dataset.opDetalhe='aberto';
+    fecharMenu();render();
+    drawer.querySelector('#op-drawer-titulo')?.focus();
+  }
+  function fecharDetalhes({devolverFoco=true}={}){
+    if(!detalheId||!drawer)return;
+    const id=detalheId;detalheId='';filters.selecionado='';drawer.hidden=true;drawerBody.innerHTML='';delete root.dataset.opDetalhe;
+    render();
+    if(devolverFoco){const alvo=origemDetalhe?.isConnected?origemDetalhe:visivel(`[data-op-action="detalhes"][data-id="${CSS.escape(id)}"]`);alvo?.focus();}
+    origemDetalhe=null;
+  }
+
+  /* ------------------------------------------------------------ menu "⋯" */
+
+  function abrirMenu(id,gatilho){
+    if(!menu)return;
+    if(menuId===id&&!menu.hidden){fecharMenu();return;}
+    menu.innerHTML=renderMenuDeAcoes(client.snapshot,id);if(!menu.innerHTML)return;
+    menuId=id;origemMenu=gatilho;menu.hidden=false;gatilho.setAttribute('aria-expanded','true');
+    const caixa=gatilho.getBoundingClientRect(),largura=menu.offsetWidth||200,altura=menu.offsetHeight||220;
+    const esquerda=Math.max(8,Math.min(caixa.right-largura,(janela?.innerWidth||1200)-largura-8));
+    const acima=caixa.bottom+altura+8>(janela?.innerHeight||800);
+    menu.style.left=`${esquerda}px`;menu.style.top=`${acima?Math.max(8,caixa.top-altura-4):caixa.bottom+4}px`;
+    menu.querySelector('[role="menuitem"]:not([disabled])')?.focus();
+  }
+  function fecharMenu({devolverFoco=false}={}){
+    if(!menu||menu.hidden)return;
+    menu.hidden=true;origemMenu?.setAttribute?.('aria-expanded','false');
+    if(devolverFoco&&origemMenu?.isConnected)origemMenu.focus();
+    menuId='';origemMenu=null;
+  }
+
+  /* ------------------------------------------------------------ cliques em áreas vazias */
+
+  const iso=(dia,minutos)=>new Date(Date.parse(`${dia}T${String(Math.floor(minutos/60)).padStart(2,'0')}:${String(minutos%60).padStart(2,'0')}:00-03:00`)).toISOString();
+  const arredondar=minutos=>Math.max(JANELA.inicio,Math.min(JANELA.fim-60,Math.floor(minutos/30)*30));
+  function sementeDoHorario(dia,minutos,room_id=''){const inicio=arredondar(minutos);return {starts_at:iso(dia,inicio),ends_at:iso(dia,inicio+60),...(room_id?{room_id}:{})};}
+
+  /* ------------------------------------------------------------ eventos */
+
   async function onClick(event){
-    if(event.target.closest('[data-op-close]')){close();return;}
-    const view=event.target.closest('[data-op-calendar-view]');if(view){filters.view=view.dataset.opCalendarView;render();return;}
-    const day=event.target.closest('[data-op-day]');if(day){filters.date=day.dataset.opDay;filters.view='day';render();return;}
-    const target=event.target.closest('[data-op-action]');if(!target)return;const kind=target.dataset.opAction,id=target.dataset.id||'';
+    const alvo=event.target;
+    if(menu&&!menu.hidden&&!alvo.closest('[data-op-menu-painel]')&&!alvo.closest('[data-op-menu]'))fecharMenu();
+    if(alvo.closest('[data-op-close]')){close();return;}
+    if(alvo.closest('[data-op-drawer-fechar]')){fecharDetalhes();return;}
+
+    const agenda=alvo.closest('[data-op-agenda]');
+    if(agenda){
+      const comando=agenda.dataset.opAgenda;
+      if(comando==='hoje')filters.date=today();
+      else if(comando==='anterior'||comando==='proximo')filters.date=deslocarData(visaoEfetiva(filters.view,estreita()),filters.date,comando==='anterior'?-1:1);
+      else if(comando==='limpar-filtros'){filters.familia='';filters.situacao='';filters.profissional='';}
+      else if(comando==='calendario'){const campo=agenda.parentElement?.querySelector('[data-op-filter="date"]');try{campo?.showPicker();}catch{campo?.focus();}return;}
+      render();
+      if(comando!=='limpar-filtros')root.querySelector(`[data-op-agenda="${comando}"]`)?.focus();
+      return;
+    }
+    const view=alvo.closest('[data-op-calendar-view]');if(view){filters.view=view.dataset.opCalendarView;render();root.querySelector(`[data-op-calendar-view="${filters.view}"]`)?.focus();return;}
+    const day=alvo.closest('[data-op-day]');if(day){filters.date=day.dataset.opDay;filters.view='day';render();root.querySelector(`[data-op-day="${filters.date}"][aria-pressed="true"]`)?.focus();return;}
+
+    const menuGatilho=alvo.closest('[data-op-menu]');if(menuGatilho){abrirMenu(menuGatilho.dataset.opMenu,menuGatilho);return;}
+    const tipo=alvo.closest('[data-op-novo-tipo]');if(tipo){abrirAgendamento(tipo.dataset.opNovoTipo,{semente:sementeNova,modo:'novo'});return;}
+    if(alvo.closest('[data-op-trocar-tipo]')){const dados=Object.fromEntries(new FormData(form));abrirEscolhaDeTipo({...sementeNova,starts_at:dados.starts_at?new Date(`${dados.starts_at}:00-03:00`).toISOString():sementeNova.starts_at,ends_at:dados.ends_at?new Date(`${dados.ends_at}:00-03:00`).toISOString():sementeNova.ends_at,room_id:dados.room_id||sementeNova.room_id,title:dados.title||''});return;}
+    const mostrar=alvo.closest('[data-op-mostrar-campos]');if(mostrar){for(const bloco of body.children)if(chaveDoBloco(bloco))bloco.hidden=false;mostrar.setAttribute('aria-expanded','true');mostrar.hidden=true;return;}
+    const sugestao=alvo.closest('[data-op-sugestao]');
+    if(sugestao){
+      if(sugestao.dataset.opSugestao==='horario'){form.elements.starts_at.value=sugestao.dataset.inicio;form.elements.ends_at.value=sugestao.dataset.fim;}
+      else{const sala=form.elements.room_id;sala.value=sugestao.dataset.sala;}
+      atualizarConflito();body.querySelector('[name="starts_at"]')?.focus();return;
+    }
+
+    const trilha=alvo.closest('[data-op-trilha][data-reservavel]');
+    if(trilha&&alvo===trilha){const caixa=trilha.getBoundingClientRect();const minutos=JANELA.inicio+((event.clientX-caixa.left)/caixa.width)*(JANELA.fim-JANELA.inicio);abrirEscolhaDeTipo(sementeDoHorario(trilha.dataset.dia,minutos,trilha.dataset.opTrilha));return;}
+    const coluna=alvo.closest('[data-op-coluna]');
+    if(coluna&&alvo===coluna){const caixa=coluna.getBoundingClientRect();const hora=parseFloat(getComputedStyle(coluna).getPropertyValue('--hora'))||40;abrirEscolhaDeTipo(sementeDoHorario(coluna.dataset.opColuna,JANELA.inicio+((event.clientY-caixa.top)/hora)*60));return;}
+
+    const target=alvo.closest('[data-op-action]');if(!target||target.disabled)return;const kind=target.dataset.opAction,id=target.dataset.id||'';
+    fecharMenu();
+    if(kind==='detalhes'){abrirDetalhes(id,target);return;}
+    if(kind==='novo-agendamento'){abrirEscolhaDeTipo(target.dataset.room?{room_id:target.dataset.room}:{});return;}
+    if(kind==='reagendar'){abrirAgendamento(null,{id,modo:'reagendar'});return;}
+    if(kind==='duplicar'){const original=client.snapshot.schedule_items.find(item=>item.id===id);if(!original)return;const copia=Object.fromEntries(CAMPOS_COPIAVEIS.filter(campo=>original[campo]!=null).map(campo=>[campo,structuredClone(original[campo])]));abrirAgendamento(familiaDe(original),{semente:copia,modo:'duplicar'});return;}
+    if(kind==='schedule'&&id){abrirAgendamento(null,{id,modo:'editar'});return;}
     if(kind==='setup'){if(confirm('Criar os dez cadastros provisórios de sala? Eles continuarão indisponíveis até a confirmação dos dados.'))await run('setup.rooms',{},'Dez salas preparadas para conferência.');return;}
     if(kind==='complete'){if(confirm('Marcar esta atividade como realizada?'))await run('schedule.complete',{id,scope:'occurrence'},'Atividade concluída.');return;}
     if(kind==='goto-rooms'){onNavigate('salas');return;}
+    if(kind==='goto-reports'){onNavigate('relatorios');return;}
     if(kind==='export'){const blob=new Blob([JSON.stringify(client.snapshot,null,2)],{type:'application/json'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`potala-operacao-${today()}.json`;link.click();URL.revokeObjectURL(link.href);return;}
+    if(kind==='schedule'){abrirEscolhaDeTipo(target.dataset.room?{room_id:target.dataset.room}:{});return;}
     open(kind,id,{room:target.dataset.room,destination:target.dataset.destination,asset:target.dataset.asset,item:target.dataset.item,offering:target.dataset.offering,schedule:target.dataset.schedule,entry:target.dataset.entry,date:filters.date,hour:target.dataset.hour});
   }
-  function onChange(event){const filter=event.target.dataset.opFilter;if(!filter)return;filters[filter]=event.target.value;render();}
-  root.addEventListener('click',onClick);root.addEventListener('change',onChange);form.addEventListener('submit',onSubmit);dialog.addEventListener('cancel',event=>{event.preventDefault();close();});render();
-  return {render,destroy(){root.removeEventListener('click',onClick);root.removeEventListener('change',onChange);form.removeEventListener('submit',onSubmit);}};
+
+  function onChange(event){
+    if(event.target.closest?.('[data-op-form]')){if(currentKind==='schedule')atualizarConflito();return;}
+    const filter=event.target.dataset.opFilter;if(!filter)return;
+    if(filter==='search')return;
+    filters[filter]=event.target.value;
+    if(filter==='date'&&!filters.date)filters.date=today();
+    render();
+  }
+  function onInput(event){
+    if(event.target.closest?.('[data-op-form]')){if(currentKind==='schedule')atualizarConflito();return;}
+    if(event.target.dataset?.opFilter!=='search')return;
+    clearTimeout(buscaEspera);const valor=event.target.value;
+    buscaEspera=setTimeout(()=>{filters.search=valor;render();},180);
+  }
+  function onKeydown(event){
+    if(menu&&!menu.hidden){
+      if(event.key==='Escape'){event.preventDefault();fecharMenu({devolverFoco:true});return;}
+      if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)&&event.target.closest('[data-op-menu-painel]')){
+        event.preventDefault();const itens=[...menu.querySelectorAll('[role="menuitem"]:not([disabled])')];const atual=itens.indexOf(event.target);
+        const proximo=event.key==='Home'?0:event.key==='End'?itens.length-1:(atual+(event.key==='ArrowDown'?1:-1)+itens.length)%itens.length;itens[proximo]?.focus();return;
+      }
+      if(event.key==='Tab')fecharMenu();
+    }
+    if(event.key==='Escape'&&detalheId&&!dialog.open){event.preventDefault();fecharDetalhes();}
+  }
+
+  const larguraMudou=()=>render();
+  const mediaEstreita=consulta('(max-width: 819px)');
+  root.addEventListener('click',onClick);root.addEventListener('change',onChange);root.addEventListener('input',onInput);root.addEventListener('keydown',onKeydown);
+  form.addEventListener('submit',onSubmit);dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
+  mediaEstreita?.addEventListener?.('change',larguraMudou);
+  render();
+  return {render,filters,abrirDetalhes,fecharDetalhes,definirRecebidos(dados){recebidos=dados;render();},destroy(){root.removeEventListener('click',onClick);root.removeEventListener('change',onChange);root.removeEventListener('input',onInput);root.removeEventListener('keydown',onKeydown);form.removeEventListener('submit',onSubmit);mediaEstreita?.removeEventListener?.('change',larguraMudou);clearTimeout(buscaEspera);}};
 }

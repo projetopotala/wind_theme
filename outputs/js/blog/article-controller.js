@@ -1,7 +1,8 @@
 import { DEFAULT_BLOG_POSTS } from "./blog-data.js";
 import { normalizePosts } from "./blog-model.js";
-import { createBlogRepository } from "./blog-repository.js";
+import { criarBlogPublico, quandoFoi } from "./blog-remoto.js";
 import { findPostBySlug, renderArticle } from "./article-renderer.js";
+import { criarRestPublico } from "../supabase/rest.js";
 
 const escapeHtml = (value) => String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
@@ -41,16 +42,22 @@ function mount(root = document) {
   if (!target) return;
   const params = new URLSearchParams(window.location.search);
   const preview = params.get("preview") === "1";
-  const repository = createBlogRepository({ defaults:DEFAULT_BLOG_POSTS });
-  let posts = repository.list();
-  let slug = params.get("post") || posts[0]?.slug;
+  const blog = criarBlogPublico({
+    rest: criarRestPublico(),
+    reserva: DEFAULT_BLOG_POSTS,
+    aoFalhar: (erro) => console.warn("Artigo: leitura do banco falhou; mostrando o acervo empacotado.", erro),
+  });
+  let posts = [];
+  let slug = params.get("post") || "";
+  let recebeuPrevia = false;
+  let leituraContada = false;
 
   function draw() {
     const post = findPostBySlug(posts, slug, { preview });
     if (!post) {
       target.innerHTML = '<div class="article-content"><h1>Este texto não está disponível.</h1><p>Ele pode ter sido ocultado ou o endereço mudou.</p></div>';
       root.querySelector("[data-article-related]").innerHTML = "";
-      return;
+      return null;
     }
     document.title = `${post.title} — Caderno de Travessia`;
     target.innerHTML = renderArticle(post);
@@ -59,24 +66,53 @@ function mount(root = document) {
       .filter((item) => item.status === "published" && item.id !== post.id)
       .slice(0,2)
       .map((item) => `<a href="artigo.html?post=${encodeURIComponent(item.slug)}" style="background-image:url('${escapeHtml(item.cover)}')">${escapeHtml(item.title)}</a>`).join("");
+    return post;
   }
 
   window.addEventListener("message", (event) => {
     if (event.origin !== window.location.origin || event.data?.type !== "potala:blog-preview") return;
+    recebeuPrevia = true;
     posts = normalizePosts(event.data.posts);
     slug = event.data.selectedSlug || slug;
     draw();
   });
 
+  const list = root.querySelector("[data-article-comment-list]");
+  const status = root.querySelector("[data-article-comment-status]");
+  const comentario = (item) => `<li><strong>${escapeHtml(item.nome)}</strong> <small>${escapeHtml(quandoFoi(item.criadoEm))}</small><p>${escapeHtml(item.texto)}</p></li>`;
+
   const form = root.querySelector("[data-article-comment-form]");
-  form?.addEventListener("submit", (event) => {
+  form?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const values = new FormData(form);
-    root.querySelector("[data-article-comment-list]").insertAdjacentHTML("afterbegin", `<li><strong>${escapeHtml(values.get("name"))}</strong><p>${escapeHtml(values.get("text"))}</p></li>`);
-    form.reset();
-    root.querySelector("[data-article-comment-status]").textContent = "Comentário visível somente nesta aba.";
+    const enviar = form.querySelector('[type="submit"]');
+    enviar?.setAttribute("disabled", "");
+    if (status) status.textContent = "Enviando…";
+    try {
+      await blog.enviarComentario({ slug, nome: values.get("name"), texto: values.get("text") });
+      form.reset();
+      if (status) status.textContent = "Recebido. Sua reflexão aparece aqui depois da leitura da equipe.";
+    } catch (erro) {
+      if (status) status.textContent = `Não foi possível enviar: ${erro.message}`;
+    } finally {
+      enviar?.removeAttribute("disabled");
+    }
   });
-  draw();
+
+  blog.listarPublicados().then((publicados) => {
+    if (recebeuPrevia) return;
+    posts = publicados;
+    slug ||= posts[0]?.slug || "";
+    const post = draw();
+    if (!post || preview) return;
+    if (!leituraContada) {
+      leituraContada = true;
+      blog.registrarLeitura(post.slug);
+    }
+    blog.listarComentarios(post.slug)
+      .then((comentarios) => { if (list) list.innerHTML = comentarios.map(comentario).join(""); })
+      .catch(() => {});
+  });
 }
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => mount(document), { once:true });

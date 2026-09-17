@@ -254,14 +254,15 @@ test("comentario sem nome ou quase sem texto e recusado", () => {
   assert.deepEqual(validarComentario({ nome: "Ana", texto: "gostei muito" }), {});
 });
 
-test("a interface avisa que o comentario nao e gravado", () => {
+test("a interface avisa que o comentario passa pela equipe antes de aparecer", () => {
   /*
-   * Um formulario que aceita texto e o descarta em silencio e pior do que
-   * formulario nenhum. O aviso precisa estar ANTES do botao, e nao numa nota
-   * de rodape que ninguem le antes de escrever.
+   * O comentario e gravado como pendente. Sem este aviso, quem envia e nao ve
+   * o proprio texto na lista acha que ele se perdeu. O aviso precisa estar
+   * ANTES do botao, e nao numa nota de rodape que ninguem le antes de escrever.
    */
   assert.match(html, /class="comentario-aviso"/);
-  assert.match(html, /ainda não é gravado/i);
+  assert.match(html, /lido pela equipe antes de aparecer/i);
+  assert.doesNotMatch(html, /ainda não é gravado/i);
   const aviso = html.indexOf("comentario-aviso");
   const botao = html.indexOf("comentario-enviar");
   assert.ok(aviso < botao, "o aviso ficou depois do botao");

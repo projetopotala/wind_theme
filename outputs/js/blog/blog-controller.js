@@ -1,8 +1,9 @@
 import { arteDaCapa } from "./blog-arte.js";
 import { CATEGORIAS, DEFAULT_BLOG_POSTS, contarPorCategoria, dataLegivel } from "./blog-data.js";
 import { normalizePost, normalizePosts, placeBlogPosts } from "./blog-model.js";
-import { createBlogRepository } from "./blog-repository.js";
+import { criarBlogPublico, quandoFoi, validarEnvioDeComentario } from "./blog-remoto.js";
 import { applyBlogSettings } from "./blog-settings.js";
+import { criarRestPublico } from "../supabase/rest.js";
 
 const escapar = (valor) => String(valor ?? "")
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -65,11 +66,6 @@ export function marcacaoDasCategorias(posts, ativa = "todos") {
   }).join("");
 }
 
-const CONVERSA_INICIAL = [
-  { nome: "Beatriz", quando: "há 2 dias", texto: "A leitura abriu uma pausa de que eu precisava. Voltei ao texto no fim do dia." },
-  { nome: "Rogério M.", quando: "há 4 dias", texto: "Gosto quando a reflexão encontra uma prática possível, sem oferecer respostas prontas." },
-];
-
 function comentarioEmLista({ nome, quando, texto }) {
   const inicial = String(nome || "?").trim().charAt(0).toUpperCase();
   return `<li class="comentario"><span class="comentario-inicial" aria-hidden="true">${escapar(inicial)}</span><div>
@@ -77,21 +73,31 @@ function comentarioEmLista({ nome, quando, texto }) {
     <p class="comentario-texto">${escapar(texto)}</p></div></li>`;
 }
 
-export function validarComentario({ nome = "", texto = "" } = {}) {
-  const erros = {};
-  if (!String(nome).trim()) erros.nome = "Diga como quer ser chamada ou chamado.";
-  if (String(texto).trim().length < 3) erros.texto = "Escreva ao menos algumas palavras.";
-  return erros;
+export function validarComentario(campos = {}) {
+  return validarEnvioDeComentario(campos);
 }
 
-function wireComments(root) {
+/*
+ * A conversa da página do Caderno.
+ *
+ * O comentário vai ao banco como pendente e só aparece depois da leitura da
+ * equipe. Por isso ele NÃO entra na lista ao enviar: mostrá-lo ali faria a
+ * pessoa achar que já está público para todos.
+ */
+function wireComments(root, blog) {
   const form = root.querySelector("[data-comentario-forma]");
   const list = root.querySelector("[data-comentario-lista]");
   const status = root.querySelector("[data-comentario-status]");
   const counter = root.querySelector("[data-comentario-contador]");
-  if (list) list.innerHTML = CONVERSA_INICIAL.map(comentarioEmLista).join("");
+
+  blog.listarComentarios(null)
+    .then((comentarios) => {
+      if (list) list.innerHTML = comentarios.map((item) => comentarioEmLista({ ...item, quando: quandoFoi(item.criadoEm) })).join("");
+    })
+    .catch(() => { if (list) list.innerHTML = ""; });
+
   form?.elements?.texto?.addEventListener("input", () => { if (counter) counter.textContent = form.elements.texto.value.length; });
-  form?.addEventListener("submit", (event) => {
+  form?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const errors = validarComentario({ nome: form.elements.nome.value, texto: form.elements.texto.value });
     for (const field of ["nome", "texto"]) {
@@ -100,10 +106,19 @@ function wireComments(root) {
       form.elements[field].setAttribute("aria-invalid", errors[field] ? "true" : "false");
     }
     if (Object.keys(errors).length) return form.querySelector('[aria-invalid="true"]')?.focus();
-    list?.insertAdjacentHTML("afterbegin", comentarioEmLista({ nome: form.elements.nome.value.trim(), quando: "agora", texto: form.elements.texto.value.trim() }));
-    form.reset();
-    if (counter) counter.textContent = "0";
-    if (status) status.textContent = "Comentário publicado nesta aba. Ele não fica gravado.";
+    const enviar = form.querySelector('[type="submit"]');
+    enviar?.setAttribute("disabled", "");
+    if (status) status.textContent = "Enviando…";
+    try {
+      await blog.enviarComentario({ slug: null, nome: form.elements.nome.value, texto: form.elements.texto.value });
+      form.reset();
+      if (counter) counter.textContent = "0";
+      if (status) status.textContent = "Recebido. Seu comentário aparece aqui depois da leitura da equipe.";
+    } catch (erro) {
+      if (status) status.textContent = `Não foi possível enviar: ${erro.message}`;
+    } finally {
+      enviar?.removeAttribute("disabled");
+    }
   });
 }
 
@@ -116,8 +131,14 @@ export function montar(root = document) {
   const search = root.querySelector("[data-blog-search]");
   if (!gridTarget) return { destroy() {} };
 
-  const repository = createBlogRepository({ defaults: DEFAULT_BLOG_POSTS });
-  let posts = repository.list();
+  const blog = criarBlogPublico({
+    rest: criarRestPublico(),
+    reserva: DEFAULT_BLOG_POSTS,
+    aoFalhar: (erro) => console.warn("Caderno: leitura do banco falhou; mostrando o acervo empacotado.", erro),
+  });
+  const preview = new URLSearchParams(globalThis.location?.search || "").get("preview") === "1";
+  let posts = [];
+  let recebeuPrevia = false;
   let activeCategory = "todos";
   let term = "";
 
@@ -148,24 +169,43 @@ export function montar(root = document) {
   search?.addEventListener("input", () => { term = search.value.trim().toLocaleLowerCase("pt-BR"); draw(); });
 
   const newsletter = root.querySelector("[data-blog-newsletter]");
-  newsletter?.addEventListener("submit", (event) => {
+  newsletter?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    newsletter.reset();
-    root.querySelector("[data-blog-newsletter-status]").textContent = "Demonstração local: inscrição ainda não foi enviada.";
+    const aviso = root.querySelector("[data-blog-newsletter-status]");
+    const campo = newsletter.querySelector('input[type="email"]');
+    if (!campo?.value.trim() || campo.validity?.valid === false) {
+      if (aviso) aviso.textContent = "Informe um e-mail válido.";
+      campo?.focus();
+      return;
+    }
+    if (aviso) aviso.textContent = "Enviando…";
+    try {
+      await blog.inscrever(campo.value, "blog");
+      newsletter.reset();
+      if (aviso) aviso.textContent = "Inscrição registrada. Obrigado por acompanhar o Caderno.";
+    } catch (erro) {
+      if (aviso) aviso.textContent = `Não foi possível inscrever: ${erro.message}`;
+    }
   });
 
   const onPreview = (evento) => {
     if (evento.origin !== window.location.origin || evento.data?.type !== "potala:blog-preview") return;
+    recebeuPrevia = true;
     posts = normalizePosts(evento.data.posts);
     draw();
   };
-  const onStorage = (event) => { if (event.key === "potala.blog.frontend.v1") { posts = repository.list(); draw(); } };
   window.addEventListener("message", onPreview);
-  window.addEventListener("storage", onStorage);
-  wireComments(root);
-  applyBlogSettings(root);
-  draw();
-  return { draw, destroy() { window.removeEventListener("message", onPreview); window.removeEventListener("storage", onStorage); } };
+  empty.hidden = true;
+  const carregado = Promise.all([blog.listarPublicados(), blog.lerConfiguracao()]).then(([publicados, configuracao]) => {
+    applyBlogSettings(root, configuracao);
+    /* Na prévia do editor, o rascunho que chegou pela mensagem vale mais que o banco. */
+    if (!recebeuPrevia) {
+      posts = publicados;
+      draw();
+    }
+  });
+  if (!preview) wireComments(root, blog);
+  return { draw, carregado, destroy() { window.removeEventListener("message", onPreview); } };
 }
 
 if (typeof document !== "undefined") {

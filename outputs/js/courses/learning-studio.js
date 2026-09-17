@@ -1,3 +1,5 @@
+import { enviarInteresse } from "../shared/participacao.js";
+
 const ADVICE_PATHS = {
   choose: {
     eyebrow: "Uma conversa antes da escolha",
@@ -41,11 +43,13 @@ export function buildCourseInterest(raw = {}) {
     throw new Error("Escolha uma modalidade e ao menos um período disponível.");
   }
 
+  const contact = String(raw.contact || "").trim().slice(0, 120);
   return {
     topic,
     modality: LABELS[modalityKey],
     availability: availabilityKeys.map((key) => LABELS[key] || key),
     goal: String(raw.goal || "").trim(),
+    ...(contact ? { contact } : {}),
   };
 }
 
@@ -77,6 +81,7 @@ function readInterestForm(form) {
   return buildCourseInterest({
     topic: data.get("topic"),
     goal: data.get("goal"),
+    contact: data.get("contact"),
     modality: data.get("modality"),
     availability: data.getAll("availability"),
   });
@@ -105,15 +110,30 @@ export function mountLearningStudio(root = document) {
 
   const form = studio.querySelector("[data-course-interest-form]");
   const status = studio.querySelector("[data-interest-status]");
-  const onSubmit = (event) => {
+  const onSubmit = async (event) => {
     event.preventDefault();
+    const submit = form.querySelector('[type="submit"]');
+    let interest;
     try {
-      renderInterestReview(studio, readInterestForm(form));
-      status.textContent = "Sua ideia está pronta para ser revisada.";
-      status.dataset.state = "success";
+      interest = readInterestForm(form);
     } catch (error) {
       status.textContent = error.message;
       status.dataset.state = "error";
+      return;
+    }
+    submit?.setAttribute("disabled", "");
+    status.textContent = "Enviando ao Instituto…";
+    status.dataset.state = "";
+    try {
+      await enviarInteresse({ kind: "curso", subject: interest.topic, details: interest });
+      renderInterestReview(studio, interest);
+      status.textContent = "Interesse enviado. A equipe do Instituto já pode ver sua proposta.";
+      status.dataset.state = "success";
+    } catch (error) {
+      status.textContent = `Não foi possível enviar agora: ${error.message}`;
+      status.dataset.state = "error";
+    } finally {
+      submit?.removeAttribute("disabled");
     }
   };
   form?.addEventListener("submit", onSubmit);

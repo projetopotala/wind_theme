@@ -69,22 +69,34 @@ O navegador recebe apenas a chave `sb_publishable_...`, que é pública por defi
 - Antes de qualquer remoção futura de tabela, exporte `home_blocks`. Esta migração não contém `drop table`, `truncate` nem outra contração destrutiva.
 - Falha de escrita no painel é exibida como erro e não altera a lista em memória nem anuncia publicação.
 
-## Central operacional local
+## Banco do Portal (Supabase, projeto "Painel")
 
-Ao executar `npm run preview:portal`, o `/admin` também inicia a operação local em SQLite. A base fica em `.local/potala-operations.sqlite`, não entra no Git e não é enviada ao Supabase. O editor da jornada continua usando as tabelas editoriais existentes no Supabase; assim, conteúdo e operação não mantêm cópias concorrentes.
+Tudo o que o site grava vai para o projeto `gotrumwuimpoeggwamut`. O navegador usa só a chave publicável; quem pode ler e escrever é decidido pelos grants e políticas RLS das migrações em `supabase/migrations/`, aplicadas em ordem. Em 17/09/2026 todas estavam aplicadas.
 
-Na primeira entrada, use **Preparar as 10 salas** e revise cada cadastro antes de liberar reservas. Os registros provisórios começam indisponíveis, sem capacidade ou acessibilidade presumidas. Depois disso, o painel permite cadastrar pessoas com múltiplos papéis, catálogo e turmas, agenda presencial ou online, recorrência, participantes, inventário por quantidade, patrimônio individual, movimentações, manutenção, lançamentos, pagamentos, estornos e regras configuráveis de repasse.
+| O que | Onde grava | Quem lê |
+|---|---|---|
+| Jornada da Home, rascunhos | `home_blocks`, `home_block_drafts` | público lê o publicado; rascunho só administração |
+| Operação: salas, agenda, pessoas, cursos e turmas, inventário, movimentações, manutenção, financeiro | `op_records` via `op_snapshot()` e `op_apply()` | só owner/admin ativo |
+| Textos e configuração do Blog | `blog_posts` via `save_blog_post()`, `blog_settings` | público lê o publicado |
+| Leituras dos artigos | `blog_post_views` via `register_blog_view()` | só administração |
+| Comentários do Caderno e dos artigos | `blog_comments` (nasce pendente) | público lê os aprovados; a mesa do Blog modera |
+| Inscrição nas inspirações | `newsletter_subscriptions` via `subscribe_newsletter()` | só administração |
+| "Monte seu curso", "Tenho interesse", retorno da Recepção | `site_interests` | só administração (Relatórios → Recebido pelo site) |
+| Meu Potala | `profiles`, `saved_items`, `history_items`… | cada pessoa, só o que é dela |
 
-As reservas bloqueiam conflitos de sala e profissional, consideram preparação e desmontagem e registram histórico. Movimentações não alteram reservas automaticamente; quando houver impacto futuro, o painel exige uma confirmação explícita. Valores e repasses guardam a regra aplicada no momento da transação para preservar o histórico.
+### Operação do Instituto
 
-Para copiar os dados, acesse **Configurações → Exportar cópia dos dados**. O arquivo JSON serve como cópia de consulta; a restauração automática ainda não faz parte desta entrega. Para iniciar uma base vazia durante o desenvolvimento, pare o preview, mova o arquivo SQLite para um local seguro e inicie o servidor novamente.
+A central operacional abre depois do login do `/admin`. As regras de domínio (`outputs/js/admin/operations/schedule.js` e `resources.js`) rodam no navegador contra uma revisão do estado; `op_apply` grava o resultado numa transação e recusa se outra janela gravou antes (HTTP 409), se o identificador do pedido já foi usado para outro comando ou se um código de sala ou patrimônio se repete. Cada gravação registra o autor da sessão e o antes/depois.
 
-Validação da operação:
+Na primeira entrada, use **Preparar as 10 salas** e revise cada cadastro antes de liberar reservas. Para copiar os dados, use **Configurações → Exportar cópia dos dados**.
 
-```bash
-npm run test:portal
-npm run validate:portal
-```
+### Cuidado ao criar funções no banco
+
+No Supabase, função nova em `public` recebe EXECUTE para `anon` e `authenticated` por privilégio padrão. `revoke all ... from public` NÃO tira esse grant: revogue de `anon` explicitamente. Foi assim que `set_portal_user_password` ficou chamável por qualquer visitante até `202609170004`.
+
+### Blog
+
+`npm run db:seed-blog` regenera a migração com o acervo empacotado de `outputs/js/blog/blog-data.js`. O "acesso de teste" da mesa continua no `localStorage` e nunca escreve no banco.
 
 ## Composição editorial e Rodapé Vivo
 
@@ -92,11 +104,11 @@ A Home respeita a ordem publicada no painel, intercalando notícias e seções c
 
 Na aba Aparência do editor, os formatos Editorial, Imagem em destaque, Retrato e Reflexão compartilham a mesma navegação. Os caminhos relacionados podem ser selecionados pelo nome; no modo automático, temas em comum completam as sugestões. No modo manual, uma seleção vazia suprime os relacionados.
 
-Antes de usar a escrita editorial, aplique `supabase/migrations/202609100001_home_editorial_composition.sql` depois das migrações anteriores. Ela adiciona `editorial_variant`, `related_mode` e `related_content` às tabelas de conteúdo e rascunhos, cria `replace_home_blocks_editorial` e atualiza a publicação de rascunhos. Preserva as políticas de acesso e o conteúdo existente. A nova RPC impede que um banco antigo descarte silenciosamente os campos. Nesta entrega, a aplicação remota não foi possível: o conector recusou o acesso por permissão.
+Antes de usar a escrita editorial, aplique `supabase/migrations/202609100001_home_editorial_composition.sql` depois das migrações anteriores. Ela adiciona `editorial_variant`, `related_mode` e `related_content` às tabelas de conteúdo e rascunhos, cria `replace_home_blocks_editorial` e atualiza a publicação de rascunhos. Preserva as políticas de acesso e o conteúdo existente. A nova RPC impede que um banco antigo descarte silenciosamente os campos. Aplicada no projeto em 17/09/2026.
 
 O Rodapé Vivo oferece retorno às seções, contato por e-mail e WhatsApp, poemas/reflexões/perguntas para baixar como texto e a plantinha. O progresso da planta fica apenas no `localStorage` deste navegador (`potala.plantinha.v1`), com um cuidado por dia local; não é enviado ao Instituto e pode desaparecer ao limpar os dados do navegador. Sem armazenamento, a experiência continua durante a visita. Os links sobre Mural de Luz e novidades abrem uma conversa com a Recepção, sem registrar nomes ou inscrições automaticamente.
 
-Validação específica: `node --test tests/potala/editorial-composition.test.mjs`. A migração também precisa ser verificada no projeto Supabase quando o acesso estiver disponível.
+Validação específica: `node --test tests/potala/editorial-composition.test.mjs`.
 
 ## Sobra: starter vinext
 

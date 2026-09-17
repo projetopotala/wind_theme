@@ -1,3 +1,5 @@
+import { enviarInteresse } from "../shared/participacao.js";
+
 export const CULTURAL_EXPERIENCES = [
   {
     slug: "cine-potala",
@@ -103,11 +105,28 @@ export function mountCulturalExperience(root = document, locationLike = globalTh
   });
   root.title = `${experience.title} — Instituto Potala`;
 
+  /*
+   * O interesse vai ao Instituto uma vez por visita. Depois de enviado o botão
+   * fica marcado e não desfaz: desmarcar daria a entender que o registro foi
+   * apagado, e ele não foi.
+   */
   const interest = shell.querySelector("[data-cultural-interest]");
-  const onInterest = () => {
-    const active = interest.getAttribute("aria-pressed") !== "true";
-    interest.setAttribute("aria-pressed", String(active));
-    interest.textContent = active ? "Interesse registrado nesta visita" : "Tenho interesse";
+  const note = interest?.parentElement?.querySelector("p");
+  const onInterest = async () => {
+    if (interest.getAttribute("aria-pressed") === "true" || interest.disabled) return;
+    interest.disabled = true;
+    interest.textContent = "Enviando…";
+    try {
+      await enviarInteresse({ kind: "experiencia-cultural", subject: experience.title, details: { slug: experience.slug || "" } });
+      interest.setAttribute("aria-pressed", "true");
+      interest.textContent = "Interesse registrado";
+      if (note) note.textContent = "Obrigado. O Instituto recebeu seu interesse neste encontro.";
+    } catch (error) {
+      interest.textContent = "Tenho interesse";
+      if (note) note.textContent = `Não foi possível registrar agora: ${error.message}`;
+    } finally {
+      interest.disabled = false;
+    }
   };
   interest?.addEventListener("click", onInterest);
   return { experience, destroy: () => interest?.removeEventListener("click", onInterest) };

@@ -54,3 +54,5 @@ yarn-error.log*
 # versionado, e a receita para refazê-lo está em
 # scripts/prepare-home-travessia-video.mjs.
 /assets-source/home-travessia/home-travessia-source.mp4
+
+.superdesign/tmp/

@@ -65,6 +65,41 @@ function clique(alvo) {
   return evento;
 }
 
+test("a barra abre por cima e fecha com Escape, com o véu e ao escolher uma seção", () => {
+  const { root, nav } = montar();
+  root.dataset = {};
+  const alternador = no({ "aria-expanded": "false" });
+  alternador.classList = { contains: () => false };
+  const veu = no();
+  veu.hidden = true;
+  const secao = no({ "data-section": "agenda", "data-dica": "Agenda" });
+  nav.querySelectorAll = () => [secao];
+  nav.querySelector = () => null;
+  const buscar = root.querySelector;
+  root.querySelector = (seletor) => (seletor === "[data-admin-nav-fechar]" ? veu : buscar(seletor));
+  root.querySelectorAll = (seletor) => (seletor === "[data-admin-nav-toggle]" ? [alternador] : []);
+  const ouvintes = new Map();
+  root.addEventListener = (tipo, fn) => ouvintes.set(tipo, fn);
+  createAdminShell({ root });
+
+  alternador.disparar("click");
+  assert.equal(root.dataset.navAberta, "true");
+  assert.equal(alternador.getAttribute("aria-expanded"), "true");
+  assert.equal(veu.hidden, false);
+
+  ouvintes.get("keydown")({ key: "Escape", preventDefault() {} });
+  assert.equal(root.dataset.navAberta, undefined);
+  assert.equal(veu.hidden, true);
+
+  alternador.disparar("click");
+  veu.disparar("click");
+  assert.equal(root.dataset.navAberta, undefined, "o véu fecha");
+
+  alternador.disparar("click");
+  nav.disparar("click", clique(secao));
+  assert.equal(root.dataset.navAberta, undefined, "escolher a seção fecha a gaveta");
+});
+
 test("isInerte reconhece só o que está marcado", () => {
   assert.equal(isInerte(no({ "aria-disabled": "true" })), true);
   assert.equal(isInerte(no({ "aria-disabled": "false" })), false);

@@ -98,7 +98,7 @@
             <p class="learning-studio-overline">Monte seu Curso</p>
             <h3 id="course-builder-title">Ajude uma nova turma a nascer.</h3>
             <p>Registre um interesse ainda não contemplado na programação. Tema, formato e disponibilidade passam a orientar novas conversas com facilitadores e com a comunidade.</p>
-            <p class="learning-studio-note">Nesta prévia, suas escolhas ficam apenas nesta tela e não são enviadas ao Instituto.</p>
+            <p class="learning-studio-note">Seu interesse chega à equipe do Instituto. O contato é opcional e serve só para avisar sobre esta turma.</p>
           </div>
 
           <form class="course-interest-form" data-course-interest-form data-reveal novalidate>
@@ -126,9 +126,14 @@
               <textarea id="course-goal" name="goal" rows="3" placeholder="Conte brevemente o que trouxe você até este tema"></textarea>
             </div>
 
+            <div class="course-field course-field-wide">
+              <label for="course-contact">E-mail ou WhatsApp para avisarmos <span>(opcional)</span></label>
+              <input id="course-contact" name="contact" type="text" maxlength="120" autocomplete="email" placeholder="Ex.: voce@email.com ou (19) 99999-9999">
+            </div>
+
             <div class="course-interest-action course-field-wide">
-              <button type="submit">Visualizar meu interesse <span aria-hidden="true">→</span></button>
-              <p data-interest-status role="status" aria-live="polite">Você poderá revisar tudo antes de um envio futuro.</p>
+              <button type="submit">Enviar meu interesse <span aria-hidden="true">→</span></button>
+              <p data-interest-status role="status" aria-live="polite"></p>
             </div>
 
             <section class="course-interest-review course-field-wide" data-interest-review tabindex="-1" hidden aria-labelledby="interest-review-title">
@@ -138,7 +143,7 @@
                 <div><dt>Formato e disponibilidade</dt><dd data-interest-format></dd></div>
                 <div><dt>Intenção</dt><dd data-interest-goal></dd></div>
               </dl>
-              <p>Quando este recurso for conectado ao Instituto, esta proposta poderá aproximar você de outras pessoas interessadas.</p>
+              <p>O Instituto recebeu esta proposta. Quando mais pessoas pedirem o mesmo tema, a turma começa a se formar.</p>
             </section>
           </form>
         </article>

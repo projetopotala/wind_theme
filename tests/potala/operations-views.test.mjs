@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {collections} from '../../scripts/operations-store.mjs';
+import {COLECOES as collections} from '../../outputs/js/admin/operations/motor.js';
 const mod=await import('../../outputs/js/admin/operations/views.js').catch(()=>({}));
 const state=()=>Object.fromEntries(collections.map(name=>[name,[]]));
 test('visão inicial apresenta dados vazios reais e preparação das salas',()=>{

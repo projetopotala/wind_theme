@@ -1,7 +1,9 @@
 import { createAdminAuth } from "../admin/admin-auth.js";
 import { getSupabaseClient } from "../supabase/client.js";
 import { DEFAULT_BLOG_POSTS } from "../blog/blog-data.js";
+import { criarBlogAdministrativo, criarBlogDeDemonstracao } from "../blog/blog-remoto.js";
 import { createBlogRepository } from "../blog/blog-repository.js";
+import { readBlogSettings, saveBlogSettings } from "../blog/blog-settings.js";
 import { createBlogEditor } from "./blog-editor.js";
 import { createBlogDesk } from "./blog-desk.js";
 
@@ -11,7 +13,34 @@ const panel = document.getElementById("admin-panel");
 const deskView = root?.querySelector("[data-blog-desk]");
 const editorView = root?.querySelector("[data-blog-editor]");
 const continueButton = root?.querySelector("[data-blog-continue]");
-const repository = createBlogRepository({ defaults: DEFAULT_BLOG_POSTS });
+/*
+ * Duas mesas, um repositório só para as telas.
+ *
+ * Com login, textos e configuração vão ao banco do Portal. O "acesso de teste"
+ * continua no navegador: sem conta o banco recusaria a escrita, e a
+ * demonstração não pode mexer no Blog que os visitantes leem. A mesa e o
+ * editor são criados uma vez; o que troca é para onde este objeto aponta.
+ */
+const demonstracao = criarBlogDeDemonstracao({
+  local: createBlogRepository({ defaults: DEFAULT_BLOG_POSTS }),
+  lerConfiguracao: () => readBlogSettings(),
+  salvarConfiguracao: (configuracao) => saveBlogSettings(configuracao),
+});
+let remoto = null;
+const atual = () => (root.dataset.blogDemo === "true" || !remoto ? demonstracao : remoto);
+const repository = {
+  get demonstracao() { return atual() === demonstracao; },
+  list: () => atual().list(),
+  save: (post) => atual().save(post),
+  remove: (id) => atual().remove(id),
+  reset: () => (atual() === demonstracao ? demonstracao.reset() : Promise.resolve()),
+  lerConfiguracao: () => atual().lerConfiguracao(),
+  salvarConfiguracao: (configuracao) => atual().salvarConfiguracao(configuracao),
+  leituras: () => atual().leituras(),
+  comentarios: () => atual().comentarios(),
+  moderar: (id, status) => atual().moderar(id, status),
+  inscritos: () => atual().inscritos(),
+};
 let editor = null;
 let desk = null;
 
@@ -27,6 +56,7 @@ function mostrarLogin() {
 function abrirMesa({ demo = false } = {}) {
   root.dataset.blogGate = "mesa";
   if (demo) root.dataset.blogDemo = "true";
+  else delete root.dataset.blogDemo;
   if (loginView) loginView.hidden = true;
   if (panel) panel.hidden = false;
   if (deskView) deskView.hidden = false;
@@ -74,6 +104,7 @@ panel?.querySelector("[data-admin-sign-out]")?.addEventListener("click", (event)
 
 try {
   const client = getSupabaseClient();
+  remoto = criarBlogAdministrativo({ client });
   const form = root?.querySelector("[data-admin-auth-form]");
   form?.addEventListener("submit", () => { root.dataset.blogGate = "entrar"; }, true);
   createAdminAuth({

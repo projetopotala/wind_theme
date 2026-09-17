@@ -3,35 +3,16 @@
  *
  * O padrão de mercado (Ghost, WordPress, Substack, Blogger) não abre o editor
  * na entrada. A casa é uma visão: escrever, ver alcance e moderar respostas.
- * Os números abaixo são de demonstração, para a seção poder ser vista antes
- * de existir medição real.
+ *
+ * Tudo aqui vem do banco do Portal: textos, leituras contadas na página do
+ * artigo, comentários enviados pelos visitantes e inscrições nas inspirações.
+ * Na mesa de demonstração o repositório é local e os números ficam zerados —
+ * inventar leituras seria pior do que mostrar que ainda não há.
  */
-
-const DEMO_ACCESS = {
-  "novos-profissionais": { views: 1284, likes: 96, comments: 14 },
-  "oraculo-de-hoje": { views: 860, likes: 71, comments: 9 },
-  "borra-de-cafe": { views: 642, likes: 48, comments: 6 },
-  "ansiedade-corpo": { views: 1102, likes: 88, comments: 11 },
-  "curso-desenho": { views: 390, likes: 27, comments: 3 },
-  "cinema-quinta": { views: 510, likes: 34, comments: 5 },
-  "meditacao-inicio": { views: 734, likes: 52, comments: 7 },
-  "sono-estacoes": { views: 448, likes: 31, comments: 4 },
-};
-
-const DEMO_COMMENTS = [
-  { author: "Helena Vasconcelos", post: "Oráculo de hoje: a carta da Ponte", text: "A imagem da margem me acompanhou o dia inteiro.", when: "hoje" },
-  { author: "Marina Alves", post: "Novos profissionais chegaram ao Instituto", text: "Quero saber quando a constelação familiar abre agenda.", when: "ontem" },
-  { author: "Leitora da casa", post: "Onde a ansiedade se instala no corpo", text: "Reconheci o ombro. Obrigado por nomear.", when: "2 dias" },
-];
-
-import { readBlogSettings, saveBlogSettings } from "../blog/blog-settings.js";
 
 const number = new Intl.NumberFormat("pt-BR");
 const escapeHtml = (value) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
-function accessOf(post) {
-  return DEMO_ACCESS[post.id] || { views: 0, likes: 0, comments: 0 };
-}
+const quando = (iso) => (iso ? new Date(iso).toLocaleString("pt-BR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "");
 
 function statusLabel(status) {
   if (status === "published") return "Publicado";
@@ -39,11 +20,14 @@ function statusLabel(status) {
   return "Rascunho";
 }
 
+const COMENTARIO = { pending: "Aguardando leitura", approved: "Publicado", rejected: "Recusado" };
+
 export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
   if (!root || !repository) throw new TypeError("root e repository são obrigatórios");
   const form = root.querySelector("[data-blog-settings-form]");
   const preview = root.querySelector("[data-blog-cover-preview]");
   const status = root.querySelector("[data-blog-settings-status]");
+  const note = root.querySelector("[data-blog-reach-note]");
 
   function showTab(id) {
     for (const tab of root.querySelectorAll("[data-blog-tab]")) {
@@ -54,7 +38,7 @@ export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
     }
   }
 
-  function paintSettings(settings = readBlogSettings()) {
+  function paintSettings(settings) {
     if (form) {
       form.elements.name.value = settings.name;
       form.elements.cover.value = settings.cover;
@@ -67,55 +51,84 @@ export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
     if (brand) brand.textContent = settings.name;
   }
 
-  function render() {
-    const posts = repository.list();
-    const totals = posts.reduce((sum, post) => {
-      const access = accessOf(post);
-      return {
-        views: sum.views + access.views,
-        likes: sum.likes + access.likes,
-        comments: sum.comments + access.comments,
-      };
-    }, { views: 0, likes: 0, comments: 0 });
+  function paintComments(comments, slugs) {
+    const target = root.querySelector("[data-blog-comments]");
+    if (!target) return;
+    if (!comments.length) {
+      target.innerHTML = `<li class="blog-desk-empty">${repository.demonstracao ? "Na demonstração não há comentários de visitantes." : "Nenhum comentário recebido ainda."}</li>`;
+      return;
+    }
+    target.innerHTML = comments.map((item) => {
+      const onde = item.slug ? slugs.get(item.slug) || item.slug : "Conversa do Caderno";
+      const acoes = item.status === "pending"
+        ? `<span class="blog-desk-actions"><button type="button" data-blog-moderar="approved" data-id="${escapeHtml(item.id)}">Publicar</button><button type="button" data-blog-moderar="rejected" data-id="${escapeHtml(item.id)}">Recusar</button></span>`
+        : `<span class="blog-desk-actions"><button type="button" data-blog-moderar="${item.status === "approved" ? "rejected" : "approved"}" data-id="${escapeHtml(item.id)}">${item.status === "approved" ? "Retirar" : "Publicar"}</button></span>`;
+      return `<li data-comentario-status="${escapeHtml(item.status)}"><strong>${escapeHtml(item.nome)}</strong><small>${escapeHtml(onde)} · ${escapeHtml(quando(item.criadoEm))} · ${escapeHtml(COMENTARIO[item.status] || item.status)}</small><p>${escapeHtml(item.texto)}</p>${acoes}</li>`;
+    }).join("");
+  }
+
+  async function render() {
+    const [posts, views, comments, subscribers, settings] = await Promise.all([
+      repository.list(),
+      repository.leituras().catch(() => ({})),
+      repository.comentarios().catch(() => []),
+      repository.inscritos().catch(() => 0),
+      repository.lerConfiguracao(),
+    ]);
+    const bySlug = new Map(posts.map((post) => [post.slug, post.title]));
+    const commentsOf = (slug) => comments.filter((item) => item.slug === slug && item.status !== "rejected").length;
+    const pending = comments.filter((item) => item.status === "pending").length;
+    const totalViews = posts.reduce((sum, post) => sum + (views[post.slug] || 0), 0);
 
     const metrics = root.querySelector("[data-blog-metrics]");
     if (metrics) {
       metrics.innerHTML = [
-        ["Visualizações", totals.views, "últimos 30 dias"],
-        ["Curtidas", totals.likes, "reações nos textos"],
-        ["Comentários", totals.comments, "aguardando leitura"],
+        ["Leituras", totalViews, "aberturas dos artigos"],
+        ["Comentários", pending, "aguardando leitura"],
+        ["Inscritos", subscribers, "nas inspirações"],
       ].map(([label, value, hint]) => `<p><small>${label}</small><strong>${number.format(value)}</strong><span>${hint}</span></p>`).join("");
+    }
+    if (note) {
+      note.textContent = repository.demonstracao
+        ? "Na demonstração nada é medido: os números aparecem na mesa real."
+        : "Leituras contadas a cada abertura de um artigo publicado.";
     }
 
     const list = root.querySelector("[data-blog-desk-list]");
     if (list) {
-      list.innerHTML = posts.map((post) => `<tr>
+      list.innerHTML = posts.length
+        ? posts.map((post) => `<tr>
           <td><strong>${escapeHtml(post.title)}</strong><small>${escapeHtml(post.publishedAt || "")}</small></td>
           <td>${escapeHtml(statusLabel(post.status))}</td>
           <td><button type="button" data-blog-edit="${escapeHtml(post.id)}">Editar</button></td>
-        </tr>`).join("");
+        </tr>`).join("")
+        : '<tr><td colspan="3">Nenhum texto ainda. Comece por “Escrever novo artigo”.</td></tr>';
     }
 
     const reach = root.querySelector("[data-blog-reach-list]");
     if (reach) {
-      reach.innerHTML = posts.map((post) => {
-        const access = accessOf(post);
-        return `<tr>
+      reach.innerHTML = posts.map((post) => `<tr>
           <td>${escapeHtml(post.title)}</td>
-          <td>${number.format(access.views)}</td>
-          <td>${number.format(access.likes)}</td>
-          <td>${number.format(access.comments)}</td>
-        </tr>`;
-      }).join("");
+          <td>${number.format(views[post.slug] || 0)}</td>
+          <td>${number.format(commentsOf(post.slug))}</td>
+        </tr>`).join("");
     }
 
-    const comments = root.querySelector("[data-blog-comments]");
-    if (comments) {
-      comments.innerHTML = DEMO_COMMENTS.map((item) => `<li><strong>${escapeHtml(item.author)}</strong><small>${escapeHtml(item.post)} · ${escapeHtml(item.when)}</small><p>${escapeHtml(item.text)}</p></li>`).join("");
-    }
+    const tabBadge = root.querySelector('[data-blog-tab="comentarios"]');
+    if (tabBadge) tabBadge.textContent = pending ? `Comentários (${pending})` : "Comentários";
+
+    paintComments(comments, bySlug);
+    if (!form?.contains(root.ownerDocument?.activeElement)) paintSettings(settings);
   }
 
-  function onClick(event) {
+  function renderSafely() {
+    return render().catch((error) => {
+      const list = root.querySelector("[data-blog-desk-list]");
+      if (list) list.innerHTML = `<tr><td colspan="3">${escapeHtml(error.message)}</td></tr>`;
+    });
+  }
+
+  async function onClick(event) {
     const tab = event.target.closest?.("[data-blog-tab]");
     if (tab) {
       showTab(tab.getAttribute("data-blog-tab"));
@@ -126,17 +139,36 @@ export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
       return;
     }
     const edit = event.target.closest?.("[data-blog-edit]");
-    if (edit) onEdit?.(edit.getAttribute("data-blog-edit"));
+    if (edit) {
+      onEdit?.(edit.getAttribute("data-blog-edit"));
+      return;
+    }
+    const moderate = event.target.closest?.("[data-blog-moderar]");
+    if (moderate) {
+      moderate.disabled = true;
+      try {
+        await repository.moderar(moderate.dataset.id, moderate.dataset.blogModerar);
+        await renderSafely();
+      } catch (error) {
+        moderate.disabled = false;
+        moderate.closest("li")?.insertAdjacentHTML("beforeend", `<p role="alert">${escapeHtml(error.message)}</p>`);
+      }
+    }
   }
 
-  function onSubmit(event) {
+  async function onSubmit(event) {
     event.preventDefault();
-    const saved = saveBlogSettings({
-      name: form.elements.name.value,
-      cover: form.elements.cover.value,
-    });
-    paintSettings(saved);
-    if (status) status.textContent = "Configuração salva. O nome e a imagem passam a aparecer no topo do blog.";
+    if (status) status.textContent = "Salvando…";
+    try {
+      const saved = await repository.salvarConfiguracao({
+        name: form.elements.name.value,
+        cover: form.elements.cover.value,
+      });
+      paintSettings(saved);
+      if (status) status.textContent = "Configuração salva. O nome e a imagem passam a aparecer no topo do blog.";
+    } catch (error) {
+      if (status) status.textContent = `Não foi possível salvar: ${error.message}`;
+    }
   }
 
   function onCoverInput() {
@@ -146,10 +178,10 @@ export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
   root.addEventListener("click", onClick);
   form?.addEventListener("submit", onSubmit);
   form?.elements.cover?.addEventListener("input", onCoverInput);
-  paintSettings();
-  render();
+  const pronto = renderSafely();
   return {
-    render,
+    pronto,
+    render: renderSafely,
     destroy() {
       root.removeEventListener("click", onClick);
       form?.removeEventListener("submit", onSubmit);

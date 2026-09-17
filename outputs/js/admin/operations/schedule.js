@@ -57,10 +57,12 @@ function validateItem(state, item, others) {
   item.requirements=(item.requirements || []).map(r=>{const item_id=required(r.item_id,'Item');ref(state.inventory_items || [],item_id,'Item de inventário');return {...r,item_id,quantity:number(r.quantity,'Quantidade',1)};});
   item.extras=(item.extras || []).map(e=>({...e,name:required(e.name,'Serviço extra'),quantity:number(e.quantity,'Quantidade',1),unit_price_cents:number(e.unit_price_cents,'Preço do extra')}));
   if(item.status==='cancelled')return item;
+  // A mensagem diz o horário local ocupado, e não o carimbo ISO: "18:30 e 20:00" é o que a recepção precisa para escolher outro.
+  const hm=value=>local(date(value)).toISOString().slice(11,16);
   for(const other of others){
     if(other.id===item.id||other.status==='cancelled'||!overlaps(range,bounds(other)))continue;
-    if(item.room_id&&item.room_id===other.room_id)fail(`Conflito de sala com “${other.title}” (${other.starts_at}).`);
-    if(item.professional_id&&item.professional_id===other.professional_id)fail(`Conflito de profissional com “${other.title}” (${other.starts_at}).`);
+    if(item.room_id&&item.room_id===other.room_id){const nome=state.rooms.find(room=>room.id===item.room_id)?.name||'Sala';const feminino=/a$/i.test(nome.trim().split(" ")[0]);fail(`Conflito de sala: ${feminino?'a':'o'} ${nome} já está ${feminino?'ocupada':'ocupado'} entre ${hm(other.starts_at)} e ${hm(other.ends_at)} (“${other.title}”).`);}
+    if(item.professional_id&&item.professional_id===other.professional_id)fail(`Conflito de profissional: ${state.profiles.find(person=>person.id===item.professional_id)?.display_name||'o profissional'} já tem “${other.title}” entre ${hm(other.starts_at)} e ${hm(other.ends_at)}.`);
   }
   return item;
 }

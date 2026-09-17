@@ -68,10 +68,11 @@ export function createBlogEditor({ root, repository, previewWindow } = {}) {
   const blocksTarget = root.querySelector("[data-blog-blocks]");
   const iframe = root.querySelector("[data-blog-preview]");
   const status = root.querySelector("[data-blog-editor-status]");
-  let posts = repository.list();
-  let selectedId = posts[0]?.id || null;
-  let draft = posts[0] ? clone(posts[0]) : createBlankPost();
+  let posts = [];
+  let selectedId = null;
+  let draft = createBlankPost();
   let previewPage = "blog";
+  let saving = false;
 
   const announce = (message) => { if (status) status.textContent = message; };
   const getPreviewWindow = () => previewWindow || iframe?.contentWindow;
@@ -106,12 +107,35 @@ export function createBlogEditor({ root, repository, previewWindow } = {}) {
     if (!found) return;
     selectedId = id; draft = clone(found); renderList(); fillForm();
   }
-  function save(statusOverride) {
+  async function save(statusOverride) {
+    if (saving) return;
     readForm();
     if (statusOverride) draft.status = statusOverride;
-    const saved = repository.save(draft);
-    posts = repository.list(); selectedId = saved.id; draft = clone(saved);
-    renderList(); fillForm(); announce(saved.status === "published" ? "Artigo publicado localmente." : "Rascunho salvo localmente.");
+    saving = true;
+    announce("Salvando…");
+    try {
+      const saved = await repository.save(draft);
+      posts = await repository.list(); selectedId = saved.id; draft = clone(saved);
+      renderList(); fillForm();
+      const onde = repository.demonstracao ? " nesta demonstração" : "";
+      announce(saved.status === "published" ? `Artigo publicado${onde}.` : `Rascunho salvo${onde}.`);
+    } catch (error) {
+      announce(`Não foi possível salvar: ${error.message}`);
+    } finally {
+      saving = false;
+    }
+  }
+
+  /* Restaurar a demonstração só existe na mesa de teste; na real apagaria o Blog de todos. */
+  const reset = root.querySelector("[data-blog-reset]");
+
+  async function load(id) {
+    if (reset) reset.hidden = !repository.demonstracao;
+    posts = await repository.list();
+    const found = posts.find((post) => post.id === id) || (id === undefined ? posts[0] : null);
+    selectedId = found?.id || null;
+    draft = found ? clone(found) : createBlankPost();
+    renderList(); fillForm();
   }
 
   list.addEventListener("click", (event) => { const button = event.target.closest?.("[data-select-post]"); if (button) select(button.dataset.selectPost); });
@@ -120,14 +144,21 @@ export function createBlogEditor({ root, repository, previewWindow } = {}) {
   form.addEventListener("submit", (event) => { event.preventDefault(); save(); });
   root.querySelector("[data-blog-new]")?.addEventListener("click", () => { selectedId = null; draft = createBlankPost(); fillForm(); renderList(); announce("Novo rascunho iniciado."); form.elements.title.focus(); });
   root.querySelector("[data-blog-publish]")?.addEventListener("click", () => save("published"));
-  root.querySelector("[data-blog-delete]")?.addEventListener("click", () => {
-    if (!selectedId || !globalThis.confirm("Excluir este texto localmente?")) return;
-    posts = repository.remove(selectedId); selectedId = posts[0]?.id || null; draft = posts[0] ? clone(posts[0]) : createBlankPost();
-    renderList(); fillForm(); announce("Texto excluído da representação local.");
+  root.querySelector("[data-blog-delete]")?.addEventListener("click", async () => {
+    if (!selectedId || !globalThis.confirm("Excluir este texto? Ele sai do Blog para todos os visitantes.")) return;
+    try {
+      await repository.remove(selectedId);
+      await load();
+      announce("Texto excluído.");
+    } catch (error) {
+      announce(`Não foi possível excluir: ${error.message}`);
+    }
   });
-  root.querySelector("[data-blog-reset]")?.addEventListener("click", () => {
-    if (!globalThis.confirm("Restaurar os textos de demonstração?")) return;
-    posts = repository.reset(); selectedId = posts[0]?.id || null; draft = posts[0] ? clone(posts[0]) : createBlankPost(); renderList(); fillForm(); announce("Demonstração restaurada.");
+  reset?.addEventListener("click", async () => {
+    if (!repository.demonstracao || !globalThis.confirm("Restaurar os textos de demonstração?")) return;
+    await repository.reset();
+    await load();
+    announce("Demonstração restaurada.");
   });
   root.querySelector("[data-blog-block-types]")?.addEventListener("click", (event) => {
     const button = event.target.closest?.("[data-add-block]"); if (!button) return;
@@ -160,11 +191,18 @@ export function createBlogEditor({ root, repository, previewWindow } = {}) {
   iframe?.addEventListener("load", sendPreview);
 
   renderList(); fillForm();
+  const pronto = load().catch((error) => announce(`Não foi possível carregar os textos: ${error.message}`));
   return {
+    pronto,
     getDraft:() => clone(draft),
     getPosts:() => clone(posts),
-    open(id) { select(id); },
-    startNew() {
+    async open(id) {
+      await pronto;
+      await load(id).catch((error) => announce(`Não foi possível abrir o texto: ${error.message}`));
+    },
+    async startNew() {
+      await pronto;
+      posts = await repository.list().catch(() => posts);
       selectedId = null;
       draft = createBlankPost();
       fillForm();
