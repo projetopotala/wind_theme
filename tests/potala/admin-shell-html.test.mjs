@@ -153,3 +153,17 @@ test("esconder um bloco realmente o esconde", async () => {
   const css = await readFile(new URL("../../outputs/css/admin.css", import.meta.url), "utf8");
   assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/);
 });
+
+/*
+ * O Salvar dos diálogos da operação precisa aparecer.
+ *
+ * `.op-dialog button` zera o fundo de todos os botões do diálogo e vence
+ * `.op-primary` por especificidade. Sem fundo próprio, o Salvar ficava com
+ * texto escuro sobre o fundo escuro do diálogo — parecia desabilitado.
+ */
+test("o botão Salvar dos diálogos da operação tem fundo próprio", async () => {
+  const css = await readFile(new URL("../../outputs/css/admin.css", import.meta.url), "utf8");
+  const regra = /\n\.op-dialog \.op-primary \{([^}]*)\}/.exec(css)?.[1] || "";
+  assert.match(regra, /background:\s*var\(--admin-gold\)/);
+  assert.match(regra, /color:\s*#17120d/);
+});

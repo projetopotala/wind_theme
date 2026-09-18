@@ -287,7 +287,7 @@ export function createOperationsController({root,client,onNavigate=()=>{},janela
   }
 
   function onChange(event){
-    if(event.target.closest?.('[data-op-form]')){if(currentKind==='schedule')atualizarConflito();return;}
+    if(event.target.closest?.('[data-op-form]')){error.textContent='';if(currentKind==='schedule')atualizarConflito();return;}
     const filter=event.target.dataset.opFilter;if(!filter)return;
     if(filter==='search')return;
     filters[filter]=event.target.value;
@@ -295,7 +295,7 @@ export function createOperationsController({root,client,onNavigate=()=>{},janela
     render();
   }
   function onInput(event){
-    if(event.target.closest?.('[data-op-form]')){if(currentKind==='schedule')atualizarConflito();return;}
+    if(event.target.closest?.('[data-op-form]')){error.textContent='';if(currentKind==='schedule')atualizarConflito();return;}
     if(event.target.dataset?.opFilter!=='search')return;
     clearTimeout(buscaEspera);const valor=event.target.value;
     buscaEspera=setTimeout(()=>{filters.search=valor;render();},180);

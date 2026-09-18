@@ -683,7 +683,11 @@ button {
 .op-form-body .op-check { display: flex; flex-direction: row; gap: 8px; align-items: center; }
 .op-form-body .op-check input { width: auto; }
 .op-dialog button { min-height: 40px; padding: 8px 14px; border: 1px solid var(--admin-line); border-radius: 9px; color: inherit; background: transparent; font: inherit; cursor: pointer; }
-.op-dialog .op-primary { color: #17120d; }
+.op-dialog .op-primary { border-color: var(--admin-gold); background: var(--admin-gold); color: #17120d; font-weight: 700; }
+.op-dialog .op-primary:hover { background: #e2c07f; }
+.op-dialog .op-primary:active { background: #c9a45e; }
+.op-dialog .op-primary:disabled { opacity: .55; cursor: progress; }
+.op-dialog .op-primary:focus-visible { outline: 2px solid var(--admin-gold); outline-offset: 2px; }
 .op-form-error { min-height: 1.2em; margin: 0; padding: 0 20px; color: #e8a5a5; }
 .op-dialog-commands { display: flex; gap: 8px; }
 .op-table pre { max-width: 560px; overflow: auto; white-space: pre-wrap; color: var(--admin-muted); font-size: .7rem; }
