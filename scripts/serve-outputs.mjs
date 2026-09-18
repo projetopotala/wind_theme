@@ -20,6 +20,7 @@ const types = {
 const aliases = {
   admin: "admin.html",
   blog: "blog-admin.html",
+  "confirmar-conta": "confirmar-conta.html",
 };
 
 export function resolveRequestPath(requestUrl) {

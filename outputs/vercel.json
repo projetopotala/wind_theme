@@ -17,6 +17,14 @@
       "destination": "/blog-admin.html"
     },
     {
+      "source": "/confirmar-conta",
+      "destination": "/confirmar-conta.html"
+    },
+    {
+      "source": "/confirmar-conta/",
+      "destination": "/confirmar-conta.html"
+    },
+    {
       "source": "/meu-potala",
       "destination": "/meu-potala.html"
     },

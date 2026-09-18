@@ -126,6 +126,12 @@ export function criarAutenticacaoSupabase({
 } = {}) {
   if (!client?.auth) throw new TypeError("Um cliente Supabase é obrigatório.");
 
+  const baseDeRetorno = String(config.siteUrl || origem || "").replace(/\/+$/, "");
+  const retorno = (caminho) => {
+    if (!baseDeRetorno) throw new ErroDeConta("CONFIGURACAO", new Error("A URL pública do portal não foi configurada."));
+    return new URL(caminho, `${baseDeRetorno}/`).href;
+  };
+
   return {
     demonstracao: false,
 
@@ -142,7 +148,7 @@ export function criarAutenticacaoSupabase({
     },
 
     /*
-     * O link de confirmação volta para o Meu Potala.
+     * O link de confirmação volta para a tela pública dedicada.
      *
      * Sem `emailRedirectTo`, o Supabase usa a URL padrão do projeto, e quem
      * confirma o e-mail cai numa página que não sabe o que fazer com o token.
@@ -153,7 +159,7 @@ export function criarAutenticacaoSupabase({
       const { data, error } = await client.auth.signUp({
         email,
         password: senha,
-        options: { data: { full_name: nome }, emailRedirectTo: `${origem}/meu-potala` },
+        options: { data: { full_name: nome }, emailRedirectTo: retorno("confirmar-conta") },
       });
       if (error) throw falhouAuth(error);
       return { usuario: usuarioDoSupabase(data?.user), aguardandoConfirmacao: !data?.session };
@@ -166,7 +172,7 @@ export function criarAutenticacaoSupabase({
 
     /* O Supabase não revela se a conta existe, e a tela também não deve revelar. */
     async recuperarSenha(email) {
-      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: `${origem}/meu-potala/configuracoes` });
+      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: retorno("meu-potala/configuracoes") });
       if (error) throw falhouAuth(error);
     },
 
@@ -206,9 +212,10 @@ export function criarAutenticacaoSupabase({
     },
 
     async entrarComGoogle() {
+      const caminhoAtual = globalThis.location?.pathname?.replace(/^\/+/, "") || "meu-potala";
       const { error } = await client.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${origem}${globalThis.location?.pathname || "/meu-potala"}` },
+        options: { redirectTo: retorno(caminhoAtual) },
       });
       if (error) throw falhouAuth(error);
     },

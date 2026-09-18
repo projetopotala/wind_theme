@@ -107,15 +107,55 @@ test("o usuario do Supabase vira modelo com o nome do cadastro", () => {
  * Autenticacao Supabase
  * ------------------------------------------------------------------ */
 
-test("o cadastro manda o nome e o retorno para o Meu Potala, e sem sessao aguarda confirmacao", async () => {
+test("o cadastro manda o nome e o retorno para a confirmacao publica, mesmo aberto localmente", async () => {
   const cliente = clienteFalso();
-  const autenticacao = criarAutenticacaoSupabase({ client: cliente, origem: "http://127.0.0.1:4173" });
+  const autenticacao = criarAutenticacaoSupabase({
+    client: cliente,
+    origem: "http://127.0.0.1:4173",
+    config: {
+      url: "https://exemplo.supabase.co",
+      publishableKey: "sb_publishable_teste",
+      siteUrl: "https://portal.exemplo.com",
+    },
+  });
   const resposta = await autenticacao.criarConta({ nome: "Ana Clara", email: "ana@exemplo.com", senha: "segredo-longo" });
 
   assert.equal(resposta.aguardandoConfirmacao, true);
   const [parametros] = cliente.chamadas.signUp;
   assert.equal(parametros.options.data.full_name, "Ana Clara");
-  assert.equal(parametros.options.emailRedirectTo, "http://127.0.0.1:4173/meu-potala");
+  assert.equal(parametros.options.emailRedirectTo, "https://portal.exemplo.com/confirmar-conta");
+});
+
+test("recuperacao de senha e Google tambem nunca voltam para o servidor local", async () => {
+  const pedidos = { reset: [], oauth: [] };
+  const cliente = clienteFalso({
+    auth: {
+      async resetPasswordForEmail(email, options) {
+        pedidos.reset.push({ email, options });
+        return { error: null };
+      },
+      async signInWithOAuth(options) {
+        pedidos.oauth.push(options);
+        return { error: null };
+      },
+    },
+  });
+  const autenticacao = criarAutenticacaoSupabase({
+    client: cliente,
+    origem: "http://127.0.0.1:4173",
+    config: {
+      url: "https://exemplo.supabase.co",
+      publishableKey: "sb_publishable_teste",
+      siteUrl: "https://portal.exemplo.com/",
+    },
+  });
+
+  await autenticacao.recuperarSenha("ana@exemplo.com");
+  await autenticacao.entrarComGoogle();
+
+  assert.equal(pedidos.reset[0].options.redirectTo, "https://portal.exemplo.com/meu-potala/configuracoes");
+  assert.match(pedidos.oauth[0].options.redirectTo, /^https:\/\/portal\.exemplo\.com\//);
+  assert.doesNotMatch(pedidos.oauth[0].options.redirectTo, /127\.0\.0\.1|localhost/);
 });
 
 test("a recusa do login vira erro com o motivo certo", async () => {

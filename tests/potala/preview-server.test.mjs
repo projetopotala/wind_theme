@@ -74,3 +74,7 @@ test("a area pessoal e uma SPA: toda rota /meu-potala devolve o mesmo documento"
   assert.ok(regras.includes("/meu-potala -> /meu-potala.html"), "a Vercel nao entrega a SPA na raiz");
   assert.ok(regras.includes("/meu-potala/:path* -> /meu-potala.html"), "a Vercel nao entrega a SPA nas rotas internas");
 });
+
+test("a confirmacao de conta possui uma rota amigavel", () => {
+  assert.match(resolveRequestPath("/confirmar-conta").replaceAll("\\", "/"), /outputs\/confirmar-conta\.html$/);
+});
