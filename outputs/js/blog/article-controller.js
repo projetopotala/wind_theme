@@ -1,7 +1,7 @@
 import { DEFAULT_BLOG_POSTS } from "./blog-data.js";
 import { normalizePosts } from "./blog-model.js";
 import { criarBlogPublico, criarRestSemBanco, querAcervoLocal, quandoFoi } from "./blog-remoto.js";
-import { avisarAcervoLocal } from "./blog-controller.js";
+import { avisarAcervoLocal, definirCatalogo, menuDasCategorias } from "./blog-controller.js";
 import { findPostBySlug, renderArticle, rotuloDaCategoria } from "./article-renderer.js";
 import { criarRestPublico } from "../supabase/rest.js";
 
@@ -65,12 +65,17 @@ function mount(root = document) {
 
   function draw() {
     const post = findPostBySlug(posts, slug, { preview });
+    if (!post && preview && !recebeuPrevia) {
+      target.innerHTML = '<div class="article-content"><p>Carregando a prévia…</p></div>';
+      return null;
+    }
     if (!post) {
       target.innerHTML = '<div class="article-content"><h1>Este texto não está disponível.</h1><p>Ele pode ter sido ocultado ou o endereço mudou.</p></div>';
       root.querySelector("[data-article-related]").innerHTML = "";
       return null;
     }
-    document.title = `${post.title} — Caderno de Travessia`;
+    document.title = `${post.seo?.title || post.title} — Caderno de Travessia`;
+    document.querySelector('meta[name="description"]')?.setAttribute("content", post.seo?.description || post.excerpt || post.subtitle || "");
     target.innerHTML = renderArticle(post);
     prepararLeitura(target, post, preview);
     root.querySelector("[data-article-related]").innerHTML = relacionados(posts, post)
@@ -99,6 +104,19 @@ function mount(root = document) {
     posts = normalizePosts(event.data.posts);
     slug = event.data.selectedSlug || slug;
     draw();
+  });
+
+  /* A mesa espera este aviso para mandar o rascunho (no quadro da prévia ou em outra aba). */
+  if (preview) {
+    const mesa = window.opener || (window.parent !== window ? window.parent : null);
+    mesa?.postMessage({ type: "potala:blog-preview-pronto" }, window.location.origin);
+  }
+
+  blog.listarCategorias().then((lista) => {
+    definirCatalogo(lista);
+    const menu = root.querySelector("[data-artigo-menu]");
+    if (menu) menu.innerHTML = menuDasCategorias(lista, { inicioComoFiltro: false });
+    if (posts.length) draw();
   });
 
   const list = root.querySelector("[data-article-comment-list]");

@@ -86,6 +86,16 @@ function conteudoDaLinha(linha, tipo) {
   return linha;
 }
 
+/*
+ * Negrito, itálico e link dentro de um bloco de texto do Caderno. Quebras de
+ * linha viram <br>; listas e citações já são blocos próprios no editor.
+ */
+export function marcarTextoEmLinha(texto) {
+  return String(texto ?? "").replace(/\r\n/g, "\n").split("\n")
+    .map((linha) => marcarLinha(escapar(linha)))
+    .join("<br>");
+}
+
 export function renderRestrictedMarkdown(texto) {
   const linhas = String(texto ?? "").replace(/\r\n/g, "\n").split("\n");
   const saida = [];

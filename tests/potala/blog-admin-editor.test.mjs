@@ -18,10 +18,12 @@ test("um novo post nasce como rascunho com endereço utilizável", () => {
   assert.deepEqual(post.content, []);
 });
 
-test("o editor admite exatamente os seis tipos de conteúdo", () => {
+test("o editor admite exatamente os nove tipos de bloco", () => {
+  const tipos = ["paragraph", "heading", "image", "gallery", "quote", "callout", "video", "list", "divider"];
   let post = createBlankPost();
-  for (const type of ["paragraph", "heading", "image", "quote", "list", "divider"]) post = addContentBlock(post, type);
-  assert.deepEqual(post.content.map(({ type }) => type), ["paragraph", "heading", "image", "quote", "list", "divider"]);
+  for (const type of tipos) post = addContentBlock(post, type);
+  assert.deepEqual(post.content.map(({ type }) => type), tipos);
+  assert.equal(new Set(post.content.map(({ id }) => id)).size, tipos.length, "cada bloco com seu id");
   assert.equal(addContentBlock(post, "html"), post);
 });
 

@@ -23,6 +23,12 @@ export const ICONES = Object.freeze([
   // agenda e ações
   "search", "chevron-left", "chevron-right", "calendar", "sliders-horizontal", "ellipsis",
   "x", "triangle-alert", "plus", "repeat", "check", "clock", "map-pin", "user",
+  // mesa do blog: status, blocos, edição e publicação
+  "pencil", "eye", "archive", "circle-check", "file-text", "message-circle", "image", "images",
+  "heading", "type", "quote", "sticky-note", "list", "minus", "grip-vertical", "arrow-up", "arrow-down",
+  "copy", "trash-2", "send", "calendar-clock", "upload", "external-link", "history", "tag", "link",
+  "bold", "italic", "monitor", "smartphone", "undo-2", "loader-circle", "circle-alert", "command",
+  "align-left", "align-center", "rotate-ccw",
 ]);
 
 const NOMES = new Set(ICONES);

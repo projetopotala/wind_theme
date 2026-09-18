@@ -4,162 +4,77 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
-  <meta name="theme-color" content="#20180f">
-  <title>Potala — Editor do Blog</title>
+  <meta name="theme-color" content="#12100e">
+  <title>Potala — Mesa do Caderno</title>
+  <link rel="icon" href="media/potala-mark-transparent.png">
   <link rel="stylesheet" href="css/blog-admin.css">
   <script src="vendor/supabase.js"></script>
   <script type="module" src="js/blog-admin/blog-admin-entry.js"></script>
 </head>
 <body>
-  <main class="blog-admin" id="blog-admin-app" data-auth-state="checking">
-    <section class="blog-admin-login" data-admin-auth-view aria-labelledby="login-title">
-      <img src="media/potala-mark-transparent.png" alt="Instituto Potala">
-      <p>Caderno de Travessia</p>
-      <h1 id="login-title">Entrar na mesa</h1>
-      <p>Escreva, acompanhe quem leu e responda quem comentou.</p>
+  <main class="mesa" id="blog-admin-app" data-auth-state="checking">
+    <section class="mesa-entrada" data-admin-auth-view aria-labelledby="login-title">
+      <img class="mesa-entrada__marca" src="media/potala-mark-transparent.png" alt="Instituto Potala" width="96" height="78">
+      <p class="mesa-entrada__sobre">Caderno de Travessia</p>
+      <h1 id="login-title">Mesa do Caderno</h1>
+      <p class="mesa-entrada__texto">Escreva, publique e acompanhe quem leu e comentou.</p>
       <form data-admin-auth-form hidden>
         <label>E-mail<input name="email" type="email" autocomplete="username" required></label>
         <label>Senha<input name="password" type="password" autocomplete="current-password" required></label>
-        <button class="blog-admin-login-primary" type="submit">Entrar</button>
-        <button type="button" data-admin-recovery>Primeiro acesso ou esqueci a senha</button>
+        <button class="mesa-botao mesa-botao--principal" type="submit">Entrar</button>
+        <button class="mesa-link" type="button" data-admin-recovery>Primeiro acesso ou esqueci a senha</button>
       </form>
-      <button class="blog-admin-login-primary" type="button" data-blog-continue hidden>Continuar para a mesa</button>
-      <p data-admin-forbidden hidden>Esta conta não possui acesso administrativo.</p>
-      <p data-admin-auth-status role="status" aria-live="polite">Verificando acesso…</p>
-      <button type="button" data-blog-teste>Ver o acesso de teste</button>
-      <a href="blog.html">Ver o Blog público</a>
+      <button class="mesa-botao mesa-botao--principal" type="button" data-blog-continue hidden>Continuar para a mesa</button>
+      <p class="mesa-entrada__aviso" data-admin-forbidden hidden>Esta conta não tem acesso à mesa do Blog.</p>
+      <p class="mesa-entrada__status" data-admin-auth-status role="status" aria-live="polite">Verificando acesso…</p>
+      <div class="mesa-entrada__rodape">
+        <button type="button" class="mesa-link" data-blog-teste>Ver o acesso de teste</button>
+        <a class="mesa-link" href="blog.html">Ver o Blog público</a>
+      </div>
     </section>
 
-    <section id="admin-panel" hidden>
-    <section class="blog-desk" data-blog-desk aria-labelledby="blog-desk-title">
-      <header class="blog-desk-top">
-        <div class="blog-editor-brand"><img src="media/potala-mark-transparent.png" alt=""><span>Instituto Potala<small>Caderno de Travessia</small></span></div>
-        <a href="blog.html" target="_blank" rel="noopener">Visualizar</a>
-        <button type="button" data-admin-sign-out>Encerrar sessão</button>
+    <section id="admin-panel" class="mesa-app" hidden>
+      <header class="mesa-barra-movel">
+        <button type="button" class="mesa-botao-icone" data-mesa-gaveta aria-expanded="false" aria-controls="mesa-trilho">
+          <svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#menu"></use></svg><span class="sr-only">Abrir o menu</span>
+        </button>
+        <a class="mesa-barra-movel__marca" href="#/visao"><img src="media/potala-mark-transparent.png" alt="" width="30" height="24"><span>Mesa do Caderno</span></a>
+        <a class="mesa-botao mesa-botao--principal mesa-botao--pequeno" href="#/novo">
+          <svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#plus"></use></svg>Novo
+        </a>
       </header>
-      <div class="blog-desk-hero">
-        <div>
-          <p>Mesa do blogueiro</p>
-          <h2 id="blog-desk-title">Seus textos e quem chegou até eles</h2>
+
+      <nav class="mesa-trilho" id="mesa-trilho" data-mesa-trilho aria-label="Mesa do Caderno">
+        <a class="mesa-trilho__marca" href="#/visao"><img src="media/potala-mark-transparent.png" alt="Mesa do Caderno — início" width="44" height="36"></a>
+        <div class="mesa-trilho__links">
+          <a href="#/visao" data-mesa-nav="visao"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#layout-dashboard"></use></svg><span>Visão geral</span></a>
+          <a href="#/posts" data-mesa-nav="posts"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#file-text"></use></svg><span>Posts</span></a>
+          <a href="#/comentarios" data-mesa-nav="comentarios"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#message-circle"></use></svg><span>Comentários</span><span class="mesa-trilho__selo" data-mesa-selo-comentarios hidden></span></a>
+          <a href="#/configuracoes" data-mesa-nav="configuracoes"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#settings"></use></svg><span>Configurações</span></a>
         </div>
+        <div class="mesa-trilho__pe">
+          <a class="mesa-trilho__novo" href="#/novo" data-mesa-novo title="Novo post"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#plus"></use></svg><span>Novo post</span></a>
+          <button type="button" data-mesa-paleta-abrir title="Comandos (Ctrl+K)"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#command"></use></svg><span>Comandos</span></button>
+          <a href="blog.html" target="_blank" rel="noopener" title="Ver o Blog"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#external-link"></use></svg><span>Ver o Blog</span></a>
+          <span class="mesa-perfil" data-mesa-perfil aria-hidden="true"></span>
+          <button type="button" data-admin-sign-out title="Sair"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#log-out"></use></svg><span>Sair</span></button>
+        </div>
+      </nav>
+      <div class="mesa-veu" data-mesa-veu aria-hidden="true"></div>
+
+      <div class="mesa-conteudo" data-mesa-conteudo>
+        <section class="mesa-tela" data-mesa-view="visao" aria-label="Visão geral"></section>
+        <section class="mesa-tela" data-mesa-view="posts" aria-label="Posts" hidden></section>
+        <section class="mesa-tela" data-mesa-view="comentarios" aria-label="Comentários" hidden></section>
+        <section class="mesa-tela" data-mesa-view="configuracoes" aria-label="Configurações" hidden></section>
+        <section class="mesa-tela mesa-tela--editor" data-mesa-view="editor" data-blog-editor aria-label="Editor" hidden></section>
       </div>
-      <div class="blog-desk-tabs" role="tablist" aria-label="Seções da mesa">
-        <button type="button" role="tab" data-blog-tab="publicacoes" aria-selected="true">Publicações</button>
-        <button type="button" role="tab" data-blog-tab="alcance" aria-selected="false">Alcance</button>
-        <button type="button" role="tab" data-blog-tab="comentarios" aria-selected="false">Comentários</button>
-        <button type="button" role="tab" data-blog-tab="configuracao" aria-selected="false">Configuração</button>
-      </div>
 
-      <section data-blog-panel="publicacoes" role="tabpanel" aria-labelledby="blog-posts-title">
-        <header class="blog-desk-panel-head">
-          <h3 id="blog-posts-title">Publicações</h3>
-          <button type="button" class="blog-desk-write" data-blog-write>Escrever novo artigo</button>
-        </header>
-        <table>
-          <caption>Textos da mesa</caption>
-          <thead><tr><th>Texto</th><th>Estado</th><th></th></tr></thead>
-          <tbody data-blog-desk-list></tbody>
-        </table>
-      </section>
-
-      <section data-blog-panel="alcance" role="tabpanel" hidden aria-labelledby="blog-metrics-title">
-        <h3 id="blog-metrics-title">Alcance</h3>
-        <p class="blog-desk-note" data-blog-reach-note>Leituras contadas a cada abertura de um artigo publicado.</p>
-        <div class="blog-desk-metrics" data-blog-metrics></div>
-        <table>
-          <caption>Alcance de cada texto</caption>
-          <thead><tr><th>Texto</th><th>Leituras</th><th>Comentários</th></tr></thead>
-          <tbody data-blog-reach-list></tbody>
-        </table>
-      </section>
-
-      <section data-blog-panel="comentarios" role="tabpanel" hidden aria-labelledby="blog-comments-title">
-        <h3 id="blog-comments-title">Comentários recebidos</h3>
-        <p class="blog-desk-note">Um comentário só aparece no Blog depois de publicado aqui.</p>
-        <ul data-blog-comments></ul>
-      </section>
-
-      <section data-blog-panel="configuracao" role="tabpanel" hidden aria-labelledby="blog-settings-title">
-        <h3 id="blog-settings-title">Configuração do blog</h3>
-        <p class="blog-desk-note">O nome e a imagem aparecem no topo do blog público.</p>
-        <form class="blog-desk-settings" data-blog-settings-form>
-          <label>Nome do blog<input name="name" required maxlength="80"></label>
-          <label>Imagem do blog<input name="cover" placeholder="media/blog-hero-caminhante.webp" required></label>
-          <figure>
-            <img data-blog-cover-preview alt="Prévia da imagem do blog">
-          </figure>
-          <button type="submit">Salvar configuração</button>
-          <p data-blog-settings-status role="status" aria-live="polite"></p>
-        </form>
-      </section>
-    </section>
-
-    <section class="blog-editor" data-blog-editor hidden aria-labelledby="blog-editor-title" data-preview-device="desktop">
-      <header class="blog-editor-topbar">
-        <div class="blog-editor-brand"><img src="media/potala-mark-transparent.png" alt=""><span>Instituto Potala<small>Caderno de Travessia</small></span></div>
-        <button type="button" data-blog-leave>Voltar à mesa</button>
-        <a href="blog.html" target="_blank" rel="noopener">Visualizar</a>
-        <button type="button" data-blog-sign-out>Encerrar sessão</button>
-      </header>
-
-      <aside class="blog-editor-library">
-        <header><p>Publicações</p><button type="button" data-blog-new aria-label="Criar novo texto">＋</button></header>
-        <ol data-blog-editor-list></ol>
-        <button class="blog-editor-reset" type="button" data-blog-reset>Restaurar demonstração</button>
-      </aside>
-
-      <section class="blog-editor-canvas" aria-labelledby="blog-editor-title">
-        <header>
-          <div><p>Atualização ao vivo</p><h2 id="blog-editor-title" tabindex="-1">Prévia do Blog</h2></div>
-          <div class="blog-editor-switch" data-preview-pages role="group" aria-label="Página na prévia">
-            <button type="button" data-preview-page="blog" aria-pressed="true">Blog</button>
-            <button type="button" data-preview-page="article" aria-pressed="false">Artigo</button>
-          </div>
-          <div class="blog-editor-switch" data-preview-devices role="group" aria-label="Tamanho da prévia">
-            <button type="button" data-preview-device="desktop" aria-pressed="true">Desktop</button>
-            <button type="button" data-preview-device="mobile" aria-pressed="false">Mobile</button>
-          </div>
-        </header>
-        <div class="blog-editor-frame"><iframe data-blog-preview src="blog.html?preview=1" title="Prévia ao vivo do Blog"></iframe></div>
-      </section>
-
-      <aside class="blog-editor-inspector">
-        <header><p>Opções de edição</p><span>Estrutura fixa</span></header>
-        <form data-blog-editor-form>
-          <fieldset>
-            <legend>Publicação</legend>
-            <label>Título<input name="title" required></label>
-            <label>Subtítulo<textarea name="subtitle" rows="2"></textarea></label>
-            <label>Resumo<textarea name="excerpt" rows="4" required></textarea></label>
-            <div class="blog-editor-pair"><label>Categoria<input name="category"></label><label>Autor<input name="author"></label></div>
-            <div class="blog-editor-pair"><label>Data<input name="publishedAt" type="date"></label><label>Leitura (min)<input name="readingMinutes" type="number" min="1" max="120"></label></div>
-            <label>Imagem de capa<input name="cover" placeholder="media/imagem.webp"></label>
-            <label>Descrição da imagem<input name="coverAlt"></label>
-            <div class="blog-editor-pair"><label>Status<select name="status"><option value="draft">Rascunho</option><option value="published">Publicado</option><option value="hidden">Oculto</option></select></label><label class="blog-editor-check"><input name="featured" type="checkbox"><span>Artigo principal</span></label></div>
-          </fieldset>
-
-          <fieldset>
-            <legend>Conteúdo do artigo</legend>
-            <div class="blog-editor-add" data-blog-block-types>
-              <button type="button" data-add-block="paragraph">＋ Parágrafo</button>
-              <button type="button" data-add-block="heading">＋ Título</button>
-              <button type="button" data-add-block="image">＋ Imagem</button>
-              <button type="button" data-add-block="quote">＋ Citação</button>
-              <button type="button" data-add-block="list">＋ Lista</button>
-              <button type="button" data-add-block="divider">＋ Divisor</button>
-            </div>
-            <div data-blog-blocks></div>
-          </fieldset>
-
-          <footer>
-            <button type="button" class="danger" data-blog-delete>Excluir</button>
-            <button type="submit">Salvar alterações</button>
-            <button type="button" class="primary" data-blog-publish>Publicar</button>
-          </footer>
-          <p data-blog-editor-status role="status" aria-live="polite"></p>
-        </form>
-      </aside>
-    </section>
+      <div class="mesa-avisos" data-mesa-avisos></div>
+      <dialog class="mesa-dialogo" data-mesa-confirmar aria-label="Confirmação"></dialog>
+      <dialog class="mesa-dialogo mesa-paleta" data-mesa-paleta aria-label="Comandos"></dialog>
+      <dialog class="mesa-dialogo mesa-dialogo--largo" data-mesa-biblioteca aria-label="Biblioteca de imagens"></dialog>
+      <div class="mesa-menu" data-mesa-menu role="menu" hidden></div>
     </section>
   </main>
 </body>

@@ -3,12 +3,31 @@ import { CATEGORIAS, DEFAULT_BLOG_POSTS, contarPorCategoria, dataLegivel } from 
 import { normalizePost, normalizePosts, placeBlogPosts } from "./blog-model.js";
 import { criarBlogPublico, criarRestSemBanco, querAcervoLocal, quandoFoi, validarEnvioDeComentario } from "./blog-remoto.js";
 import { applyBlogSettings } from "./blog-settings.js";
+import { definirCategorias } from "./article-renderer.js";
 import { criarRestPublico } from "../supabase/rest.js";
 
 const escapar = (valor) => String(valor ?? "")
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-const labelCategory = (id) => CATEGORIAS.find((item) => item.id === id)?.rotulo
+/*
+ * As categorias vêm do banco (editáveis na mesa). Até chegarem — ou se a
+ * leitura falhar — vale a lista empacotada, que é a mesma do menu escrito no HTML.
+ */
+let catalogo = CATEGORIAS.filter(({ id }) => id !== "todos");
+export function definirCatalogo(lista) {
+  if (Array.isArray(lista) && lista.length) catalogo = lista;
+  definirCategorias(catalogo);
+}
+const labelCategory = (id) => catalogo.find((item) => item.id === id)?.rotulo
+  || CATEGORIAS.find((item) => item.id === id)?.rotulo
   || String(id || "Reflexão").replace(/(^|-)(\w)/g, (_, sep, letter) => `${sep ? " " : ""}${letter.toUpperCase()}`);
+const maiuscula = (texto) => String(texto).charAt(0).toLocaleUpperCase("pt-BR") + String(texto).slice(1);
+
+/* O menu do Caderno, na ordem da mesa. "Início" só marca o filtro na página do Blog. */
+export function menuDasCategorias(categorias = catalogo, { inicioComoFiltro = true } = {}) {
+  return `<li><a href="blog.html"${inicioComoFiltro ? ' data-categoria-link="todos"' : ""}>Início</a></li>${categorias
+    .map((categoria) => `<li><a href="blog.html?categoria=${encodeURIComponent(categoria.id)}" data-categoria-link="${escapar(categoria.id)}">${escapar(maiuscula(categoria.rotulo))}</a></li>`)
+    .join("")}`;
+}
 
 function cardValues(post) {
   const next = normalizePost(post);
@@ -44,15 +63,16 @@ export function cartaoDoPost(post, { destaque = false } = {}) {
     </article>`;
 }
 
-export function marcacaoDasCategorias(posts, ativa = "todos") {
+export function marcacaoDasCategorias(posts, ativa = "todos", categorias = catalogo) {
   const legacy = posts.some((post) => post?.categoria);
   const normalized = normalizePosts(posts);
   const counts = legacy
     ? contarPorCategoria(posts)
     : normalized.reduce((sum, post) => ({ ...sum, [post.category]: (sum[post.category] || 0) + 1 }), { todos: normalized.length });
-  const known = new Set(CATEGORIAS.map(({ id }) => id));
+  const base = [{ id: "todos", rotulo: "tudo" }, ...categorias];
+  const known = new Set(base.map(({ id }) => id));
   const catalog = [
-    ...CATEGORIAS,
+    ...base,
     ...normalized
       .filter(({ category }) => !known.has(category))
       .map(({ category }) => ({ id:category, rotulo:labelCategory(category) }))
@@ -60,7 +80,7 @@ export function marcacaoDasCategorias(posts, ativa = "todos") {
   ];
   return catalog.map((category) => {
     const count = counts[category.id] || 0;
-    const foto = FOTO_DA_CATEGORIA[category.id] || FOTO_DA_CATEGORIA.todos;
+    const foto = category.imagem || FOTO_DA_CATEGORIA[category.id] || FOTO_DA_CATEGORIA.todos;
     return `<li><button type="button" data-categoria="${escapar(category.id)}"
       aria-pressed="${category.id === ativa ? "true" : "false"}" ${count === 0 ? "disabled" : ""}>
       <span class="blog-medalhao"><img src="${foto}" alt="" loading="lazy" decoding="async"></span>
@@ -215,7 +235,7 @@ export function montar(root = document) {
   let posts = [];
   let recebeuPrevia = false;
   /* O menu das outras páginas (o artigo) chega aqui por ?categoria=. */
-  let activeCategory = CATEGORIAS.some(({ id }) => id === params.get("categoria")) ? params.get("categoria") : "todos";
+  let activeCategory = params.get("categoria") || "todos";
   let term = "";
   /* A primeira tela mostra a composição inteira (1 + 2 + 3 + duas linhas de três); o resto vem sob pedido. */
   let limite = POR_PAGINA;
@@ -341,7 +361,13 @@ export function montar(root = document) {
   };
   window.addEventListener("message", onPreview);
   empty.hidden = true;
-  const carregado = Promise.all([blog.listarPublicados(), blog.lerConfiguracao()]).then(([publicados, configuracao]) => {
+  const categoriasProntas = blog.listarCategorias().then((lista) => {
+    definirCatalogo(lista);
+    if (menu) menu.innerHTML = menuDasCategorias(catalogo);
+    /* Sem os textos ainda, desenhar só mostraria "nenhum texto" por um instante. */
+    if (posts.length) draw();
+  });
+  const carregado = Promise.all([blog.listarPublicados(), blog.lerConfiguracao(), categoriasProntas]).then(([publicados, configuracao]) => {
     applyBlogSettings(root, configuracao);
     /* Na prévia do editor, o rascunho que chegou pela mensagem vale mais que o banco. */
     if (!recebeuPrevia) {

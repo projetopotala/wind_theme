@@ -22,8 +22,23 @@ export const LEVAS = Object.freeze({
   2: { titulo: "Segunda leva de textos do Blog.", ids: DEFAULT_BLOG_POSTS.slice(8, 20).map(({ id }) => id) },
 });
 
+/*
+ * Os campos que o modelo ganhou depois (etiquetas, "Também no Portal", SEO)
+ * só entram no documento quando têm conteúdo. Assim a leva já aplicada
+ * continua sendo exatamente o texto que foi ao banco, e o banco recebe o
+ * mesmo documento que a página reconstrói com os valores padrão.
+ */
+function semVazios(post) {
+  const { tags, relatedPortal, seo, ...resto } = post;
+  const documento = { ...resto };
+  if (tags.length) documento.tags = tags;
+  if (relatedPortal.length) documento.relatedPortal = relatedPortal;
+  if (seo.title || seo.description || seo.image) documento.seo = seo;
+  return documento;
+}
+
 export function sementeDoBlog(posts = DEFAULT_BLOG_POSTS.slice(0, 8), { titulo = LEVAS[1].titulo } = {}) {
-  const linhas = normalizePosts(posts).map((post) => `  (${[
+  const linhas = normalizePosts(posts).map(semVazios).map((post) => `  (${[
     literal(post.id),
     literal(post.slug),
     literal(post.status),

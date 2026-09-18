@@ -25,12 +25,33 @@ function restFalso(respostas = {}) {
   };
 }
 
-test("a página pública lê só publicados do banco", async () => {
-  const rest = restFalso({ "ler:blog_posts": [{ document: { id: "a", title: "Do banco", status: "published" } }] });
+/*
+ * Quem decide o que o visitante vê é a política do banco (publicado, ou
+ * agendado cuja hora chegou). A página não filtra por status: um agendado que
+ * chega é um texto que já está no ar.
+ */
+test("a página pública mostra o que o banco libera, inclusive o agendado que chegou", async () => {
+  const rest = restFalso({ "ler:blog_posts": [
+    { document: { id: "a", title: "Do banco", status: "published" }, status: "published" },
+    { document: { id: "b", title: "Agendado que chegou", status: "scheduled" }, status: "scheduled", publish_at: "2026-09-01T13:00:00Z" },
+  ] });
   const blog = criarBlogPublico({ rest, reserva: DEFAULT_BLOG_POSTS });
   const posts = await blog.listarPublicados();
-  assert.deepEqual(posts.map((post) => post.title), ["Do banco"]);
-  assert.equal(rest.pedidos[0].corpo.status, "eq.published");
+  assert.deepEqual(posts.map((post) => post.title), ["Do banco", "Agendado que chegou"]);
+  assert.ok(posts.every((post) => post.status === "published"));
+  assert.equal(rest.pedidos[0].corpo.status, undefined);
+  assert.doesNotMatch(rest.pedidos[0].corpo.select, /pending_document/);
+});
+
+test("as categorias vêm do banco, na ordem da mesa, e caem na lista empacotada se a leitura falhar", async () => {
+  const doBanco = criarBlogPublico({ rest: restFalso({ "ler:blog_categories": [{ id: "meditacao", rotulo: "meditação", ordem: 1, imagem: "media/x.webp" }] }) });
+  assert.deepEqual(await doBanco.listarCategorias(), [{ id: "meditacao", rotulo: "meditação", ordem: 1, imagem: "media/x.webp" }]);
+  const falhas = [];
+  const semBanco = criarBlogPublico({ rest: restFalso({ "ler:blog_categories": new Error("offline") }), aoFalhar: (erro) => falhas.push(erro) });
+  const reserva = await semBanco.listarCategorias();
+  assert.ok(reserva.some(({ id }) => id === "oraculos"));
+  assert.ok(!reserva.some(({ id }) => id === "todos"), "tudo é filtro, não categoria");
+  assert.equal(falhas.length, 1);
 });
 
 test("se a leitura falhar, a página mostra o acervo empacotado e avisa quem depura", async () => {
@@ -76,7 +97,7 @@ test("contar leitura nunca quebra a página", async () => {
   assert.match(falhas[0].erro.message, /offline/);
 });
 
-test("a mesa real salva pelo banco e traduz a recusa", async () => {
+test("a mesa real salva pela função do banco e traduz a recusa", async () => {
   const chamadas = [];
   const client = {
     rpc: async (nome, args) => {
@@ -86,36 +107,89 @@ test("a mesa real salva pelo banco e traduz a recusa", async () => {
     from: () => ({}),
   };
   const blog = criarBlogAdministrativo({ client });
-  await assert.rejects(blog.save({ id: "p", title: "Texto" }), /não permite alterar o Blog/);
-  assert.equal(chamadas[0][0], "save_blog_post");
-  assert.equal(chamadas[0][1].post.slug, "texto");
+  await assert.rejects(blog.salvar({ id: "p", title: "Texto" }, "rascunho"), /não permite alterar o Blog/);
+  const [nome, args] = chamadas[0];
+  assert.equal(nome, "mesa_salvar_post");
+  assert.equal(args.p_post.slug, "texto");
+  assert.equal(args.p_acao, "rascunho");
+  assert.equal(args.p_quando, null);
+  assert.equal(args.p_registrar, true);
 });
 
-test("a mesa identifica métricas parciais indisponíveis em vez de fingir zero", async () => {
-  const repository = {
-    list: async () => [{ id: "p", slug: "texto", title: "Texto" }],
+test("o agendamento vai ao banco como instante, e o registro separa o que está no ar do que está pendente", async () => {
+  const chamadas = [];
+  const client = {
+    rpc: async (nome, args) => {
+      chamadas.push(args);
+      return { data: { document: { ...args.p_post, status: "published" }, pending_document: { ...args.p_post, title: "Mudança" }, status: "published", publish_at: "2026-09-10T13:00:00Z", updated_by_name: "Ana" }, error: null };
+    },
+    from: () => ({}),
+  };
+  const blog = criarBlogAdministrativo({ client });
+  const registro = await blog.salvar({ id: "p", title: "No ar" }, "agendar", { quando: new Date("2026-09-22T13:00:00Z"), registrar: false, resumo: "Mudou título" });
+  assert.equal(chamadas[0].p_quando, "2026-09-22T13:00:00.000Z");
+  assert.equal(chamadas[0].p_registrar, false);
+  assert.equal(chamadas[0].p_resumo, "Mudou título");
+  assert.equal(registro.post.title, "No ar");
+  assert.equal(registro.pendente.title, "Mudança");
+  assert.equal(registro.atualizadoPor, "Ana");
+});
+
+test("a mesa identifica leituras parciais indisponíveis em vez de fingir zero", async () => {
+  const repositorio = {
+    listar: async () => [{ id: "p", post: { id: "p", slug: "texto", title: "Texto" }, status: "draft" }],
+    lerConfiguracao: async () => ({ name: "Caderno", cover: "capa.webp" }),
+    listarCategorias: async () => { throw new Error("categorias offline"); },
     leituras: async () => { throw new Error("views offline"); },
     comentarios: async () => [],
     inscritos: async () => { throw new Error("newsletter offline"); },
-    lerConfiguracao: async () => ({ name: "Caderno", cover: "capa.webp" }),
   };
 
-  const dados = await carregarDadosDaMesa(repository);
+  const dados = await carregarDadosDaMesa(repositorio);
 
-  assert.equal(dados.posts.length, 1);
-  assert.deepEqual(dados.views, {});
-  assert.equal(dados.subscribers, 0);
-  assert.deepEqual(dados.falhas.map((falha) => falha.contexto), ["blog.leituras", "blog.inscritos"]);
+  assert.equal(dados.registros.length, 1);
+  assert.deepEqual(dados.leituras, {});
+  assert.equal(dados.inscritos, 0);
+  assert.ok(dados.categorias.some(({ id }) => id === "artigos"), "sem o banco, as categorias empacotadas seguram o menu");
+  assert.deepEqual(dados.falhas.map((falha) => falha.contexto), ["blog.categorias", "blog.leituras", "blog.inscritos"]);
 });
 
-test("a demonstração continua no navegador e não mede nada", async () => {
+test("sem os textos a mesa não abre fingindo estar vazia", async () => {
+  const repositorio = {
+    listar: async () => { throw new Error("sem conexão"); },
+    lerConfiguracao: async () => ({}), listarCategorias: async () => [], leituras: async () => ({}), comentarios: async () => [], inscritos: async () => 0,
+  };
+  await assert.rejects(carregarDadosDaMesa(repositorio), /sem conexão/);
+});
+
+function demonstracao() {
   const armazenamento = new Map();
   const storage = { getItem: (k) => armazenamento.get(k) ?? null, setItem: (k, v) => armazenamento.set(k, v), removeItem: (k) => armazenamento.delete(k) };
-  const demo = criarBlogDeDemonstracao({ local: createBlogRepository({ storage, defaults: DEFAULT_BLOG_POSTS }), lerConfiguracao: () => ({}), salvarConfiguracao: (c) => c });
+  return criarBlogDeDemonstracao({ local: createBlogRepository({ storage, defaults: DEFAULT_BLOG_POSTS }), lerConfiguracao: () => ({}), salvarConfiguracao: (c) => c });
+}
+
+test("a demonstração continua no navegador e não mede nada", async () => {
+  const demo = demonstracao();
   assert.equal(demo.demonstracao, true);
-  assert.equal((await demo.list()).length, DEFAULT_BLOG_POSTS.length);
+  assert.equal((await demo.listar()).length, DEFAULT_BLOG_POSTS.length);
   assert.deepEqual(await demo.leituras(), {});
   assert.equal(await demo.inscritos(), 0);
+  await assert.rejects(demo.enviarImagem({ type: "image/png", size: 10 }), /demonstração/);
+});
+
+test("a demonstração segue as regras de status do banco", async () => {
+  const demo = demonstracao();
+  const [publicado] = await demo.listar();
+  const pendente = await demo.salvar({ ...publicado.post, title: "Ainda mexendo" }, "pendente", { registrar: false });
+  assert.equal(pendente.status, "published");
+  assert.equal(pendente.post.title, publicado.post.title, "o leitor continua vendo o texto no ar");
+  assert.equal(pendente.pendente.title, "Ainda mexendo");
+  await assert.rejects(demo.salvar({ id: "novo", title: "Novo" }, "agendar", { quando: new Date(Date.now() - 60000) }), /futuro/);
+  const agendado = await demo.salvar({ id: "novo", title: "Novo" }, "agendar", { quando: new Date(Date.now() + 86400000) });
+  assert.equal(agendado.status, "scheduled");
+  assert.ok(agendado.publicarEm);
+  assert.equal((await demo.versoes("novo")).length, 1);
+  await assert.rejects(demo.removerCategoria(publicado.post.category), /ainda tem textos/);
 });
 
 test("o tempo relativo fala como a conversa sempre falou", () => {
