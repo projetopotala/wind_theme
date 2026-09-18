@@ -3,36 +3,74 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#302318">
+  <meta name="theme-color" content="#12100e">
   <meta name="description" content="Leitura completa do Caderno de Travessia do Instituto Potala.">
   <title>Artigo — Caderno de Travessia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&amp;display=swap">
   <link rel="stylesheet" href="css/secoes.css">
+  <link rel="stylesheet" href="css/caderno.css">
   <link rel="stylesheet" href="css/artigo.css">
   <script type="module" src="js/secoes.js"></script>
   <script type="module" src="js/blog/article-controller.js"></script>
 </head>
-<body class="article-body" data-section="blog">
+<body class="article-body cad-body" data-section="blog">
   <a class="skip-link" href="#artigo">Ir para o artigo</a>
+
+  <header class="cad-cabecalho">
+    <a class="blog-marca" href="transcendido.html" aria-label="Voltar à Travessia">
+      <img src="media/potala-mark-transparent.png" alt="Instituto Potala" width="86" height="70">
+    </a>
+    <p class="cad-nome"><span>Caderno</span><span class="cad-script">de Travessia</span></p>
+    <nav class="cad-menu" aria-label="Caminhos do Caderno">
+      <ul data-artigo-menu>
+        <li><a href="blog.html">Início</a></li>
+        <li><a href="blog.html?categoria=artigos" data-categoria-link="artigos">Artigos</a></li>
+        <li><a href="blog.html?categoria=oraculos" data-categoria-link="oraculos">Oráculos</a></li>
+        <li><a href="blog.html?categoria=terapias" data-categoria-link="terapias">Terapias</a></li>
+        <li><a href="blog.html?categoria=praticas" data-categoria-link="praticas">Práticas</a></li>
+        <li><a href="blog.html?categoria=cultura" data-categoria-link="cultura">Cultura</a></li>
+        <li><a href="blog.html?categoria=cursos" data-categoria-link="cursos">Cursos</a></li>
+      </ul>
+      <a class="cad-busca-abrir" href="blog.html#buscar" aria-label="Buscar no Caderno">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      </a>
+    </nav>
+    <nav class="artigo-trilha" aria-label="Você está em">
+      <a href="blog.html">Caderno</a><span aria-hidden="true">›</span><span data-article-trilha>Leitura</span>
+    </nav>
+  </header>
+
   <main class="article-page" id="artigo">
-    <a class="article-back" href="blog.html">← Caderno de Travessia</a>
     <article data-article-root data-item-visto aria-live="polite"></article>
+
     <section class="article-related" aria-labelledby="related-title">
-      <p class="article-kicker">Outros caminhos</p>
-      <h2 id="related-title">Continue a travessia</h2>
+      <p class="cad-rotulo">Continue a travessia</p>
+      <h2 id="related-title">Outros caminhos</h2>
       <div class="article-related__grid" data-article-related></div>
     </section>
+
     <section class="article-comments" data-article-comments aria-labelledby="article-comments-title">
-      <p class="article-kicker">Conversa</p>
-      <h2 id="article-comments-title">O que esta leitura despertou?</h2>
+      <p class="cad-rotulo">O que a leitura despertou em você?</p>
+      <h2 id="article-comments-title">Conversa</h2>
       <form data-article-comment-form>
-        <label>Seu nome<input name="name" maxlength="60" required></label>
-        <label>Sua reflexão<textarea name="text" rows="4" minlength="3" maxlength="600" required></textarea></label>
-        <p>A reflexão é lida pela equipe antes de aparecer aqui.</p>
-        <button type="submit">Compartilhar reflexão</button>
+        <label>Seu nome<input name="name" maxlength="60" autocomplete="name" required></label>
+        <label class="article-comments__largo">Sua reflexão<textarea name="text" rows="4" minlength="3" maxlength="600" required></textarea></label>
+        <div class="article-comments__rodape">
+          <p>A reflexão é lida pela equipe antes de aparecer aqui.</p>
+          <button class="cad-botao" type="submit">Compartilhar reflexão</button>
+        </div>
       </form>
       <p data-article-comment-status role="status" aria-live="polite"></p>
       <ol data-article-comment-list></ol>
     </section>
   </main>
+
+  <footer class="cad-rodape">
+    <img src="media/potala-mark-transparent.png" alt="" width="86" height="70">
+    <a href="transcendido.html">Voltar à Travessia</a>
+    <p>Instituto Potala · Indaiatuba, SP</p>
+  </footer>
 </body>
 </html>

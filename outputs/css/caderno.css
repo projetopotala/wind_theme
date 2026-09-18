@@ -1,0 +1,213 @@
+/*
+ * O CADERNO DE TRAVESSIA — o que o Blog e o artigo dividem.
+ *
+ * Escuro, quente e dourado como o resto do Portal. Da referência editorial
+ * escolhida vem só a composição: logotipo centralizado com o nome em
+ * caligrafia, menu fino entre filetes, fotos em moldura de polaroid. A
+ * caligrafia aparece em poucos lugares de propósito: usada em tudo, deixa de
+ * ser gesto e vira ruído.
+ */
+
+:root {
+  --cad-chao: #12100e;
+  --cad-painel: #1a1613;
+  --cad-painel-2: #211c17;
+  --cad-sepia: #2b2016;
+  --cad-tinta: #302318;
+  --cad-marfim: #f7edda;
+  --cad-texto: #f2e9d9;
+  --cad-suave: rgba(242, 233, 217, .66);
+  --cad-fraco: rgba(242, 233, 217, .42);
+  --cad-ouro: #d7ba78;
+  --cad-ouro-linha: rgba(215, 186, 120, .22);
+  --cad-brasa: #c8402f;
+  --cad-serifa: Georgia, "Times New Roman", serif;
+  --cad-sans: "Segoe UI", system-ui, Arial, Helvetica, sans-serif;
+  --cad-script: "Great Vibes", "Brush Script MT", cursive;
+  --cad-largura: 1320px;
+}
+
+.cad-body {
+  margin: 0;
+  color: var(--cad-texto);
+  background: var(--cad-chao);
+  font-family: var(--cad-sans);
+  color-scheme: dark;
+}
+
+/* O fundo do html aparece ao puxar a página além do fim; claro ali, ele pisca. */
+html:has(> body.cad-body) { background: var(--cad-chao); }
+
+.cad-body ::selection { background: rgba(215, 186, 120, .35); color: var(--cad-marfim); }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.cad-script { font-family: var(--cad-script); font-weight: 400; letter-spacing: 0; text-transform: none; }
+
+.cad-rotulo {
+  margin: 0;
+  color: var(--cad-ouro);
+  text-transform: uppercase;
+  letter-spacing: .24em;
+  font: 700 .62rem/1.3 var(--cad-sans);
+}
+
+/* ------------------------------------------------------------------
+ * Cabeçalho
+ * ------------------------------------------------------------------ */
+
+.cad-cabecalho {
+  display: grid;
+  /* Coluna presa à largura da tela: sem isso ela cresce até caber o menu inteiro. */
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  padding: clamp(28px, 4vw, 48px) 16px 0;
+  background: var(--cad-chao);
+}
+
+.blog-marca { display: block; padding: 6px; border-radius: 12px; }
+.blog-marca img { display: block; width: clamp(58px, 6vw, 80px); height: auto; }
+.blog-marca:focus-visible { outline: 2px solid var(--cad-ouro); outline-offset: 4px; }
+
+.cad-nome {
+  display: grid;
+  justify-items: center;
+  margin: 10px 0 clamp(18px, 2.4vw, 28px);
+  color: var(--cad-marfim);
+  line-height: 1;
+}
+.cad-nome > span:first-child {
+  padding-left: .4em;
+  text-transform: uppercase;
+  letter-spacing: .4em;
+  font: 400 clamp(1rem, 1.5vw, 1.3rem)/1 var(--cad-serifa);
+}
+.cad-nome .cad-script { margin-top: -.12em; color: var(--cad-ouro); font-size: clamp(1.9rem, 3vw, 2.6rem); }
+
+.cad-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 18px;
+  width: min(100%, 1200px);
+  padding: 0 8px;
+  border-block: 1px solid var(--cad-ouro-linha);
+}
+.cad-menu ul { display: flex; flex-wrap: wrap; justify-content: center; margin: 0; padding: 0; list-style: none; }
+.cad-menu li { display: flex; align-items: center; }
+.cad-menu li + li::before { content: "·"; margin: 0 clamp(8px, 1.4vw, 18px); color: var(--cad-fraco); }
+.cad-menu a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  color: var(--cad-suave);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  font: 700 .64rem/1 var(--cad-sans);
+  transition: color .3s ease;
+}
+.cad-menu a:hover,
+.cad-menu a[aria-current="page"] { color: var(--cad-ouro); }
+.cad-menu a:focus-visible,
+.cad-busca-abrir:focus-visible { outline: 2px solid var(--cad-ouro); outline-offset: 3px; border-radius: 4px; }
+
+.cad-busca-abrir {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  color: var(--cad-suave);
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+.cad-busca-abrir:hover,
+.cad-busca-abrir[aria-expanded="true"] { color: var(--cad-ouro); }
+.cad-busca-abrir svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+
+/* ------------------------------------------------------------------
+ * Molduras e botões
+ * ------------------------------------------------------------------ */
+
+.cad-polaroid {
+  margin: 0;
+  padding: 10px 10px 30px;
+  background: #f4ecdd;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .55);
+  transform: rotate(-2deg);
+  transition: transform .6s cubic-bezier(.2, .7, .2, 1);
+}
+.cad-polaroid img { display: block; width: 100%; height: auto; object-fit: cover; }
+
+.cad-botao-contorno {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 28px;
+  border: 1px solid var(--cad-marfim);
+  color: var(--cad-marfim);
+  background: transparent;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  font: 600 .7rem/1 var(--cad-sans);
+  cursor: pointer;
+  transition: background .3s ease, color .3s ease;
+}
+.cad-botao-contorno:hover { color: var(--cad-chao); background: var(--cad-marfim); }
+.cad-botao-contorno:focus-visible { outline: 2px solid var(--cad-ouro); outline-offset: 4px; }
+
+.cad-botao {
+  min-height: 46px;
+  padding: 0 32px;
+  border: 0;
+  color: var(--cad-chao);
+  background: var(--cad-ouro);
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  font: 700 .68rem/1 var(--cad-sans);
+  cursor: pointer;
+  transition: filter .3s ease;
+}
+.cad-botao:hover { filter: brightness(1.08); }
+.cad-botao:disabled { opacity: .55; cursor: progress; }
+
+.blog-acervo-local { position: sticky; top: 0; z-index: 50; margin: 0; padding: 10px 16px; color: var(--cad-chao); background: var(--cad-ouro); text-align: center; font: 600 .78rem/1.4 var(--cad-sans); }
+.blog-acervo-local a { color: inherit; font-weight: 700; }
+
+/* ------------------------------------------------------------------
+ * Rodapé
+ * ------------------------------------------------------------------ */
+
+.cad-rodape {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 48px 16px;
+  border-top: 1px solid var(--cad-ouro-linha);
+  background: #0a0908;
+  text-align: center;
+}
+.cad-rodape img { width: 48px; height: auto; opacity: .55; }
+.cad-rodape p { margin: 0; color: var(--cad-fraco); text-transform: uppercase; letter-spacing: .3em; font: .6rem/1.6 var(--cad-sans); }
+.cad-rodape a { display: inline-block; padding: 14px 8px; color: var(--cad-suave); text-decoration: none; text-transform: uppercase; letter-spacing: .2em; font: 700 .62rem/1 var(--cad-sans); }
+.cad-rodape a:hover { color: var(--cad-ouro); }
+.cad-rodape a:focus-visible { outline: 2px solid var(--cad-ouro); outline-offset: 4px; }
+
+@media (max-width: 720px) {
+  .cad-menu { gap: 4px; padding: 0; }
+  /* Sem min-width: 0 a lista não encolhe dentro do menu: os últimos itens ficariam cortados em vez de rolar. */
+  .cad-menu ul { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; padding: 0 8px; }
+  .cad-menu ul::-webkit-scrollbar { display: none; }
+  .cad-menu li + li::before { margin: 0 10px; }
+  .cad-menu a { white-space: nowrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cad-polaroid, .cad-menu a, .cad-botao, .cad-botao-contorno { transition: none; }
+}

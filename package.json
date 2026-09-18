@@ -21,7 +21,7 @@
     "vendor:three": "node scripts/vendor-three.mjs",
     "vendor:supabase": "node scripts/vendor-supabase.mjs",
     "vendor:lucide": "node scripts/vendor-lucide.mjs",
-    "db:seed-blog": "node scripts/gerar-semente-blog.mjs",
+    "db:seed-blog": "node scripts/gerar-semente-blog.mjs --leva 2",
     "audit:database": "node scripts/audit-supabase-public.mjs",
     "validate:portal": "node scripts/validate-portal-assets.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .worktrees --ignore-pattern outputs/vendor",

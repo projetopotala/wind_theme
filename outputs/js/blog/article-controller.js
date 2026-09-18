@@ -1,7 +1,8 @@
 import { DEFAULT_BLOG_POSTS } from "./blog-data.js";
 import { normalizePosts } from "./blog-model.js";
-import { criarBlogPublico, quandoFoi } from "./blog-remoto.js";
-import { findPostBySlug, renderArticle } from "./article-renderer.js";
+import { criarBlogPublico, criarRestSemBanco, querAcervoLocal, quandoFoi } from "./blog-remoto.js";
+import { avisarAcervoLocal } from "./blog-controller.js";
+import { findPostBySlug, renderArticle, rotuloDaCategoria } from "./article-renderer.js";
 import { criarRestPublico } from "../supabase/rest.js";
 
 const escapeHtml = (value) => String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -25,7 +26,7 @@ function prepararLeitura(target, post, preview) {
   const ref = post.id || post.slug;
   const href = `/artigo.html?post=${encodeURIComponent(post.slug)}`;
   const acompanhar = post.category
-    ? `<button type="button" class="conta-alternar" data-acompanhar data-acompanhar-tipo="tema" data-acompanhar-ref="${escapeHtml(refDoTema(post.category))}" data-acompanhar-rotulo="${escapeHtml(post.category)}" aria-pressed="false"><span data-alternador-rotulo>Acompanhar</span><span class="conta-alternar-tema">${escapeHtml(post.category)}</span></button>`
+    ? `<button type="button" class="conta-alternar" data-acompanhar data-acompanhar-tipo="tema" data-acompanhar-ref="${escapeHtml(refDoTema(post.category))}" data-acompanhar-rotulo="${escapeHtml(rotuloDaCategoria(post.category))}" aria-pressed="false"><span data-alternador-rotulo>Acompanhar</span><span class="conta-alternar-tema">${escapeHtml(rotuloDaCategoria(post.category))}</span></button>`
     : "";
   target.querySelector(".article-hero__copy")?.insertAdjacentHTML("beforeend", `<div class="article-acoes">
     <button type="button" class="conta-alternar" data-salvar data-salvar-tipo="blog" data-salvar-ref="${escapeHtml(ref)}" data-salvar-titulo="${escapeHtml(post.title)}" data-salvar-href="${escapeHtml(href)}" data-salvar-imagem="${escapeHtml(post.cover || "")}" aria-pressed="false">${MARCADOR}<span data-alternador-rotulo>Salvar</span></button>
@@ -37,13 +38,23 @@ function prepararLeitura(target, post, preview) {
   document.dispatchEvent(new CustomEvent("potala:item-visto", { detail: { tipo: "blog", ref, titulo: post.title, href } }));
 }
 
+/* Os escolhidos pelo editor vêm primeiro; o resto completa com o mesmo tema e, depois, com os mais novos. */
+export function relacionados(posts, post, quantos = 2) {
+  const publicados = posts.filter((item) => item.status === "published" && item.id !== post.id);
+  const escolhidos = (post.relatedPostIds || []).map((id) => publicados.find((item) => item.id === id)).filter(Boolean);
+  const mesmoTema = publicados.filter((item) => item.category === post.category);
+  return [...new Set([...escolhidos, ...mesmoTema, ...publicados])].slice(0, quantos);
+}
+
 function mount(root = document) {
   const target = root.querySelector("[data-article-root]");
   if (!target) return;
   const params = new URLSearchParams(window.location.search);
   const preview = params.get("preview") === "1";
+  const acervoLocal = querAcervoLocal();
+  if (acervoLocal) avisarAcervoLocal(document);
   const blog = criarBlogPublico({
-    rest: criarRestPublico(),
+    rest: acervoLocal ? criarRestSemBanco() : criarRestPublico(),
     reserva: DEFAULT_BLOG_POSTS,
     aoFalhar: (erro) => console.warn("Artigo: leitura do banco falhou; mostrando o acervo empacotado.", erro),
   });
@@ -62,10 +73,23 @@ function mount(root = document) {
     document.title = `${post.title} — Caderno de Travessia`;
     target.innerHTML = renderArticle(post);
     prepararLeitura(target, post, preview);
-    root.querySelector("[data-article-related]").innerHTML = posts
-      .filter((item) => item.status === "published" && item.id !== post.id)
-      .slice(0,2)
-      .map((item) => `<a href="artigo.html?post=${encodeURIComponent(item.slug)}" style="background-image:url('${escapeHtml(item.cover)}')">${escapeHtml(item.title)}</a>`).join("");
+    root.querySelector("[data-article-related]").innerHTML = relacionados(posts, post)
+      .map((item) => `<a class="article-relacionado" href="artigo.html?post=${encodeURIComponent(item.slug)}">
+        <figure class="cad-polaroid">
+          <img src="${escapeHtml(item.cover)}" alt="" loading="lazy" decoding="async">
+          <figcaption>
+            <span class="article-relacionado__tema">${escapeHtml(rotuloDaCategoria(item.category))}</span>
+            <span class="article-relacionado__titulo">${escapeHtml(item.title)}</span>
+            <span class="article-relacionado__ler">Ler artigo →</span>
+          </figcaption>
+        </figure>
+      </a>`).join("");
+    const trilha = root.querySelector("[data-article-trilha]");
+    if (trilha) trilha.innerHTML = `<a href="blog.html?categoria=${encodeURIComponent(post.category)}">${escapeHtml(rotuloDaCategoria(post.category))}</a>`;
+    for (const link of root.querySelectorAll("[data-artigo-menu] [data-categoria-link]")) {
+      if (link.dataset.categoriaLink === post.category) link.setAttribute("aria-current", "true");
+      else link.removeAttribute("aria-current");
+    }
     return post;
   }
 
@@ -79,7 +103,7 @@ function mount(root = document) {
 
   const list = root.querySelector("[data-article-comment-list]");
   const status = root.querySelector("[data-article-comment-status]");
-  const comentario = (item) => `<li><strong>${escapeHtml(item.nome)}</strong> <small>${escapeHtml(quandoFoi(item.criadoEm))}</small><p>${escapeHtml(item.texto)}</p></li>`;
+  const comentario = (item) => `<li><span class="article-comentario__inicial" aria-hidden="true">${escapeHtml(String(item.nome || "?").trim().charAt(0).toUpperCase())}</span><div><strong>${escapeHtml(item.nome)}</strong> <small>${escapeHtml(quandoFoi(item.criadoEm))}</small><p>${escapeHtml(item.texto)}</p></div></li>`;
 
   const form = root.querySelector("[data-article-comment-form]");
   form?.addEventListener("submit", async (event) => {

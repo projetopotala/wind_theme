@@ -3,68 +3,111 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#302318">
+  <meta name="theme-color" content="#12100e">
   <meta name="description" content="Caderno de Travessia: ideias, práticas e reflexões para uma vida mais consciente.">
   <title>Caderno de Travessia — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&amp;display=swap">
   <link rel="stylesheet" href="css/secoes.css">
+  <link rel="stylesheet" href="css/caderno.css">
   <link rel="stylesheet" href="css/blog.css">
   <script type="module" src="js/secoes.js"></script>
   <script type="module" src="js/blog/blog-controller.js"></script>
 </head>
-<body class="blog-body" data-section="blog">
+<body class="blog-body cad-body" data-section="blog">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-  <main class="blog" id="conteudo">
-    <header class="blog-panorama">
-      <div class="blog-panorama__shade" aria-hidden="true"></div>
-      <a class="blog-marca" href="transcendido.html" aria-label="Voltar à Travessia">
-        <img src="media/potala-mark-transparent.png" alt="Instituto Potala" width="86" height="70">
-      </a>
-      <div class="blog-panorama__copy">
-        <p class="blog-temas">pensamentos · práticas · pessoas · caminhos</p>
-        <h1>Caderno de Travessia</h1>
-        <p class="blog-lema">Ideias, práticas e reflexões para uma vida mais consciente.</p>
-      </div>
-      <blockquote>“Todo caminho verdadeiro<br>começa no mundo interno.”</blockquote>
-    </header>
 
-    <div class="blog-shell">
-      <section class="blog-principal" aria-label="Publicações">
-        <div data-blog-destaque></div>
-        <header class="blog-list-head">
-          <h2 id="artigos">Artigos</h2>
-          <span>mais recentes</span>
-        </header>
-        <div class="blog-grade" data-blog-grade aria-labelledby="artigos"></div>
-        <p class="blog-vazio" data-blog-vazio hidden>Nenhum texto encontrado neste caminho.</p>
-      </section>
-
-      <aside class="blog-lateral" aria-label="Explorar o Caderno">
-        <label class="blog-busca">
-          <span class="sr-only">Buscar no blog</span>
-          <span aria-hidden="true">⌕</span>
-          <input type="search" data-blog-search placeholder="Buscar no blog…" autocomplete="off">
-        </label>
-        <nav class="blog-categorias" aria-label="Categorias do blog">
-          <h2>Categorias</h2>
-          <ul data-blog-categorias></ul>
-        </nav>
-        <section class="lateral-convite" aria-labelledby="inspiracoes">
-          <p class="lateral-eyebrow">Receba nossas inspirações</p>
-          <h2 class="lateral-titulo" id="inspiracoes">Um intervalo de presença na sua caixa de entrada.</h2>
-          <form data-blog-newsletter>
-            <label class="sr-only" for="blog-email">Seu e-mail</label>
-            <input id="blog-email" type="email" placeholder="Seu e-mail…" required>
-            <button class="lateral-acao" type="submit" aria-label="Enviar e-mail">→</button>
-          </form>
-          <p class="lateral-feedback" data-blog-newsletter-status role="status" aria-live="polite"></p>
-        </section>
-        <section class="lateral-lista" aria-labelledby="recentes">
-          <h2 class="lateral-titulo" id="recentes">Posts recentes</h2>
-          <ol data-blog-recentes></ol>
-        </section>
-      </aside>
+  <header class="cad-cabecalho">
+    <a class="blog-marca" href="transcendido.html" aria-label="Voltar à Travessia">
+      <img src="media/potala-mark-transparent.png" alt="Instituto Potala" width="86" height="70">
+    </a>
+    <p class="cad-nome"><span>Caderno</span><span class="cad-script">de Travessia</span></p>
+    <nav class="cad-menu" aria-label="Caminhos do Caderno">
+      <ul data-blog-menu>
+        <li><a href="blog.html" data-categoria-link="todos" aria-current="page">Início</a></li>
+        <li><a href="blog.html?categoria=artigos" data-categoria-link="artigos">Artigos</a></li>
+        <li><a href="blog.html?categoria=oraculos" data-categoria-link="oraculos">Oráculos</a></li>
+        <li><a href="blog.html?categoria=terapias" data-categoria-link="terapias">Terapias</a></li>
+        <li><a href="blog.html?categoria=praticas" data-categoria-link="praticas">Práticas</a></li>
+        <li><a href="blog.html?categoria=cultura" data-categoria-link="cultura">Cultura</a></li>
+        <li><a href="blog.html?categoria=cursos" data-categoria-link="cursos">Cursos</a></li>
+      </ul>
+      <button class="cad-busca-abrir" type="button" data-blog-busca-abrir aria-expanded="false" aria-controls="blog-busca" aria-label="Buscar no Caderno">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      </button>
+    </nav>
+    <div class="blog-busca-faixa" id="blog-busca" hidden>
+      <label class="blog-busca">
+        <span class="sr-only">Buscar no Caderno</span>
+        <input type="search" data-blog-search placeholder="Buscar por título, tema ou autor…" autocomplete="off">
+      </label>
     </div>
+  </header>
+
+  <main class="blog" id="conteudo">
+    <section class="blog-hero" aria-labelledby="blog-titulo">
+      <div class="blog-hero__foto">
+        <img data-blog-capa src="media/blog-hero-caminhante.webp" alt="" width="1920" height="1280" fetchpriority="high" decoding="async">
+        <div class="blog-hero__veu" aria-hidden="true"></div>
+        <div class="blog-hero__texto">
+          <p class="blog-hero__saudacao cad-script">Bem-vindo ao</p>
+          <h1 id="blog-titulo" data-blog-nome>Caderno de Travessia</h1>
+          <p class="blog-hero__lema">Ideias, práticas e reflexões para uma vida mais consciente.</p>
+          <a class="cad-botao-contorno" href="#artigos">Começar a leitura</a>
+        </div>
+      </div>
+      <div class="blog-hero__painel">
+        <svg class="blog-hero__lotus" viewBox="0 0 200 160" aria-hidden="true" focusable="false">
+          <path d="M100 140C86 112 86 76 100 40c14 36 14 72 0 100Z"/>
+          <path d="M100 140C76 122 62 94 64 60c22 18 34 48 36 80Z"/>
+          <path d="M100 140c24-18 38-46 36-80-22 18-34 48-36 80Z"/>
+          <path d="M100 140C68 134 44 114 34 86c30 4 52 26 66 54Z"/>
+          <path d="M100 140c32-6 56-26 66-54-30 4-52 26-66 54Z"/>
+          <path d="M40 146c40 6 80 6 120 0"/>
+        </svg>
+        <div class="blog-hero__destaque" data-blog-destaque></div>
+      </div>
+    </section>
+
+    <nav class="blog-categorias" aria-label="Categorias do Caderno">
+      <h2 class="sr-only">Categorias</h2>
+      <ul data-blog-categorias></ul>
+    </nav>
+
+    <section class="blog-artigos" aria-labelledby="artigos">
+      <header class="blog-list-head">
+        <h2 id="artigos">Artigos</h2>
+        <span data-blog-filtro>mais recentes</span>
+      </header>
+      <div class="blog-grade" data-blog-grade aria-labelledby="artigos"></div>
+      <p class="blog-vazio" data-blog-vazio hidden>Nenhum texto encontrado neste caminho.</p>
+      <div class="blog-mais">
+        <button class="cad-botao-contorno" type="button" data-blog-mais hidden>Ver mais textos</button>
+      </div>
+    </section>
+
+    <section class="blog-convite lateral-convite" aria-labelledby="inspiracoes">
+      <figure class="cad-polaroid blog-convite__foto">
+        <img src="media/blog-caderno-vela.webp" alt="Caderno aberto com anotações à mão, caneta, vela acesa e flores secas" width="900" height="1125" loading="lazy" decoding="async">
+      </figure>
+      <div class="blog-convite__texto">
+        <p class="cad-script blog-convite__script">Receba inspirações</p>
+        <h2 class="lateral-titulo" id="inspiracoes">Um intervalo de presença na sua caixa de entrada.</h2>
+        <form data-blog-newsletter>
+          <label class="sr-only" for="blog-email">Seu e-mail</label>
+          <input id="blog-email" type="email" placeholder="Seu melhor e-mail" autocomplete="email" required>
+          <button class="lateral-acao" type="submit">Inscrever-se</button>
+        </form>
+        <p class="lateral-feedback" data-blog-newsletter-status role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="lateral-lista blog-recentes" aria-labelledby="recentes">
+      <h2 class="cad-rotulo" id="recentes">Recentemente</h2>
+      <ol data-blog-recentes></ol>
+    </section>
 
     <section class="comentarios" aria-labelledby="comentarios-titulo">
       <p class="comentarios-kicker">Mais que conteúdo, um convite ao encontro.</p>
@@ -76,7 +119,7 @@
           <input id="comentario-nome" name="nome" type="text" maxlength="60" required>
           <p class="campo-erro" data-erro-nome></p>
         </div>
-        <div class="campo">
+        <div class="campo campo--largo">
           <label for="comentario-texto">Seu comentário</label>
           <textarea id="comentario-texto" name="texto" rows="4" maxlength="600" required></textarea>
           <p class="campo-contador"><span data-comentario-contador>0</span>/600</p>
@@ -84,13 +127,19 @@
         </div>
         <div class="comentario-rodape">
           <p class="comentario-aviso">O comentário é lido pela equipe antes de aparecer aqui.</p>
-          <button class="comentario-enviar" type="submit">Publicar comentário</button>
+          <button class="comentario-enviar cad-botao" type="submit">Publicar comentário</button>
         </div>
       </form>
       <p class="comentario-status" data-comentario-status role="status" aria-live="polite"></p>
       <ol class="comentario-lista" data-comentario-lista></ol>
     </section>
   </main>
+
+  <footer class="cad-rodape">
+    <img src="media/potala-mark-transparent.png" alt="" width="86" height="70">
+    <a href="transcendido.html">Voltar à Travessia</a>
+    <p>Instituto Potala · Indaiatuba, SP</p>
+  </footer>
   <noscript><p class="journey-noscript">Ative o JavaScript para ver as publicações do Caderno.</p></noscript>
 </body>
 </html>

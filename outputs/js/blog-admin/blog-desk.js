@@ -10,6 +10,8 @@
  * inventar leituras seria pior do que mostrar que ainda não há.
  */
 
+import { capaDoCaderno } from "../blog/blog-settings.js";
+
 const number = new Intl.NumberFormat("pt-BR");
 const escapeHtml = (value) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const quando = (iso) => (iso ? new Date(iso).toLocaleString("pt-BR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "");
@@ -63,13 +65,15 @@ export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
     }
   }
 
+  /* A mesa mostra a capa que o site mostra: a padrão antiga já aparece como a nova. */
   function paintSettings(settings) {
+    const capa = capaDoCaderno(settings.cover);
     if (form) {
       form.elements.name.value = settings.name;
-      form.elements.cover.value = settings.cover;
+      form.elements.cover.value = capa;
     }
     if (preview) {
-      preview.src = settings.cover;
+      preview.src = capa;
       preview.alt = `Imagem do blog ${settings.name}`;
     }
     const brand = root.querySelector(".blog-editor-brand small");

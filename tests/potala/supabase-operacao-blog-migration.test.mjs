@@ -2,17 +2,18 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 
-import { sementeDoBlog } from "../../scripts/gerar-semente-blog.mjs";
+import { levaDoBlog } from "../../scripts/gerar-semente-blog.mjs";
 
 const ler = (nome) => readFile(new URL(`../../supabase/migrations/${nome}`, import.meta.url), "utf8");
 const operacao = await ler("202609170001_operacao_do_instituto.sql");
 const blog = await ler("202609170002_blog_e_participacao.sql");
 const semente = await ler("202609170003_semente_do_blog.sql");
+const segundaLeva = await ler("202609180003_mais_textos_do_blog.sql");
 const senha = await ler("202609170004_senha_do_painel_fora_do_alcance_anonimo.sql");
 const semComentarios = (sql) => sql.replace(/--.*$/gm, "");
 
 test("toda migração nova roda numa transação só", () => {
-  for (const sql of [operacao, blog, semente, senha]) {
+  for (const sql of [operacao, blog, semente, segundaLeva, senha]) {
     assert.match(sql, /^begin;$/m);
     assert.match(sql, /^commit;\s*$/m);
     /* "revoke truncate" é permissão, não apagar dados; o que não pode é o comando. */
@@ -74,10 +75,13 @@ test("inscrição e interesses: o visitante envia e não lê o que outros enviar
   assert.match(sql, /pg_column_size\(details\) <= 4000/);
 });
 
-test("a semente do Blog é o acervo empacotado e nunca sobrescreve edição", () => {
-  assert.equal(semente.replace(/\r\n/g, "\n"), sementeDoBlog(), "rode npm run db:seed-blog para regenerar a migração");
-  assert.match(semente, /on conflict do nothing;/);
+test("as sementes do Blog são o acervo empacotado e nunca sobrescrevem edição", () => {
+  assert.equal(semente.replace(/\r\n/g, "\n"), levaDoBlog(1), "a primeira leva já aplicada não pode mudar");
+  assert.equal(segundaLeva.replace(/\r\n/g, "\n"), levaDoBlog(2), "rode npm run db:seed-blog para regenerar a segunda leva");
+  for (const sql of [semente, segundaLeva]) assert.match(sql, /on conflict do nothing;/);
   assert.equal((semente.match(/, true, '/g) || []).length, 1, "um destaque só");
+  assert.equal((segundaLeva.match(/, true, '/g) || []).length, 0, "o destaque continua sendo o da primeira leva");
+  assert.equal((segundaLeva.match(/::jsonb/g) || []).length, 12);
 });
 
 /*

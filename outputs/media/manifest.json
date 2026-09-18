@@ -1,5 +1,5 @@
 {
-  "geradoEm": "2026-09-03T05:02:16.646Z",
+  "geradoEm": "2026-09-18T17:00:29.754Z",
   "imagens": [
     {
       "arquivo": "atendimentos-acolhimento.webp",
@@ -36,6 +36,18 @@
       "largura": 1600,
       "altura": 1000,
       "bytes": 157690
+    },
+    {
+      "arquivo": "blog-caderno-vela.webp",
+      "largura": 900,
+      "altura": 1125,
+      "bytes": 81576
+    },
+    {
+      "arquivo": "blog-hero-caminhante.webp",
+      "largura": 1920,
+      "altura": 1280,
+      "bytes": 133086
     },
     {
       "arquivo": "chegada-canopy.webp",
@@ -146,6 +158,12 @@
       "bytes": 90552
     },
     {
+      "arquivo": "home-travessia - Copia.png",
+      "largura": 2048,
+      "altura": 1152,
+      "bytes": 210612
+    },
+    {
       "arquivo": "home-travessia-mobile.webp",
       "largura": 1080,
       "altura": 1440,
@@ -212,6 +230,12 @@
       "bytes": 328756
     },
     {
+      "arquivo": "potala-mark-transparent.png",
+      "largura": 1382,
+      "altura": 1138,
+      "bytes": 619169
+    },
+    {
       "arquivo": "profissionais-encontro.webp",
       "largura": 1600,
       "altura": 1000,
@@ -222,6 +246,12 @@
       "largura": 1664,
       "altura": 936,
       "bytes": 175142
+    },
+    {
+      "arquivo": "quem-somos-encerramento-v1.png",
+      "largura": 1672,
+      "altura": 941,
+      "bytes": 2545749
     },
     {
       "arquivo": "recepcao-acolhimento.webp",

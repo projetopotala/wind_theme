@@ -19,7 +19,10 @@ import {
 } from "../../outputs/js/blog/blog-controller.js";
 
 const html = readFileSync(new URL("../../outputs/blog.html", import.meta.url), "utf8");
-const css = readFileSync(new URL("../../outputs/css/blog.css", import.meta.url), "utf8");
+/* A folha do Caderno (cores, cabeçalho, rodapé) é dividida com o artigo; a do Blog completa. */
+const css = ["caderno.css", "blog.css"]
+  .map((nome) => readFileSync(new URL(`../../outputs/css/${nome}`, import.meta.url), "utf8"))
+  .join("\n");
 
 /* ------------------------------------------------------------------
  * O acervo

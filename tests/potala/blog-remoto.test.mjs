@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFile } from "node:fs/promises";
 
 import { DEFAULT_BLOG_POSTS } from "../../outputs/js/blog/blog-data.js";
-import { criarBlogAdministrativo, criarBlogDeDemonstracao, criarBlogPublico, quandoFoi } from "../../outputs/js/blog/blog-remoto.js";
+import { criarBlogAdministrativo, criarBlogDeDemonstracao, criarBlogPublico, criarRestSemBanco, quandoFoi, querAcervoLocal } from "../../outputs/js/blog/blog-remoto.js";
 import { createBlogRepository } from "../../outputs/js/blog/blog-repository.js";
 import { criarRestPublico } from "../../outputs/js/supabase/rest.js";
 import { enviarInteresse, montarInteresse } from "../../outputs/js/shared/participacao.js";
@@ -162,4 +162,17 @@ test("as páginas não prometem mais que o envio é local", async () => {
   assert.doesNotMatch(controlador, /Demonstração local/);
   assert.match(recepcao, /<script type="module" src="js\/recepcao\.js"><\/script>/);
   assert.match(cursos, /name="contact"/);
+});
+
+test("o acervo local liga pela URL, vale na aba e nunca toca o banco", async () => {
+  const guardado = new Map();
+  const sessao = { getItem: (k) => guardado.get(k) ?? null, setItem: (k, v) => guardado.set(k, v), removeItem: (k) => guardado.delete(k) };
+  assert.equal(querAcervoLocal({ search: "" }, sessao), false);
+  assert.equal(querAcervoLocal({ search: "?acervo=local" }, sessao), true);
+  assert.equal(querAcervoLocal({ search: "?post=x" }, sessao), true, "o artigo herda o modo da aba");
+  assert.equal(querAcervoLocal({ search: "?acervo=banco" }, sessao), false);
+
+  const blog = criarBlogPublico({ rest: criarRestSemBanco(), reserva: DEFAULT_BLOG_POSTS });
+  assert.equal((await blog.listarPublicados()).length, DEFAULT_BLOG_POSTS.length);
+  await assert.rejects(blog.enviarComentario({ nome: "Ana", texto: "gostei muito" }), /acervo local/);
 });

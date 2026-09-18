@@ -14,7 +14,7 @@
  */
 import { normalizePost, normalizePosts } from "./blog-model.js";
 
-export const BLOG_PADRAO = Object.freeze({ name: "Caderno de Travessia", cover: "media/chegada-landscape.webp" });
+export const BLOG_PADRAO = Object.freeze({ name: "Caderno de Travessia", cover: "media/blog-hero-caminhante.webp" });
 
 const comoConfiguracao = (linha) => ({
   name: String(linha?.name || "").trim() || BLOG_PADRAO.name,
@@ -50,6 +50,35 @@ export function validarEnvioDeComentario({ nome = "", texto = "" } = {}) {
   if (String(texto).trim().length < 3) erros.texto = "Escreva ao menos algumas palavras.";
   else if (String(texto).trim().length > 600) erros.texto = "Use até 600 caracteres.";
   return erros;
+}
+
+/*
+ * O ACERVO LOCAL — ver textos do código antes de levá-los ao banco.
+ *
+ * `?acervo=local` liga o modo nesta aba (fica guardado na sessão, para valer
+ * também no artigo); `?acervo=banco` desliga. Nele o Caderno não lê nem grava
+ * no banco: mostra os textos empacotados em blog-data.js, e comentário e
+ * inscrição avisam que estão desligados. Serve para revisar uma leva nova sem
+ * publicá-la no site de todos.
+ */
+const CHAVE_ACERVO = "potala.blog.acervo";
+
+export function querAcervoLocal(local = globalThis.location, sessao = globalThis.sessionStorage) {
+  const pedido = new URLSearchParams(local?.search || "").get("acervo");
+  try {
+    if (pedido === "local") sessao?.setItem(CHAVE_ACERVO, "local");
+    if (pedido === "banco") sessao?.removeItem(CHAVE_ACERVO);
+    return sessao?.getItem(CHAVE_ACERVO) === "local";
+  } catch {
+    return pedido === "local";
+  }
+}
+
+export function criarRestSemBanco() {
+  const recusar = async () => {
+    throw Object.assign(new Error("Modo de acervo local: nada é lido nem gravado no banco."), { code: "acervo-local" });
+  };
+  return { ler: recusar, inserir: recusar, rpc: recusar };
 }
 
 export function criarBlogPublico({ rest, reserva = [], aoFalhar = () => {} } = {}) {
