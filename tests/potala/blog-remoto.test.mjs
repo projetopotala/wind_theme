@@ -7,6 +7,7 @@ import { criarBlogAdministrativo, criarBlogDeDemonstracao, criarBlogPublico, qua
 import { createBlogRepository } from "../../outputs/js/blog/blog-repository.js";
 import { criarRestPublico } from "../../outputs/js/supabase/rest.js";
 import { enviarInteresse, montarInteresse } from "../../outputs/js/shared/participacao.js";
+import { carregarDadosDaMesa } from "../../outputs/js/blog-admin/blog-desk.js";
 
 function restFalso(respostas = {}) {
   const pedidos = [];
@@ -64,8 +65,15 @@ test("a conversa geral pede comentários aprovados sem artigo; a do artigo, os d
 });
 
 test("contar leitura nunca quebra a página", async () => {
-  const blog = criarBlogPublico({ rest: restFalso({ "rpc:register_blog_view": new Error("offline") }) });
+  const falhas = [];
+  const blog = criarBlogPublico({
+    rest: restFalso({ "rpc:register_blog_view": new Error("offline") }),
+    aoFalhar: (erro, contexto) => falhas.push({ erro, contexto }),
+  });
   await blog.registrarLeitura("x");
+  assert.equal(falhas.length, 1);
+  assert.equal(falhas[0].contexto, "blog.registrarLeitura");
+  assert.match(falhas[0].erro.message, /offline/);
 });
 
 test("a mesa real salva pelo banco e traduz a recusa", async () => {
@@ -81,6 +89,23 @@ test("a mesa real salva pelo banco e traduz a recusa", async () => {
   await assert.rejects(blog.save({ id: "p", title: "Texto" }), /não permite alterar o Blog/);
   assert.equal(chamadas[0][0], "save_blog_post");
   assert.equal(chamadas[0][1].post.slug, "texto");
+});
+
+test("a mesa identifica métricas parciais indisponíveis em vez de fingir zero", async () => {
+  const repository = {
+    list: async () => [{ id: "p", slug: "texto", title: "Texto" }],
+    leituras: async () => { throw new Error("views offline"); },
+    comentarios: async () => [],
+    inscritos: async () => { throw new Error("newsletter offline"); },
+    lerConfiguracao: async () => ({ name: "Caderno", cover: "capa.webp" }),
+  };
+
+  const dados = await carregarDadosDaMesa(repository);
+
+  assert.equal(dados.posts.length, 1);
+  assert.deepEqual(dados.views, {});
+  assert.equal(dados.subscribers, 0);
+  assert.deepEqual(dados.falhas.map((falha) => falha.contexto), ["blog.leituras", "blog.inscritos"]);
 });
 
 test("a demonstração continua no navegador e não mede nada", async () => {

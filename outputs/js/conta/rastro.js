@@ -10,7 +10,8 @@
  * abrir um bloco e fechar, ir e voltar pelo histórico do navegador — nada disso
  * é uma visita nova, e um histórico que registra cada recarga vira ruído.
  *
- * Gravar o histórico nunca atrapalha a leitura: qualquer falha é engolida.
+ * Gravar o histórico nunca atrapalha a leitura. A falha segue para o canal de
+ * diagnóstico recebido na montagem, para não desaparecer silenciosamente.
  */
 
 import { criarHistorico } from "./modelos.js";
@@ -46,6 +47,7 @@ export function montarRastro({
   armazenamento = globalThis.sessionStorage,
   agora = () => Date.now(),
   local = globalThis.location,
+  aoFalhar = () => {},
 } = {}) {
   const lerUltimas = () => {
     try {
@@ -70,8 +72,9 @@ export function montarRastro({
       const ultimas = lerUltimas();
       ultimas[chave] = agora();
       armazenamento?.setItem(CHAVE_ULTIMAS, JSON.stringify(ultimas));
-    } catch {
+    } catch (erro) {
       /* O histórico é secundário: sem banco, a leitura continua igual. */
+      aoFalhar(erro, "historico.gravar");
     } finally {
       emCurso.delete(chave);
     }

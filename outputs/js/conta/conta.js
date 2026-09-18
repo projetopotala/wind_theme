@@ -27,6 +27,10 @@ const URL_DO_SDK = new URL("../../vendor/supabase.js", import.meta.url).href;
 const URL_DO_CSS = new URL("../../css/conta.css", import.meta.url).href;
 const CHAVE_DEMO = "potala.conta.demo";
 
+function relatarFalhaDePersistencia(erro, contexto) {
+  console.warn(`Conta: falha em ${contexto}.`, erro);
+}
+
 export function querDemonstracao(local = globalThis.location, armazenamento = globalThis.sessionStorage) {
   const pedido = new URLSearchParams(local?.search || "").get("demo");
   try {
@@ -195,7 +199,7 @@ export function obterSessaoGlobal({ documento = document, janela = window } = {}
      * isso aqui, e não depois de montar.
      */
     if (pedido === "visita") autenticacao.iniciarVisita();
-    sessaoGlobal = criarSessao({ autenticacao, dados: reserva });
+    sessaoGlobal = criarSessao({ autenticacao, dados: reserva, aoFalhar: relatarFalhaDePersistencia });
   } else {
     /* Sair da demonstração leva junto a pessoa fictícia, para ela não reaparecer numa próxima visita. */
     if (pedido === "sair") criarAutenticacaoDemonstracao().sair();
@@ -215,7 +219,7 @@ export function obterSessaoGlobal({ documento = document, janela = window } = {}
       const { criarDadosSupabase } = await import("./adaptadores/supabase.js");
       return criarDadosSupabase({ client: await cliente() });
     });
-    sessaoGlobal = criarSessao({ autenticacao, dados: comReserva(principal, reserva) });
+    sessaoGlobal = criarSessao({ autenticacao, dados: comReserva(principal, reserva), aoFalhar: relatarFalhaDePersistencia });
   }
 
   sessaoGlobal.iniciar();
@@ -274,7 +278,7 @@ export function montarConta({ documento = document, janela = window } = {}) {
     const acoes = criarAcoesComConta({ sessao, painel, janela });
     const anunciar = criarAnunciador(documento);
     const alternadores = montarAlternadores({ documento, sessao, acoes, anunciar });
-    const rastro = montarRastro({ documento, sessao });
+    const rastro = montarRastro({ documento, sessao, aoFalhar: relatarFalhaDePersistencia });
 
     const pintar = (estado) => {
       const nome = nomeDeExibicao(estado.usuario, estado.perfil);

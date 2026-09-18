@@ -96,8 +96,9 @@ export function criarBlogPublico({ rest, reserva = [], aoFalhar = () => {} } = {
     async registrarLeitura(slug) {
       try {
         await rest.rpc("register_blog_view", { p_slug: String(slug || "") });
-      } catch {
+      } catch (erro) {
         /* Contar a leitura é estatística; não pode atrapalhar quem está lendo. */
+        aoFalhar(erro, "blog.registrarLeitura");
       }
     },
   };

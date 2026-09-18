@@ -22,6 +22,31 @@ function statusLabel(status) {
 
 const COMENTARIO = { pending: "Aguardando leitura", approved: "Publicado", rejected: "Recusado" };
 
+export async function carregarDadosDaMesa(repository) {
+  const contextos = ["blog.posts", "blog.leituras", "blog.comentarios", "blog.inscritos", "blog.configuracao"];
+  const resultados = await Promise.allSettled([
+    repository.list(),
+    repository.leituras(),
+    repository.comentarios(),
+    repository.inscritos(),
+    repository.lerConfiguracao(),
+  ]);
+  /* Posts e configuração sustentam a tela. Sem eles, o erro principal aparece. */
+  if (resultados[0].status === "rejected") throw resultados[0].reason;
+  if (resultados[4].status === "rejected") throw resultados[4].reason;
+  const falhas = resultados.flatMap((resultado, indice) => (
+    resultado.status === "rejected" ? [{ erro: resultado.reason, contexto: contextos[indice] }] : []
+  ));
+  return {
+    posts: resultados[0].value,
+    views: resultados[1].status === "fulfilled" ? resultados[1].value : {},
+    comments: resultados[2].status === "fulfilled" ? resultados[2].value : [],
+    subscribers: resultados[3].status === "fulfilled" ? resultados[3].value : 0,
+    settings: resultados[4].value,
+    falhas,
+  };
+}
+
 export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
   if (!root || !repository) throw new TypeError("root e repository são obrigatórios");
   const form = root.querySelector("[data-blog-settings-form]");
@@ -68,13 +93,7 @@ export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
   }
 
   async function render() {
-    const [posts, views, comments, subscribers, settings] = await Promise.all([
-      repository.list(),
-      repository.leituras().catch(() => ({})),
-      repository.comentarios().catch(() => []),
-      repository.inscritos().catch(() => 0),
-      repository.lerConfiguracao(),
-    ]);
+    const { posts, views, comments, subscribers, settings, falhas } = await carregarDadosDaMesa(repository);
     const bySlug = new Map(posts.map((post) => [post.slug, post.title]));
     const commentsOf = (slug) => comments.filter((item) => item.slug === slug && item.status !== "rejected").length;
     const pending = comments.filter((item) => item.status === "pending").length;
@@ -89,9 +108,12 @@ export function createBlogDesk({ root, repository, onWrite, onEdit } = {}) {
       ].map(([label, value, hint]) => `<p><small>${label}</small><strong>${number.format(value)}</strong><span>${hint}</span></p>`).join("");
     }
     if (note) {
-      note.textContent = repository.demonstracao
-        ? "Na demonstração nada é medido: os números aparecem na mesa real."
-        : "Leituras contadas a cada abertura de um artigo publicado.";
+      note.textContent = falhas.length
+        ? "Alguns indicadores não puderam ser carregados. Atualize a página para tentar novamente."
+        : repository.demonstracao
+          ? "Na demonstração nada é medido: os números aparecem na mesa real."
+          : "Leituras contadas a cada abertura de um artigo publicado.";
+      note.setAttribute("role", falhas.length ? "alert" : "status");
     }
 
     const list = root.querySelector("[data-blog-desk-list]");

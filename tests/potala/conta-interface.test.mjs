@@ -5,7 +5,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { ESTADOS_DO_PAINEL, renderizarPainel } from "../../outputs/js/conta/painel-conta.js";
 import { BASE, ROTAS, caminhoDa, deveInterceptar, resolverRota } from "../../outputs/js/conta/spa/roteador.js";
 import { VALIDADE_PENDENTE, pendenteValido } from "../../outputs/js/conta/alternadores.js";
-import { JANELA_DE_VISITA, deveRegistrar, itemDeclarado } from "../../outputs/js/conta/rastro.js";
+import { JANELA_DE_VISITA, deveRegistrar, itemDeclarado, montarRastro } from "../../outputs/js/conta/rastro.js";
 import { autenticacaoPreguicosa, haSessaoGuardada, querDemonstracao } from "../../outputs/js/conta/conta.js";
 import { criarAcoesComConta } from "../../outputs/js/conta/acoes-com-conta.js";
 import { VISTAS } from "../../outputs/js/conta/spa/app.js";
@@ -232,6 +232,38 @@ test("voltar à mesma página em meia hora não vira outra linha no histórico",
     itemDeclarado({ dataset: { itemTipo: "blog", itemRef: "oraculo", itemTitulo: "Oráculo", itemHref: "/artigo.html?post=oraculo" } }),
     { tipo: "blog", ref: "oraculo", titulo: "Oráculo", href: "/artigo.html?post=oraculo" },
   );
+});
+
+test("falha ao persistir histórico é observável sem interromper a leitura", async () => {
+  const falhas = [];
+  const eventos = new Map();
+  const documento = {
+    addEventListener: (nome, fn) => eventos.set(nome, fn),
+    removeEventListener: (nome) => eventos.delete(nome),
+    querySelector: () => null,
+    body: { dataset: {} },
+    title: "Portal",
+  };
+  const sessao = {
+    obter: () => ({ status: "autenticado", usuario: { id: "u1" } }),
+    assinar: () => () => {},
+    colecao: () => ({ gravar: async () => { throw new Error("banco indisponível"); } }),
+  };
+  const rastro = montarRastro({
+    documento,
+    sessao,
+    armazenamento: { getItem: () => null, setItem: () => {} },
+    agora: () => 10_000_000,
+    local: { pathname: "/artigo.html" },
+    aoFalhar: (erro, contexto) => falhas.push({ erro, contexto }),
+  });
+
+  await rastro.registrar({ tipo: "blog", ref: "x", titulo: "X", href: "/x" });
+
+  assert.equal(falhas.length, 1);
+  assert.match(falhas[0].erro.message, /indisponível/);
+  assert.equal(falhas[0].contexto, "historico.gravar");
+  rastro.destroy();
 });
 
 /* ------------------------------------------------------------------

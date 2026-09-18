@@ -19,7 +19,7 @@ test("a tabela users guarda o cadastro administrativo e a função lê dela", ()
   assert.doesNotMatch(sql, /sb_secret_|sb_publishable_|service_role/i);
 });
 
-test("a senha fica só como hash e o login confere na tabela", async () => {
+test("a migration histórica de senha é coberta pela remoção posterior", async () => {
   const sql = await readFile(
     new URL("../../supabase/migrations/202609080005_portal_user_password.sql", import.meta.url),
     "utf8",
@@ -30,4 +30,11 @@ test("a senha fica só como hash e o login confere na tabela", async () => {
   assert.match(sql, /verify_portal_password/i);
   assert.match(sql, /grant select \(id, email, name, role, active, created_at, updated_at\)/i);
   assert.doesNotMatch(sql, /grant execute on function public\.set_portal_user_password/i);
+
+  const limpeza = await readFile(
+    new URL("../../supabase/migrations/202609180001_integridade_de_persistencia.sql", import.meta.url),
+    "utf8",
+  );
+  assert.match(limpeza, /drop function if exists public\.verify_portal_password/i);
+  assert.match(limpeza, /drop column if exists password_hash/i);
 });

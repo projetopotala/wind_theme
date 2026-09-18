@@ -149,14 +149,32 @@ test("sem conta, nenhuma colecao responde", async () => {
 });
 
 test("um perfil que nao carrega nao expulsa a pessoa", async () => {
+  const falhas = [];
   const sessao = criarSessao({
     autenticacao: autenticacaoFalsa(),
     dados: dadosFalsos({ async perfil() { throw new Error("rede"); } }),
+    aoFalhar: (erro, contexto) => falhas.push({ erro, contexto }),
   });
   await sessao.iniciar();
   await sessao.entrar({ email: "gustavo@exemplo.com", senha: "segredo-longo" });
   assert.equal(sessao.obter().status, "autenticado");
   assert.equal(sessao.obter().perfil.nome, "Gustavo Ishibashi");
+  assert.equal(falhas.length, 1);
+  assert.equal(falhas[0].contexto, "perfil.carregar");
+  assert.match(falhas[0].erro.message, /rede/);
+});
+
+test("falha ao recuperar a sessão inicial é observável", async () => {
+  const falhas = [];
+  const autenticacao = autenticacaoFalsa();
+  autenticacao.sessaoAtual = async () => { throw new Error("auth offline"); };
+  const sessao = criarSessao({ autenticacao, dados: dadosFalsos(), aoFalhar: (erro, contexto) => falhas.push({ erro, contexto }) });
+
+  await sessao.iniciar();
+
+  assert.equal(sessao.obter().status, "visitante", "a tela continua utilizável como visitante");
+  assert.equal(falhas.length, 1);
+  assert.equal(falhas[0].contexto, "sessao.restaurar");
 });
 
 /* ------------------------------------------------------------------

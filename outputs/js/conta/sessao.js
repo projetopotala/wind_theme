@@ -87,7 +87,7 @@ export function comReserva(principal, reserva, { aoCair } = {}) {
   };
 }
 
-export function criarSessao({ autenticacao, dados = null, agora = () => new Date() } = {}) {
+export function criarSessao({ autenticacao, dados = null, agora = () => new Date(), aoFalhar = () => {} } = {}) {
   if (!autenticacao) throw new TypeError("A sessão precisa de um adaptador de autenticação.");
 
   let estado = Object.freeze({
@@ -110,8 +110,9 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
     if (!dados) return criarPerfil({ usuarioId: usuario.id, nome: usuario.nome });
     try {
       return await dados.perfil(usuario);
-    } catch {
+    } catch (erro) {
       /* Sem perfil a pessoa continua dentro: o nome sai do cadastro do Auth. */
+      aoFalhar(erro, "perfil.carregar");
       return criarPerfil({ usuarioId: usuario.id, nome: usuario.nome });
     }
   }
@@ -161,7 +162,8 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
       try {
         const { usuario } = await autenticacao.sessaoAtual();
         await aplicarUsuario(usuario);
-      } catch {
+      } catch (erro) {
+        aoFalhar(erro, "sessao.restaurar");
         definir({ status: "visitante", usuario: null, perfil: null });
       }
       return estado;

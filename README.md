@@ -44,15 +44,20 @@ A Home lê os blocos de `public.home_blocks`. Se a leitura remota falhar, usa os
 ### Preparar o projeto
 
 1. Execute `npm install` e `npm run vendor:supabase`.
-2. Aplique `supabase/migrations/202609020001_portal_home_content.sql` e depois `supabase/migrations/202609080004_portal_users.sql` no SQL Editor do projeto `gotrumwuimpoeggwamut`.
-3. Em Authentication → Users, crie o primeiro usuário com e-mail e senha.
-4. Cadastre essa conta e grave a senha só como hash bcrypt, na tabela e no Auth:
+2. Aplique todos os arquivos de `supabase/migrations/` pela ordem numérica do nome no SQL Editor do projeto `gotrumwuimpoeggwamut`.
+3. Em **Authentication → Users**, crie o primeiro usuário com e-mail e senha. O Supabase Auth é a única fonte de credenciais.
+4. No SQL Editor, autorize o mesmo `id` no cadastro administrativo:
 
 ```sql
-select public.set_portal_user_password('projetopotala@gmail.com', '<SENHA_FORTE_E_EXCLUSIVA>');
+insert into public.users (id, email, name, role, active)
+select id, email, coalesce(raw_user_meta_data ->> 'full_name', ''), 'owner', true
+from auth.users
+where email = 'projetopotala@gmail.com'
+on conflict (id) do update
+set role = excluded.role, active = true, updated_at = now();
 ```
 
-Substitua o segundo argumento pelo valor real, sem os sinais de menor e maior.
+Trocas e recuperações de senha são feitas por **Authentication → Users** ou pelo fluxo de recuperação do Supabase Auth. `public.users` guarda somente papel e situação de acesso ao painel.
 
 O navegador recebe apenas a chave `sb_publishable_...`, que é pública por definição. A proteção real está nos grants e nas políticas RLS da migração. Nunca coloque `service_role`, `sb_secret_...`, senha do banco ou access token em `outputs/`, no Git ou em uma variável exposta ao cliente.
 
@@ -92,7 +97,7 @@ Na primeira entrada, use **Preparar as 10 salas** e revise cada cadastro antes d
 
 ### Cuidado ao criar funções no banco
 
-No Supabase, função nova em `public` recebe EXECUTE para `anon` e `authenticated` por privilégio padrão. `revoke all ... from public` NÃO tira esse grant: revogue de `anon` explicitamente. Foi assim que `set_portal_user_password` ficou chamável por qualquer visitante até `202609170004`.
+No Supabase, função nova em `public` recebe EXECUTE para `anon` e `authenticated` por privilégio padrão. `revoke all ... from public` NÃO tira esse grant: revogue de `anon` explicitamente. Uma função antiga de senha ficou chamável por qualquer visitante até `202609170004`; `202609180001` remove definitivamente essa credencial paralela.
 
 ### Blog
 
