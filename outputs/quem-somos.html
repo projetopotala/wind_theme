@@ -10,60 +10,77 @@
   <link rel="preload" href="media/quem-somos-acolhimento.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/quem-somos.css">
+  <link rel="stylesheet" href="css/quem-somos-redesign.css">
   <script type="module" src="js/secoes.js"></script>
+  <script type="module" src="js/sections/movimento.js"></script>
 </head>
 <body data-section="quem-somos">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
 
-  <main class="about-page" id="conteudo">
-    <section class="about-hero" aria-labelledby="about-title">
-      <div class="about-hero-copy">
-        <p class="about-kicker">Quem somos</p>
-        <h1 id="about-title">Um lugar onde muitos caminhos se encontram.</h1>
-        <p class="about-lead">O Potala reúne cuidado, conhecimento, cultura e convivência para que cada pessoa possa descobrir, em seu próprio tempo, aquilo que faz sentido para sua jornada.</p>
-        <a class="about-action" href="#historia">Conhecer nossa história <span aria-hidden="true">↓</span></a>
+  <main class="about-page" id="conteudo" data-movimento>
+    <div class="leitura-progresso" data-leitura-progresso aria-hidden="true"><span></span></div>
+    <svg class="fio-da-jornada" data-fio-da-jornada aria-hidden="true" focusable="false">
+      <path class="fio-da-jornada__trilha"></path>
+      <path class="fio-da-jornada__traco"></path>
+      <g data-fio-nos></g>
+    </svg>
+
+    <section class="about-hero" id="inicio" data-capitulo="inicio" aria-labelledby="about-title">
+      <div class="about-hero-copy" data-fio-alvo>
+        <p class="about-kicker" data-revelar="0">Quem somos</p>
+        <h1 id="about-title" data-revelar="1">Um lugar onde muitos caminhos se encontram.</h1>
+        <p class="about-lead" data-revelar="2">O Potala reúne cuidado, conhecimento, cultura e convivência para que cada pessoa possa descobrir, em seu próprio tempo, aquilo que faz sentido para sua jornada.</p>
+        <a class="about-action" href="#historia" data-revelar="3">Conhecer nossa história <span aria-hidden="true">↘</span></a>
+        <p class="about-hero-note" data-revelar="4"><strong>Desde 2012</strong><span>Indaiatuba · SP</span></p>
       </div>
 
-      <figure class="about-hero-visual">
+      <figure class="about-hero-visual" data-recorte>
         <img src="media/quem-somos-acolhimento.webp"
           alt="Grupo de pessoas de diferentes gerações reunido em uma conversa acolhedora"
           width="1664" height="936" fetchpriority="high" decoding="async">
+        <figcaption>Um lugar feito de pessoas, escuta e caminhos compartilhados.</figcaption>
       </figure>
+      <a class="about-continue" href="#visao"><span>Continue para conhecer</span><i aria-hidden="true">↓</i></a>
     </section>
 
-    <section class="about-opening" id="visao" aria-labelledby="vision-title">
-      <p class="about-number">01</p>
+    <section class="about-opening" id="visao" data-capitulo="visao" aria-labelledby="vision-title">
+      <nav class="about-trilha" aria-label="Capítulos desta página">
+        <a href="#visao" data-capitulo-link="visao"><span>01</span>Uma visão de cuidado</a>
+        <a href="#historia" data-capitulo-link="historia"><span>02</span>Origem e propósito</a>
+        <a href="#ecossistema" data-capitulo-link="ecossistema"><span>03</span>Ecossistema Potala</a>
+      </nav>
+      <p class="about-number" data-fio-alvo>01</p>
       <div>
-        <p class="about-kicker">Uma visão de cuidado</p>
-        <h2 id="vision-title">Somos todos um único instituto.</h2>
+        <p class="about-kicker" data-revelar="0">Uma visão de cuidado</p>
+        <h2 id="vision-title" data-revelar="1">Somos todos um único instituto.</h2>
       </div>
       <div class="about-prose">
-        <p>O Potala nasceu da convicção de que o desenvolvimento humano acontece quando diferentes saberes podem dialogar. Cada pessoa chega com uma história, necessidades e possibilidades próprias.</p>
-        <p>Por isso, não oferecemos uma única resposta. Criamos um ambiente onde ciência, tradições de cuidado, educação, arte, cultura e espiritualidade possam se encontrar com respeito e consciência.</p>
+        <p data-revelar="0">O Potala nasceu da convicção de que o desenvolvimento humano acontece quando diferentes saberes podem dialogar. Cada pessoa chega com uma história, necessidades e possibilidades próprias.</p>
+        <p data-revelar="1">Por isso, não oferecemos uma única resposta. Criamos um ambiente onde ciência, tradições de cuidado, educação, arte, cultura e espiritualidade possam se encontrar com respeito e consciência.</p>
       </div>
     </section>
 
-    <section class="about-history" id="historia" aria-labelledby="history-title">
-      <div class="about-history-mark" aria-hidden="true"><span>2012</span></div>
+    <section class="about-history" id="historia" data-capitulo="historia" aria-labelledby="history-title">
+      <div class="about-history-mark" data-fio-alvo aria-hidden="true"><span>2012</span></div>
       <div class="about-history-copy">
-        <p class="about-kicker">Origem e propósito</p>
-        <h2 id="history-title">Estender as mãos para que novos caminhos possam surgir.</h2>
-        <p>O Instituto Cultural Potala foi inaugurado em 26 de maio de 2012, em Indaiatuba. Seu nome remete ao Monte Potala, no Tibete, associado à morada de Avalokiteshvara — figura que simboliza a compaixão e a escuta dos clamores do mundo.</p>
-        <p>Essa imagem inspira uma missão simples e profunda: acolher pessoas e promover saúde física, mental e emocional por meio de experiências que respeitem a individualidade de cada ser humano.</p>
+        <p class="about-kicker" data-revelar="0">Origem e propósito</p>
+        <h2 id="history-title" data-revelar="1">Estender as mãos para que novos caminhos possam surgir.</h2>
+        <p data-revelar="2">O Instituto Cultural Potala foi inaugurado em 26 de maio de 2012, em Indaiatuba. Seu nome remete ao Monte Potala, no Tibete, associado à morada de Avalokiteshvara — figura que simboliza a compaixão e a escuta dos clamores do mundo.</p>
+        <p data-revelar="3">Essa imagem inspira uma missão simples e profunda: acolher pessoas e promover saúde física, mental e emocional por meio de experiências que respeitem a individualidade de cada ser humano.</p>
       </div>
     </section>
 
-    <section class="about-ecosystem" id="ecossistema" aria-labelledby="ecosystem-title">
-      <header>
-        <p class="about-kicker">Ecossistema Potala</p>
-        <h2 id="ecosystem-title">Cuidar também é aprender, conviver, criar e transformar.</h2>
+    <section class="about-ecosystem" id="ecossistema" data-capitulo="ecossistema" aria-labelledby="ecosystem-title">
+      <header data-fio-alvo>
+        <p class="about-kicker" data-revelar="0">Ecossistema Potala</p>
+        <h2 id="ecosystem-title" data-revelar="1">Cuidar também é aprender, conviver, criar e transformar.</h2>
       </header>
 
       <div class="about-paths" aria-label="Dimensões do Ecossistema Potala">
-        <div><span>01</span><strong>Cuidado</strong><p>Atendimentos e práticas que acolhem o momento presente.</p></div>
-        <div><span>02</span><strong>Conhecimento</strong><p>Cursos e conteúdos que ampliam a compreensão e a autonomia.</p></div>
-        <div><span>03</span><strong>Movimento</strong><p>Corpo, arte e experiências que transformam conhecimento em vida.</p></div>
-        <div><span>04</span><strong>Convivência</strong><p>Pessoas e iniciativas reunidas por um propósito comum.</p></div>
+        <article data-foco tabindex="0" data-revelar="0"><span>01</span><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 16.5c2.8 0 4.7 1.3 6.2 3.5 1.1-4.4 3.8-7.2 8.8-8.5M6 11c3.2.4 5.8 2.2 7.5 5.1M14 25c1.2-4.8 4.9-7.3 11-7.5"/></svg><strong>Cuidado</strong><p>Atendimentos e práticas que acolhem o momento presente.</p></article>
+        <article data-foco tabindex="0" data-revelar="1"><span>02</span><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5.5 7.5h8.2c1.3 0 2.3 1 2.3 2.3v15.4c0-1.3-1-2.3-2.3-2.3H5.5V7.5Zm21 0h-8.2c-1.3 0-2.3 1-2.3 2.3v15.4c0-1.3 1-2.3 2.3-2.3h8.2V7.5Z"/></svg><strong>Conhecimento</strong><p>Cursos e conteúdos que ampliam a compreensão e a autonomia.</p></article>
+        <article data-foco tabindex="0" data-revelar="2"><span>03</span><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v24M4 16h24M7.5 7.5l17 17M24.5 7.5l-17 17"/><circle cx="16" cy="16" r="4.2"/></svg><strong>Movimento</strong><p>Corpo, arte e experiências que transformam conhecimento em vida.</p></article>
+        <article data-foco tabindex="0" data-revelar="3"><span>04</span><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="11" cy="11" r="3.5"/><circle cx="22" cy="12.5" r="3"/><path d="M4.5 25c.7-5 3-7.6 6.8-7.6s6.2 2.6 6.8 7.6M17.2 20c1-1.6 2.5-2.5 4.7-2.5 3.1 0 5 2.1 5.6 6.2"/></svg><strong>Convivência</strong><p>Pessoas e iniciativas reunidas por um propósito comum.</p></article>
       </div>
     </section>
 
@@ -75,7 +92,7 @@
       <p id="about-closing-copy">Conhecer um lugar é importante. Mas conhecer as pessoas, as ideias e os propósitos que o sustentam tornam qualquer encontro muito mais verdadeiro. Agora que você já conhece um pouco da nossa história, gostaríamos de apresentar aquilo que fazemos todos os dias: cuidar de pessoas.</p>
     </div>
 
-    <section class="about-closing-stage" data-about-closing-trigger aria-label="Um encontro no caminho">
+    <section class="about-closing-stage" data-capitulo="encerramento" data-about-closing-trigger aria-label="Um encontro no caminho">
       <figure class="about-closing-photo">
         <img src="media/quem-somos-encerramento-v1.png"
           alt="Duas pessoas caminham juntas por um jardim em direção a um espaço acolhedor"

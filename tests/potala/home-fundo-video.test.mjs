@@ -95,7 +95,7 @@ test("navegador sem `connection` não é tratado como lento", () => {
  * ------------------------------------------------------------------ */
 
 const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
-const html = await readFile(new URL("../../outputs/transcendido.html", import.meta.url), "utf8");
+const html = await readFile(new URL("../../outputs/travessia.html", import.meta.url), "utf8");
 
 test("o vídeo mora dentro da paisagem, para atravessar junto com ela", () => {
   /*

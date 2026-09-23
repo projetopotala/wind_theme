@@ -1,0 +1,223 @@
+:root {
+  --culture-cacao: #4a2b20;
+  --culture-forest: #344c36;
+  --culture-brass: #a67d40;
+  --culture-ivory: #f6efe3;
+}
+
+body[data-section="cultura"] { background: var(--culture-ivory); }
+body[data-section="cultura"] .editorial-page { color: var(--culture-cacao); }
+body[data-section="cultura"] .editorial-hero {
+  display: grid;
+  min-height: 100svh;
+  grid-template-columns: minmax(520px, 1.12fr) minmax(390px, .88fr);
+  grid-template-rows: auto auto auto auto;
+  gap: 0 clamp(42px, 6vw, 92px);
+  align-items: start;
+  padding: clamp(104px, 9vw, 138px) clamp(28px, 5.2vw, 84px) 34px;
+  background:
+    linear-gradient(146deg, transparent 0 64%, rgba(184, 139, 91, .2) 64% 100%),
+    radial-gradient(circle at 5% 10%, rgba(166, 125, 64, .06), transparent 28%),
+    var(--culture-ivory);
+}
+body[data-section="cultura"] .editorial-hero-copy {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  align-self: end;
+}
+body[data-section="cultura"] .editorial-kicker { margin-bottom: 14px; color: var(--culture-brass); }
+body[data-section="cultura"] .editorial-hero h1 {
+  max-width: none;
+  margin-bottom: 14px;
+  color: var(--culture-cacao);
+  font-size: clamp(4.7rem, 7.2vw, 7.6rem);
+  line-height: .84;
+}
+body[data-section="cultura"] .editorial-hero .editorial-lead {
+  max-width: 42ch;
+  margin: 0;
+  color: var(--culture-cacao);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.25rem, 1.8vw, 1.8rem);
+  line-height: 1.35;
+}
+body[data-section="cultura"] .editorial-hero-visual {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  width: 100%;
+  height: auto;
+  min-height: 500px;
+  max-height: 590px;
+  border-radius: 50% 50% 8px 8px;
+  box-shadow: 0 30px 78px rgba(74, 43, 32, .18);
+}
+body[data-section="cultura"] .editorial-hero-visual img { filter: saturate(.9) contrast(1.02); }
+
+.culture-resource-hero {
+  --resource-paper: var(--culture-cacao);
+  --resource-ink: var(--culture-ivory);
+  --resource-accent: var(--culture-brass);
+  --resource-muted: rgba(74, 43, 32, .58);
+  --resource-line: rgba(74, 43, 32, .15);
+  --resource-control-line: rgba(74, 43, 32, .34);
+  --resource-chip-line: rgba(74, 43, 32, .22);
+  --resource-primary: var(--culture-forest);
+  display: contents;
+}
+body[data-section="cultura"] .resource-hero__tools {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  align-self: start;
+  margin-top: 28px;
+}
+body[data-section="cultura"] .resource-hero__search input { color: var(--culture-cacao); }
+body[data-section="cultura"] .resource-hero__chips button { color: rgba(74, 43, 32, .83); }
+body[data-section="cultura"] .resource-hero__chips button:hover,
+body[data-section="cultura"] .resource-hero__chips button[aria-pressed="true"] { color: var(--culture-ivory); background: var(--culture-brass); }
+body[data-section="cultura"] .resource-hero__actions a { color: var(--culture-cacao); font-family: Georgia, "Times New Roman", serif; font-size: .88rem; font-weight: 400; }
+body[data-section="cultura"] .resource-hero__actions a:first-child { color: var(--culture-ivory); }
+
+body[data-section="cultura"] .resource-hero__panel {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  min-width: 0;
+  margin-top: 26px;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--resource-line);
+  border-left: 0;
+}
+body[data-section="cultura"] .resource-hero__panel h2 {
+  max-width: none;
+  margin-bottom: 12px;
+  color: var(--culture-brass);
+  font: 700 .64rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+body[data-section="cultura"] .resource-hero__panel > div { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+body[data-section="cultura"] .resource-hero__item {
+  grid-template-columns: 38px 1fr;
+  grid-template-rows: auto auto;
+  min-width: 0;
+  min-height: 112px;
+  padding: 12px clamp(11px, 1.45vw, 22px);
+  align-content: start;
+  border-right: 1px solid var(--resource-line);
+  border-bottom: 0;
+  color: var(--culture-cacao);
+}
+body[data-section="cultura"] .resource-hero__item:first-child { padding-left: 0; }
+body[data-section="cultura"] .resource-hero__item:last-child { border-right: 0; }
+body[data-section="cultura"] .resource-hero__item-icon { border: 0; color: var(--culture-brass); }
+body[data-section="cultura"] .resource-hero__item-icon svg { width: 25px; height: 25px; }
+body[data-section="cultura"] .resource-hero__item strong { font-family: Georgia, "Times New Roman", serif; font-size: .91rem; line-height: 1.14; }
+body[data-section="cultura"] .resource-hero__item small {
+  display: block;
+  grid-column: 2;
+  margin-top: 6px;
+  color: rgba(74, 43, 32, .55);
+  font: 400 .64rem/1.34 Arial, Helvetica, sans-serif;
+}
+body[data-section="cultura"] .resource-hero__item > i { display: none; }
+body[data-section="cultura"] .resource-hero__benefits {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  margin-top: 0;
+  padding-top: 13px;
+}
+body[data-section="cultura"] .resource-hero__benefits a { color: var(--culture-cacao); }
+body[data-section="cultura"] .resource-hero__benefits a > span { border-color: rgba(52, 76, 54, .3); color: var(--culture-forest); }
+
+body[data-section="cultura"] .editorial-chapter { background: #e9dcc9; }
+body[data-section="cultura"] .editorial-collection { background: #fbf6ed; }
+body[data-section="cultura"] .editorial-grid { gap: 14px; border-top: 0; }
+body[data-section="cultura"] .editorial-grid article {
+  border: 1px solid rgba(74, 43, 32, .14);
+  border-radius: 18px;
+  background: rgba(255,255,255,.26);
+  transition: color .24s ease, background .24s ease, transform .24s ease;
+}
+body[data-section="cultura"] .editorial-grid article:hover { color: var(--culture-ivory); background: var(--culture-forest); transform: translateY(-4px); }
+body[data-section="cultura"] .editorial-grid article:hover p { color: rgba(246, 239, 227, .72); }
+body[data-section="cultura"] .editorial-quote { background: var(--culture-cacao); }
+
+@media (max-width: 1100px) {
+  body[data-section="cultura"] .editorial-hero { grid-template-columns: minmax(430px, 1.05fr) minmax(330px, .95fr); }
+  body[data-section="cultura"] .resource-hero__panel > div { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body[data-section="cultura"] .resource-hero__item:nth-child(3n) { border-right: 0; }
+  body[data-section="cultura"] .resource-hero__item:nth-child(n + 4) { border-top: 1px solid var(--resource-line); }
+}
+
+@media (max-width: 760px) {
+  body[data-section="cultura"] .editorial-hero {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    width: 100%;
+    min-width: 0;
+    padding: 96px 20px 44px;
+  }
+  body[data-section="cultura"] .editorial-hero > *,
+  body[data-section="cultura"] .editorial-hero-copy,
+  body[data-section="cultura"] .resource-hero__tools,
+  body[data-section="cultura"] .resource-hero__panel,
+  body[data-section="cultura"] .resource-hero__benefits { min-width: 0; max-width: 100%; }
+  body[data-section="cultura"] .editorial-hero-visual { grid-column: 1; grid-row: 1; min-height: 54svh; max-height: 54svh; }
+  body[data-section="cultura"] .editorial-hero-copy { grid-column: 1; grid-row: 2; margin-top: 26px; }
+  body[data-section="cultura"] .resource-hero__tools { grid-column: 1; grid-row: 3; margin-top: 24px; }
+  body[data-section="cultura"] .resource-hero__panel { grid-column: 1; grid-row: 4; margin-top: 34px; }
+  body[data-section="cultura"] .resource-hero__panel > div { grid-template-columns: 1fr; }
+  body[data-section="cultura"] .resource-hero__item,
+  body[data-section="cultura"] .resource-hero__item:first-child {
+    grid-template-columns: 42px 1fr 18px;
+    min-height: 78px;
+    padding: 12px 0;
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--resource-line);
+  }
+  body[data-section="cultura"] .resource-hero__item small { grid-column: 2; }
+  body[data-section="cultura"] .resource-hero__item > i { display: block; grid-column: 3; grid-row: 1 / span 2; color: var(--culture-brass); }
+  body[data-section="cultura"] .resource-hero__benefits { grid-column: 1; grid-row: 5; margin-top: 26px; }
+}
+
+@media (max-width: 600px) {
+  body[data-section="cultura"] .editorial-hero h1 { max-width: 7ch; font-size: clamp(3.5rem, 17vw, 4.8rem); }
+  body[data-section="cultura"] .editorial-hero .editorial-lead { max-width: 27ch; font-size: 1.34rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-section="cultura"] .editorial-grid article { transition: none; }
+}
+
+/* ------------------------------------------------------------------
+ * A travessia desta página
+ *
+ * Cultura tem muitas portas (seis experiências, comunidades e a biblioteca).
+ * O gesto daqui é o número: a experiência que está sendo lida cresce, e o
+ * resto continua inteiro na tela.
+ * ------------------------------------------------------------------ */
+
+body[data-section="cultura"] {
+  --progresso-cor: var(--culture-brass, #a87d46);
+  --fio-cor: rgba(168, 125, 70, .68);
+  --fio-cor-fraca: rgba(52, 38, 28, .13);
+}
+
+body[data-section="cultura"] .editorial-page { position: relative; }
+body[data-section="cultura"] .fio-da-jornada { left: clamp(6px, 1.4vw, 24px); }
+
+body[data-section="cultura"] .editorial-collection article span {
+  display: inline-block;
+  transform-origin: left center;
+  transition: transform var(--movimento-medio) var(--movimento-saida), color var(--movimento-medio) var(--movimento-saida);
+}
+
+body[data-section="cultura"] .editorial-collection article.is-ativa span { transform: scale(1.35); }
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-section="cultura"] .editorial-collection article span { transition: none; }
+  body[data-section="cultura"] .editorial-collection article.is-ativa span { transform: none; }
+}

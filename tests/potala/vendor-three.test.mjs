@@ -39,7 +39,7 @@ test("os módulos publicados em vendor/ não pedem arquivo que não foi copiado"
 });
 
 test("o import map da Home aponta para um arquivo que existe", async () => {
-  const html = await readFile(new URL("../../outputs/transcendido.html", import.meta.url), "utf8");
+  const html = await readFile(new URL("../../outputs/travessia.html", import.meta.url), "utf8");
   const mapa = html.match(/<script type="importmap">\s*([\s\S]*?)\s*<\/script>/);
   assert.ok(mapa, "a Home precisa do import map do Three.js");
 

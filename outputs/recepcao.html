@@ -10,46 +10,83 @@
   <link rel="preload" href="media/recepcao-acolhimento.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/recepcao.css">
+  <link rel="stylesheet" href="css/recepcao-redesign.css">
   <script type="module" src="js/secoes.js"></script>
+  <script type="module" src="js/sections/movimento.js"></script>
   <script type="module" src="js/recepcao.js"></script>
 </head>
 <body data-section="recepcao">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
 
-  <main class="reception-page" id="conteudo">
-    <section class="reception-hero" aria-labelledby="reception-title">
-      <figure class="reception-portrait">
+  <main class="reception-page" id="conteudo" data-movimento>
+    <div class="leitura-progresso" data-leitura-progresso aria-hidden="true"><span></span></div>
+    <svg class="fio-da-jornada" data-fio-da-jornada aria-hidden="true" focusable="false">
+      <path class="fio-da-jornada__trilha"></path>
+      <path class="fio-da-jornada__traco"></path>
+      <g data-fio-nos></g>
+    </svg>
+
+    <section class="reception-hero" id="inicio" data-capitulo="inicio" aria-labelledby="reception-title">
+      <figure class="reception-portrait" data-recorte>
         <img src="media/recepcao-acolhimento.webp"
           alt="Recepcionista e visitante conversam em um ambiente acolhedor"
           width="1280" height="1600" fetchpriority="high" decoding="async">
+        <p class="reception-portrait-words" aria-hidden="true">Pessoas<br>Cultura<br>Práticas<br>Um caminho mais humano</p>
+        <figcaption>Aqui começam novos caminhos.</figcaption>
       </figure>
 
-      <div class="reception-hero-copy">
-        <p class="reception-kicker">A porta de entrada</p>
-        <h1 id="reception-title">Recepção</h1>
+      <div class="reception-hero-copy" data-fio-alvo>
+        <p class="reception-kicker" data-revelar="0">A porta de entrada</p>
+        <h1 id="reception-title" data-revelar="1">Recepção</h1>
+        <p class="reception-lead" data-revelar="2">O primeiro ponto de contato para reconhecer o caminho certo.</p>
+        <p class="reception-summary" data-revelar="3">Seja para conhecer o Instituto, encontrar um atendimento, tirar uma dúvida ou dar o próximo passo na sua jornada, estamos aqui para acolher você.</p>
+        <div class="reception-hero-actions" data-revelar="4">
+          <a class="reception-primary-action" href="#fale-conosco">Começar uma conversa <span aria-hidden="true">→</span></a>
+          <a class="reception-secondary-action" href="quem-somos.html">Conhecer o Instituto</a>
+        </div>
       </div>
+
+      <nav class="reception-wayfinding" data-revelar="0" aria-label="Como podemos acompanhar você?">
+        <p><span>Como podemos</span> acompanhar você?</p>
+        <a data-revelar="0" href="#primeiro-passo">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 27V13M16 18c-5.5 0-9-3.3-9-8.5 5.5 0 9 3.3 9 8.5Zm0-3c0-5.5 3.3-9 8.5-9 0 5.5-3.3 9-8.5 9Z"/></svg>
+          <strong>É minha primeira visita</strong><small>Conhecer a casa e como participar.</small><i aria-hidden="true">→</i>
+        </a>
+        <a data-revelar="1" href="atendimentos.html">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="10" r="4"/><path d="M8 27c.7-6.5 3.3-10 8-10s7.3 3.5 8 10"/></svg>
+          <strong>Quero encontrar um atendimento</strong><small>Buscar práticas e acompanhamentos.</small><i aria-hidden="true">→</i>
+        </a>
+        <a data-revelar="2" href="#perguntas">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 7.5h22v15H14l-6 4v-4H5v-15Z"/></svg>
+          <strong>Tenho uma dúvida</strong><small>Falar com a equipe do Instituto.</small><i aria-hidden="true">→</i>
+        </a>
+        <a data-revelar="3" href="#assistente">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11"/><path d="m12 20 3-7 7-3-3 7-7 3Z"/></svg>
+          <strong>Já sei o que procuro</strong><small>Ir direto ao próximo passo.</small><i aria-hidden="true">→</i>
+        </a>
+      </nav>
     </section>
 
-    <section class="reception-intro" id="primeiro-passo" aria-labelledby="intro-title">
-      <p class="reception-index">01</p>
+    <section class="reception-intro" id="primeiro-passo" data-capitulo="primeiro-passo" aria-labelledby="intro-title">
+      <p class="reception-index" data-fio-alvo>01</p>
       <div class="reception-intro-title">
-        <p class="reception-kicker">Antes de escolher</p>
-        <h2 id="intro-title">Comece com uma conversa.</h2>
+        <p class="reception-kicker" data-revelar="0">Antes de escolher</p>
+        <h2 id="intro-title" data-revelar="1">Comece com uma conversa.</h2>
       </div>
       <div class="reception-copy">
-        <p>Algumas pessoas chegam procurando um atendimento, um curso ou uma atividade. Outras chegam apenas com uma pergunta. Em ambos os casos, o primeiro gesto é o mesmo: escutar.</p>
-        <p>A partir dessa conversa, ajudamos você a compreender os caminhos do Ecossistema Potala sem pressa e sem impor uma única resposta.</p>
+        <p class="reception-copy-abertura" data-revelar="0">Algumas pessoas chegam procurando um atendimento, um curso ou uma atividade. Outras chegam apenas com uma pergunta. Em ambos os casos, o primeiro gesto é o mesmo: escutar.</p>
+        <p data-revelar="1">A partir dessa conversa, ajudamos você a compreender os caminhos do Ecossistema Potala sem pressa e sem impor uma única resposta.</p>
       </div>
     </section>
 
-    <section class="reception-paths" aria-labelledby="paths-title">
-      <header class="reception-section-heading">
-        <p class="reception-kicker">Possibilidades de chegada</p>
-        <h2 id="paths-title">O que você precisa hoje?</h2>
+    <section class="reception-paths" id="caminhos" data-capitulo="caminhos" aria-labelledby="paths-title">
+      <header class="reception-section-heading" data-fio-alvo>
+        <p class="reception-kicker" data-revelar="0">Possibilidades de chegada</p>
+        <h2 id="paths-title" data-revelar="1">O que você precisa hoje?</h2>
       </header>
 
       <div class="reception-path-list">
-        <article class="reception-path">
+        <article data-foco data-revelar="0" class="reception-path">
           <p class="reception-path-number">01</p>
           <div>
             <h3>Não sei por onde começar</h3>
@@ -58,7 +95,7 @@
           <a href="#assistente">Iniciar percurso <span aria-hidden="true">↓</span></a>
         </article>
 
-        <article class="reception-path">
+        <article data-foco data-revelar="1" class="reception-path">
           <p class="reception-path-number">02</p>
           <div>
             <p class="reception-path-label">Interface em preparação</p>
@@ -68,7 +105,7 @@
           <a href="#assistente">Ver a prévia <span aria-hidden="true">↓</span></a>
         </article>
 
-        <article class="reception-path reception-path--featured">
+        <article data-foco data-revelar="2" class="reception-path reception-path--featured">
           <p class="reception-path-number">03</p>
           <div>
             <p class="reception-path-label">Orientação humana e solidária</p>
@@ -78,7 +115,7 @@
           <a href="https://www.institutopotala.com/programacao" rel="noreferrer">Ver programação <span aria-hidden="true">↗</span></a>
         </article>
 
-        <article class="reception-path" id="perguntas">
+        <article data-foco data-revelar="3" class="reception-path" id="perguntas">
           <p class="reception-path-number">04</p>
           <div>
             <h3>Perguntas Frequentes</h3>
@@ -87,7 +124,7 @@
           <a href="https://www.institutopotala.com/contato" rel="noreferrer">Tirar uma dúvida <span aria-hidden="true">↗</span></a>
         </article>
 
-        <article class="reception-path">
+        <article data-foco data-revelar="4" class="reception-path">
           <p class="reception-path-number">05</p>
           <div>
             <p class="reception-path-label">Interface em preparação</p>
@@ -97,7 +134,7 @@
           <a href="#assistente">Conhecer a proposta <span aria-hidden="true">↓</span></a>
         </article>
 
-        <article class="reception-path">
+        <article data-foco data-revelar="5" class="reception-path">
           <p class="reception-path-number">06</p>
           <div>
             <h3>Primeira visita</h3>
@@ -106,7 +143,7 @@
           <a href="quem-somos.html" aria-label="Conhecer o Instituto Potala">Conhecer o Potala <span aria-hidden="true">↗</span></a>
         </article>
 
-        <article class="reception-path reception-path--urgent">
+        <article data-foco data-revelar="6" class="reception-path reception-path--urgent">
           <p class="reception-path-number">07</p>
           <div>
             <p class="reception-path-label">Acolhimento prioritário</p>
@@ -116,7 +153,7 @@
           <a href="#fale-conosco">Pedir acolhimento <span aria-hidden="true">↓</span></a>
         </article>
 
-        <article class="reception-path">
+        <article data-foco data-revelar="7" class="reception-path">
           <p class="reception-path-number">08</p>
           <div>
             <h3>Antes de ir embora...</h3>
@@ -127,13 +164,13 @@
       </div>
     </section>
 
-    <section class="reception-assistant" id="assistente" aria-labelledby="assistant-title">
-      <div class="reception-assistant-copy">
-        <p class="reception-kicker">Prévia do assistente</p>
-        <h2 id="assistant-title">Posso ajudar você?</h2>
-        <p>Esta é a interface visual da futura conversa inteligente do Portal. A integração será feita em uma próxima etapa; por enquanto, nenhuma mensagem é enviada ou armazenada.</p>
+    <section class="reception-assistant" id="assistente" data-capitulo="assistente" aria-labelledby="assistant-title">
+      <div class="reception-assistant-copy" data-fio-alvo>
+        <p class="reception-kicker" data-revelar="0">Prévia do assistente</p>
+        <h2 id="assistant-title" data-revelar="1">Posso ajudar você?</h2>
+        <p data-revelar="2">Esta é a interface visual da futura conversa inteligente do Portal. A integração será feita em uma próxima etapa; por enquanto, nenhuma mensagem é enviada ou armazenada.</p>
       </div>
-      <form class="reception-assistant-form" data-assistant-preview>
+      <form class="reception-assistant-form" data-assistant-preview data-revelar="0">
         <label for="reception-question">O que trouxe você ao Potala?</label>
         <div class="reception-assistant-input">
           <input id="reception-question" name="question" type="text" autocomplete="off" placeholder="Escreva sua pergunta...">
@@ -148,12 +185,12 @@
       </form>
     </section>
 
-    <section class="reception-contact" id="fale-conosco" aria-labelledby="contact-title">
-      <div class="reception-contact-heading">
-        <p class="reception-kicker">Estamos aqui</p>
-        <h2 id="contact-title">Posso ajudar você?</h2>
+    <section class="reception-contact" id="fale-conosco" data-capitulo="contato" aria-labelledby="contact-title">
+      <div class="reception-contact-heading" data-fio-alvo>
+        <p class="reception-kicker" data-revelar="0">Estamos aqui</p>
+        <h2 id="contact-title" data-revelar="1">Venha, escreva ou ligue.</h2>
       </div>
-      <div class="reception-contact-details">
+      <div class="reception-contact-details" data-revelar="0">
         <p class="reception-human-label">Atendimento humano</p>
         <p>Rua 24 de Maio, 748<br>Centro · Indaiatuba, SP</p>
         <div class="reception-contact-links">
@@ -164,10 +201,10 @@
       </div>
     </section>
 
-    <section class="reception-feedback" id="retorno" aria-labelledby="feedback-title">
-      <div>
-        <p class="reception-kicker">Antes de ir embora...</p>
-        <h2 id="feedback-title">Você encontrou o que procurava?</h2>
+    <section class="reception-feedback" id="retorno" data-capitulo="retorno" aria-labelledby="feedback-title">
+      <div data-fio-alvo>
+        <p class="reception-kicker" data-revelar="0">Antes de ir embora...</p>
+        <h2 id="feedback-title" data-revelar="1">Você encontrou o que procurava?</h2>
       </div>
       <div class="reception-feedback-actions" data-feedback-preview>
         <button type="button" data-feedback="yes">Sim, encontrei</button>
@@ -177,8 +214,8 @@
       </div>
     </section>
 
-    <section class="reception-closing" aria-label="Continuação da jornada">
-      <p>Às vezes, o caminho começa quando alguém nos ajuda a formular a primeira pergunta.</p>
+    <section class="reception-closing" data-capitulo="encerramento" aria-label="Continuação da jornada">
+      <p data-revelar="0">Às vezes, o caminho começa quando alguém nos ajuda a formular a primeira pergunta.</p>
       <a class="reception-scroll reception-scroll--light" href="transcendido.html">Voltar à travessia <span aria-hidden="true">↗</span></a>
     </section>
 

@@ -1,0 +1,137 @@
+body[data-section="especialistas"] .site-nav {
+  min-height: 78px;
+  padding: 0 clamp(28px, 5vw, 76px);
+  border-bottom: 1px solid rgba(86, 60, 45, .14);
+  background: rgba(248, 243, 234, .94);
+  backdrop-filter: blur(16px);
+}
+body[data-section="especialistas"] .site-nav-marca img { width: 34px; }
+body[data-section="especialistas"] .site-nav-link { min-height: 78px; }
+
+body[data-section="especialistas"] .com-page {
+  --com-cream: #f6f0e6;
+  --com-paper: #ebe1d3;
+  --com-brown: #4c3024;
+  --com-ink: #291b15;
+  --com-gold: #a97536;
+  padding-top: calc(78px + clamp(54px, 7vw, 94px));
+}
+body[data-section="especialistas"] .com-hero {
+  grid-template-columns: minmax(0, .9fr) minmax(420px, .8fr);
+  gap: 0 clamp(48px, 7vw, 108px);
+  padding-bottom: clamp(42px, 6vw, 76px);
+}
+body[data-section="especialistas"] .com-hero > .com-kicker,
+body[data-section="especialistas"] .com-hero > h1,
+body[data-section="especialistas"] .com-hero > .com-subtitulo,
+body[data-section="especialistas"] .com-hero > .com-lead,
+body[data-section="especialistas"] .com-hero > .com-aviso { grid-column: 1; }
+body[data-section="especialistas"] .com-hero > .com-lead { grid-row: auto; margin-top: 28px; }
+body[data-section="especialistas"] .com-hero h1 { font-size: clamp(4.8rem, 8.3vw, 8rem); letter-spacing: -.065em; }
+body[data-section="especialistas"] .com-subtitulo { max-width: 17ch; font-size: clamp(1.6rem, 2.7vw, 2.8rem); line-height: 1.05; }
+body[data-section="especialistas"] .com-lead p:last-child { display: none; }
+body[data-section="especialistas"] .com-aviso { margin-top: 18px; }
+
+.specialists-hero-art {
+  grid-column: 2;
+  grid-row: 1 / span 6;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(10px, 2vw, 28px);
+  align-self: center;
+  padding-left: clamp(30px, 5vw, 78px);
+  border-left: 1px solid rgba(76, 48, 36, .18);
+}
+.specialists-hero-art svg {
+  width: 100%;
+  fill: none;
+  stroke: var(--com-gold);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.specialists-hero-art p { grid-column: 1 / -1; margin: 15px 0 0; color: var(--com-ink); font: 400 clamp(1.3rem, 2vw, 2.1rem)/1.25 Georgia, serif; }
+
+.specialists-filter {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px clamp(24px, 4vw, 54px);
+  align-items: center;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--com-line);
+}
+.specialists-filter > p,
+.specialists-filter > span { margin: 0; color: rgba(76, 48, 36, .6); font: 700 .59rem/1.3 Arial, sans-serif; letter-spacing: .17em; text-transform: uppercase; }
+.specialists-filter > div { display: flex; flex-wrap: wrap; gap: 9px; }
+.specialists-filter button {
+  min-height: 39px;
+  padding: 0 17px;
+  border: 1px solid rgba(76, 48, 36, .2);
+  border-radius: 999px;
+  color: rgba(76, 48, 36, .8);
+  background: transparent;
+  font: 600 .72rem/1 Arial, sans-serif;
+  cursor: pointer;
+}
+.specialists-filter button:hover,
+.specialists-filter button[aria-pressed="true"] { border-color: #536047; color: #f8f1e7; background: #536047; }
+.specialists-filter button:focus-visible { outline: 2px solid var(--com-gold); outline-offset: 3px; }
+
+body[data-section="especialistas"] .com-lista {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  padding-top: 28px;
+}
+body[data-section="especialistas"] .com-ficha {
+  display: flex;
+  min-height: 680px;
+  flex-direction: column;
+  gap: 0;
+  padding: 12px;
+  border: 1px solid var(--com-line);
+  border-radius: 15px;
+  background: rgba(255, 253, 248, .44);
+}
+body[data-section="especialistas"] .com-ficha[hidden] { display: none; }
+body[data-section="especialistas"] .com-selo {
+  display: grid;
+  min-height: 210px;
+  place-items: center;
+  border-radius: 10px;
+  background: linear-gradient(140deg, rgba(83, 96, 71, .14), rgba(169, 117, 54, .07));
+}
+body[data-section="especialistas"] .com-ficha:nth-child(3n + 2) .com-selo { background: linear-gradient(140deg, rgba(169, 117, 54, .12), rgba(235, 225, 211, .5)); }
+body[data-section="especialistas"] .com-selo .selo { width: 150px; height: 150px; }
+body[data-section="especialistas"] .com-ficha-corpo { display: flex; flex: 1; flex-direction: column; padding: 20px 8px 8px; }
+body[data-section="especialistas"] .com-ficha h2 { font-size: clamp(1.65rem, 2.2vw, 2.3rem); }
+body[data-section="especialistas"] .com-frase { min-height: 3.2em; }
+body[data-section="especialistas"] .com-aulas { margin-top: 14px; }
+body[data-section="especialistas"] .com-cv { margin-top: 22px; padding: 20px 0 0; border-top: 1px solid var(--com-line); border-left: 0; }
+
+@media (max-width: 1040px) {
+  body[data-section="especialistas"] .com-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  body[data-section="especialistas"] .site-nav { min-height: 62px; padding: 0 18px; }
+  body[data-section="especialistas"] .site-nav-list { overflow-x: auto; flex-wrap: nowrap; }
+  body[data-section="especialistas"] .site-nav-link { min-height: 62px; white-space: nowrap; }
+  body[data-section="especialistas"] .com-page { padding: 102px 20px 0; }
+  body[data-section="especialistas"] .com-hero { display: block; }
+  body[data-section="especialistas"] .com-hero h1 { font-size: clamp(3.4rem, 15vw, 4.25rem); }
+  body[data-section="especialistas"] .com-subtitulo { font-size: 1.8rem; }
+  .specialists-hero-art { margin-top: 38px; padding: 26px 0 0; border-top: 1px solid var(--com-line); border-left: 0; }
+  .specialists-hero-art p { font-size: 1.35rem; }
+  .specialists-filter { grid-template-columns: 1fr; padding: 19px 0; }
+  .specialists-filter > div { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .specialists-filter button { flex: 0 0 auto; }
+  .specialists-filter > span { justify-self: start; }
+  body[data-section="especialistas"] .com-lista { grid-template-columns: 1fr; }
+  body[data-section="especialistas"] .com-ficha { min-height: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .specialists-filter button { transition: none; }
+}

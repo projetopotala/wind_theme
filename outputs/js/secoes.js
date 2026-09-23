@@ -4,6 +4,7 @@ import { DEFAULT_HOME_BLOCKS } from "./home/journey-data.js";
 import { withRequiredDefaultSections } from "./home/default-section-bridge.js";
 import { createSupabaseContentRepository } from "./home/supabase-content-repository.js";
 import { getSupabaseClient } from "./supabase/client.js";
+import { mountPortalHeader } from "./shared/portal-header.js";
 
 (() => {
   "use strict";
@@ -46,6 +47,7 @@ import { getSupabaseClient } from "./supabase/client.js";
 
   function mountLegacyNavigation() {
     const current = body.dataset.section || "inicio";
+    if (["quem-somos", "recepcao", "atendimentos", "cursos", "atividades", "profissionais", "programacao", "cultura", "saude-integrativa", "marketplace", "inspiracao"].includes(current)) mountPortalHeader({ current });
     if (temBarra(current)) {
       const navigation = document.createElement("nav");
       navigation.className = "site-nav";

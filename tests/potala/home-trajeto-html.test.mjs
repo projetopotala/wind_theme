@@ -9,7 +9,7 @@ import {
 import { mountJourney, renderJourneyMenu } from "../../outputs/js/home/home-scenes.js";
 
 test("Home aponta o navegador para o módulo Three.js local", async () => {
-  const html = await readFile(new URL("../../outputs/transcendido.html", import.meta.url), "utf8");
+  const html = await readFile(new URL("../../outputs/travessia.html", import.meta.url), "utf8");
   assert.match(html, /type="importmap"/);
   assert.match(html, /\.\/vendor\/three\.module\.min\.js/);
 });

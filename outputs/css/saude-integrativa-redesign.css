@@ -1,0 +1,242 @@
+:root {
+  --health-cacao: #4b3125;
+  --health-forest: #34513a;
+  --health-sage: #79826a;
+  --health-brass: #a47839;
+  --health-ivory: #f5ecdf;
+}
+
+body[data-section="saude-integrativa"] { background: var(--health-ivory); }
+body[data-section="saude-integrativa"] .photo-page { color: var(--health-cacao); }
+body[data-section="saude-integrativa"] .photo-hero {
+  display: grid;
+  min-height: 100svh;
+  grid-template-columns: minmax(380px, .94fr) minmax(540px, 1.06fr);
+  grid-template-rows: auto auto auto auto;
+  gap: 0 clamp(42px, 5.4vw, 86px);
+  align-items: start;
+  padding: clamp(98px, 8.6vw, 132px) clamp(28px, 5vw, 80px) 36px;
+  background:
+    radial-gradient(circle at 93% 14%, rgba(121, 130, 106, .11), transparent 28%),
+    linear-gradient(151deg, transparent 0 72%, rgba(164, 120, 57, .08) 72% 100%),
+    var(--health-ivory);
+}
+body[data-section="saude-integrativa"] .photo-hero-visual {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 100%;
+  height: auto;
+  min-height: 500px;
+  max-height: 590px;
+  margin: 0;
+  border-radius: 49% 49% 8px 8px;
+  box-shadow: 0 30px 76px rgba(75, 49, 37, .16);
+}
+body[data-section="saude-integrativa"] .photo-hero-visual img { object-position: center center; filter: saturate(.82) sepia(.07) contrast(1.02); }
+body[data-section="saude-integrativa"] .photo-hero-visual::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 24%;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(transparent, rgba(38, 31, 25, .52));
+}
+body[data-section="saude-integrativa"] .photo-hero-visual figcaption {
+  position: absolute;
+  z-index: 1;
+  right: 25px;
+  bottom: 20px;
+  color: rgba(255, 249, 239, .9);
+  font: 700 .59rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+body[data-section="saude-integrativa"] .photo-hero-copy {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  align-self: end;
+}
+body[data-section="saude-integrativa"] .photo-kicker { margin-bottom: 14px; color: var(--health-brass); }
+body[data-section="saude-integrativa"] .photo-hero h1 {
+  max-width: 10ch;
+  margin-bottom: 4px;
+  color: var(--health-cacao);
+  font-size: clamp(4.2rem, 6.4vw, 6.8rem);
+  line-height: .81;
+}
+body[data-section="saude-integrativa"] .photo-subtitle {
+  margin: 7px 0 17px;
+  color: var(--health-cacao);
+  font-size: clamp(1.6rem, 2.35vw, 2.55rem);
+  line-height: 1;
+}
+body[data-section="saude-integrativa"] .photo-hero .photo-lead {
+  max-width: 59ch;
+  margin: 0;
+  color: rgba(75, 49, 37, .69);
+  font-size: clamp(.9rem, 1vw, 1.02rem);
+  line-height: 1.58;
+}
+
+.health-resource-hero {
+  --resource-paper: var(--health-cacao);
+  --resource-ink: var(--health-ivory);
+  --resource-accent: var(--health-brass);
+  --resource-muted: rgba(75, 49, 37, .57);
+  --resource-line: rgba(75, 49, 37, .15);
+  --resource-control-line: rgba(75, 49, 37, .34);
+  --resource-chip-line: rgba(52, 81, 58, .3);
+  --resource-primary: var(--health-forest);
+  display: contents;
+}
+body[data-section="saude-integrativa"] .resource-hero__tools {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  margin-top: 22px;
+}
+body[data-section="saude-integrativa"] .resource-hero__search input { color: var(--health-cacao); }
+body[data-section="saude-integrativa"] .resource-hero__chips button { color: rgba(75, 49, 37, .82); }
+body[data-section="saude-integrativa"] .resource-hero__chips button:hover,
+body[data-section="saude-integrativa"] .resource-hero__chips button[aria-pressed="true"] { color: var(--health-ivory); background: var(--health-sage); }
+body[data-section="saude-integrativa"] .resource-hero__actions a { color: var(--health-cacao); font-family: Georgia, "Times New Roman", serif; font-size: .88rem; font-weight: 400; }
+body[data-section="saude-integrativa"] .resource-hero__actions a:first-child { color: var(--health-ivory); }
+
+body[data-section="saude-integrativa"] .resource-hero__panel {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  min-width: 0;
+  margin-top: 28px;
+  padding: 17px 0 0;
+  border-top: 1px solid var(--resource-line);
+  border-left: 0;
+}
+body[data-section="saude-integrativa"] .resource-hero__panel h2 {
+  max-width: none;
+  margin-bottom: 12px;
+  color: var(--health-brass);
+  font: 700 .64rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+body[data-section="saude-integrativa"] .resource-hero__panel > div { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+body[data-section="saude-integrativa"] .resource-hero__item {
+  grid-template-columns: 38px 1fr;
+  grid-template-rows: auto auto;
+  min-width: 0;
+  min-height: 108px;
+  padding: 12px clamp(11px, 1.4vw, 22px);
+  align-content: start;
+  border-right: 1px solid var(--resource-line);
+  border-bottom: 0;
+  color: var(--health-cacao);
+}
+body[data-section="saude-integrativa"] .resource-hero__item:first-child { padding-left: 0; }
+body[data-section="saude-integrativa"] .resource-hero__item:last-child { border-right: 0; }
+body[data-section="saude-integrativa"] .resource-hero__item-icon { border-color: rgba(52, 81, 58, .32); color: var(--health-forest); }
+body[data-section="saude-integrativa"] .resource-hero__item strong { font-family: Georgia, "Times New Roman", serif; font-size: .9rem; line-height: 1.13; }
+body[data-section="saude-integrativa"] .resource-hero__item small {
+  display: block;
+  grid-column: 2;
+  margin-top: 6px;
+  color: rgba(75, 49, 37, .55);
+  font: 400 .64rem/1.34 Arial, Helvetica, sans-serif;
+}
+body[data-section="saude-integrativa"] .resource-hero__item > i { display: none; }
+body[data-section="saude-integrativa"] .resource-hero__benefits {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  margin-top: 0;
+  padding-top: 13px;
+}
+body[data-section="saude-integrativa"] .resource-hero__benefits a { color: var(--health-cacao); }
+body[data-section="saude-integrativa"] .resource-hero__benefits a > span { border-color: rgba(52, 81, 58, .3); color: var(--health-forest); }
+
+body[data-section="saude-integrativa"] .photo-intro { background: #dfd3c0; }
+body[data-section="saude-integrativa"] .photo-list { background: #faf5ed; }
+body[data-section="saude-integrativa"] .photo-dark { background: var(--health-forest); }
+body[data-section="saude-integrativa"] .photo-closing { background: #ded1be; }
+
+@media (max-width: 1100px) {
+  body[data-section="saude-integrativa"] .photo-hero { grid-template-columns: minmax(350px, .88fr) minmax(450px, 1.12fr); }
+  body[data-section="saude-integrativa"] .resource-hero__panel > div { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body[data-section="saude-integrativa"] .resource-hero__item:nth-child(3n) { border-right: 0; }
+  body[data-section="saude-integrativa"] .resource-hero__item:nth-child(n + 4) { border-top: 1px solid var(--resource-line); }
+}
+
+@media (max-width: 760px) {
+  body[data-section="saude-integrativa"] .photo-hero {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    width: 100%;
+    min-width: 0;
+    padding: 96px 20px 44px;
+  }
+  body[data-section="saude-integrativa"] .photo-hero > *,
+  body[data-section="saude-integrativa"] .photo-hero-copy,
+  body[data-section="saude-integrativa"] .resource-hero__tools,
+  body[data-section="saude-integrativa"] .resource-hero__panel,
+  body[data-section="saude-integrativa"] .resource-hero__benefits { min-width: 0; max-width: 100%; }
+  body[data-section="saude-integrativa"] .photo-hero-visual { grid-column: 1; grid-row: 1; min-height: 54svh; max-height: 54svh; }
+  body[data-section="saude-integrativa"] .photo-hero-copy { grid-column: 1; grid-row: 2; margin-top: 26px; }
+  body[data-section="saude-integrativa"] .resource-hero__tools { grid-column: 1; grid-row: 3; margin-top: 24px; }
+  body[data-section="saude-integrativa"] .resource-hero__panel { grid-column: 1; grid-row: 4; margin-top: 34px; }
+  body[data-section="saude-integrativa"] .resource-hero__panel > div { grid-template-columns: 1fr; }
+  body[data-section="saude-integrativa"] .resource-hero__item,
+  body[data-section="saude-integrativa"] .resource-hero__item:first-child {
+    grid-template-columns: 42px 1fr 18px;
+    min-height: 78px;
+    padding: 12px 0;
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--resource-line);
+  }
+  body[data-section="saude-integrativa"] .resource-hero__item small { grid-column: 2; }
+  body[data-section="saude-integrativa"] .resource-hero__item > i { display: block; grid-column: 3; grid-row: 1 / span 2; color: var(--health-brass); }
+  body[data-section="saude-integrativa"] .resource-hero__benefits { grid-column: 1; grid-row: 5; margin-top: 26px; }
+}
+
+@media (max-width: 600px) {
+  body[data-section="saude-integrativa"] .photo-hero h1 { max-width: 9ch; font-size: clamp(3.45rem, 16.5vw, 4.8rem); }
+  body[data-section="saude-integrativa"] .photo-subtitle { max-width: 15ch; font-size: 1.62rem; }
+  body[data-section="saude-integrativa"] .photo-hero .photo-lead { max-width: 34ch; }
+}
+
+/* ------------------------------------------------------------------
+ * A travessia desta página
+ *
+ * Saúde Integrativa precisa de sobriedade: o gesto é uma régua fina que
+ * cresce sob a dimensão em leitura — nada que sugira promessa.
+ * ------------------------------------------------------------------ */
+
+body[data-section="saude-integrativa"] {
+  --progresso-cor: var(--integrative-gold, #a4894f);
+  --fio-cor: rgba(164, 137, 79, .66);
+  --fio-cor-fraca: rgba(45, 40, 30, .13);
+}
+
+body[data-section="saude-integrativa"] .photo-page { position: relative; }
+body[data-section="saude-integrativa"] .fio-da-jornada { left: clamp(6px, 1.4vw, 24px); }
+
+body[data-section="saude-integrativa"] .photo-rows article {
+  position: relative;
+}
+
+body[data-section="saude-integrativa"] .photo-rows article::after {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--integrative-gold, #a4894f);
+  content: "";
+  transition: width var(--movimento-lento) var(--movimento-saida);
+}
+
+body[data-section="saude-integrativa"] .photo-rows article.is-ativa::after { width: clamp(40px, 7vw, 110px); }
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-section="saude-integrativa"] .photo-rows article::after { transition: none; }
+}

@@ -1,0 +1,268 @@
+:root {
+  --professionals-cacao: #3d291f;
+  --professionals-forest: #425633;
+  --professionals-brass: #a57c3b;
+  --professionals-ivory: #f4ecdf;
+}
+
+body[data-section="profissionais"] { background: var(--professionals-ivory); }
+body[data-section="profissionais"] .photo-page { color: var(--professionals-cacao); }
+body[data-section="profissionais"] .photo-hero {
+  display: grid;
+  min-height: 100svh;
+  grid-template-columns: minmax(380px, .96fr) minmax(540px, 1.04fr);
+  grid-template-rows: auto auto auto auto auto;
+  gap: 0 clamp(40px, 5vw, 82px);
+  align-items: start;
+  padding: clamp(96px, 8.4vw, 132px) clamp(28px, 5vw, 80px) 40px;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(165, 124, 59, .08), transparent 27%),
+    var(--professionals-ivory);
+}
+
+body[data-section="profissionais"] .photo-hero-visual {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  width: 100%;
+  height: auto;
+  min-height: 500px;
+  max-height: 590px;
+  margin: 0;
+  border-radius: 50% 50% 8px 8px;
+  box-shadow: 0 30px 76px rgba(61, 41, 31, .16);
+}
+body[data-section="profissionais"] .photo-hero-visual img { object-position: center center; filter: saturate(.82) sepia(.08) contrast(1.02); }
+body[data-section="profissionais"] .photo-hero-visual::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 25%;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(transparent, rgba(34, 26, 20, .56));
+}
+body[data-section="profissionais"] .photo-hero-visual figcaption {
+  position: absolute;
+  z-index: 1;
+  right: 25px;
+  bottom: 20px;
+  max-width: 28ch;
+  color: rgba(255, 248, 236, .9);
+  font: 700 .58rem/1.5 Arial, Helvetica, sans-serif;
+  letter-spacing: .16em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+body[data-section="profissionais"] .photo-hero-copy {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  align-self: end;
+}
+body[data-section="profissionais"] .photo-kicker { margin-bottom: 14px; color: var(--professionals-brass); }
+body[data-section="profissionais"] .photo-hero h1 {
+  max-width: none;
+  margin-bottom: 0;
+  color: var(--professionals-cacao);
+  font-size: clamp(4.2rem, 6.7vw, 7rem);
+  line-height: .83;
+}
+body[data-section="profissionais"] .photo-subtitle {
+  margin: 7px 0 18px;
+  color: var(--professionals-cacao);
+  font-size: clamp(1.65rem, 2.45vw, 2.65rem);
+  line-height: 1;
+}
+body[data-section="profissionais"] .photo-hero .photo-lead {
+  max-width: 58ch;
+  margin: 0;
+  color: rgba(61, 41, 31, .68);
+  font-size: clamp(.9rem, 1.02vw, 1.02rem);
+  line-height: 1.58;
+}
+
+.professionals-resource-hero {
+  --resource-paper: var(--professionals-cacao);
+  --resource-ink: var(--professionals-ivory);
+  --resource-accent: var(--professionals-brass);
+  --resource-muted: rgba(61, 41, 31, .58);
+  --resource-line: rgba(61, 41, 31, .15);
+  --resource-control-line: rgba(61, 41, 31, .34);
+  --resource-chip-line: rgba(66, 86, 51, .3);
+  --resource-primary: var(--professionals-forest);
+  display: contents;
+}
+body[data-section="profissionais"] .resource-hero__tools {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  margin-top: 24px;
+}
+body[data-section="profissionais"] .resource-hero__search input { color: var(--professionals-cacao); }
+body[data-section="profissionais"] .resource-hero__chips button { color: rgba(61, 41, 31, .83); }
+body[data-section="profissionais"] .resource-hero__chips button:hover,
+body[data-section="profissionais"] .resource-hero__chips button[aria-pressed="true"] { color: var(--professionals-ivory); background: var(--professionals-forest); }
+body[data-section="profissionais"] .resource-hero__status { margin: 5px 0 0; }
+
+body[data-section="profissionais"] .photo-hero-acoes {
+  grid-column: 2;
+  grid-row: 3;
+  align-self: start;
+  margin-top: 9px;
+}
+body[data-section="profissionais"] .photo-cta {
+  min-height: 48px;
+  padding: 0 24px;
+  border-color: var(--professionals-forest);
+  color: var(--professionals-ivory);
+  background: var(--professionals-forest);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .88rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+body[data-section="profissionais"] .photo-action {
+  color: var(--professionals-cacao);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .87rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+body[data-section="profissionais"] .resource-hero__panel {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  min-width: 0;
+  margin-top: 25px;
+  padding: 17px 0 0;
+  border-top: 1px solid var(--resource-line);
+  border-left: 0;
+}
+body[data-section="profissionais"] .resource-hero__panel h2 {
+  max-width: none;
+  margin-bottom: 12px;
+  color: var(--professionals-brass);
+  font: 700 .64rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+body[data-section="profissionais"] .resource-hero__panel > div { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+body[data-section="profissionais"] .resource-hero__item {
+  grid-template-columns: 36px 1fr;
+  grid-template-rows: auto auto;
+  min-width: 0;
+  min-height: 112px;
+  padding: 12px clamp(11px, 1.35vw, 21px);
+  align-content: start;
+  border-right: 1px solid var(--resource-line);
+  border-bottom: 0;
+  color: var(--professionals-cacao);
+}
+body[data-section="profissionais"] .resource-hero__item:first-child { padding-left: 0; }
+body[data-section="profissionais"] .resource-hero__item:last-child { border-right: 0; }
+body[data-section="profissionais"] .resource-hero__item-icon { border-color: rgba(66, 86, 51, .32); color: var(--professionals-forest); }
+body[data-section="profissionais"] .resource-hero__item strong { font-family: Georgia, "Times New Roman", serif; font-size: .9rem; line-height: 1.13; }
+body[data-section="profissionais"] .resource-hero__item small {
+  display: block;
+  grid-column: 2;
+  margin-top: 6px;
+  color: rgba(61, 41, 31, .55);
+  font: 400 .64rem/1.34 Arial, Helvetica, sans-serif;
+}
+body[data-section="profissionais"] .resource-hero__item > i { display: none; }
+body[data-section="profissionais"] .resource-hero__benefits {
+  grid-column: 1 / -1;
+  grid-row: 5;
+  margin-top: 0;
+  padding-top: 13px;
+}
+body[data-section="profissionais"] .resource-hero__benefits a { color: var(--professionals-cacao); }
+body[data-section="profissionais"] .resource-hero__benefits a > span { border-color: rgba(66, 86, 51, .3); color: var(--professionals-forest); }
+
+body[data-section="profissionais"] .photo-intro { background: #e1d4c1; }
+body[data-section="profissionais"] .photo-list { background: #f9f4ec; }
+body[data-section="profissionais"] .photo-rows { margin-top: 52px; }
+body[data-section="profissionais"] .photo-rows article { transition: padding .22s ease, background .22s ease; }
+body[data-section="profissionais"] .photo-rows article:hover { padding-right: 18px; padding-left: 18px; background: rgba(66, 86, 51, .055); }
+body[data-section="profissionais"] .photo-closing { background: #dcd0bd; }
+
+@media (max-width: 1100px) {
+  body[data-section="profissionais"] .photo-hero { grid-template-columns: minmax(350px, .88fr) minmax(450px, 1.12fr); }
+  body[data-section="profissionais"] .resource-hero__panel > div { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body[data-section="profissionais"] .resource-hero__item:nth-child(3n) { border-right: 0; }
+  body[data-section="profissionais"] .resource-hero__item:nth-child(n + 4) { border-top: 1px solid var(--resource-line); }
+}
+
+@media (max-width: 760px) {
+  body[data-section="profissionais"] .photo-hero {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    width: 100%;
+    min-width: 0;
+    padding: 96px 20px 44px;
+  }
+  body[data-section="profissionais"] .photo-hero > *,
+  body[data-section="profissionais"] .photo-hero-copy,
+  body[data-section="profissionais"] .resource-hero__tools,
+  body[data-section="profissionais"] .resource-hero__panel,
+  body[data-section="profissionais"] .resource-hero__benefits { min-width: 0; max-width: 100%; }
+  body[data-section="profissionais"] .photo-hero-visual { grid-column: 1; grid-row: 1; min-height: 54svh; max-height: 54svh; }
+  body[data-section="profissionais"] .photo-hero-copy { grid-column: 1; grid-row: 2; margin-top: 26px; }
+  body[data-section="profissionais"] .resource-hero__tools { grid-column: 1; grid-row: 3; margin-top: 24px; }
+  body[data-section="profissionais"] .photo-hero-acoes { grid-column: 1; grid-row: 4; margin-top: 10px; }
+  body[data-section="profissionais"] .resource-hero__panel { grid-column: 1; grid-row: 5; margin-top: 34px; }
+  body[data-section="profissionais"] .resource-hero__panel > div { grid-template-columns: 1fr; }
+  body[data-section="profissionais"] .resource-hero__item,
+  body[data-section="profissionais"] .resource-hero__item:first-child {
+    grid-template-columns: 42px 1fr 18px;
+    min-height: 78px;
+    padding: 12px 0;
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--resource-line);
+  }
+  body[data-section="profissionais"] .resource-hero__item small { grid-column: 2; }
+  body[data-section="profissionais"] .resource-hero__item > i { display: block; grid-column: 3; grid-row: 1 / span 2; color: var(--professionals-brass); }
+  body[data-section="profissionais"] .resource-hero__benefits { grid-column: 1; grid-row: 6; margin-top: 26px; }
+}
+
+@media (max-width: 600px) {
+  body[data-section="profissionais"] .photo-hero h1 { font-size: clamp(3rem, 15vw, 4.5rem); }
+  body[data-section="profissionais"] .photo-subtitle { max-width: 15ch; font-size: 1.63rem; }
+  body[data-section="profissionais"] .photo-hero-acoes { align-items: stretch; flex-direction: column; gap: 10px; }
+  body[data-section="profissionais"] .photo-cta { justify-content: space-between; }
+  body[data-section="profissionais"] .photo-action { align-self: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-section="profissionais"] .photo-rows article { transition: none; }
+}
+
+/* ------------------------------------------------------------------
+ * A travessia desta página
+ *
+ * Profissionais fala de trajetórias: o gesto é o número da família ganhando
+ * a cor do latão quando a leitura chega nela.
+ * ------------------------------------------------------------------ */
+
+body[data-section="profissionais"] {
+  --progresso-cor: var(--professionals-gold, #b08a4b);
+  --fio-cor: rgba(176, 138, 75, .68);
+  --fio-cor-fraca: rgba(52, 38, 28, .13);
+}
+
+body[data-section="profissionais"] .photo-page { position: relative; }
+body[data-section="profissionais"] .fio-da-jornada { left: clamp(6px, 1.4vw, 24px); }
+
+body[data-section="profissionais"] .photo-rows article span {
+  transition: color var(--movimento-medio) var(--movimento-saida);
+}
+
+body[data-section="profissionais"] .photo-rows article.is-ativa span { color: var(--professionals-gold, #b08a4b); }
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-section="profissionais"] .photo-rows article span { transition: none; }
+}

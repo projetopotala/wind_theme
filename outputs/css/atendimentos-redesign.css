@@ -1,0 +1,525 @@
+/*
+ * ATENDIMENTOS — a travessia do cuidado.
+ *
+ * A página é lida como capítulos: abertura, praça de caminhos, antes da
+ * técnica, espectro, oráculos, formas de chegar e primeiro passo. O esqueleto
+ * vem da referência (assimetria, numeração, espaço negativo, alternância entre
+ * claro e território escuro); a paleta continua sendo a do Potala.
+ *
+ * As passagens entre capítulos não são cortes: cada ambiente dissolve no
+ * próximo, e o fio da jornada atravessa a página inteira.
+ */
+
+:root {
+  --care-night: #201d15;
+  --care-night-soft: #2a291d;
+  --care-ivory: #f5eddf;
+  --care-forest: #344636;
+  --care-brass: #c39c55;
+  --care-orientation-paper: #f8f3ea;
+  --care-spectrum-paper: #e9dfd1;
+  --care-closing-paper: #d9c5a7;
+}
+
+body[data-section="atendimentos"] {
+  --progresso-cor: var(--care-brass);
+  --fio-cor: rgba(195, 156, 85, .62);
+  --fio-cor-fraca: rgba(245, 237, 223, .14);
+}
+
+/* O fio acompanha a atmosfera do capítulo: no papel claro ele escurece. */
+.care-page[data-capitulo-ativo="orientacao"],
+.care-page[data-capitulo-ativo="possibilidades"],
+.care-page[data-capitulo-ativo="acesso"],
+.care-page[data-capitulo-ativo="primeiro-passo"] {
+  --fio-cor: rgba(139, 102, 51, .7);
+  --fio-cor-fraca: rgba(91, 63, 49, .14);
+}
+
+body[data-section="atendimentos"] .portal-header { color: var(--care-ivory); }
+body[data-section="atendimentos"] .portal-header__nav a { color: rgba(245, 237, 223, .72); }
+body[data-section="atendimentos"] .portal-header__nav a:hover { color: var(--care-ivory); }
+body[data-section="atendimentos"] .portal-header__account.conta-gatilho {
+  border-color: rgba(245, 237, 223, .24);
+  color: var(--care-ivory);
+  background: rgba(27, 25, 18, .58);
+}
+
+.care-page { position: relative; }
+.care-page .fio-da-jornada { left: clamp(6px, 1.6vw, 28px); }
+
+/* ------------------------------------------------------------------
+ * Abertura
+ * ------------------------------------------------------------------ */
+
+.care-hero {
+  position: relative;
+  box-sizing: border-box;
+  grid-template-columns: minmax(430px, 42%) minmax(0, 58%);
+  gap: 0;
+  align-items: stretch;
+  width: 100%;
+  height: 100svh;
+  min-height: 820px;
+  padding: 92px 0 0;
+  color: var(--care-ivory);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(195, 156, 85, .09), transparent 32%),
+    var(--care-night);
+}
+
+.care-hero-visual {
+  min-height: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.care-hero-visual::after { background: linear-gradient(180deg, transparent 48%, rgba(18, 17, 12, .7)); }
+.care-hero-visual img { min-height: 0; filter: saturate(.9) contrast(1.02) brightness(.9); object-position: center 42%; }
+.care-hero-visual figcaption {
+  position: absolute;
+  z-index: 2;
+  bottom: 46px;
+  left: clamp(30px, 4vw, 66px);
+  max-width: 12ch;
+  color: rgba(245, 237, 223, .88);
+  font: italic 400 clamp(1.05rem, 1.45vw, 1.4rem)/1.25 Georgia, "Times New Roman", serif;
+}
+
+.care-hero-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(198px, 254px);
+  grid-template-rows: minmax(0, 1fr) auto;
+  column-gap: clamp(28px, 3.6vw, 62px);
+  min-width: 0;
+  padding: clamp(42px, 5.3vh, 62px) clamp(34px, 4.5vw, 72px) clamp(26px, 3vh, 38px);
+}
+
+.care-hero-copy {
+  grid-row: 1;
+  grid-column: 1;
+  align-self: center;
+  max-width: none;
+}
+
+.care-hero .care-kicker { color: var(--care-brass); }
+.care-hero h1 {
+  color: var(--care-ivory);
+  font-size: clamp(4.4rem, 5.45vw, 6.4rem);
+  line-height: .82;
+  letter-spacing: -.072em;
+}
+.care-subtitle {
+  margin-top: 16px;
+  color: rgba(245, 237, 223, .55);
+  font: 700 .62rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+.care-hero-statement {
+  max-width: 20ch;
+  margin: 26px 0 0;
+  color: var(--care-ivory);
+  font: 400 clamp(1.65rem, 2.1vw, 2.4rem)/1.06 Georgia, "Times New Roman", serif;
+  letter-spacing: -.035em;
+}
+.care-lead {
+  max-width: 48ch;
+  margin-top: 18px;
+  color: rgba(245, 237, 223, .68);
+  font-size: clamp(.86rem, .96vw, 1rem);
+  line-height: 1.62;
+}
+
+/* Índice do capítulo: liberdade de navegação sem quebrar a ordem da narrativa. */
+.care-indice {
+  grid-row: 1;
+  grid-column: 2;
+  align-self: center;
+  min-width: 0;
+}
+
+.care-indice .care-kicker { margin-bottom: 10px; color: rgba(245, 237, 223, .45); }
+
+.care-indice ol {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.care-indice a {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: baseline;
+  padding: 10px 0;
+  border-top: 1px solid rgba(245, 237, 223, .13);
+  color: rgba(245, 237, 223, .7);
+  font: 400 .78rem/1.25 Arial, Helvetica, sans-serif;
+  text-decoration: none;
+  transition: color var(--movimento-rapido) var(--movimento-saida), transform var(--movimento-medio) var(--movimento-saida);
+}
+
+.care-indice li:last-child a { border-bottom: 1px solid rgba(245, 237, 223, .13); }
+.care-indice a span { color: var(--care-brass); font-size: .62rem; letter-spacing: .14em; }
+.care-indice a:hover { color: var(--care-ivory); }
+.care-indice a[aria-current="true"] { color: var(--care-ivory); transform: translateX(9px); }
+
+.care-rolagem {
+  display: flex;
+  grid-row: 2;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: rgba(245, 237, 223, .48);
+  font: 700 .58rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+
+.care-rolagem i {
+  position: relative;
+  display: block;
+  width: 22px;
+  height: 34px;
+  border: 1px solid rgba(245, 237, 223, .28);
+  border-radius: 999px;
+}
+
+.care-rolagem i::after {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 3px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--care-brass);
+  animation: care-roda 1.9s ease-in-out infinite;
+  content: "";
+  transform: translateX(-50%);
+}
+
+@keyframes care-roda {
+  0% { opacity: 0; transform: translate(-50%, 0); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, 11px); }
+}
+
+/* ------------------------------------------------------------------
+ * 01 · Praça de caminhos
+ * ------------------------------------------------------------------ */
+
+.care-caminhos {
+  position: relative;
+  padding: clamp(70px, 9vw, 116px) clamp(24px, 6vw, 92px) clamp(96px, 11vw, 150px);
+  color: var(--care-ivory);
+  background: linear-gradient(180deg, var(--care-night) 0%, var(--care-night-soft) 100%);
+}
+
+.care-faixa-head {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: clamp(18px, 4vw, 56px);
+  width: min(100%, 1180px);
+  margin: 0 auto clamp(42px, 5vw, 70px);
+}
+
+.care-faixa-head .care-index { margin: 0; color: rgba(195, 156, 85, .8); }
+.care-faixa-head .care-kicker { color: rgba(245, 237, 223, .5); }
+.care-faixa-head h2 {
+  max-width: 16ch;
+  margin: 0;
+  color: var(--care-ivory);
+  font-size: clamp(2.2rem, 3.4vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+
+.care-faixa-lead {
+  max-width: 62ch;
+  margin: 22px 0 0;
+  color: rgba(245, 237, 223, .66);
+  font-size: clamp(.95rem, 1.1vw, 1.08rem);
+  line-height: 1.7;
+}
+
+.care-caminhos-grade {
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(290px, .96fr);
+  grid-template-rows: auto auto;
+  column-gap: clamp(30px, 4.2vw, 72px);
+  align-items: start;
+  width: min(100%, 1180px);
+  margin-inline: auto;
+}
+
+.care-resource-hero {
+  --resource-paper: var(--care-ivory);
+  --resource-ink: var(--care-night);
+  --resource-accent: var(--care-brass);
+  --resource-muted: rgba(245, 237, 223, .58);
+  --resource-line: rgba(245, 237, 223, .2);
+  --resource-control-line: rgba(245, 237, 223, .58);
+  --resource-chip-line: rgba(195, 156, 85, .52);
+  display: contents;
+}
+
+.care-caminhos .resource-hero__tools { grid-row: 1; grid-column: 1; min-width: 0; }
+.care-caminhos .resource-hero__panel { grid-row: 1 / span 2; grid-column: 2; }
+.care-caminhos .resource-hero__benefits { grid-row: 2; grid-column: 1; margin-top: 30px; }
+.care-caminhos .resource-hero__item small { display: block; margin-top: 3px; color: rgba(245, 237, 223, .5); font: 400 .68rem/1.35 Arial, Helvetica, sans-serif; }
+.care-caminhos .resource-hero__item { min-height: 74px; }
+
+/* ------------------------------------------------------------------
+ * 02 · Antes da técnica
+ * ------------------------------------------------------------------ */
+
+.care-orientation {
+  position: relative;
+  align-items: start;
+  background: var(--care-orientation-paper);
+}
+
+/* O argumento fica; os parágrafos passam. */
+.care-orientation .care-heading {
+  position: sticky;
+  top: clamp(96px, 13vh, 150px);
+}
+
+.care-orientation .care-prose {
+  align-self: start;
+  padding-bottom: clamp(0px, 4vw, 60px);
+}
+
+.care-orientation .care-prose p + p { margin-top: 1.7em; }
+
+/* ------------------------------------------------------------------
+ * 03 · Espectro do cuidado
+ * ------------------------------------------------------------------ */
+
+.care-possibilities {
+  position: relative;
+  background: var(--care-spectrum-paper);
+}
+
+.care-possibilities .care-section-head {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: clamp(18px, 4vw, 56px);
+}
+
+.care-possibilities .care-section-head .care-index { grid-row: 1; margin: 0; }
+.care-possibilities .care-section-head .care-kicker,
+.care-possibilities .care-section-head h2,
+.care-possibilities .care-section-head > p:last-child { grid-column: 2; }
+
+.care-spectrum article {
+  position: relative;
+  isolation: isolate;
+  transition:
+    transform var(--movimento-medio) var(--movimento-saida),
+    border-color var(--movimento-medio) var(--movimento-saida);
+}
+
+/* A camada visual entra por trás do texto: nada é escondido para revelar algo. */
+.care-spectrum article::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0 clamp(-24px, -3vw, -12px);
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(255, 252, 246, .72), rgba(255, 252, 246, 0) 72%);
+  content: "";
+  opacity: 0;
+  transition: opacity var(--movimento-medio) var(--movimento-saida);
+}
+
+.care-spectrum article.is-ativa::before { opacity: 1; }
+.care-spectrum article.is-ativa { border-color: rgba(173, 138, 85, .5); transform: translateX(clamp(8px, 1.4vw, 20px)); }
+.care-spectrum article:focus-visible { outline: 2px solid var(--care-gold); outline-offset: 8px; }
+
+.care-spectrum__num {
+  display: block;
+  transition: color var(--movimento-medio) var(--movimento-saida);
+}
+
+.care-spectrum article.is-ativa .care-spectrum__num { color: var(--care-earth); }
+.care-spectrum article.is-ativa h3 { color: var(--care-earth-dark); }
+
+/* Um arco: o gesto do Potala, discreto, que confirma onde a leitura está. */
+.care-spectrum__arco {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  right: clamp(-40px, -3vw, -12px);
+  width: clamp(120px, 14vw, 190px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(173, 138, 85, .55);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(32%, -50%) scale(.72);
+  transition:
+    opacity var(--movimento-lento) var(--movimento-saida),
+    transform var(--movimento-lento) var(--movimento-saida);
+}
+
+.care-spectrum article.is-ativa .care-spectrum__arco { opacity: .75; transform: translate(26%, -50%) scale(1); }
+
+/* ------------------------------------------------------------------
+ * 04 · Oráculos
+ * ------------------------------------------------------------------ */
+
+.care-oracles {
+  position: relative;
+  overflow: hidden;
+  background: var(--care-forest);
+}
+
+.care-oracles-orbita {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: grid;
+  width: 100%;
+  max-width: none;
+  place-items: center;
+  pointer-events: none;
+}
+
+.care-oracles-orbita svg {
+  width: min(86vh, 660px);
+  height: auto;
+  overflow: visible;
+  opacity: .5;
+  animation: care-orbita 120s linear infinite;
+}
+
+.care-oracles-orbita circle {
+  fill: none;
+  stroke: rgba(228, 207, 174, .3);
+  stroke-width: 1;
+}
+
+.care-oracles-orbita circle:nth-child(2) { stroke-dasharray: 2 16; }
+.care-oracles-orbita circle:nth-child(3) { stroke-dasharray: 1 10; stroke: rgba(195, 156, 85, .5); }
+
+@keyframes care-orbita { to { transform: rotate(360deg); } }
+
+.care-oracles-marca,
+.care-oracles-copy {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 520px);
+  justify-self: center;
+}
+
+.care-oracles-copy h2 { color: #f2ead9; }
+
+/* ------------------------------------------------------------------
+ * 05 · Formas de chegar
+ * ------------------------------------------------------------------ */
+
+.care-access { position: relative; background: var(--care-paper); }
+
+/* Cada modalidade desloca um pouco o eixo: a leitura desce em degraus. */
+.care-access-list article:nth-child(2) { padding-left: clamp(0px, 5vw, 86px); }
+.care-access-list article:nth-child(3) { padding-left: clamp(0px, 10vw, 168px); }
+
+
+/* ------------------------------------------------------------------
+ * 06 · Primeiro passo
+ * ------------------------------------------------------------------ */
+
+.care-closing {
+  position: relative;
+  overflow: hidden;
+  background: var(--care-closing-paper);
+}
+
+/* A atmosfera do encerramento começa aqui: a mesma fotografia da passagem. */
+.care-closing-atmosfera {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
+  pointer-events: none;
+}
+
+.care-closing-atmosfera img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .22;
+  filter: saturate(.72);
+  mask-image: linear-gradient(180deg, transparent, #000 55%);
+}
+
+.care-closing-marca,
+.care-closing-copy {
+  position: relative;
+  z-index: 1;
+}
+
+/* ------------------------------------------------------------------
+ * Telas menores
+ * ------------------------------------------------------------------ */
+
+@media (max-width: 1180px) {
+  .care-hero { grid-template-columns: 36% 64%; }
+  .care-hero-content { grid-template-columns: minmax(0, 1fr) 210px; padding-inline: 38px; }
+  .care-hero h1 { font-size: clamp(4rem, 5.2vw, 5.4rem); }
+  .resource-hero__chips button { padding-inline: 11px; }
+  .care-caminhos-grade { grid-template-columns: minmax(0, 1fr) minmax(260px, .9fr); }
+}
+
+@media (max-width: 900px) {
+  .care-hero {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 0;
+    padding-top: 76px;
+  }
+  .care-hero-visual { min-height: 64svh; }
+  .care-hero-content { grid-template-columns: 1fr; grid-template-rows: auto; padding: 48px 28px; }
+  .care-hero-copy,
+  .care-indice { grid-row: auto; grid-column: 1; }
+  .care-indice { margin-top: 34px; }
+  .care-rolagem { display: none; }
+
+  .care-caminhos-grade { grid-template-columns: 1fr; }
+  .care-caminhos .resource-hero__tools,
+  .care-caminhos .resource-hero__panel,
+  .care-caminhos .resource-hero__benefits { grid-row: auto; grid-column: 1; }
+  .care-caminhos .resource-hero__panel { margin-top: 40px; padding: 0; border: 0; }
+  .care-caminhos .resource-hero__benefits { margin-top: 32px; }
+
+  .care-orientation .care-heading { position: static; }
+  .care-access-list article:nth-child(2),
+  .care-access-list article:nth-child(3) { padding-left: 0; }
+  .care-spectrum__arco { display: none; }
+}
+
+@media (max-width: 600px) {
+  .care-hero-visual { min-height: 57svh; }
+  .care-hero-visual figcaption { bottom: 24px; }
+  .care-hero-content { padding: 42px 20px; }
+  .care-hero h1 { font-size: clamp(3rem, 13.5vw, 4.6rem); }
+  .care-hero-statement { font-size: 1.75rem; }
+  .care-caminhos { padding-inline: 20px; }
+  .care-faixa-head { grid-template-columns: 1fr; gap: 10px; }
+  .care-possibilities .care-section-head { grid-template-columns: 1fr; gap: 10px; }
+  .care-possibilities .care-section-head .care-kicker,
+  .care-possibilities .care-section-head h2,
+  .care-possibilities .care-section-head > p:last-child { grid-column: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .care-rolagem i::after,
+  .care-oracles-orbita svg { animation: none; }
+  .care-spectrum article,
+  .care-spectrum__arco,
+  .care-access-list article,
+  .care-indice a { transition: none; }
+}

@@ -1,0 +1,176 @@
+/*
+ * O MOVIMENTO DAS SEÇÕES — vocabulário compartilhado.
+ *
+ * Aqui ficam só as primitivas que qualquer seção pode usar: a revelação de um
+ * bloco ao entrar na tela, o fio da jornada que atravessa a página, a barra de
+ * progresso da leitura e a moldura de foto que se recorta durante a passagem.
+ * A composição de cada seção vive no CSS dela; o que é comum vive aqui, para
+ * que as páginas pareçam da mesma família sem virarem o mesmo componente.
+ *
+ * Duas regras valem para tudo o que entra neste arquivo:
+ *
+ * 1. Só se anima `opacity`, `transform`, `clip-path` e traço de SVG. Nada que
+ *    obrigue o navegador a recalcular a página a cada quadro.
+ * 2. Sem JavaScript, ou com `prefers-reduced-motion`, o conteúdo aparece
+ *    inteiro. O movimento conduz a leitura; ele nunca é a condição dela.
+ */
+
+:root {
+  --movimento-rapido: 220ms;
+  --movimento-medio: 620ms;
+  --movimento-lento: 1180ms;
+  /* Saída lenta: o elemento chega e desacelera, como quem pousa. */
+  --movimento-saida: cubic-bezier(.22, .61, .36, 1);
+  --movimento-entrada: cubic-bezier(.32, .08, .24, 1);
+  --fio-espessura: 1.5px;
+}
+
+/* ------------------------------------------------------------------
+ * Revelação
+ * ------------------------------------------------------------------ */
+
+[data-revelar] {
+  opacity: 0;
+  transform: translate3d(var(--revelar-eixo-x, 0), var(--revelar-desvio, 26px), 0);
+  transition:
+    opacity var(--movimento-medio) var(--movimento-saida) var(--revelar-atraso, 0ms),
+    transform var(--movimento-medio) var(--movimento-saida) var(--revelar-atraso, 0ms);
+}
+
+[data-revelar].is-revelado {
+  opacity: 1;
+  transform: none;
+}
+
+/* Sem JS o observador nunca roda: o conteúdo não pode ficar invisível. */
+html:not(.js) [data-revelar] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Entrada lateral, para quem chega da margem em vez de baixo. */
+[data-revelar-eixo="esquerda"] { --revelar-desvio: 0; --revelar-eixo-x: -22px; }
+[data-revelar-eixo="direita"] { --revelar-desvio: 0; --revelar-eixo-x: 22px; }
+
+/* ------------------------------------------------------------------
+ * Fio da jornada
+ *
+ * Um traço só, desenhado conforme a página é atravessada. Ele desce pela
+ * margem e se aproxima do capítulo que está sendo lido — é fio condutor, não
+ * enfeite: quem olha para ele sabe onde está e que ainda há caminho.
+ * ------------------------------------------------------------------ */
+
+.fio-da-jornada {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.fio-da-jornada__trilha,
+.fio-da-jornada__traco {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: var(--fio-espessura);
+}
+
+.fio-da-jornada__trilha { stroke: var(--fio-cor-fraca, rgba(91, 63, 49, .12)); }
+
+.fio-da-jornada__traco {
+  stroke: var(--fio-cor, rgba(173, 138, 85, .55));
+  transition: stroke var(--movimento-lento) linear;
+}
+
+.fio-da-jornada__no {
+  fill: var(--fio-cor, rgba(173, 138, 85, .55));
+  opacity: .28;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity var(--movimento-medio) var(--movimento-saida), transform var(--movimento-medio) var(--movimento-saida);
+}
+
+.fio-da-jornada__no.is-ativo {
+  opacity: 1;
+  transform: scale(2.1);
+}
+
+/* ------------------------------------------------------------------
+ * Passagem entre capítulos
+ *
+ * Um elemento próprio, e não um ::after: quase toda seção já usa os dois
+ * pseudoelementos para a composição dela, e uma passagem que some porque a
+ * página redefiniu ::after seria um bug impossível de entender depois.
+ * ------------------------------------------------------------------ */
+
+[data-capitulo] { position: relative; }
+
+.passagem {
+  position: absolute;
+  z-index: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: clamp(70px, 9vw, 130px);
+  background: linear-gradient(180deg, transparent, var(--passagem, transparent));
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------
+ * Progresso da leitura
+ * ------------------------------------------------------------------ */
+
+.leitura-progresso {
+  position: fixed;
+  z-index: 60;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  pointer-events: none;
+}
+
+.leitura-progresso span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--progresso-cor, rgba(173, 138, 85, .8));
+  transform: scaleX(var(--progresso, 0));
+  transform-origin: left center;
+}
+
+/* ------------------------------------------------------------------
+ * Recorte da fotografia
+ *
+ * A imagem de abertura estreita enquanto a página avança: em vez de sumir por
+ * corte, ela entrega o próximo capítulo.
+ * ------------------------------------------------------------------ */
+
+[data-recorte] {
+  clip-path: inset(0 0 calc(var(--recorte, 0) * 14%) 0);
+  transform: scale(calc(1 + var(--recorte, 0) * .03));
+  transform-origin: center 35%;
+}
+
+/* ------------------------------------------------------------------
+ * Menos movimento: o conteúdo continua inteiro
+ * ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-revelar] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  [data-recorte] {
+    clip-path: none;
+    transform: none;
+  }
+
+  .fio-da-jornada__no,
+  .fio-da-jornada__traco { transition: none; }
+
+  .fio-da-jornada__no.is-ativo { transform: scale(1.6); }
+}

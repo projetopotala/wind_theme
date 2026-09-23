@@ -15,7 +15,12 @@ export function selectGuidedChoice(group, selectedButton) {
 
 export function createSectionFrontDemo(root = document) {
   const reducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  const reveal = [...root.querySelectorAll("[data-reveal]")];
+  /*
+   * Onde a travessia da seção está montada, quem revela é `movimento.js`: dois
+   * observadores sobre os mesmos elementos seriam trabalho repetido a cada
+   * rolagem, com dois ritmos diferentes na mesma página.
+   */
+  const reveal = root.querySelector?.("[data-movimento]") ? [] : [...root.querySelectorAll("[data-reveal]")];
   const Observer = globalThis.IntersectionObserver;
   const observer = !reducedMotion && Observer
     ? new Observer((entries) => {

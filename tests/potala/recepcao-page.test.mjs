@@ -38,7 +38,7 @@ test("a página oferece todos os destaques permanentes da Recepção", async () 
 
 test("a Home e a navegação conduzem para a nova Recepção", async () => {
   const journey = await readFile(new URL("../../outputs/js/home/journey-data.js", import.meta.url), "utf8");
-  const home = await readFile(new URL("../../outputs/transcendido.html", import.meta.url), "utf8");
+  const home = await readFile(new URL("../../outputs/travessia.html", import.meta.url), "utf8");
 
   /*
    * A CHECAGEM MUDOU DE LUGAR, e não de propósito.

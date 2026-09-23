@@ -1,99 +1,1036 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#c7b79f">
-  <meta name="description" content="Percorra o Ecossistema Potala: cuidado, conhecimento, atividades, pessoas, cultura e inspiração.">
-  <title>Instituto Potala — A Travessia</title>
-  <script>
-    document.documentElement.classList.add("js");
-    try {
-      const handoff = JSON.parse(sessionStorage.getItem("potala.travessia.v1") || "{}");
-      if (["scroll", "drag", "keyboard"].includes(handoff.entry)) {
-        document.documentElement.classList.add("entry-pending");
-      }
-    } catch {}
-  </script>
-  <link rel="stylesheet" href="css/secoes.css">
-  <link rel="stylesheet" href="css/living-footer.css">
-  <link rel="stylesheet" href="css/portal-discovery.css">
-  <link rel="stylesheet" href="css/section-panel.css">
-  <script type="importmap">
-    {"imports":{"three":"./vendor/three.module.min.js"}}
-  </script>
-  <script src="vendor/supabase.js"></script>
-  <script type="module" src="js/secoes.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#173f36" />
+<title>Instituto Potala</title>
+<script>
+  /* Vindo da Chegada, a página nasce coberta pelo mesmo escuro do véu e se
+     abre devagar: a troca de documento fica escondida, como na Travessia.
+     Só a entrada é consumida; a preferência de som continua guardada. */
+  try {
+    const chave = "potala.travessia.v1";
+    const estado = JSON.parse(sessionStorage.getItem(chave) || "{}");
+    if (["scroll", "drag", "keyboard"].includes(estado.entry)) {
+      document.documentElement.classList.add("entry-pending");
+      const guarda = typeof estado.soundEnabled === "boolean" ? { soundEnabled: estado.soundEnabled } : {};
+      sessionStorage.setItem(chave, JSON.stringify(guarda));
+    }
+  } catch {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#18362f;
+  --ink-soft:#39534c;
+  --paper:#f6f3ea;
+  --paper-2:#efeadd;
+  --mist:#e4eee8;
+  --moss:#284d40;
+  --sage:#789481;
+  --sage-2:#b9c8bb;
+  --gold:#a78855;
+  --clay:#a16f5a;
+  --night:#142a27;
+  --line:rgba(24,54,47,.14);
+  --shadow:0 22px 60px rgba(24,54,47,.12);
+  --radius:28px;
+  --serif:"Cormorant Garamond", Georgia, serif;
+  --sans:"Manrope", Arial, sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit}
+::selection{background:#dfe9df;color:var(--ink)}
+.skip{position:fixed;left:16px;top:-60px;z-index:9999;background:#fff;padding:10px 14px;border-radius:10px;box-shadow:var(--shadow)}
+.skip:focus{top:16px}
+.shell{width:min(1180px,calc(100% - 40px));margin:auto}
+.eyebrow{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--gold)}
+.display{font-family:var(--serif);font-size:clamp(3rem,7vw,6.8rem);line-height:.9;font-weight:500;letter-spacing:-.035em;margin:0}
+.h2{font-family:var(--serif);font-size:clamp(2.2rem,4.2vw,4.6rem);line-height:1;font-weight:500;letter-spacing:-.02em;margin:0}
+.lead{font-size:clamp(1.05rem,1.5vw,1.25rem);max-width:720px;color:var(--ink-soft)}
+.small{font-size:.88rem;color:var(--ink-soft)}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:rgba(255,255,255,.5);backdrop-filter:blur(12px);border-radius:999px;padding:9px 14px;font-size:.82rem;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.btn{border:0;border-radius:999px;padding:13px 18px;cursor:pointer;display:inline-flex;gap:10px;align-items:center;justify-content:center;transition:.25s ease;font-weight:700}
+.btn:hover{transform:translateY(-2px)}
+.btn-primary{background:var(--ink);color:#fff;box-shadow:0 12px 30px rgba(24,54,47,.18)}
+.btn-soft{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.icon{width:18px;height:18px;display:inline-block}
+
+/* top navigation */
+.topbar{position:fixed;inset:0 0 auto 0;z-index:1000;padding:14px 0;transition:.25s ease}
+.topbar.scrolled{background:rgba(246,243,234,.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);padding:9px 0}
+.topbar-row{display:flex;align-items:center;gap:18px;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700}
+.brand-mark{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);background:rgba(255,255,255,.65)}
+.brand-mark svg{width:22px;height:22px}
+.top-actions{display:flex;gap:8px;align-items:center}
+.progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--gold);width:0}
+
+/* jump drawer */
+.drawer{position:fixed;top:74px;right:20px;z-index:900;width:min(420px,calc(100vw - 40px));background:rgba(251,249,243,.97);backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:var(--shadow);transform:translateY(-10px) scale(.98);opacity:0;pointer-events:none;transition:.2s ease}
+.drawer.open{opacity:1;transform:none;pointer-events:auto}
+.drawer-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.drawer a{border:1px solid var(--line);border-radius:14px;padding:10px 11px;font-size:.82rem;background:#fff}
+.drawer a:hover{background:var(--mist)}
+.page-search{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}
+.page-search input{min-width:0;border:1px solid var(--line);border-radius:999px;padding:12px 14px;background:#fff;outline:none}
+.page-search input:focus{box-shadow:0 0 0 4px rgba(120,148,129,.15)}
+
+/* hero */
+.hero{min-height:100svh;position:relative;display:grid;align-items:end;padding:130px 0 72px;overflow:hidden;background:
+radial-gradient(circle at 78% 18%, rgba(184,204,189,.72), transparent 28%),
+radial-gradient(circle at 15% 30%, rgba(229,238,230,.85), transparent 34%),
+linear-gradient(180deg,#f7f4eb 0%,#f2eee3 72%,#e8eee8 100%)}
+.hero-orb{position:absolute;border-radius:50%;filter:blur(2px);opacity:.7;animation:float 10s ease-in-out infinite}
+.hero-orb.one{width:430px;height:430px;right:-110px;top:120px;border:1px solid rgba(24,54,47,.14)}
+.hero-orb.two{width:260px;height:260px;right:80px;top:255px;border:1px solid rgba(24,54,47,.18);animation-delay:-3s}
+.hero-orb.three{width:120px;height:120px;right:250px;top:150px;background:rgba(255,255,255,.35);animation-delay:-6s}
+@keyframes float{50%{transform:translateY(-18px) translateX(8px)}}
+.botanical{position:absolute;right:-10px;bottom:-25px;width:min(43vw,600px);opacity:.22;color:var(--ink);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.7fr);gap:52px;align-items:end}
+.hero-copy{position:relative;z-index:2}
+.hero-copy .lead{margin:30px 0 26px}
+.hero-note{border-left:1px solid var(--gold);padding-left:18px;margin-top:28px;max-width:550px;color:var(--ink-soft)}
+.hero-card{position:relative;z-index:2;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.85);backdrop-filter:blur(20px);border-radius:32px;padding:24px;box-shadow:var(--shadow)}
+.hero-card h3{font-family:var(--serif);font-size:2rem;font-weight:500;margin:4px 0 12px}
+.hero-index{display:grid;gap:7px;margin-top:14px}
+.hero-index a{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.hero-index a span{color:var(--gold)}
+.scrollhint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.scrollhint i{display:block;width:24px;height:36px;border:1px solid var(--line);border-radius:999px;position:relative}
+.scrollhint i::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;border-radius:4px;background:var(--gold);transform:translateX(-50%);animation:wheel 1.8s infinite}
+@keyframes wheel{0%{opacity:0;transform:translate(-50%,0)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,12px)}}
+
+/* sections */
+.section{padding:110px 0;position:relative}
+.section-head{display:grid;grid-template-columns:.8fr 1.2fr;gap:46px;align-items:end;margin-bottom:54px}
+.section-num{font-family:var(--serif);font-size:5rem;line-height:.8;color:rgba(24,54,47,.16)}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .75s ease, transform .75s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* health */
+.health{background:#f6f4ed}
+.health-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:28px}
+.health-story{border-top:1px solid var(--line);padding-top:22px}
+.health-story p{font-size:1.08rem;color:var(--ink-soft);max-width:700px}
+.phase-line{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:34px}
+.phase{padding:18px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.48)}
+.phase b{font-family:var(--serif);font-size:1.8rem;font-weight:500;display:block;margin-bottom:6px}
+.research-board{background:var(--ink);color:#f8f6ef;border-radius:var(--radius);padding:30px;min-height:410px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.research-board::after{content:"";position:absolute;inset:auto -80px -100px auto;width:280px;height:280px;border:1px solid rgba(255,255,255,.14);border-radius:50%}
+.research-board h3{font-family:var(--serif);font-size:2.55rem;line-height:1;font-weight:500;margin:10px 0 20px;max-width:360px}
+.research-board p{color:rgba(255,255,255,.74)}
+.research-lines{display:grid;gap:10px;margin-top:28px}
+.research-line{display:flex;justify-content:space-between;gap:15px;border-top:1px solid rgba(255,255,255,.16);padding-top:10px;font-size:.8rem}
+.research-line span:last-child{color:#d7c6a0}
+
+/* experience */
+.experience{background:linear-gradient(180deg,#e7eee9 0%,#edf0ea 55%,#f6f3ea 100%);overflow:hidden}
+.inner-map{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center}
+.orbit{aspect-ratio:1;border-radius:50%;position:relative;display:grid;place-items:center;max-width:520px;margin:auto;background:radial-gradient(circle,rgba(255,255,255,.8) 0 22%,transparent 22% 100%)}
+.orbit::before,.orbit::after{content:"";position:absolute;border:1px solid rgba(24,54,47,.18);border-radius:50%}
+.orbit::before{inset:17%}
+.orbit::after{inset:3%}
+.center-self{width:138px;height:138px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;text-align:center;padding:16px;z-index:2;font-family:var(--serif);font-size:1.35rem;line-height:1}
+.orbit-tag{position:absolute;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.84);border:1px solid var(--line);font-size:.75rem;box-shadow:0 12px 26px rgba(24,54,47,.08)}
+.t1{top:8%;left:50%;transform:translateX(-50%)}.t2{right:-1%;top:32%}.t3{right:4%;bottom:19%}.t4{left:12%;bottom:3%}.t5{left:-1%;top:40%}.t6{left:17%;top:18%}
+.experience-copy h3{font-family:var(--serif);font-size:clamp(2rem,3.4vw,3.5rem);line-height:1.02;font-weight:500;margin:0 0 20px}
+.experience-copy p{color:var(--ink-soft);font-size:1.05rem}
+.quote-box{margin-top:28px;border-left:2px solid var(--gold);padding:8px 0 8px 20px;font-family:var(--serif);font-size:1.55rem;line-height:1.15}
+.topic-shelf{display:flex;gap:14px;overflow:auto;padding:18px 4px 14px;scroll-snap-type:x mandatory;margin-top:50px;scrollbar-width:thin}
+.topic{scroll-snap-align:start;min-width:240px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.9);border-radius:22px;padding:20px;min-height:170px;display:flex;flex-direction:column;justify-content:space-between}
+.topic strong{font-family:var(--serif);font-size:1.6rem;font-weight:500}
+.topic span{font-size:.8rem;color:var(--ink-soft)}
+.breathe{margin-top:36px;border-radius:28px;padding:26px;background:linear-gradient(120deg,#fff,rgba(255,255,255,.5));border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:20px}
+.breathe-ball{width:64px;height:64px;border-radius:50%;border:1px solid var(--sage);animation:breathe 5s ease-in-out infinite;box-shadow:0 0 0 0 rgba(120,148,129,.16)}
+@keyframes breathe{50%{transform:scale(1.25);box-shadow:0 0 0 22px rgba(120,148,129,0)}}
+
+/* investigate */
+.investigate{padding:85px 0;background:#fbfaf5}
+.investigate-wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:56px;align-items:center}
+.signal-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;align-items:center}
+.signal-step{height:118px;border:1px solid var(--line);border-radius:20px;padding:16px;background:#fff;display:flex;flex-direction:column;justify-content:space-between;font-size:.78rem}
+.signal-step b{font-family:var(--serif);font-size:1.35rem;font-weight:500}
+.signal-step:not(:last-child)::after{content:"→";position:absolute}
+
+/* potala role */
+.picshi{background:var(--night);color:#f7f4ec;overflow:hidden}
+.picshi .section-head .lead{color:rgba(255,255,255,.68)}
+.picshi .section-num{color:rgba(255,255,255,.12)}
+.map-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center}
+.picshi-map{aspect-ratio:1;position:relative;max-width:560px;margin:auto;display:grid;place-items:center}
+.picshi-core{width:170px;height:170px;border-radius:50%;background:#f4efe1;color:var(--ink);display:grid;place-items:center;text-align:center;z-index:3;padding:20px;font-family:var(--serif);font-size:1.6rem;line-height:1}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.16)}
+.r1{inset:12%}.r2{inset:2%}
+.map-node{position:absolute;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.07);color:#fff;border-radius:999px;padding:9px 13px;font-size:.76rem;cursor:pointer;transition:.2s ease}
+.map-node:hover,.map-node.active{background:#f4efe1;color:var(--ink);transform:scale(1.05)}
+.n1{top:4%;left:50%;transform:translateX(-50%)}.n2{right:1%;top:27%}.n3{right:7%;bottom:18%}.n4{left:10%;bottom:4%}.n5{left:-1%;top:33%}.n6{left:16%;top:15%}
+.map-caption{min-height:330px;border:1px solid rgba(255,255,255,.14);border-radius:28px;padding:30px;background:rgba(255,255,255,.05)}
+.map-caption h3{font-family:var(--serif);font-size:2.5rem;font-weight:500;line-height:1;margin:10px 0 16px}
+.map-caption p{color:rgba(255,255,255,.67)}
+.map-caption .note{margin-top:30px;padding-top:18px;border-top:1px solid rgba(255,255,255,.14);font-size:.8rem;color:#ddcaa1}
+.case{margin-top:48px;border-top:1px solid rgba(255,255,255,.15);padding-top:24px;display:grid;grid-template-columns:.55fr 1.45fr;gap:34px;align-items:start}
+.case h3{font-family:var(--serif);font-size:2.2rem;font-weight:500;margin:0}
+.case-lenses{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.lens{border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:15px;background:rgba(255,255,255,.04);font-size:.78rem;color:rgba(255,255,255,.72)}
+.lens b{display:block;color:#fff;margin-bottom:6px}
+
+/* praça */
+.plaza{background:#f5f2e8;padding-top:120px;overflow:hidden}
+.plaza-head{display:flex;justify-content:space-between;align-items:end;gap:30px;margin-bottom:32px}
+.plaza-head .lead{max-width:590px}
+.plaza-toolbar{position:sticky;top:62px;z-index:40;background:rgba(245,242,232,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px 0;margin-bottom:42px}
+.toolbar-row{display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(170px,.7fr) auto;gap:10px}
+.toolbar-row input,.toolbar-row select{width:100%;border:1px solid var(--line);background:#fff;border-radius:999px;padding:12px 15px;outline:none;color:var(--ink)}
+.category-strip{display:flex;gap:10px;overflow:auto;padding:4px 0 18px;scrollbar-width:none}
+.category-strip::-webkit-scrollbar{display:none}
+.cat-btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 14px;cursor:pointer;white-space:nowrap;transition:.2s ease;color:var(--ink)}
+.cat-btn:hover,.cat-btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.discovery-hero{display:grid;grid-template-columns:1.25fr .75fr;gap:18px;margin:12px 0 42px}
+.feature{min-height:360px;border-radius:30px;position:relative;overflow:hidden;background:linear-gradient(135deg,#a9bea9 0%,#dde6dc 45%,#f5f2e8 100%);padding:32px;display:flex;flex-direction:column;justify-content:flex-end}
+.feature::after{content:"";position:absolute;width:330px;height:330px;border-radius:50%;border:1px solid rgba(24,54,47,.18);right:-90px;top:-70px}
+.feature .tag{align-self:flex-start;background:rgba(255,255,255,.7);border-radius:999px;padding:7px 10px;font-size:.72rem}
+.feature h3{font-family:var(--serif);font-size:3rem;line-height:.95;font-weight:500;margin:14px 0 8px;max-width:480px}
+.feature p{max-width:530px;color:var(--ink-soft)}
+.side-feature{border-radius:30px;background:var(--clay);color:#fff;padding:28px;display:flex;flex-direction:column;justify-content:space-between;min-height:360px;position:relative;overflow:hidden}
+.side-feature::after{content:"";position:absolute;right:-20px;bottom:-70px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.12)}
+.side-feature h3{font-family:var(--serif);font-size:2.4rem;font-weight:500;line-height:1;margin:16px 0}
+.side-feature p{color:rgba(255,255,255,.8)}
+.shelf-title{display:flex;justify-content:space-between;align-items:end;margin:44px 0 14px}
+.shelf-title h3{font-family:var(--serif);font-size:2.2rem;font-weight:500;margin:0}
+.shelf-title small{color:var(--ink-soft)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.therapy-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;min-height:225px;display:flex;flex-direction:column;justify-content:space-between;transition:.22s ease;position:relative;overflow:hidden}
+.therapy-card:hover{transform:translateY(-4px);box-shadow:0 18px 38px rgba(24,54,47,.10)}
+.therapy-card::before{content:"";position:absolute;right:-55px;top:-55px;width:125px;height:125px;border-radius:50%;background:var(--mist)}
+.therapy-card .mini{font-size:.67rem;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);position:relative;z-index:2}
+.therapy-card h4{font-family:var(--serif);font-size:1.85rem;font-weight:500;line-height:1;margin:12px 0 8px;position:relative;z-index:2}
+.therapy-card p{font-size:.82rem;color:var(--ink-soft);position:relative;z-index:2}
+.therapy-card .card-foot{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;border-top:1px solid var(--line);padding-top:10px}
+.hidden{display:none!important}
+.horizontal-shelf{display:flex;gap:14px;overflow:auto;scroll-snap-type:x mandatory;padding:3px 2px 18px;scrollbar-width:thin}
+.horizontal-shelf .therapy-card{min-width:280px;scroll-snap-align:start}
+.az{margin:56px 0 20px;border-top:1px solid var(--line);padding-top:30px}
+.az-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}
+.az button{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:#fff;cursor:pointer}
+.az button:hover,.az button.active{background:var(--ink);color:#fff}
+.no-results{padding:28px;border:1px dashed var(--line);border-radius:20px;color:var(--ink-soft);display:none}
+
+/* bank */
+.bank{margin-top:60px;background:#e6eee7;border-radius:34px;padding:34px;display:grid;grid-template-columns:.8fr 1.2fr;gap:34px}
+.bank h3{font-family:var(--serif);font-size:2.7rem;font-weight:500;line-height:1;margin:8px 0 14px}
+.faq{display:grid;gap:8px}
+.faq button{width:100%;text-align:left;border:1px solid rgba(24,54,47,.12);background:rgba(255,255,255,.7);border-radius:16px;padding:14px 16px;cursor:pointer;color:var(--ink);font-weight:600}
+.answer{display:none;padding:4px 16px 12px;font-size:.86rem;color:var(--ink-soft)}
+.answer.open{display:block}
+
+/* oracles */
+.oracles{background:linear-gradient(180deg,#162827 0%,#0f1e1e 100%);color:#f7f3e9;overflow:hidden}
+.oracles .section-num{color:rgba(255,255,255,.1)}
+.oracles .lead{color:rgba(255,255,255,.65)}
+.oracle-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.oracle-card{min-height:290px;border:1px solid rgba(255,255,255,.14);border-radius:26px;padding:24px;background:radial-gradient(circle at 85% 10%,rgba(255,255,255,.09),transparent 30%),rgba(255,255,255,.035);display:flex;flex-direction:column;justify-content:flex-end}
+.oracle-card .sigil{font-family:var(--serif);font-size:4rem;color:#d5c19a;line-height:1}
+.oracle-card h3{font-family:var(--serif);font-size:2rem;font-weight:500;margin:12px 0 6px}
+.oracle-card p{color:rgba(255,255,255,.62);font-size:.84rem}
+
+/* people */
+.people{background:#f6f3ea}
+.people-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.person{background:#fff;border:1px solid var(--line);border-radius:26px;overflow:hidden}
+.portrait{aspect-ratio:1.1;background:linear-gradient(135deg,#dbe5dc,#a9bcae);display:grid;place-items:center;position:relative}
+.portrait svg{width:90px;height:90px;opacity:.28}
+.person-copy{padding:20px}
+.person-copy h3{font-family:var(--serif);font-size:1.8rem;font-weight:500;margin:0 0 8px}
+.person-copy p{font-size:.82rem;color:var(--ink-soft)}
+
+/* special */
+.special{background:#e8efe8}
+.special-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.special-card{border-radius:28px;padding:26px;background:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.95);min-height:280px;display:flex;flex-direction:column;justify-content:space-between}
+.special-card h3{font-family:var(--serif);font-size:2rem;font-weight:500;line-height:1;margin:14px 0 8px}
+.special-card p{font-size:.84rem;color:var(--ink-soft)}
+.candle-card{background:var(--night);color:#fff;position:relative;overflow:hidden}
+.candle-card p{color:rgba(255,255,255,.68)}
+.candle{width:44px;height:92px;border-radius:8px 8px 12px 12px;background:linear-gradient(90deg,#d9c8a4,#fff3cb,#c7b589);position:relative;margin:8px auto 0;box-shadow:0 15px 30px rgba(0,0,0,.18)}
+.flame{position:absolute;width:25px;height:38px;left:50%;top:-31px;transform:translateX(-50%) rotate(5deg);border-radius:55% 45% 60% 40%;background:radial-gradient(circle at 50% 70%,#fff 0 18%,#ffd978 25%,#d8953c 60%,transparent 63%);filter:drop-shadow(0 0 12px #f2bd5d);animation:flicker 1.8s ease-in-out infinite}
+@keyframes flicker{0%,100%{transform:translateX(-50%) rotate(5deg) scale(1)}50%{transform:translateX(-50%) rotate(-3deg) scale(.92,1.08)}}
+
+/* virtual & schedule */
+.virtual{background:#f8f5ed}
+.virtual-wrap{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center}
+.portal-window{aspect-ratio:1.25;border-radius:34px;background:linear-gradient(160deg,#203d36,#17312b);padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.portal-window::before{content:"";position:absolute;inset:12%;border:1px solid rgba(255,255,255,.15);border-radius:50%}
+.portal-window::after{content:"";position:absolute;inset:24%;border:1px solid rgba(255,255,255,.1);border-radius:50%}
+.screen{position:absolute;inset:18% 14%;border-radius:22px;border:1px solid rgba(255,255,255,.18);background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.02));display:grid;place-items:center;color:#fff;text-align:center;padding:20px;z-index:2}
+.screen strong{font-family:var(--serif);font-size:2rem;font-weight:500}
+.schedule{background:var(--ink);color:#fff}
+.schedule .lead{color:rgba(255,255,255,.7)}
+.schedule-box{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-top:38px}
+.book-panel{border-radius:30px;padding:28px;background:#fff;color:var(--ink)}
+.book-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+.book-grid label{font-size:.72rem;font-weight:700;color:var(--ink-soft)}
+.book-grid select{width:100%;margin-top:5px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;color:var(--ink)}
+.book-note{border-radius:30px;padding:28px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;justify-content:space-between}
+.book-note h3{font-family:var(--serif);font-size:2.4rem;line-height:1;font-weight:500;margin:10px 0}
+.book-note p{color:rgba(255,255,255,.68)}
+
+/* footer */
+footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
+.footer-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:40px}
+.footer-grid h2{font-family:var(--serif);font-size:3rem;font-weight:500;line-height:1;margin:0 0 18px}
+.footer-links{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.footer-links a{border-bottom:1px solid rgba(255,255,255,.12);padding:8px 0;color:rgba(255,255,255,.7);font-size:.84rem}
+.footer-bottom{margin-top:38px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;gap:20px;color:rgba(255,255,255,.45);font-size:.72rem}
+
+/* prototype badge */
+.proto{position:fixed;right:18px;bottom:18px;z-index:1000;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:999px;padding:9px 12px;font-size:.7rem;color:var(--ink-soft)}
+
+@media(max-width:980px){
+  .hero-grid,.section-head,.health-grid,.inner-map,.investigate-wrap,.map-grid,.case,.discovery-hero,.bank,.virtual-wrap,.schedule-box,.footer-grid{grid-template-columns:1fr}
+  .hero{padding-top:120px}.hero-card{max-width:650px}.section-head{gap:16px}.section-num{font-size:3.5rem}
+  .cards{grid-template-columns:repeat(2,1fr)}.case-lenses{grid-template-columns:repeat(2,1fr)}.people-grid,.special-grid,.oracle-grid{grid-template-columns:1fr 1fr}.toolbar-row{grid-template-columns:1fr 1fr}.toolbar-row .btn{grid-column:1/-1}
+  .signal-flow{grid-template-columns:repeat(5,minmax(120px,1fr));overflow:auto;padding-bottom:10px}
+}
+@media(max-width:680px){
+  .shell{width:min(100% - 28px,1180px)}.top-actions .btn-soft{display:none}.drawer{top:66px;right:14px;width:calc(100vw - 28px)}
+  .drawer-grid{grid-template-columns:1fr}.hero{min-height:auto;padding:112px 0 72px}.hero-grid{gap:24px}.display{font-size:3.7rem}.hero-orb.one{width:280px;height:280px}.botanical{width:90vw;right:-30vw}
+  .section{padding:78px 0}.section-head{margin-bottom:34px}.phase-line{grid-template-columns:1fr 1fr}.orbit{max-width:360px}.orbit-tag{font-size:.64rem;padding:6px 8px}.center-self{width:112px;height:112px;font-size:1.1rem}.t2{right:-4%}.t5{left:-4%}
+  .breathe{align-items:flex-start}.map-caption{min-height:auto}.case-lenses{grid-template-columns:1fr 1fr}.plaza-head{display:block}.plaza-toolbar{top:56px}.toolbar-row{grid-template-columns:1fr}.toolbar-row .btn{grid-column:auto}.cards{grid-template-columns:1fr}.feature h3{font-size:2.45rem}.feature,.side-feature{min-height:300px}.people-grid,.special-grid,.oracle-grid{grid-template-columns:1fr}.book-grid{grid-template-columns:1fr}.footer-links{grid-template-columns:1fr}.footer-bottom{display:block}.proto{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}
+}
+</style>
+<meta name="description" content="Instituto Potala: saúde, cuidado e autoconhecimento — matérias para ler com calma, caminhos de atendimento, profissionais e formas de acesso.">
+<link rel="stylesheet" href="css/atendimentos-conceito.css">
 </head>
-<body data-story-page="true">
-  <a class="skip-link" href="#journey-root">Ir para a jornada</a>
-  <!--
-    A paisagem sai do `body` e vira ELEMENTO.
-    Um `background-attachment: fixed` não pode ser animado, e a travessia
-    precisa deslocá-la horizontalmente. Em repouso este elemento pinta
-    exatamente o que o body pintava, então nada muda visualmente até alguém
-    abrir um bloco. Ele é uma camada só: a cena nunca é trocada por outra.
-  -->
-  <div class="journey-landscape" id="journey-landscape" aria-hidden="true">
-    <!--
-      O vídeo anda com a rolagem: descer adianta a câmera, subir rebobina.
-
-      Ele vive DENTRO da paisagem porque a travessia desloca esse elemento para o
-      lado quando um bloco abre, e ele é de propósito mais largo que a tela para
-      a borda nunca aparecer. Um vídeo irmão, fixo por conta própria, ficaria
-      parado enquanto a cena anda.
-
-      O endereço está em `data-src`, e não em `src`: assim o navegador não gasta
-      banda com sete megabytes enquanto ainda desenha o que a pessoa precisa ver
-      primeiro. Quem o promove a `src` é o `landscape-video.js`, depois de
-      decidir se vale — no telefone, com movimento reduzido ou em conexão
-      medida, ele nunca chega a ser pedido, e o fundo segue sendo a webp que já
-      está por trás.
-    -->
-    <video class="journey-landscape-video" data-src="media/home-travessia.mp4"
-      muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+<header class="topbar" id="topbar">
+  <div class="shell topbar-row">
+    <a class="brand" href="#inicio" aria-label="Potala - início da página">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2"><path d="M32 47c-8-4-14-11-14-19 7 0 12 3 14 8 2-5 7-8 14-8 0 8-6 15-14 19Z"/><path d="M32 36c-5-5-7-11-3-18 4 2 7 6 7 11 2-4 5-7 9-8 2 7-1 13-7 18"/><path d="M32 36c-5-4-9-6-15-5 1 6 6 11 12 13"/></svg>
+      </span>
+      <span>Potala</span>
+    </a>
+    <div class="top-actions">
+      <button class="btn btn-soft top-action-icon" id="searchOpen" type="button" aria-label="Buscar na página" title="Buscar na página" aria-controls="drawer" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg>
+      </button>
+      <button class="btn btn-primary top-action-icon top-action-icon--profile conta-gatilho" type="button"
+        data-conta-gatilho data-keeps-expansion aria-haspopup="dialog" aria-expanded="false"
+        aria-label="Seu espaço no Potala" title="Seu espaço no Potala">
+        <svg class="conta-icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Zm0 1.8c-3.6 0-7.4 1.8-7.4 4.6V20h14.8v-1.4c0-2.8-3.8-4.6-7.4-4.6Z"/></svg>
+        <span class="conta-iniciais" aria-hidden="true"></span>
+      </button>
+    </div>
   </div>
-  <canvas class="journey-road journey-path" id="journey-road" aria-hidden="true"></canvas>
-  <div class="journey-entry-veil" id="journey-entry-veil" aria-hidden="true"></div>
-  <main id="journey-root" aria-label="Travessia pelo Ecossistema Potala"></main>
+  <div class="progress" id="progress"></div>
+</header>
 
-  <noscript>
-    <section class="journey-noscript" aria-labelledby="journey-noscript-title">
-      <h1 id="journey-noscript-title">Ecossistema Potala</h1>
-      <p>Escolha um caminho para continuar:</p>
-      <!--
-        A LISTA COMPLETA, e não a que sobrou.
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="eyebrow">Navegação livre</div>
+  <div class="page-search">
+    <input id="pageSearch" type="search" placeholder="Ex.: insônia, Ayurveda, oráculos..." aria-label="Buscar nesta página" />
+    <button class="btn btn-primary" id="pageSearchBtn">Buscar</button>
+  </div>
+  <div class="drawer-grid">
+    <a href="#saude">02 Saúde</a><a href="#vivemos">03 O que vivemos</a>
+    <a href="#investigar">04 Investigar</a><a href="#papel">05 Papel do Potala</a>
+    <a href="#praca">06 Praça dos Atendimentos</a><a href="#oraculos">07 Oráculos</a>
+    <a href="#profissionais">08 Terapeutas</a><a href="#especiais">09 Especiais</a>
+    <a href="#virtual">10 Sala Virtual</a><a href="#agendar">11 Agendamentos</a>
+  </div>
+  <div class="eyebrow drawer-portal-titulo">Pelo Portal</div>
+  <nav class="drawer-grid drawer-portal" aria-label="Seções do Portal Potala">
+    <a href="quem-somos.html">Quem somos</a><a href="recepcao.html">Recepção</a>
+    <a href="atendimentos.html">Atendimentos</a><a href="saude-integrativa.html">Saúde integrativa</a>
+    <a href="profissionais.html">Profissionais</a><a href="cursos.html">Cursos</a>
+    <a href="atividades.html">Atividades</a><a href="programacao.html">Programação</a>
+    <a href="cultura.html">Cultura</a><a href="inspiracao.html">Inspiração</a>
+    <a href="blog.html">Blog</a><a href="revista.html">Revista</a>
+    <a href="marketplace.html">Loja</a><a href="travessia.html">A Travessia</a>
+  </nav>
+</div>
 
-        Ela tinha nove das treze seções: faltavam Recepção, Saúde Integrativa e
-        Blog, e ninguém notou porque a lista só aparece sem JavaScript. Enquanto
-        as páginas de seção carregavam um menu com as treze, o buraco era
-        contornável; agora que a barra do topo mudou de assunto, este é o único
-        caminho de quem não tem script, e uma seção fora daqui não existe.
-      -->
-      <ul>
-        <li><a href="quem-somos.html">Quem somos</a></li>
-        <li><a href="recepcao.html">Recepção</a></li>
-        <li><a href="atendimentos.html">Atendimentos</a></li>
-        <li><a href="cursos.html">Cursos</a></li>
-        <li><a href="atividades.html">Atividades</a></li>
-        <li><a href="profissionais.html">Profissionais</a></li>
-        <li><a href="saude-integrativa.html">Saúde Integrativa</a></li>
-        <li><a href="programacao.html">Programação</a></li>
-        <li><a href="cultura.html">Arte e cultura</a></li>
-        <li><a href="marketplace.html">Marketplace</a></li>
-        <li><a href="inspiracao.html">Inspiração</a></li>
-        <li><a href="revista.html">Revista</a></li>
-        <li><a href="blog.html">Blog</a></li>
-      </ul>
-      <p>E o que acontece fora da grade de aulas:</p>
-      <ul>
-        <li><a href="especialistas.html">Especialistas</a></li>
-        <li><a href="workshops.html">Workshops</a></li>
-        <li><a href="grupos-de-estudo.html">Grupos de estudo</a></li>
-        <li><a href="mentorias.html">Mentorias</a></li>
-        <li><a href="eventos.html">Eventos futuros</a></li>
-      </ul>
+<main id="main">
+<svg class="journey-thread" data-journey-thread aria-hidden="true" focusable="false"><path data-journey-path></path><circle class="journey-thread__ponta" data-journey-tip r="3.2"></circle></svg>
+<section class="hero" id="inicio" data-search="apresentação atendimentos potala picshi biblioteca revista banco vivo concierge">
+  <div class="hero-orb one"></div><div class="hero-orb two"></div><div class="hero-orb three"></div>
+  <svg class="botanical" viewBox="0 0 500 420" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <path d="M448 410C362 343 324 259 329 168C332 112 357 65 398 24"/><path d="M331 184C277 166 246 133 236 87C281 91 315 112 337 149"/><path d="M335 229C388 203 433 201 470 222C436 250 392 260 344 247"/><path d="M351 296C299 288 260 263 236 220C283 216 324 232 355 268"/><path d="M386 357C424 321 461 306 498 314C474 351 440 372 398 379"/>
+  </svg>
+  <div class="shell hero-grid">
+    <div class="hero-copy">
+      <div class="pill">Instituto Potala • Atendimentos</div>
+      <div class="eyebrow" style="margin-top:28px">A pessoa vem antes da técnica</div>
+      <h1 class="display">Atendimentos</h1>
+      <p class="lead">Você chegou à página de atendimentos do Instituto Potala. Aqui, você pode compreender melhor a saúde e a prevenção, conhecer técnicas integrativas, holísticas e regulamentadas, explorar dezenas de oráculos e encontrar diferentes formas de cuidado para aliviar dores físicas e emocionais, recuperar equilíbrio, aprofundar o autoconhecimento e encontrar apoio em diferentes momentos da vida.</p>
+      <div class="hero-note">Antes de escolher uma técnica, você pode compreender o território, reconhecer diferenças e chegar pelo caminho que fizer sentido para o seu momento.</div>
+    </div>
+    <aside class="hero-card"><img class="hero-card__image" src="media/atendimentos-acolhimento.webp" alt="Profissional acolhe uma pessoa em uma conversa de cuidado" width="1440" height="1800">
+      <div class="eyebrow">Você encontrará aqui</div>
+      <h3>Um universo organizado</h3>
+      <p class="small">Saúde, experiências humanas, diferentes naturezas de cuidado, técnicas, Oráculos, profissionais, atendimentos especiais e formas de acesso.</p>
+      <div class="hero-index">
+        <a href="#vivemos">Situações humanas <span>↘</span></a>
+        <a href="#praca">Explorar atendimentos <span>↘</span></a>
+        <a href="#oraculos">Conhecer Oráculos <span>↘</span></a>
+        <a href="#especiais">Cuidados especiais <span>↘</span></a>
+      </div>
+    </aside>
+  </div>
+  <div class="scrollhint" aria-hidden="true"><i></i> role para explorar</div>
+</section>
+
+
+<section class="section materia-secao health" id="saude" data-search="saúde envelhecimento sono movimento alimentação ayurveda yoga biblioteca estudos pesquisa">
+  <div class="shell">
+    <header class="section-head materia-cabeca reveal">
+      <div><div class="section-num">01</div><div class="eyebrow">Saúde</div></div>
+      <div><h2 class="h2">Tudo começa por compreender a saúde.</h2></div>
+    </header>
+    <div class="materia" data-materia>
+      <details class="source-reading" data-reading="saude">
+        <summary>
+          <span class="source-reading__preview">
+            <small>Matéria principal · Saúde</small>
+            <strong>Saúde é uma história em movimento</strong>
+            <em class="materia-abertura">Antes de apresentar terapias, técnicas e profissionais, queremos começar pelo que todas essas escolhas procuram cuidar: a sua saúde. Ela não depende de um único fator nem começa quando surge uma doença. Corpo, sono, alimentação, movimento, emoções, relações, ambiente e história de vida participam dessa construção.</em>
+            <b data-reading-action>Continuar a leitura</b>
+          </span>
+          <span class="source-reading__symbol" aria-hidden="true">＋</span>
+        </summary>
+        <div class="source-reading__body">
+          <div class="source-reading__text"><p data-slide="0">É fácil imaginar a saúde como uma fotografia: um exame, um número, um diagnóstico ou a ausência de sintomas naquele dia. Mas a experiência real se parece muito mais com um filme longo. Corpo, energia, força, cognição, metabolismo, relações, trabalho, alimentação, movimento, descanso e saúde emocional se transformam ao longo do tempo — e nem sempre no mesmo ritmo.</p><p data-slide="0">Isso muda a pergunta. Em vez de apenas “estou saudável agora?”, vale observar “que trajetória estou construindo?” e “quais possibilidades desejo preservar?”. Saúde nasce da combinação entre biologia, história de vida, ambiente, acesso a recursos, escolhas possíveis e acontecimentos que ninguém controla inteiramente. Por isso, prevenção precisa falar de circunstâncias, e não apenas de disciplina individual.</p><p data-slide="0">A alimentação entra nessa história sem precisar virar uma coleção de proibições. A atualização da Organização Mundial da Saúde publicada em janeiro de 2026 reforça quatro ideias simples: adequação, equilíbrio, moderação e diversidade. Essa forma de olhar é mais interessante do que procurar um alimento perfeito ou transformar cada refeição num teste moral. O que sustenta a saúde costuma ser um padrão possível de manter no tempo.</p><p data-slide="1">O sono mostra com clareza por que saúde não cabe numa medida isolada. A quantidade de horas continua importante, mas a ciência passou a observar também regularidade, continuidade, ritmo e funcionamento durante o dia. Um grande estudo publicado na revista SLEEP , com dados objetivos de mais de 60 mil participantes do UK Biobank, encontrou associação importante entre maior regularidade do sono e menor risco de mortalidade.</p><p data-slide="1">Isso não transforma regularidade numa fórmula mágica e nem significa que uma noite ruim determine o futuro. Significa que a pergunta “quantas horas você dorme?” talvez seja pequena demais para compreender uma experiência tão complexa. Horários, despertares, trabalho em turnos, preocupações, ambiente, responsabilidades familiares e saúde física também participam da qualidade do descanso.</p><p data-slide="1">Quando uma recomendação de saúde considera contexto, ela deixa de soar como cobrança e começa a funcionar como instrumento de percepção. O objetivo não é vigiar cada noite, mas perceber padrões: o que mudou, o que se repete, o que afeta o dia seguinte e quando vale procurar avaliação.</p><p data-slide="2">O mesmo cuidado vale para o movimento. A OMS lembra que atividade física inclui muito mais do que esporte ou academia: caminhar, pedalar, brincar, deslocar-se, trabalhar e realizar atividades domésticas também são formas de movimento. Em adultos e pessoas mais velhas, manter-se ativo está associado a benefícios físicos e mentais, enquanto longos períodos de sedentarismo aumentam riscos importantes.</p><p data-slide="2">A conversa fica mais humana quando sai da performance e volta para a função. Subir uma escada, levantar-se com segurança, carregar compras, brincar com uma criança, manter equilíbrio e continuar fazendo aquilo que dá autonomia à vida são medidas concretas de capacidade. Movimento não é punição pelo corpo que temos; é uma forma de preservar possibilidades.</p><p data-slide="2">Também não existe uma única porta de entrada. Uma pessoa pode começar com caminhada; outra precisa primeiro tratar dor, recuperar confiança, melhorar mobilidade ou receber orientação adequada. O ponto de partida importa tanto quanto a meta. O cuidado só se torna sustentável quando cabe na vida real.</p><p data-slide="3">Prevenção, por fim, não é promessa de controle. Ela trabalha com proteção, redução de riscos, detecção, acompanhamento e construção de recursos. A própria ideia de envelhecimento saudável adotada pela OMS chama atenção para aquilo que a pessoa consegue ser e fazer ao longo da vida: atender necessidades básicas, aprender, decidir, manter mobilidade, construir relações e participar da sociedade.</p><p data-slide="3">Esse olhar inclui o que acontece fora do corpo. Trabalho, renda, moradia, transporte, vínculos sociais, segurança, acesso a serviços e oportunidades de descanso influenciam a forma como o cuidado pode acontecer. Em 2025, a Comissão da OMS sobre Conexão Social reforçou que relações e pertencimento também devem ser tratados como dimensões importantes da saúde.</p><p data-slide="3">Por isso, esta página não começa dizendo qual terapia você deve escolher. Primeiro, queremos oferecer um terreno mais claro. Compreender saúde ajuda a fazer perguntas melhores: o que mudou? o que desejo preservar? o que merece investigação? o que posso ajustar sozinho e em que ponto vale buscar apoio?</p><p data-slide="0">A nova ficha da OMS sobre alimentação saudável coloca quatro princípios no centro da conversa: adequação, equilíbrio, moderação e diversidade. A mudança parece simples, mas desloca o foco de listas rígidas para aquilo que conseguimos construir repetidamente ao longo da vida. Na prática, isso muda o tom da pergunta: em vez de “qual alimento devo cortar?”, talvez seja mais útil observar variedade, grau de processamento, contexto e aquilo que cabe de forma sustentável na rotina.</p><p data-slide="0">O interesse deixa de estar num ingrediente isolado e passa para o padrão alimentar como um todo — e para a relação que esse padrão estabelece com cultura, renda, rotina, prazer e acesso.</p><p data-slide="1">Um estudo prospectivo publicado em SLEEP comparou duração e regularidade do sono em mais de 60 mil participantes com dados objetivos de actigrafia. A regularidade apareceu como um marcador importante associado ao risco de mortalidade, mesmo quando outros fatores foram considerados.</p><p data-slide="1">Isso não transforma horário em receita universal. Mas ajuda a ampliar a conversa sobre sono: ritmo, continuidade, despertares e funcionamento diurno passam a dividir espaço com a velha pergunta “quantas horas você dormiu?”. Observar o padrão ao longo dos dias também ajuda a perceber se o descanso está oferecendo recuperação suficiente e em que momento vale buscar orientação. A qualidade do dia seguinte também faz parte dessa leitura.</p><p data-slide="2">As recomendações da OMS tratam atividade física de forma mais ampla do que muita gente imagina. Caminhar, pedalar, deslocar-se, trabalhar, brincar e realizar tarefas cotidianas também contam. E reduzir tempo sedentário é parte da mesma equação. Essa visão aproxima movimento de autonomia. Força, equilíbrio, mobilidade e capacidade funcional deixam de ser metas abstratas e passam a significar coisas concretas: continuar subindo escadas, saindo de casa, carregando o que precisa e participando da própria vida.</p><p data-slide="2">O ponto de partida também importa. Movimento pode significar treino estruturado, mas pode significar igualmente recuperar confiança, interromper longos períodos sentado ou simplesmente voltar a caminhar com segurança.</p><p data-slide="3">A OMS define envelhecimento saudável pela manutenção da capacidade funcional: conseguir atender necessidades, aprender, decidir, mover-se, manter relações e participar da sociedade. Essa lente desloca a prevenção do medo da doença para a preservação de possibilidades. E há um elemento que ganhou ainda mais espaço recentemente: conexão social.</p><p data-slide="3">O relatório global da OMS publicado em 2025 trata vínculos e pertencimento como dimensões relevantes para saúde e bem-estar — lembrando que prevenção não acontece apenas dentro do corpo. Isso amplia o campo da prevenção: preservar saúde também envolve manter autonomia, vínculos, acesso a recursos e condições para continuar participando da própria vida.</p></div>
+          <p class="materia-referencias"><span>Referências</span><a href="https://www.who.int/news-room/questions-and-answers/item/healthy-ageing-and-functional-ability">OMS · Healthy ageing &amp; functional ability</a>
+      <a href="https://academic.oup.com/ageing/article/48/1/16/5126243">EWGSOP2 · Sarcopenia</a>
+      <a href="https://academic.oup.com/sleep/article/47/1/zsad253/7280269">SLEEP · Regularidade do sono</a>
+      <a href="https://www.who.int/groups/commission-on-social-connection/report/">OMS · Conexão social</a>
+      <a href="https://www.who.int/news-room/fact-sheets/detail/healthy-diet">OMS · Alimentação saudável</a>
+      <a href="https://www.who.int/news-room/fact-sheets/detail/physical-activity">OMS · Atividade física</a></p>
+          <button type="button" class="materia-recolher" data-materia-recolher>Recolher a leitura <span aria-hidden="true">↑</span></button>
+        </div>
+      </details>
+      <div class="source-reading__media materia-slides" data-slides id="saude-slides" role="region" aria-roledescription="carrossel" aria-label="Revista Potala · Biblioteca Potala">
+        <p class="materia-slides__rotulo">Revista Potala · Biblioteca Potala</p>
+        <div class="materia-slides__quadro">
+          <figure class="materia-slide is-ativo" data-slide-item="0" aria-roledescription="slide" aria-label="1 de 4">
+            <span class="materia-slide__foto"><img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&amp;fit=crop&amp;w=1500&amp;q=82" alt="Alimentos variados e coloridos sobre a mesa" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>Alimentação · atualizado em 2026</small>
+              <strong>A dieta saudável está menos interessada em perfeição — e mais em padrão</strong>
+              <span>A nova ficha da OMS desloca o foco de listas rígidas para adequação, equilíbrio, moderação, diversidade e para aquilo que pode ser construído repetidamente na vida real.</span><ul><li>Padrões alimentares e saúde ao longo da vida</li><li>Alimentos in natura, processados e ultraprocessados</li><li>Como interpretar recomendações nutricionais</li></ul>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="1" aria-roledescription="slide" aria-label="2 de 4" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&amp;fit=crop&amp;w=1500&amp;q=82" alt="Pessoa dormindo em um quarto sereno" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>Sono · pesquisa em foco</small>
+              <strong>Talvez a regularidade do sono conte uma história que as horas, sozinhas, não contam</strong>
+              <span>Ritmo, continuidade, despertares e funcionamento durante o dia ampliam a leitura sobre o descanso e ajudam a reconhecer quando vale buscar orientação.</span><ul><li>Sono, ritmo circadiano e regularidade</li><li>Arquitetura do sono e despertares</li><li>Luz, rotina e relógio biológico</li></ul>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="2" aria-roledescription="slide" aria-label="3 de 4" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&amp;fit=crop&amp;w=1500&amp;q=82" alt="Pessoa caminhando ao ar livre" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>Movimento · saúde ao longo da vida</small>
+              <strong>O corpo não precisa de performance para se beneficiar do movimento</strong>
+              <span>Caminhar, deslocar-se, trabalhar, brincar e realizar tarefas cotidianas também contam. Movimento pode significar preservar função, autonomia e participação.</span><ul><li>Atividade física, função e autonomia</li><li>Força muscular e envelhecimento</li><li>Sedentarismo e saúde metabólica</li></ul>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="3" aria-roledescription="slide" aria-label="4 de 4" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&amp;fit=crop&amp;w=1500&amp;q=82" alt="Pessoas conversando e convivendo" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>Prevenção · saúde e contexto</small>
+              <strong>Prevenir também é preservar aquilo que permite continuar vivendo a própria vida</strong>
+              <span>Prevenção envolve autonomia, vínculos, acesso a recursos, acompanhamento e condições para continuar participando da própria vida.</span><ul><li>Capacidade funcional e envelhecimento saudável</li><li>Prevenção, rastreamento e acompanhamento</li><li>Determinantes sociais da saúde</li></ul>
+            </figcaption>
+          </figure>
+        </div>
+        <div class="materia-slides__controles">
+          <button type="button" class="materia-slides__seta" data-slide-anterior aria-controls="saude-slides" aria-label="Imagem anterior">←</button>
+          <ol class="materia-slides__pontos"><li><button type="button" data-slide-ir="0" aria-label="Ver imagem 1: Alimentação · atualizado em 2026" aria-current="true"></button></li><li><button type="button" data-slide-ir="1" aria-label="Ver imagem 2: Sono · pesquisa em foco"></button></li><li><button type="button" data-slide-ir="2" aria-label="Ver imagem 3: Movimento · saúde ao longo da vida"></button></li><li><button type="button" data-slide-ir="3" aria-label="Ver imagem 4: Prevenção · saúde e contexto"></button></li></ol>
+          <button type="button" class="materia-slides__seta" data-slide-proximo aria-controls="saude-slides" aria-label="Próxima imagem">→</button>
+        </div>
+      </div>
+    </div>
+    <aside class="conexao reveal" aria-labelledby="conexao-saude-titulo">
+      <form class="conexao__interacao conexao-check" data-saude-check>
+        <p class="conexao__rotulo">Um instante com você</p>
+        <h3 id="conexao-saude-titulo">Como está sua saúde hoje?</h3>
+        <p class="conexao__nota">Quatro perguntas rápidas, só para você perceber. Nada é enviado nem guardado.</p>
+        <fieldset data-dimensao="sono"><legend>Sono</legend>
+          <label><input type="radio" name="saude-sono" value="bem"><span>Em dia</span></label>
+          <label><input type="radio" name="saude-sono" value="oscila"><span>Oscilando</span></label>
+          <label><input type="radio" name="saude-sono" value="atencao"><span>Pedindo atenção</span></label>
+        </fieldset><fieldset data-dimensao="alimentacao"><legend>Alimentação</legend>
+          <label><input type="radio" name="saude-alimentacao" value="bem"><span>Em dia</span></label>
+          <label><input type="radio" name="saude-alimentacao" value="oscila"><span>Oscilando</span></label>
+          <label><input type="radio" name="saude-alimentacao" value="atencao"><span>Pedindo atenção</span></label>
+        </fieldset><fieldset data-dimensao="movimento"><legend>Movimento</legend>
+          <label><input type="radio" name="saude-movimento" value="bem"><span>Em dia</span></label>
+          <label><input type="radio" name="saude-movimento" value="oscila"><span>Oscilando</span></label>
+          <label><input type="radio" name="saude-movimento" value="atencao"><span>Pedindo atenção</span></label>
+        </fieldset><fieldset data-dimensao="vinculos"><legend>Vínculos</legend>
+          <label><input type="radio" name="saude-vinculos" value="bem"><span>Em dia</span></label>
+          <label><input type="radio" name="saude-vinculos" value="oscila"><span>Oscilando</span></label>
+          <label><input type="radio" name="saude-vinculos" value="atencao"><span>Pedindo atenção</span></label>
+        </fieldset>
+        <p class="conexao__resposta" data-saude-resposta aria-live="polite"></p>
+      </form>
+      <nav class="conexao__indicacoes" aria-label="Indicações e leituras sobre saúde">
+        <p class="conexao__rotulo">Indicações</p>
+        <div class="conexao__portal"><a href="saude-integrativa.html">Saúde Integrativa <span aria-hidden="true">↗</span></a><a href="atividades.html">Atividades para o corpo <span aria-hidden="true">↗</span></a><a href="recepcao.html">Conversar com a Recepção <span aria-hidden="true">↗</span></a></div>
+        <p class="conexao__rotulo">No Blog</p>
+        <div class="conexao__blog"><a class="conexao__artigo" href="artigo.html?post=sono-estacoes"><small>Sono</small>O sono muda de estação, e a rotina não</a><a class="conexao__artigo" href="artigo.html?post=caminhar-em-silencio"><small>Movimento</small>Caminhar em silêncio: notas sobre andar sem destino</a><a class="conexao__artigo" href="artigo.html?post=ritual-da-manha"><small>Práticas</small>Um ritual de manhã que não pede acordar mais cedo</a></div>
+      </nav>
+    </aside>
+  </div>
+</section>
+
+<section class="section materia-secao experience" id="vivemos" data-search="o que vivemos também acontece em nós pathwork ansiedade depressão luto solidão pânico estresse insônia dor lombar cefaleia cuidados humanos">
+  <div class="shell">
+    <header class="section-head materia-cabeca reveal">
+      <div><div class="section-num">02</div><div class="eyebrow">O que vivemos também acontece em nós</div></div>
+      <div><h2 class="h2">A vida não acontece do lado de fora.</h2></div>
+    </header>
+    <div class="materia" data-materia>
+      <details class="source-reading" data-reading="vivemos">
+        <summary>
+          <span class="source-reading__preview">
+            <small>Reflexão integral · Experiência humana</small>
+            <strong>Talvez aquilo que você esteja vivendo tenha mais de uma camada</strong>
+            <em class="materia-abertura">O que sentimos, pensamos e fazemos se encontra com nossa história, nossos vínculos, o ambiente, o corpo, as escolhas que fazemos e também com circunstâncias que não escolhemos. Antes de procurar uma resposta rápida, talvez valha perceber melhor o que realmente está acontecendo.</em>
+            <b data-reading-action>Continuar a leitura</b>
+          </span>
+          <span class="source-reading__symbol" aria-hidden="true">＋</span>
+        </summary>
+        <div class="source-reading__body">
+          <div class="source-reading__text"><p data-slide="0">Quando alguma coisa nos inquieta, é natural procurar uma explicação. Queremos compreender por que estamos nos sentindo de determinada maneira, por que uma situação se repete, por que um vínculo mudou, por que algo que parecia estável deixou de ser. Procurar sentido é uma maneira profundamente humana de tentar organizar a experiência.</p><p data-slide="0">Mas a vida raramente cabe em uma única causa. Somos atravessados por escolhas, circunstâncias, vínculos, condições materiais, pelo corpo que temos, pela época em que vivemos e por histórias que começaram antes de nós. Algumas dessas forças percebemos com clareza. Outras só conseguimos reconhecer muito tempo depois. Há aquilo que fazemos acontecer por meio das nossas decisões, dos nossos hábitos, das nossas omissões e dos nossos movimentos. Há também aquilo para o qual contribuímos sem perceber, porque padrões aprendidos, maneiras de reagir, medos, expectativas e formas de nos relacionar podem participar de situações que parecem surgir inteiramente de fora.</p><p data-slide="0">Há ainda aquilo que herdamos. Não apenas geneticamente, mas por meio da cultura, da família, das condições sociais, das histórias contadas e também das que nunca foram contadas. Há aquilo que outras pessoas fazem, porque as escolhas de quem convive conosco também têm consequências. E há acontecimentos que simplesmente nos encontram: uma perda, uma mudança coletiva, um acidente, uma doença, um encontro inesperado, uma oportunidade, uma ruptura ou qualquer situação que não conseguimos prever nem controlar.</p><p data-slide="0">Nem tudo o que nos acontece foi causado por nós. Mas nem tudo o que nos acontece está inteiramente fora de nós. Entre essas duas ideias existe um território muito maior e mais honesto. Nele, podemos reconhecer que não controlamos a vida e, ao mesmo tempo, não precisamos nos perceber como espectadores impotentes diante dela.</p><p data-slide="1">Responsabilidade não é a mesma coisa que culpa. Responsabilidade pode signific apenas a disposição para olhar com sinceridade para uma experiência e perguntar o que nela depende de nós, o que não depende, onde existe possibilidade de ação, onde precisamos de ajuda, o que precisa ser aceito e o que ainda não conseguimos compreender.</p><p data-slide="0">Algumas dessas perguntas atravessam a humanidade há séculos. Por que determinadas coisas nos acontecem? Existe acaso? Existe destino? Quanto da vida é escolha? Quanto é consequência de condições que não controlamos? Existe algum sentido que ainda não conseguimos enxergar? Ciência, filosofia, psicologia e diferentes tradições espirituais oferecem maneiras distintas de pensar essas questões. Nenhuma delas precisa ser usada para encerrar a pergunta. Talvez possam servir, antes, para ampliar nosso olhar sobre a complexidade da experiência humana.</p><p data-slide="0">Acolher diferentes maneiras de compreender a existência não significa fabricar uma certeza que ninguém possui. Podemos não saber por que tudo acontece e, ainda assim, não estar condenados à paralisia. Mesmo quando não encontramos uma explicação definitiva, podemos observar o que estamos vivendo, reconhecer necessidades, buscar apoio, mudar caminhos, criar limites, cuidar do corpo, rever relações, aprender a pedir ajuda ou simplesmente atravessar um período difícil com mais consciência.</p><p data-slide="2">Viver bem não é fazer tudo certo para que nada dê errado. Essa promessa não existe. Podemos cuidar, prevenir, aprender, planejar e ainda assim encontrar perdas, frustrações, mudanças e acontecimentos que escapam completamente ao nosso alcance. Cuidar da vida também não significa conquistar controle sobre ela. Significa ampliar nossa capacidade de perceber o que está acontecendo, reconhecer aquilo sobre o que podemos agir e desenvolver recursos para lidar também com aquilo que não podemos escolher.</p><p data-slide="3">Talvez aquilo que hoje pareça apenas ansiedade tenha também relação com sobrecarga, sono, vínculos, trabalho ou insegurança. Talvez um incômodo que parece apenas físico mereça investigação. Talvez uma situação que se repete esteja pedindo compreensão. Talvez não exista uma única explicação. E talvez o cuidado comece justamente quando deixamos de exigir uma resposta simples para uma experiência complexa.</p><p data-slide="3">Há uma pergunta que pode ser mais útil do que tentar explicar tudo de uma vez: o que está acontecendo aqui e o que eu posso fazer diante disso? Ela muda a posição de quem procura cuidado. Em vez de buscar uma técnica como resposta automática, podemos começar tentando compreender a experiência. O que mudou? Desde quando? O que se repete? O que alivia? O que piora? O que está ao meu alcance? Que tipo de ajuda faz sentido agora?</p><p data-slide="3">Compreender melhor antes de escolher não significa transformar a vida em análise permanente. Significa interromper o automatismo. Um atendimento, uma conversa, uma avaliação profissional, uma prática integrativa, um período de descanso ou uma mudança concreta podem fazer sentidos muito diferentes dependendo do que estamos vivendo. Talvez aquilo que hoje nos incomoda tenha mais de uma camada, e perceber essas camadas não precisa complicar a vida. Pode signific justamente o contrário: reconhecer o que pede atenção, distinguir aquilo que pode ser cuidado daquilo que precisa ser aceito e descobrir onde existe alguma possibilidade de movimento.</p><p data-slide="2">Talvez não saibamos por que tudo acontece. Mas isso não significa que nada possa ser feito.</p><p data-slide="2">Não controlamos tudo o que chega até nós. Ainda assim, podemos ampliar a maneira como percebemos, cuidamos e atravessamos o que chega. Podemos aprender a olhar com mais atenção para o corpo, para as emoções, para os vínculos, para os padrões que se repetem e para as escolhas que ainda estão disponíveis.</p><p data-slide="2">Podemos pedir ajuda. Podemos mudar de direção. Podemos reconhecer limites. Podemos elaborar perdas. Podemos construir recursos. Podemos também aceitar que algumas respostas demoram — e algumas talvez nunca venham.</p><p data-slide="2">Talvez viver conscientemente não seja descobrir todas as respostas. Talvez seja não passar distraído pela própria vida.</p><p data-slide="0">Quanto da vida escolhemos, quanto herdamos e quanto simplesmente nos acontece? A pergunta atravessa a filosofia e diferentes tradições há séculos — e continua sem uma resposta única.</p><p data-slide="1">Reconhecer nossa participação em uma experiência pode ampliar a capacidade de escolha. Transformar essa percepção em culpa, porém, pode produzir exatamente o movimento oposto.</p><p data-slide="2">Não existe uma fórmula única. Diferentes épocas e tradições pensaram felicidade, sentido, virtude, prazer, vínculos, autonomia e pertencimento de maneiras muito diferentes.</p><p data-slide="3">Dar nome ao que vivemos pode organizar uma experiência. Mas uma explicação pronta também pode reduzir aquilo que é complexo, impedir novas perguntas ou nos fazer procurar respostas no lugar errado.</p></div>
+          <p class="materia-referencias"><span>Referências</span><small>filosofia da existência</small><small>psicologia e experiência humana</small><small>determinantes sociais e contexto</small></p>
+          <button type="button" class="materia-recolher" data-materia-recolher>Recolher a leitura <span aria-hidden="true">↑</span></button>
+        </div>
+      </details>
+      <div class="source-reading__media materia-slides" data-slides id="vivemos-slides" role="region" aria-roledescription="carrossel" aria-label="Biblioteca Potala · para ir além desta matéria">
+        <p class="materia-slides__rotulo">Biblioteca Potala · para ir além desta matéria</p>
+        <div class="materia-slides__quadro">
+          <figure class="materia-slide is-ativo" data-slide-item="0" aria-roledescription="slide" aria-label="1 de 4">
+            <span class="materia-slide__foto"><img src="https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&amp;fit=crop&amp;w=1500&amp;q=82" alt="Pessoa de braços abertos diante do sol nascendo sobre a névoa" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>Filosofia · tradições · existência</small>
+              <strong>Destino, acaso e livre-arbítrio</strong>
+              <span>Quanto da vida escolhemos, quanto herdamos e quanto simplesmente nos acontece? A pergunta continua sem uma resposta única.</span><ul><li>Acaso e causalidade: são a mesma coisa?</li><li>Livre-arbítrio: o que diferentes correntes entendem por escolha</li><li>Destino em tradições filosóficas e espirituais</li></ul>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="1" aria-roledescription="slide" aria-label="2 de 4" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="https://images.unsplash.com/photo-1519682337058-a94d519337bc?auto=format&amp;fit=crop&amp;w=1500&amp;q=82" alt="Mão segurando uma pilha de livros diante de uma parede clara" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>Psicologia · ética · experiência</small>
+              <strong>Responsabilidade sem culpa</strong>
+              <span>Reconhecer nossa participação em uma experiência pode ampliar a capacidade de escolha. Transformar essa percepção em culpa pode produzir o movimento oposto.</span><ul><li>O que depende de mim — e o que não depende?</li><li>Culpa, responsabilidade e reparação</li><li>Limites: quando o outro também faz escolhas</li></ul>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="2" aria-roledescription="slide" aria-label="3 de 4" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="https://images.unsplash.com/photo-1490730141103-6cac27aaab94?auto=format&amp;fit=crop&amp;w=1500&amp;q=82" alt="Silhueta de pessoa de braços abertos à beira d'água, sob um céu de fim de tarde" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>Filosofia · psicologia · qualidade de vida</small>
+              <strong>O que significa viver bem?</strong>
+              <span>Não existe uma fórmula única. Diferentes épocas e tradições pensaram felicidade, sentido, virtude, vínculos, autonomia e pertencimento de maneiras diferentes.</span><ul><li>Bem-estar não é ausência de dificuldade</li><li>Autonomia, vínculos e participação</li><li>O que antigas filosofias chamavam de uma vida boa</li></ul>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="3" aria-roledescription="slide" aria-label="4 de 4" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&amp;fit=crop&amp;w=1500&amp;q=82" alt="Estrada que atravessa um vale de pedras vermelhas em direção à montanha" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>Sentido · cuidado · escolha</small>
+              <strong>Quando uma explicação ajuda — e quando aprisiona</strong>
+              <span>Dar nome ao que vivemos pode organizar uma experiência, mas uma resposta pronta também pode reduzir aquilo que é complexo.</span><ul><li>A necessidade humana de encontrar sentido</li><li>Quando procurar compreensão — e quando procurar avaliação</li><li>Compreender melhor antes de escolher</li></ul>
+            </figcaption>
+          </figure>
+        </div>
+        <div class="materia-slides__controles">
+          <button type="button" class="materia-slides__seta" data-slide-anterior aria-controls="vivemos-slides" aria-label="Imagem anterior">←</button>
+          <ol class="materia-slides__pontos"><li><button type="button" data-slide-ir="0" aria-label="Ver imagem 1: Filosofia · tradições · existência" aria-current="true"></button></li><li><button type="button" data-slide-ir="1" aria-label="Ver imagem 2: Psicologia · ética · experiência"></button></li><li><button type="button" data-slide-ir="2" aria-label="Ver imagem 3: Filosofia · psicologia · qualidade de vida"></button></li><li><button type="button" data-slide-ir="3" aria-label="Ver imagem 4: Sentido · cuidado · escolha"></button></li></ol>
+          <button type="button" class="materia-slides__seta" data-slide-proximo aria-controls="vivemos-slides" aria-label="Próxima imagem">→</button>
+        </div>
+      </div>
+    </div>
+    <aside class="conexao reveal" aria-labelledby="conexao-vivemos-titulo">
+      <div class="conexao__interacao conexao-reflexao" data-reflexao-leve>
+        <p class="conexao__rotulo">Para levar com você</p>
+        <h3 id="conexao-vivemos-titulo">Leve uma reflexão</h3>
+        <blockquote data-reflexao-frase>Talvez viver conscientemente não seja descobrir todas as respostas. Talvez seja não passar distraído pela própria vida.</blockquote>
+        <template data-reflexao-frases><p>Talvez viver conscientemente não seja descobrir todas as respostas. Talvez seja não passar distraído pela própria vida.</p><p>Nem tudo o que nos acontece foi causado por nós. Mas nem tudo o que nos acontece está inteiramente fora de nós.</p><p>Talvez não saibamos por que tudo acontece. Mas isso não significa que nada possa ser feito.</p><p>Responsabilidade não é a mesma coisa que culpa.</p><p>Viver bem não é fazer tudo certo para que nada dê errado.</p></template>
+        <div class="conexao__botoes">
+          <button type="button" data-reflexao-outra>Outra reflexão</button>
+          <button type="button" data-reflexao-copiar>Copiar</button>
+        </div>
+        <p class="conexao__resposta" data-reflexao-status aria-live="polite"></p>
+      </div>
+      <nav class="conexao__indicacoes" aria-label="Indicações e leituras sobre o que vivemos">
+        <p class="conexao__rotulo">Indicações</p>
+        <div class="conexao__portal"><a href="#praca">Psicoterapias e escuta <span aria-hidden="true">↗</span></a><a href="profissionais.html">Conhecer os profissionais <span aria-hidden="true">↗</span></a><a href="cursos.html">Cursos de autoconhecimento <span aria-hidden="true">↗</span></a></div>
+        <p class="conexao__rotulo">No Blog</p>
+        <div class="conexao__blog"><a class="conexao__artigo" href="artigo.html?post=cuidar-de-quem-cuida"><small>Cuidado</small>Quem cuida também precisa de cuidado</a><a class="conexao__artigo" href="artigo.html?post=carta-da-semente"><small>Oráculos</small>A carta da Semente e a paciência que não é espera</a><a class="conexao__artigo" href="artigo.html?post=perguntar-em-grupo"><small>Cultura</small>Por que perguntar em grupo muda a pergunta</a></div>
+      </nav>
+    </aside>
+  </div>
+</section>
+
+<section class="section materia-secao investigate" id="investigar" data-search="investigar sintoma diagnóstico medicina avaliação exames profissionais regulamentados">
+  <div class="shell">
+    <header class="section-head materia-cabeca reveal">
+      <div><div class="section-num">03</div><div class="eyebrow">Quando é importante investigar</div></div>
+      <div><h2 class="h2">Sintoma não é diagnóstico.</h2></div>
+    </header>
+    <p class="materia-fluxo" aria-label="Fluxo: perceber, observar, avaliar, compreender, cuidar"><span><b>Perceber</b> algo mudou</span><span><b>Observar</b> contexto e evolução</span><span><b>Avaliar</b> quando necessário</span><span><b>Compreender</b> sem simplificar</span><span><b>Cuidar</b> com o caminho adequado</span></p>
+    <div class="materia" data-materia>
+      <details class="source-reading" data-reading="investigar">
+        <summary>
+          <span class="source-reading__preview">
+            <small>Matéria integral · Investigação</small>
+            <strong>Observar vem antes de concluir</strong>
+            <em class="materia-abertura">A mesma queixa pode ter origens diferentes. Uma prática integrativa pode participar do cuidado, mas não substitui automaticamente uma avaliação profissional ou médica quando ela é necessária.</em>
+            <b data-reading-action>Continuar a leitura</b>
+          </span>
+          <span class="source-reading__symbol" aria-hidden="true">＋</span>
+        </summary>
+        <div class="source-reading__body">
+          <div class="source-reading__text"><p data-slide="0">Sentir algo diferente no corpo ou perceber uma mudança no modo como estamos vivendo costuma despertar uma pergunta imediata: o que é isso? É compreensível querer encontrar rapidamente uma explicação, sobretudo quando existe desconforto, medo ou quando aquilo começa a interferir na rotina. Mas um sintoma, isoladamente, raramente conta toda a história.</p><p data-slide="0">Dor de cabeça, cansaço, dificuldade para dormir, alterações de humor, palpitações, dores musculares, falta de concentração, desconfortos digestivos ou mudanças no apetite podem aparecer em contextos muito diferentes. Às vezes estão relacionados a situações passageiras. Em outros casos, podem fazer parte de um quadro que merece ser investigado. A semelhança entre os sintomas não significa que suas causas sejam as mesmas.</p><p data-slide="0">É por isso que observar vem antes de concluir. Quando começou? Houve alguma mudança importante naquele período? A sensação aparece ocasionalmente ou está se tornando frequente? Está aumentando de intensidade? Surge em determinadas situações? Alguma coisa melhora ou piora? Existem outros sinais acontecendo ao mesmo tempo? E, talvez a pergunta mais importante: isso começou a modificar a maneira como a pessoa vive, trabalha, dorme, se movimenta ou se relaciona?</p><p data-slide="0">Essas perguntas não servem para transformar cada sensação em motivo de preocupação. Servem para evitar o movimento oposto: normalizar tudo, atribuir qualquer mudança ao estresse, à idade, à ansiedade ou a uma explicação pronta e seguir adiante sem olhar melhor.</p><p data-slide="1">Investigar também não significa partir imediatamente para uma sucessão de exames. Pode começar por uma conversa cuidadosa, pela observação da evolução daquele sintoma e pela procura do profissional adequado. Dependendo da situação, uma avaliação clínica, psicológica, odontológica, fisioterapêutica ou de outra área pode ajudar a compreender melhor o que está acontecendo e indicar os próximos passos.</p><p data-slide="1">Esse cuidado é especialmente importante porque diferentes dimensões da vida podem se encontrar numa mesma experiência. Corpo e emoções não vivem em territórios separados. Sono, alimentação, medicamentos, relações, condições de trabalho, acontecimentos recentes, doenças já conhecidas e inúmeros outros fatores podem participar daquilo que estamos sentindo. Reconhecer essa complexidade não significa dizer que “tudo é emocional”, nem que todo desconforto físico tenha uma única causa orgânica. Significa resistir às explicações fáceis.</p><p data-slide="2">As práticas integrativas podem ocupar um lugar valioso nesse percurso. Algumas pessoas as procuram para relaxamento, conforto, bem-estar, manejo do estresse, autoconhecimento ou como complemento de outros cuidados. Em determinadas situações, elas podem caminhar ao lado de tratamentos e acompanhamentos realizados por profissionais de saúde. O ponto importante é compreender qual papel cada recurso está desempenhando.</p><p data-slide="2">Uma prática complementar não precisa competir com a medicina para ter valor. Da mesma forma, procurar uma avaliação médica não invalida o desejo de receber Reiki, acupuntura, massagem, reflexologia ou outro tipo de cuidado. São perguntas diferentes. Às vezes, inclusive, os dois movimentos fazem sentido ao mesmo tempo.</p><p data-slide="1">O que merece atenção é a tentativa de transformar uma hipótese em diagnóstico ou uma prática em resposta universal. Quando uma queixa persiste, se intensifica, muda de padrão, volta repetidamente ou começa a interferir de maneira importante na vida cotidiana, vale ampliar o olhar. E situações súbitas ou intensas também podem exigir avaliação mais rápida, conforme o que estiver acontecendo.</p><p data-slide="1">Nem sempre teremos uma resposta imediata. Algumas investigações levam tempo. Alguns sintomas desaparecem antes que sua causa fique clara. Outros exigem acompanhamento, comparação ao longo do tempo ou a participação de profissionais de áreas diferentes. Cuidar também pode signific tolerar por algum tempo a ausência de uma explicação completa sem, por isso, deixar de agir com responsabilidade.</p><p data-slide="2">Talvez a pergunta mais útil não seja apenas “qual atendimento devo fazer?”, mas “o que preciso compreender melhor antes de decidir como cuidar disso?”</p><p data-slide="2">Porque escolher conscientemente também significa reconhecer quando é hora de acolher, quando é hora de observar, quando uma prática complementar pode ajudar e quando é importante investigar.</p><p data-slide="2">E, depois de perceber que existem diferentes necessidades e diferentes tipos de cuidado, surge uma nova pergunta: que caminhos existem — e qual é o lugar de cada um?</p><p data-slide="1">O papel desta seção não é assustar nem diagnosticar. É lembrar que investigar também é uma forma de cuidado.</p></div>
+          <button type="button" class="materia-recolher" data-materia-recolher>Recolher a leitura <span aria-hidden="true">↑</span></button>
+        </div>
+      </details>
+      <div class="source-reading__media materia-slides" data-slides id="investigar-slides" role="region" aria-roledescription="carrossel" aria-label="Observar · investigar · integrar">
+        <p class="materia-slides__rotulo">Observar · investigar · integrar</p>
+        <div class="materia-slides__quadro">
+          <figure class="materia-slide is-ativo" data-slide-item="0" aria-roledescription="slide" aria-label="1 de 3">
+            <span class="materia-slide__foto"><img src="media/recepcao-acolhimento.webp" alt="Recepcionista e visitante conversam em um ambiente acolhedor" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>Observar</small>
+              <strong>O que mudou? Desde quando? Em quais situações?</strong>
+              <span>Observar vem antes de concluir: perceber o começo, a frequência e o que melhora ou piora.</span>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="1" aria-roledescription="slide" aria-label="2 de 3" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="media/saude-integrativa-escuta.webp" alt="Profissional escuta com atenção uma pessoa em atendimento" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>Investigar</small>
+              <strong>Quando houver preocupação, persistência ou impacto relevante</strong>
+              <span>Quando houver preocupação, persistência ou impacto relevante, a avaliação apropriada ajuda a compreender causas e prioridades.</span>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="2" aria-roledescription="slide" aria-label="3 de 3" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="media/profissionais-encontro.webp" alt="Profissionais conversam sobre diferentes caminhos de cuidado" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>Integrar</small>
+              <strong>Depois de compreender o contexto, diferentes recursos podem ser combinados</strong>
+              <span>Depois de compreender o contexto, diferentes recursos podem ser combinados de forma responsável.</span>
+            </figcaption>
+          </figure>
+        </div>
+        <div class="materia-slides__controles">
+          <button type="button" class="materia-slides__seta" data-slide-anterior aria-controls="investigar-slides" aria-label="Imagem anterior">←</button>
+          <ol class="materia-slides__pontos"><li><button type="button" data-slide-ir="0" aria-label="Ver imagem 1: Observar" aria-current="true"></button></li><li><button type="button" data-slide-ir="1" aria-label="Ver imagem 2: Investigar"></button></li><li><button type="button" data-slide-ir="2" aria-label="Ver imagem 3: Integrar"></button></li></ol>
+          <button type="button" class="materia-slides__seta" data-slide-proximo aria-controls="investigar-slides" aria-label="Próxima imagem">→</button>
+        </div>
+      </div>
+    </div>
+    <aside class="conexao reveal" aria-labelledby="conexao-investigar-titulo">
+      <form class="conexao__interacao conexao-anotacoes" data-anotacoes>
+        <p class="conexao__rotulo">Antes de uma conversa</p>
+        <h3 id="conexao-investigar-titulo">Leve estas perguntas com você</h3>
+        <p class="conexao__nota">Marque as que fazem sentido para o seu momento e copie. Nada sai deste aparelho.</p>
+        <div class="conexao-anotacoes__lista"><label><input type="checkbox" value="O que mudou?"><span>O que mudou?</span></label><label><input type="checkbox" value="Desde quando?"><span>Desde quando?</span></label><label><input type="checkbox" value="Em quais situações aparece?"><span>Em quais situações aparece?</span></label><label><input type="checkbox" value="Está aumentando de intensidade?"><span>Está aumentando de intensidade?</span></label><label><input type="checkbox" value="O que melhora? O que piora?"><span>O que melhora? O que piora?</span></label><label><input type="checkbox" value="Isso começou a mudar a forma como vivo, trabalho, durmo ou me relaciono?"><span>Isso começou a mudar a forma como vivo, trabalho, durmo ou me relaciono?</span></label></div>
+        <div class="conexao__botoes"><button type="button" data-anotacoes-copiar>Copiar minhas perguntas</button></div>
+        <p class="conexao__resposta" data-anotacoes-status aria-live="polite"></p>
+      </form>
+      <nav class="conexao__indicacoes" aria-label="Indicações e leituras sobre investigar">
+        <p class="conexao__rotulo">Indicações</p>
+        <div class="conexao__portal"><a href="recepcao.html">Conversar com a Recepção <span aria-hidden="true">↗</span></a><a href="profissionais.html">Encontrar um profissional <span aria-hidden="true">↗</span></a><a href="saude-integrativa.html">Saúde Integrativa <span aria-hidden="true">↗</span></a></div>
+        <p class="conexao__rotulo">No Blog</p>
+        <div class="conexao__blog"><a class="conexao__artigo" href="artigo.html?post=ansiedade-corpo"><small>Terapias</small>Onde a ansiedade se instala no corpo</a><a class="conexao__artigo" href="artigo.html?post=primeira-conversa"><small>Terapias</small>O que acontece na primeira conversa de um atendimento</a><a class="conexao__artigo" href="artigo.html?post=respiracao-quatro-tempos"><small>Práticas</small>Respirar em quatro tempos quando o dia aperta</a></div>
+      </nav>
+    </aside>
+  </div>
+</section>
+
+<section class="section materia-secao carepaths" id="caminhos-do-cuidado" data-search="cuidado prevenção investigação tratamento complemento bem-estar autoconhecimento">
+  <div class="shell">
+    <header class="section-head materia-cabeca reveal">
+      <div><div class="section-num">04</div><div class="eyebrow">E depois, o que fazer?</div></div>
+      <div><h2 class="h2">Nem todo cuidado começa no mesmo lugar.</h2></div>
+    </header>
+    <div class="materia" data-materia>
+      <details class="source-reading" data-reading="caminhos">
+        <summary>
+          <span class="source-reading__preview">
+            <small>Capítulo integral · Caminhos do cuidado</small>
+            <strong>Cuidar não cabe em uma só gaveta</strong>
+            <em class="materia-abertura">Depois de perceber o que estamos vivendo e reconhecer quando algo precisa ser investigado, surge uma pergunta inevitável: e agora, o que podemos fazer?</em>
+            <b data-reading-action>Continuar a leitura</b>
+          </span>
+          <span class="source-reading__symbol" aria-hidden="true">＋</span>
+        </summary>
+        <div class="source-reading__body">
+          <div class="source-reading__text"><p data-slide="1">Nem toda necessidade pede o mesmo tipo de resposta. Às vezes, cuidar significa procurar um médico, um psicólogo, um fisioterapeuta ou outro profissional de saúde. Em outras situações, talvez seja necessário rever o sono, a alimentação, o movimento, a rotina de trabalho, os vínculos, o excesso de estímulos ou simplesmente criar espaço para descanso e recuperação.</p><p data-slide="3">Há momentos em que uma conversa muda alguma coisa. Em outros, precisamos de acompanhamento continuado. Às vezes o corpo pede atenção. Em outras, são as emoções, os pensamentos, os relacionamentos ou o modo como estamos atravessando determinada fase da vida que começam a exigir cuidado.</p><p data-slide="3">E quase nunca essas dimensões existem completamente separadas.</p><p data-slide="3">Uma noite mal dormida interfere no humor. Um período prolongado de tensão pode se manifestar no corpo. Uma dor persistente pode mudar a maneira como nos movimentamos, trabalhamos e convivemos. Relações difíceis podem atravessar o sono, a alimentação e a disposição. Uma doença física também pode modificar profundamente nossa experiência emocional.</p><p data-slide="3">Por isso, quando falamos em cuidado, estamos falando de um território muito maior do que simplesmente escolher um atendimento.</p><p data-slide="3">Existem recursos voltados à prevenção. Outros à investigação e ao tratamento. Há práticas que ajudam a aliviar tensões, melhorar o bem-estar ou favorecer relaxamento. Há abordagens que trabalham movimento e consciência corporal. Outras se dedicam à escuta, ao comportamento, às emoções ou ao autoconhecimento. Existem ainda tradições terapêuticas que nasceram em culturas muito anteriores à medicina contemporânea e continuam sendo utilizadas por milhões de pessoas.</p><p data-slide="2">Alguns desses caminhos pertencem a profissões de saúde regulamentadas. Outros fazem parte das chamadas Práticas Integrativas e Complementares em Saúde. Há também práticas tradicionais, terapias complementares e abordagens holísticas que olham para a pessoa a partir de outras referências e modos de compreender a experiência humana.</p><p data-slide="2">Esses campos podem se encontrar.</p><p data-slide="2">Uma prática integrativa não deixa necessariamente de ser realizada por um profissional regulamentado. Uma abordagem holística pode coexistir com acompanhamento médico. Uma pessoa pode fazer psicoterapia e receber massagem. Pode praticar Yoga e realizar fisioterapia. Pode procurar acupuntura e continuar utilizando os medicamentos prescritos pelo seu médico.</p><p data-slide="2">A pergunta importante não é qual desses mundos deve vencer o outro.</p><p data-slide="2">É o que faz sentido para aquela pessoa, naquele momento, diante daquilo que ela está vivendo.</p><p data-slide="0">Também por isso é importante conhecer os limites de cada caminho. Nem toda prática serve para todas as situações. Nem todo profissional responde às mesmas necessidades. E complementar um cuidado é diferente de substituir aquilo que precisa ser acompanhado por um profissional habilitado.</p><p data-slide="2">No Potala, essa diversidade faz parte da própria maneira como compreendemos o cuidado.</p><p data-slide="2">Aqui convivem práticas integrativas, atendimentos realizados por profissionais de áreas regulamentadas, terapias complementares, saberes tradicionais, abordagens holísticas e caminhos de autoconhecimento. Não porque consideremos todas essas possibilidades iguais ou intercambiáveis, mas porque reconhecemos que as pessoas chegam com histórias, necessidades e momentos de vida diferentes.</p><p data-slide="2">Algumas procuram aliviar uma dor. Outras querem compreender melhor o que estão vivendo. Algumas chegam encaminhadas para uma prática específica. Outras ainda não sabem sequer que tipo de ajuda procuram.</p><p data-slide="4">É por isso que conhecer as possibilidades importa.</p><p data-slide="4">Não para experimentar tudo.</p><p data-slide="4">Não para transformar o cuidado em consumo de terapias.</p><p data-slide="4">Mas para conseguir perceber que existem caminhos diferentes — e fazer escolhas mais conscientes entre eles.</p><p data-slide="4">O atendimento pode começar em uma sala. Mas o cuidado começa antes: quando conseguimos compreender um pouco melhor do que precisamos e que tipo de caminho pode nos ajudar agora.</p><p data-slide="2">E é justamente a partir daqui que podemos abrir as portas do Potala e mostrar, com clareza, quais são esses caminhos e como eles se organizam.</p><p data-slide="2">Há recursos que pertencem à saúde regulamentada, práticas integrativas reconhecidas em políticas públicas, tradições terapêuticas, abordagens complementares e caminhos holísticos.</p><p data-slide="2">No Potala, essas possibilidades não aparecem como categorias concorrentes. Elas convivem dentro de uma pergunta maior: de que cuidado esta pessoa precisa agora?</p><p data-slide="0">Investigar quando é preciso.</p><p data-slide="1">Tratar quando há indicação.</p><p data-slide="2">Complementar quando faz sentido.</p><p data-slide="3">Prevenir e cultivar bem-estar.</p><p data-slide="4">Compreender-se também é cuidar.</p></div>
+          <button type="button" class="materia-recolher" data-materia-recolher>Recolher a leitura <span aria-hidden="true">↑</span></button>
+        </div>
+      </details>
+      <div class="source-reading__media materia-slides" data-slides id="caminhos-slides" role="region" aria-roledescription="carrossel" aria-label="Cuidar não cabe em uma só gaveta">
+        <p class="materia-slides__rotulo">Cuidar não cabe em uma só gaveta</p>
+        <div class="materia-slides__quadro">
+          <figure class="materia-slide is-ativo" data-slide-item="0" aria-roledescription="slide" aria-label="1 de 5">
+            <span class="materia-slide__foto"><img src="media/journey-cuidado.webp" alt="Paisagem serena que acompanha o caminho do cuidado" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>01 · Investigar</small>
+              <strong>Investigar quando é preciso.</strong>
+              <span>Reconhecer quando algo pede avaliação é o primeiro gesto de um cuidado responsável.</span>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="1" aria-roledescription="slide" aria-label="2 de 5" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="media/atendimentos-acolhimento.webp" alt="Profissional acolhe uma pessoa em uma conversa de cuidado" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>02 · Tratar</small>
+              <strong>Tratar quando há indicação.</strong>
+              <span>Profissões de saúde regulamentadas acompanham diagnósticos, tratamentos e condutas.</span>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="2" aria-roledescription="slide" aria-label="3 de 5" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="media/atividades-pratica.webp" alt="Pessoas vivem uma prática corporal juntas em um jardim" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>03 · Complementar</small>
+              <strong>Complementar quando faz sentido.</strong>
+              <span>Práticas integrativas podem caminhar ao lado de outros cuidados, sem substituí-los.</span>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="3" aria-roledescription="slide" aria-label="4 de 5" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="media/journey-inspiracao.webp" alt="Paisagem luminosa que convida à pausa" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>04 · Prevenir</small>
+              <strong>Prevenir e cultivar bem-estar.</strong>
+              <span>Sono, movimento, vínculos e descanso também são formas de cuidado.</span>
+            </figcaption>
+          </figure>
+          <figure class="materia-slide" data-slide-item="4" aria-roledescription="slide" aria-label="5 de 5" aria-hidden="true">
+            <span class="materia-slide__foto"><img src="media/atendimentos-conceito/ambiente.webp" alt="Espaço sereno preparado para uma experiência de cuidado" width="1500" height="1000" loading="lazy" decoding="async"></span>
+            <figcaption>
+              <small>05 · Compreender-se</small>
+              <strong>Compreender-se também é cuidar.</strong>
+              <span>Escuta, autoconhecimento e presença ajudam a escolher com mais consciência.</span>
+            </figcaption>
+          </figure>
+        </div>
+        <div class="materia-slides__controles">
+          <button type="button" class="materia-slides__seta" data-slide-anterior aria-controls="caminhos-slides" aria-label="Imagem anterior">←</button>
+          <ol class="materia-slides__pontos"><li><button type="button" data-slide-ir="0" aria-label="Ver imagem 1: 01 · Investigar" aria-current="true"></button></li><li><button type="button" data-slide-ir="1" aria-label="Ver imagem 2: 02 · Tratar"></button></li><li><button type="button" data-slide-ir="2" aria-label="Ver imagem 3: 03 · Complementar"></button></li><li><button type="button" data-slide-ir="3" aria-label="Ver imagem 4: 04 · Prevenir"></button></li><li><button type="button" data-slide-ir="4" aria-label="Ver imagem 5: 05 · Compreender-se"></button></li></ol>
+          <button type="button" class="materia-slides__seta" data-slide-proximo aria-controls="caminhos-slides" aria-label="Próxima imagem">→</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section reflection conexao-secao" id="reflexao" data-search="reflexão cuidado pausa compreender pessoas caminhos">
+  <div class="shell">
+    <aside class="conexao conexao--escura reveal" aria-labelledby="reflexao-titulo">
+      <div class="conexao__interacao reflection-question">
+        <p class="conexao__rotulo">Um instante antes de seguir</p>
+        <h3 id="reflexao-titulo">Como você tem cuidado de si?</h3>
+        <p class="conexao__nota">Não é preciso responder tudo. Escolha apenas a frase que mais se aproxima do seu momento agora.</p>
+        <div class="reflection-choices" role="group" aria-label="Escolha uma reflexão">
+        <button type="button" data-reflection-choice="pausa" aria-pressed="false">Meu corpo está pedindo uma pausa.</button>
+        <button type="button" data-reflection-choice="compreender" aria-pressed="false">Há algo que eu gostaria de compreender melhor.</button>
+        <button type="button" data-reflection-choice="encontro" aria-pressed="false">Talvez eu precise conversar com alguém.</button>
+      </div>
+        <p class="reflection-feedback" data-reflection-feedback aria-live="polite">Respire um pouco. O próximo passo pode ser pequeno.</p>
+      </div>
+      <nav class="conexao__indicacoes reflection-paths" aria-label="Caminhos para continuar no Portal Potala">
+        <p class="conexao__rotulo">Indicações</p>
+        <div class="conexao__portal">
+          <a href="#praca">Conheça os Atendimentos <span aria-hidden="true">↘</span></a>
+          <a href="blog.html">Explorar conhecimento <span aria-hidden="true">↗</span></a>
+          <a href="#profissionais">Encontrar pessoas <span aria-hidden="true">↘</span></a>
+        </div>
+        <p class="conexao__rotulo">No Blog</p>
+        <div class="conexao__blog">
+          <a class="conexao__artigo" href="artigo.html?post=meditacao-inicio"><small>Práticas</small>Começar a meditar sem virar outra pessoa</a>
+          <a class="conexao__artigo" href="artigo.html?post=aromaterapia-cotidiano"><small>Terapias</small>Aromaterapia no cotidiano, sem exageros</a>
+        </div>
+      </nav>
+    </aside>
+  </div>
+</section>
+
+<section class="section picshi" id="papel" data-search="papel do potala picshi profissões regulamentadas pics integrativas holísticas sistemas tradicionais espiritualidade lombalgia">
+  <div class="shell">
+    <div class="section-head reveal">
+      <div><div class="section-num">04</div><div class="eyebrow" style="color:#d8c49a">O papel do Potala</div></div>
+      <div><h2 class="h2">Muitos caminhos. Naturezas diferentes. Uma apresentação responsável</h2><p class="lead">O Potala reúne práticas, profissionais, sistemas tradicionais, caminhos de autoconhecimento e propostas espirituais. Organizamos cada prática respeitando sua natureza, o reconhecimento institucional existente, a regulamentação profissional aplicável e seus limites.</p></div>
+    </div>
+    <div class="map-grid">
+      <div class="picshi-map reveal">
+        <div class="ring r1"></div><div class="ring r2"></div>
+        <div class="picshi-core">muitos caminhos,<br>naturezas diferentes</div>
+        <button class="map-node n1 active" data-map="reg">Regulamentadas</button>
+        <button class="map-node n2" data-map="pics">PICS</button>
+        <button class="map-node n3" data-map="trad">Tradicionais</button>
+        <button class="map-node n4" data-map="auto">Autoconhecimento</button>
+        <button class="map-node n5" data-map="hol">Holísticas</button>
+        <button class="map-node n6" data-map="esp">Espiritualidade</button>
+      </div>
+      <div class="map-caption reveal" id="mapCaption">
+        <div class="eyebrow" style="color:#d8c49a">Mapa conceitual</div>
+        <h3>Profissões regulamentadas</h3>
+        <p>Um exemplo de como a página pode explicar diferenças institucionais sem transformar a seção em glossário. Cada nó muda o conteúdo e ajuda a situar o visitante.</p>
+        <div class="note">A página pública deverá distinguir regulamentação, reconhecimento institucional, tradição, evidência, hipótese, controvérsia e limites quando isso for relevante.</div>
+      </div>
+    </div>
+    <div class="case reveal">
+      <div><div class="eyebrow" style="color:#d8c49a">Um mesmo relato</div><h3>“Estou com dor lombar.”</h3><p>O objetivo não é dizer que todos os caminhos fazem a mesma coisa, mas mostrar por que a pessoa precisa compreender a natureza de cada proposta.</p></div>
+      <div class="case-lenses">
+        <div class="lens"><b>Medicina</b>investigação, diagnóstico e tratamento quando indicados.</div>
+        <div class="lens"><b>Fisioterapia</b>função, movimento e reabilitação dentro de sua competência.</div>
+        <div class="lens"><b>Massoterapia</b>trabalho corporal conforme proposta da técnica e profissional.</div>
+        <div class="lens"><b>Acupuntura</b>prática ligada à MTC, apresentada com contexto e formação.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section plaza" id="praca" data-search="grande praça atendimentos categorias massoterapia psicoterapias medicina chinesa ayurveda energéticas florais aromaterapia autoconhecimento filtros cards destaques do mês últimos adicionados vale conhecer magnified healing desenho humano">
+  <div class="shell plaza-head reveal">
+    <div><div class="section-num">05</div><div class="eyebrow">A Grande Praça dos Atendimentos</div><h2 class="h2">Agora você pode passear.</h2></div>
+    <p class="lead">Aqui estão os atendimentos. Você pode chegar pelo nome de uma técnica, por uma categoria, pelo que está vivendo, pela modalidade, pelo profissional ou simplesmente pela curiosidade. A Praça foi pensada para permitir busca e descoberta. Não é preciso escolher imediatamente. Conhecer também é uma forma de chegar.</p>
+  </div>
+  <div class="plaza-toolbar">
+    <div class="shell">
+      <div class="toolbar-row">
+        <input id="therapySearch" type="search" placeholder="Busque por técnica ou palavra-chave..." aria-label="Buscar atendimentos" />
+        <select id="therapySort" aria-label="Ordenar atendimentos"><option value="editorial">Ordem editorial</option><option value="az">A–Z</option><option value="za">Z–A</option></select>
+        <button class="btn btn-primary" id="clearFilters">Limpar filtros</button>
+      </div>
+    </div>
+  </div>
+  <div class="shell">
+    <div class="category-strip reveal" aria-label="Categorias de atendimentos">
+      <button class="cat-btn active" data-cat="all">Todos</button>
+      <button class="cat-btn" data-cat="MTC">MTC</button>
+      <button class="cat-btn" data-cat="Práticas energéticas">Práticas energéticas</button>
+      <button class="cat-btn" data-cat="Reflexologias">Reflexologias</button>
+      <button class="cat-btn" data-cat="Massoterapias">Massoterapias</button>
+      <button class="cat-btn" data-cat="Psicoterapias">Psicoterapias</button>
+      <button class="cat-btn" data-cat="Autoconhecimento">Autoconhecimento</button>
+      <button class="cat-btn" data-cat="Ayurveda">Ayurveda</button>
+      <button class="cat-btn" data-cat="Florais e Aromaterapia">Florais e Aromaterapia</button>
+      <button class="cat-btn" data-cat="Avaliações e mapeamentos">Avaliações e mapeamentos</button>
+      <button class="cat-btn" data-cat="Práticas corporais">Práticas corporais</button>
+      <button class="cat-btn" data-cat="Práticas integrativas">Práticas integrativas</button>
+    </div>
+
+    <div class="discovery-hero reveal">
+      <article class="feature">
+        <span class="tag">Vale conhecer</span>
+        <h3>Magnified Healing</h3>
+        <p>Uma prática menos conhecida de natureza energética e espiritual. Antes de escolher, conheça sua proposta, linguagem e limites.</p>
+        <div><button class="btn btn-soft">Conheça a ficha →</button></div>
+      </article>
+      <article class="side-feature">
+        <div><div class="eyebrow" style="color:#f6e2c0">Novidades no Potala</div><h3>Reflexologia Palmar</h3><p>Um atendimento centrado nas mãos, com sessão breve e presença tátil.</p></div>
+        <div class="small" style="color:rgba(255,255,255,.78)">Ver atendimento →</div>
+      </article>
+    </div>
+
+    <div class="shelf-title reveal"><h3>Explore por categorias</h3><small>cards demonstrativos • sem dados operacionais reais</small></div>
+    <div class="cards reveal" id="therapyCards"></div>
+    <div class="no-results" id="noResults">Nenhum atendimento do protótipo corresponde aos filtros atuais.</div>
+
+    <div class="shelf-title reveal"><h3>Últimos adicionados</h3><small>prateleira dinâmica</small></div>
+    <div class="horizontal-shelf reveal" id="latestShelf"></div>
+
+    <div class="source-discovery-lanes reveal">
+      <article><span>Modalidade</span><h3>Atendimentos online</h3><p>Quando a modalidade fizer sentido, a Praça também apresenta os encontros disponíveis a distância.</p></article>
+      <article><span>Descoberta</span><h3>Pouco conhecidos</h3><p>Práticas menos buscadas pelo nome ganham contexto para ampliar repertório sem sugerir uma escolha automática.</p></article>
+    </div>
+
+    <div class="az reveal">
+      <div class="eyebrow">A–Z completo</div>
+      <h3>Procure pela primeira letra</h3><div class="small">Uma navegação de primeira classe — não um recurso de emergência.</div>
+      <div class="az-row" id="azRow"></div>
+    </div>
+
+    <section class="bank reveal" aria-label="Banco Vivo de Perguntas">
+      <div><div class="eyebrow">Banco Vivo</div><h3>Perguntas reais também organizam conhecimento.</h3><p class="small">Se a mesma pergunta básica aparece muitas vezes, talvez o problema esteja no card ou na página — e o Portal precisa aprender com isso.</p><button class="btn btn-primary" id="conciergeBtn">Abrir Concierge</button></div>
+      <div class="faq">
+        <div><button class="faq-q">Como saber a diferença entre técnicas parecidas?</button><div class="answer">O Banco Vivo pode responder, relacionar páginas e oferecer comparação. Quando a dúvida pede julgamento humano, a Concierge pode conduzir ao Aconselhamento.</div></div>
+        <div><button class="faq-q">Posso buscar sem saber o nome da técnica?</button><div class="answer">Sim. A busca poderá interpretar linguagem natural e também levar a páginas temáticas, categorias e conteúdos — sem transformar sintomas em prescrição automática.</div></div>
+        <div><button class="faq-q">Por que algumas técnicas aparecem em destaque?</button><div class="answer">Prateleiras editoriais existem para produzir descoberta, contextualizar novidades e apresentar modalidades que o visitante talvez nunca procurasse sozinho.</div></div>
+      </div>
     </section>
-  </noscript>
+  </div>
+</section>
+
+<section class="section oracles" id="oraculos" data-search="oráculos tarot tarô runas baralhos simbolismo tradição astrologia numerologia">
+  <div class="shell">
+    <div class="section-head reveal">
+      <div><div class="section-num">06</div><div class="eyebrow" style="color:#d8c49a">Oráculos</div></div>
+      <div><h2 class="h2">Símbolos não substituem decisões. Podem abrir perguntas.</h2><p class="lead">Tarot, Baralho Cigano e Runas são práticas simbólicas e interpretativas. No Portal, aparecem em território próprio para que sua natureza não se confunda com terapias, profissões regulamentadas ou sistemas tradicionais.</p></div>
+    </div>
+    <div class="oracle-editorial reveal"><span>Leitura simbólica</span><h3>Uma pergunta pode mudar a forma de olhar para uma escolha</h3><p>O valor de um Oráculo não precisa estar em prometer certeza sobre o futuro. Ele pode funcionar como linguagem simbólica, espelho interpretativo ou provocação para reflexão — conforme a abordagem de quem conduz a leitura.</p></div>
+    <div class="oracle-grid reveal">
+      <article class="oracle-card"><div class="sigil">✦</div><h3>Tarot</h3><p>arquétipos · imagens · leitura</p></article>
+      <article class="oracle-card"><div class="sigil">☾</div><h3>Baralho Cigano</h3><p>símbolos · tradição · interpretação</p></article>
+      <article class="oracle-card"><div class="sigil">ᚱ</div><h3>Runas</h3><p>símbolos · tradição · reflexão</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="section people" id="profissionais" data-search="terapeutas profissionais formação trajetória entrevistas vídeos">
+  <div class="shell">
+    <div class="section-head reveal">
+      <div><div class="section-num">07</div><div class="eyebrow">Terapeutas e profissionais</div></div>
+      <div><h2 class="h2">Técnicas são oferecidas por pessoas.</h2><p class="lead">Formação, experiência, abordagem e presença participam da escolha. Os perfis abaixo são demonstrativos e servem apenas para testar a composição visual.</p></div>
+    </div>
+    <figure class="people-scene reveal"><img src="media/profissionais-encontro.webp" alt="Profissionais conversam em um ambiente acolhedor" width="1600" height="900"><figcaption>Escuta, formação e presença transformam uma técnica em encontro.</figcaption></figure><div class="people-grid reveal">
+      <article class="person"><div class="portrait"><svg viewBox="0 0 100 100"><circle cx="50" cy="36" r="20" fill="none" stroke="currentColor" stroke-width="2"/><path d="M18 92c3-24 17-36 32-36s29 12 32 36" fill="none" stroke="currentColor" stroke-width="2"/></svg></div><div class="person-copy"><span>Perfil demonstrativo</span><h3>Marina Oliveira</h3><p><strong>Psicóloga · Psicoterapia</strong><br>Atendimentos presenciais e online. Perfil criado exclusivamente para demonstrar como formação, abordagem, apresentação pessoal e agenda podem conviver na mesma ficha.</p><small>Próximos horários: dados fictícios</small></div></article>
+      <article class="person"><div class="portrait"><svg viewBox="0 0 100 100"><circle cx="50" cy="36" r="20" fill="none" stroke="currentColor" stroke-width="2"/><path d="M18 92c3-24 17-36 32-36s29 12 32 36" fill="none" stroke="currentColor" stroke-width="2"/></svg></div><div class="person-copy"><span>Perfil demonstrativo</span><h3>João Silva</h3><p><strong>Acupuntura · MTC</strong><br>Presencial</p></div></article>
+      <article class="person"><div class="portrait"><svg viewBox="0 0 100 100"><circle cx="50" cy="36" r="20" fill="none" stroke="currentColor" stroke-width="2"/><path d="M18 92c3-24 17-36 32-36s29 12 32 36" fill="none" stroke="currentColor" stroke-width="2"/></svg></div><div class="person-copy"><span>Perfil demonstrativo</span><h3>Ana Costa</h3><p><strong>Ayurveda · Yoga</strong><br>Presencial / online</p></div></article>
+    </div>
+  </div>
+</section>
+
+<section class="section special" id="especiais" data-search="atendimentos especiais cuidados solidários humanitários acesso mural de luz oração reiki à distância centro humanitário supervisionados">
+  <div class="shell">
+    <div class="section-head reveal">
+      <div><div class="section-num">08</div><div class="eyebrow">Atendimentos Especiais</div></div>
+      <div><h2 class="h2">Há formas de cuidado desenhadas para ampliar acesso.</h2><p class="lead">Nem todo cuidado entra pela mesma porta. Ações solidárias, humanitárias, gratuitas, supervisionadas ou a distância podem existir com regras próprias e responsáveis claramente identificados.</p></div>
+    </div>
+    <div class="special-grid reveal">
+      <article class="special-card"><div><div class="eyebrow">Acesso</div><h3>Atendimentos solidários</h3><p>Quando houver vagas, iniciativas com valores diferenciados ou gratuidade aparecem aqui com critérios, responsáveis e forma de inscrição.</p></div><span class="small">Ver iniciativas ativas →</span></article>
+      <article class="special-card"><div><div class="eyebrow">Humanitário</div><h3>Regeneração Celular</h3><p>Exemplo de prática humanitária oferecida em contextos específicos, com descrição de quem realiza, como funciona e quais são seus limites.</p></div><span class="small">Entender a proposta →</span></article>
+      <article class="special-card candle-card"><div><div class="eyebrow" style="color:#d8c49a">Mural de Luz</div><h3>Deixe um nome. Deixe uma intenção.</h3><p>Um gesto simples, simbólico e humano, sem promessa de resultado.</p><form class="mural-form" id="muralForm"><label>Nome<input id="muralName" name="name" autocomplete="off"></label><label>Intenção<input id="muralIntent" name="intent" autocomplete="off"></label><button class="btn btn-soft" type="submit">Acender intenção</button><p class="mural-feedback" id="muralFeedback" aria-live="polite"></p></form></div><div class="candle" aria-hidden="true"><div class="flame"></div></div></article>
+    </div>
+  </div>
+</section>
+
+<section class="section virtual" id="virtual" data-search="sala virtual atendimento online distância sessão acesso">
+  <div class="shell virtual-wrap">
+    <div class="reveal"><div class="section-num">09</div><div class="eyebrow">Sala Virtual</div><h2 class="h2">Alguns encontros podem atravessar a distância.</h2><p class="lead">A Sala Virtual reúne atendimentos compatíveis com o formato online. A experiência precisa continuar sendo humana: ambiente adequado, privacidade, preparação e orientação clara antes da sessão.</p><ol class="virtual-steps"><li><span>01</span><div><strong>Escolha</strong><small>técnica e profissional disponíveis online</small></div></li><li><span>02</span><div><strong>Prepare o ambiente</strong><small>privacidade, fones, conexão e tempo reservado</small></div></li><li><span>03</span><div><strong>Receba o acesso</strong><small>link e orientações na confirmação</small></div></li><li><span>04</span><div><strong>Entre com alguns minutos</strong><small>sem transformar a sessão numa corrida tecnológica</small></div></li></ol></div>
+    <div class="portal-window reveal"><div class="screen"><img class="virtual-image" src="media/atendimentos-conceito/ambiente.webp" alt="Ambiente tranquilo preparado para um encontro de cuidado" width="1600" height="900"><div class="virtual-caption"><strong>Sua sessão começa aqui.</strong><div class="small">profissional • horário • orientações • acesso</div></div></div></div>
+  </div>
+</section>
+
+<section class="section schedule" id="agendar" data-search="agendamento técnica profissional data horário modalidade investimento disponibilidade pagamento">
+  <div class="shell">
+    <div class="section-head reveal">
+      <div><div class="section-num" style="color:rgba(255,255,255,.12)">10</div><div class="eyebrow" style="color:#d8c49a">Agendamentos</div></div>
+      <div><h2 class="h2">Da descoberta para a ação.</h2><p class="lead">Este fluxo é demonstrativo. Nenhum horário, valor ou profissional apresentado aqui corresponde a disponibilidade real.</p></div>
+    </div>
+    <div class="schedule-box reveal">
+      <form class="book-panel" id="bookForm">
+        <div class="eyebrow">Simulação de interface</div>
+        <h3 style="font-family:var(--serif);font-size:2.4rem;font-weight:500;margin:8px 0">Encontrar um horário</h3>
+        <div class="book-grid">
+          <label>Técnica<select name="atendimento"><option>Selecione uma técnica</option><option>Acupuntura</option><option>Reflexologia Palmar</option><option>Reiki</option></select></label>
+          <label>Profissional<select name="profissional"><option>Selecione um profissional</option><option>Marina Oliveira · demonstrativo</option><option>João Silva · demonstrativo</option><option>Ana Costa · demonstrativo</option></select></label>
+          <label>Modalidade<select name="modalidade"><option>Escolha uma modalidade</option><option>Presencial</option><option>Online</option></select></label>
+          <label>Data<select name="data"><option>Escolha uma data</option><option>Exemplo de agenda</option></select></label>
+          <label>Horário<select name="horario"><option>Escolha um horário</option><option>09:00 · demonstrativo</option><option>14:30 · demonstrativo</option><option>18:00 · demonstrativo</option></select></label>
+          <label>Investimento<select name="investimento"><option>Consultar valor na ficha</option></select></label>
+        </div>
+        <p class="small">Nesta versão, o objetivo é testar fluxo e hierarquia — não disponibilidade real.</p>
+        <button class="btn btn-primary" id="bookContinue" type="button">Continuar com esta escolha →</button><div class="book-summary" id="bookSummary" tabindex="-1" aria-live="polite" hidden></div>
+      </form>
+      <aside class="book-note"><div><div class="eyebrow" style="color:#d8c49a">Resumo</div><h3>Sua escolha</h3><p>Remarcação, cancelamento, pagamento e contato humano deverão aparecer no passo seguinte.</p></div><div class="small" style="color:rgba(255,255,255,.55)">Interface demonstrativa • sem integração com agenda real</div></aside>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer id="encerramento">
+  <div class="shell">
+    <div class="footer-grid">
+      <div><div class="eyebrow" style="color:#d8c49a">12 • Encerramento / Rodapé Vivo</div><h2>Você não precisa sair daqui com todas as respostas.</h2><p style="max-width:650px;color:rgba(255,255,255,.62)">Talvez baste ter encontrado uma pergunta melhor, um caminho possível, uma técnica que merece ser conhecida ou alguém com quem conversar.</p></div>
+      <div class="footer-links"><a href="#saude">Biblioteca</a><a href="revista.html">Revista</a><a href="blog.html">Blog</a><a href="cursos.html">Cursos</a><a href="atividades.html">Atividades</a><a href="marketplace.html">Loja</a><a href="#praca">Atendimentos</a><a href="#oraculos">Oráculos</a><a href="#profissionais">Profissionais</a><a href="#especiais">Mural de Luz</a><a href="quem-somos.html">Quem somos</a><a href="travessia.html">A Travessia</a><a href="recepcao.html">Contato</a></div>
+    </div>
+    <div class="footer-bottom"><span>Instituto Potala</span><span>Informação para compreender antes de escolher.</span></div>
+  </div>
+</footer>
+<div class="proto">Portal Potala</div>
+
+<script>
+const $=(s,p=document)=>p.querySelector(s), $$=(s,p=document)=>[...p.querySelectorAll(s)];
+
+// top bar & scroll progress
+const topbar=$('#topbar'), progress=$('#progress');
+function onScroll(){
+  topbar.classList.toggle('scrolled',scrollY>20);
+  const h=document.documentElement.scrollHeight-innerHeight;
+  progress.style.width=(h>0?(scrollY/h)*100:0)+'%';
+}
+addEventListener('scroll',onScroll,{passive:true}); onScroll();
+
+// reveal
+const io=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')}),{threshold:.12});
+$$('.reveal').forEach(el=>io.observe(el));
+
+// drawer
+const drawer=$('#drawer'), searchOpen=$('#searchOpen');
+function setDrawer(open,focusSearch=false){drawer.classList.toggle('open',open);drawer.setAttribute('aria-hidden',String(!open));searchOpen.setAttribute('aria-expanded',String(open));if(open&&focusSearch)setTimeout(()=>$('#pageSearch').focus(),80)}
+searchOpen.addEventListener('click',()=>setDrawer(true,true));
+$$('#drawer a').forEach(a=>a.addEventListener('click',()=>setDrawer(false)));
+addEventListener('keydown',e=>{if(e.key==='Escape')setDrawer(false)});
+
+// page search through sections
+function doPageSearch(){
+  const q=$('#pageSearch').value.trim().toLowerCase(); if(!q)return;
+  const match=$$('[data-search]').find(el=>(el.dataset.search+' '+el.innerText).toLowerCase().includes(q));
+  if(match){setDrawer(false);match.scrollIntoView({behavior:'smooth',block:'start'});match.animate([{boxShadow:'0 0 0 0 rgba(167,136,85,0)'},{boxShadow:'0 0 0 9px rgba(167,136,85,.18)'},{boxShadow:'0 0 0 0 rgba(167,136,85,0)'}],{duration:1200})}
+}
+$('#pageSearchBtn').addEventListener('click',doPageSearch); $('#pageSearch').addEventListener('keydown',e=>{if(e.key==='Enter')doPageSearch()});
+
+// PICSHI map
+const mapText={
+ reg:['Profissões regulamentadas','Campos profissionais com competências, formação e regras próprias. O protótipo demonstra como explicar isso sem transformar a página em glossário.'],
+ pics:['PICS','Práticas reconhecidas em políticas e contextos institucionais específicos. A página deverá mostrar esse reconhecimento com precisão, sem extrapolar seu alcance.'],
+ trad:['Sistemas tradicionais','Ayurveda, Medicina Tradicional Chinesa e outros sistemas possuem estruturas históricas e conceituais próprias que não precisam ser reduzidas à lógica biomédica.'],
+ auto:['Autoconhecimento','Caminhos voltados à compreensão de padrões, escolhas e desenvolvimento pessoal podem conviver no Portal sem serem automaticamente tratados como terapia clínica.'],
+ hol:['Abordagens holísticas','Um campo amplo que exige clareza sobre natureza, proposta, limites e linguagem, evitando transformar “holístico” em categoria jurídica ou científica.'],
+ esp:['Espiritualidade','Recursos espirituais podem ter lugar explícito no Potala quando são apresentados por aquilo que são, sem confusão com diagnóstico, tratamento médico ou evidência científica.']
+};
+$$('.map-node').forEach(btn=>btn.addEventListener('click',()=>{ $$('.map-node').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const [t,p]=mapText[btn.dataset.map];$('#mapCaption h3').textContent=t;$('#mapCaption p').textContent=p;}));
+
+// therapy data — intentionally non-operational
+const therapies=[{"name":"Acupuntura","cat":"MTC","mode":"Presencial","desc":"agulhas · tradição chinesa · avaliação profissional"},{"name":"Auriculoterapia","cat":"MTC","mode":"Presencial","desc":"orelha · estímulos · diferentes escolas"},{"name":"Ventosaterapia","cat":"MTC","mode":"Presencial","desc":"ventosas · prática corporal · contexto tradicional"},{"name":"Moxabustão","cat":"MTC","mode":"Presencial","desc":"calor · pontos · tradição chinesa"},{"name":"Reiki","cat":"Práticas energéticas","mode":"Presencial / distância","desc":"toque ou proximidade · prática energética"},{"name":"Magnified Healing","cat":"Práticas energéticas","mode":"Presencial","desc":"prática energética e espiritual · abordagem própria"},{"name":"ThetaHealing","cat":"Práticas energéticas","mode":"Presencial / online","desc":"processo meditativo · autoconhecimento"},{"name":"Reflexologia Podal","cat":"Reflexologias","mode":"Presencial","desc":"pés · toque · reflexologia"},{"name":"Reflexologia Palmar","cat":"Reflexologias","mode":"Presencial","desc":"mãos · toque · reflexologia"},{"name":"Massagem Terapêutica","cat":"Massoterapias","mode":"Presencial","desc":"toque · relaxamento · trabalho corporal"},{"name":"Shiatsu","cat":"Massoterapias","mode":"Presencial","desc":"pressões · origem japonesa · prática corporal"},{"name":"Quick Massage","cat":"Massoterapias","mode":"Presencial","desc":"sessão breve · cadeira · ambiente corporativo"},{"name":"Indian Head Massage","cat":"Massoterapias","mode":"Presencial","desc":"cabeça e ombros · prática corporal"},{"name":"Massagem Relaxante","cat":"Massoterapias","mode":"Presencial","desc":"relaxamento · toque · bem-estar"},{"name":"Psicoterapia","cat":"Psicoterapias","mode":"Presencial / online","desc":"escuta psicológica · acompanhamento"},{"name":"Neurodivergência Adulta","cat":"Psicoterapias","mode":"Presencial / online","desc":"identificação e acompanhamento · adultos"},{"name":"Psicogenealogia","cat":"Autoconhecimento","mode":"Presencial / online","desc":"história familiar · transmissão psíquica"},{"name":"Pathwork","cat":"Autoconhecimento","mode":"Presencial / online","desc":"padrões · defesas · responsabilidade · consciência"},{"name":"Desenho Humano","cat":"Autoconhecimento","mode":"Presencial / online","desc":"sistema de autoconhecimento · leitura de mapa"},{"name":"Gene Keys","cat":"Autoconhecimento","mode":"Online","desc":"contemplação · autoconhecimento · mapa"},{"name":"Enneagrama","cat":"Autoconhecimento","mode":"Presencial / online","desc":"tipologias · padrões · autoconhecimento"},{"name":"Ayurveda","cat":"Ayurveda","mode":"Presencial / online","desc":"sistema tradicional indiano · rotina · constituição"},{"name":"Abhyanga","cat":"Ayurveda","mode":"Presencial","desc":"massagem com óleos · tradição ayurvédica"},{"name":"Shirodhara","cat":"Ayurveda","mode":"Presencial","desc":"óleo em fluxo contínuo · tradição ayurvédica"},{"name":"Florais","cat":"Florais e Aromaterapia","mode":"Presencial / online","desc":"sistemas florais · uso complementar"},{"name":"Aromaterapia","cat":"Florais e Aromaterapia","mode":"Presencial / online","desc":"óleos essenciais · orientação de uso"},{"name":"Biorressonância","cat":"Avaliações e mapeamentos","mode":"Presencial","desc":"avaliação tecnológica complementar"},{"name":"Biofeedback","cat":"Avaliações e mapeamentos","mode":"Presencial","desc":"sinais fisiológicos · treinamento de percepção"},{"name":"Hatha Yoga Individual","cat":"Práticas corporais","mode":"Presencial / online","desc":"movimento · respiração · prática adaptada"},{"name":"Qi Gong Individual","cat":"Práticas corporais","mode":"Presencial","desc":"movimento · respiração · tradição chinesa"},{"name":"Seitai","cat":"Práticas corporais","mode":"Presencial","desc":"trabalho corporal · origem japonesa"},{"name":"Barras de Access","cat":"Práticas integrativas","mode":"Presencial","desc":"toque leve na cabeça · prática integrativa"},{"name":"Mesa Radiônica","cat":"Práticas energéticas","mode":"Presencial / distância","desc":"prática energética · leitura simbólica"},{"name":"Apometria Clássica","cat":"Práticas energéticas","mode":"Presencial","desc":"prática espiritual/energética · abordagem própria"},{"name":"Regeneração Celular","cat":"Práticas energéticas","mode":"Presencial","desc":"toques leves · prática humanitária"},{"name":"Aconselhamento Holístico","cat":"Autoconhecimento","mode":"Presencial / online","desc":"orientação de caminhos · escuta e contexto"}];
+let activeCat='all', activeLetter='', searchTerm='', sortMode='editorial';
+function therapyCard(t){return `<article class="therapy-card" data-name="${t.name}" data-cat="${t.cat}"><div><div class="mini">${t.cat}</div><h4>${t.name}</h4><p>${t.desc}</p></div><div class="card-foot"><span>${t.mode || 'Conhecer'}</span><span>→</span></div></article>`}
+function filtered(){let arr=therapies.filter(t=>(activeCat==='all'||t.cat===activeCat)&&(!activeLetter||t.name.toUpperCase().startsWith(activeLetter))&&(!searchTerm||(`${t.name} ${t.cat} ${t.mode || ''} ${t.desc}`).toLowerCase().includes(searchTerm)));if(sortMode==='az')arr.sort((a,b)=>a.name.localeCompare(b.name));if(sortMode==='za')arr.sort((a,b)=>b.name.localeCompare(a.name));return arr}
+function renderTherapies(){const arr=filtered();$('#therapyCards').innerHTML=arr.map(therapyCard).join('');$('#noResults').style.display=arr.length?'none':'block';}
+renderTherapies();
+$('#latestShelf').innerHTML=[therapies[11],therapies[1],therapies[5],therapies[7]].map(therapyCard).join('');
+$$('.cat-btn').forEach(b=>b.addEventListener('click',()=>{activeCat=b.dataset.cat;activeLetter='';$$('.cat-btn').forEach(x=>x.classList.toggle('active',x===b));$$('#azRow button').forEach(x=>x.classList.remove('active'));renderTherapies()}));
+$('#therapySearch').addEventListener('input',e=>{searchTerm=e.target.value.trim().toLowerCase();renderTherapies()});
+$('#therapySort').addEventListener('change',e=>{sortMode=e.target.value;renderTherapies()});
+$('#clearFilters').addEventListener('click',()=>{activeCat='all';activeLetter='';searchTerm='';sortMode='editorial';$('#therapySearch').value='';$('#therapySort').value='editorial';$$('.cat-btn').forEach((x,i)=>x.classList.toggle('active',i===0));$$('#azRow button').forEach(x=>x.classList.remove('active'));renderTherapies()});
+const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+$('#azRow').innerHTML=letters.map(l=>`<button aria-label="Filtrar pela letra ${l}">${l}</button>`).join('');
+$$('#azRow button').forEach(b=>b.addEventListener('click',()=>{activeLetter=activeLetter===b.textContent?'':b.textContent;$$('#azRow button').forEach(x=>x.classList.toggle('active',x.textContent===activeLetter));renderTherapies();$('#therapyCards').scrollIntoView({behavior:'smooth',block:'center'})}));
+
+// FAQ
+$$('.faq-q').forEach(q=>q.addEventListener('click',()=>q.nextElementSibling.classList.toggle('open')));
+$('#conciergeBtn').addEventListener('click',()=>alert('Protótipo: aqui abriria a IA Concierge contextual, capaz de localizar, comparar e relacionar informações sem assumir função clínica.'));
+</script>
+<script type="module" src="js/atendimentos-conceito.js"></script>
+<script type="module" src="js/atendimentos-materia.js"></script>
 </body>
 </html>
+

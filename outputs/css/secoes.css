@@ -1,5 +1,8 @@
 @import url("secao-conteudo.css");
 @import url("home-journey.css");
+@import url("portal-header.css");
+@import url("resource-hero.css");
+@import url("movimento.css");
 
 :root {
   color-scheme: light;

@@ -7,7 +7,7 @@ import { normalizeHomeBlock } from "../../outputs/js/home/content-model.js";
 import { homeBlockToDatabase, homeBlockFromDatabase } from "../../outputs/js/home/supabase-content-repository.js";
 import { comRelacoes } from "../../outputs/js/home/home-controller.js";
 import { renderRegion, mountJourney } from "../../outputs/js/home/home-scenes.js";
-import { plantState, waterPlant, plantStage, localDay, renderLivingFooter, mountLivingFooter } from "../../outputs/js/home/living-footer.js";
+import { plantState, waterPlant, plantStage, localDay, mergePlantStates, renderLivingFooter, mountLivingFooter } from "../../outputs/js/home/living-footer.js";
 import { previewStructure } from "../../outputs/js/home/admin-preview.js";
 
 test("a capa respeita a ordem editorial, filtra rascunhos e não reinsere novidades removidas", () => {
@@ -55,7 +55,7 @@ test("encerramento integrado oferece retornos seguros e contato sem envio simula
   assert.match(root.innerHTML, /Obrigado por caminhar conosco/);
   assert.match(root.innerHTML, /href="cursos.html"/);
   assert.match(root.innerHTML, /data-water-plant/);
-  assert.match(root.innerHTML, /data-save-gift hidden/);
+  assert.match(root.innerHTML, /data-takeaway-result hidden/);
   assert.doesNotMatch(renderLivingFooter([{ title: "Ataque", href: 'javascript:alert(1)' }]), /javascript:/);
   assert.match(root.innerHTML, /A mensagem só é enviada por você/);
 });
@@ -65,11 +65,19 @@ test("plantinha guarda um cuidado por dia, preserva retornos e tolera dados inv�
   assert.deepEqual(waterPlant(first, "2026-09-10"), first);
   assert.deepEqual(waterPlant(first, "2026-09-09"), first);
   assert.equal(waterPlant(first, "2026-09-11").visits, 2);
-  assert.deepEqual(plantState(null), { visits: 0, lastDay: "" });
+  assert.equal(waterPlant(first, "2026-09-11").streak, 2);
+  assert.equal(waterPlant(first, "2026-09-14").streak, 1);
+  assert.deepEqual(plantState(null), { visits: 0, lastDay: "", streak: 0, history: [] });
   assert.equal(plantState({ visits: -200 }).visits, 0);
-  assert.equal(plantStage(0), "Semente");
-  assert.equal(plantStage(20), "Árvore");
+  assert.equal(plantStage(0), "Início");
+  assert.equal(plantStage(3), "Crescimento");
+  assert.equal(plantStage(7), "Florescimento");
+  assert.equal(plantStage(20), "Plenitude");
   assert.equal(localDay(new Date(2026, 8, 10, 23, 59)), "2026-09-10");
+  assert.deepEqual(mergePlantStates(
+    { visits: 2, lastDay: "2026-09-11", streak: 2, history: ["2026-09-10", "2026-09-11"] },
+    { visits: 3, lastDay: "2026-09-12", streak: 3, history: ["2026-09-10", "2026-09-11", "2026-09-12"] },
+  ), { visits: 3, lastDay: "2026-09-12", streak: 3, history: ["2026-09-10", "2026-09-11", "2026-09-12"] });
 });
 test("migração protege a edição e transporta campos na publicação de rascunhos", () => {
   const sql = readFileSync(new URL("../../supabase/migrations/202609100001_home_editorial_composition.sql", import.meta.url), "utf8");
@@ -82,16 +90,35 @@ test("migração protege a edição e transporta campos na publicação de rascu
   assert.doesNotMatch(sql, /grant .* to anon|disable row level security|drop table/i);
 });
 
-test("rodapé recupera a planta, muda lembranças, tolera armazenamento bloqueado e remove eventos", () => {
+test("rodapé recupera a planta, anima a troca de lembranças, tolera armazenamento bloqueado e remove eventos", async () => {
   const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
   const storageDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   const events = new Map();
   const pageEvents = new Map();
   const elements = new Map();
-  const selectors = ["[data-water-plant]", "[data-plant-status]", "[data-plant-stage]", "[data-plant-storage]", "#gift-kind", "[data-gift-message]", "[data-save-gift]"];
-  selectors.forEach((key) => elements.set(key, { textContent: "", dataset: {}, hidden: true, value: "poema" }));
+  const fake = () => {
+    const classes = new Set();
+    return {
+      textContent: "", dataset: {}, hidden: true, alt: "", disabled: false,
+      offsetWidth: 1,
+      attributes: new Map(), style: { setProperty() {} },
+      getAttribute(name) { return this.attributes.get(name) || ""; },
+      setAttribute(name, value) { this.attributes.set(name, String(value)); },
+      removeAttribute(name) { this.attributes.delete(name); },
+      classList: {
+        add(...names) { names.forEach((name) => classes.add(name)); },
+        remove(...names) { names.forEach((name) => classes.delete(name)); },
+        toggle(name, force) { if (force ?? !classes.has(name)) classes.add(name); else classes.delete(name); },
+        contains(name) { return classes.has(name); },
+      },
+    };
+  };
+  const selectors = ["[data-water-plant]", "[data-water-label]", "[data-plant-status]", "[data-plant-stage]", "[data-plant-image]", "[data-plant-stage-label]", "[data-plant-progress]", "[data-plant-storage]", ".closing-takeaway", "[data-choose-gift]", "[data-gift-message]", "[data-takeaway-result]", "[data-save-gift]"];
+  selectors.forEach((key) => elements.set(key, fake()));
+  const cards = [{ ...fake(), dataset: { takeaway: "poema" } }, { ...fake(), dataset: { takeaway: "reflexao" } }];
   const footer = {
     querySelector: (key) => elements.get(key),
+    querySelectorAll: (key) => key === "[data-takeaway]" ? cards : [],
     addEventListener: (key, fn) => events.set(key, fn),
     removeEventListener: (key) => events.delete(key),
   };
@@ -115,14 +142,18 @@ test("rodapé recupera a planta, muda lembranças, tolera armazenamento bloquead
     fire("[data-choose-gift]");
     const first = elements.get("[data-gift-message]").textContent;
     fire("[data-choose-gift]");
+    assert.equal(elements.get("[data-gift-message]").textContent, first);
+    assert.equal(elements.get("[data-gift-message]").classList.contains("is-leaving"), true);
+    await new Promise((resolve) => setTimeout(resolve, 340));
     assert.notEqual(elements.get("[data-gift-message]").textContent, first);
-    assert.equal(elements.get("[data-save-gift]").hidden, false);
+    assert.equal(elements.get("[data-gift-message]").classList.contains("is-entering"), true);
+    assert.equal(elements.get("[data-takeaway-result]").hidden, false);
     cleanup();
     assert.equal(elements.get("[data-plant-stage]").dataset.watering, undefined);
     assert.equal(events.size, 0);
     assert.equal(pageEvents.size, 0);
     cleanup = mountLivingFooter({ querySelector: () => footer });
-    assert.equal(elements.get("[data-plant-stage]").dataset.plantStage, "Broto");
+    assert.equal(elements.get("[data-plant-stage]").dataset.plantStage, "Início");
     cleanup();
     Object.defineProperty(globalThis, "localStorage", { configurable: true, get() { throw new Error("blocked"); } });
     cleanup = mountLivingFooter({ querySelector: () => footer });
@@ -133,4 +164,16 @@ test("rodapé recupera a planta, muda lembranças, tolera armazenamento bloquead
     if (windowDescriptor) Object.defineProperty(globalThis, "window", windowDescriptor); else delete globalThis.window;
     if (storageDescriptor) Object.defineProperty(globalThis, "localStorage", storageDescriptor); else delete globalThis.localStorage;
   }
+});
+
+test("migração da plantinha isola o cuidado por conta e mantém o estágio derivado", () => {
+  const sql = readFileSync(new URL("../../supabase/migrations/202609220001_plant_care.sql", import.meta.url), "utf8");
+  assert.match(sql, /create table if not exists public\.plant_care/);
+  assert.match(sql, /unique \(user_id\)/);
+  assert.match(sql, /enable row level security/);
+  assert.equal((sql.match(/auth\.uid\(\) = user_id/g) || []).length, 4);
+  assert.doesNotMatch(sql, /stage|grant .*anon/i);
+  const repository = readFileSync(new URL("../../outputs/js/home/plant-care-repository.js", import.meta.url), "utf8");
+  assert.match(repository, /onConflict: "user_id"/);
+  assert.doesNotMatch(repository, /service.role|service_role|user_id:/i);
 });

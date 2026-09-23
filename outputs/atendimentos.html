@@ -10,115 +10,176 @@
   <link rel="preload" href="media/atendimentos-acolhimento.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/atendimentos.css">
+  <link rel="stylesheet" href="css/atendimentos-redesign.css">
   <link rel="stylesheet" href="css/section-transition.css">
   <script type="module" src="js/secoes.js"></script>
+  <script type="module" src="js/sections/resource-hero.js"></script>
+  <script type="module" src="js/sections/movimento.js"></script>
 </head>
 <body data-section="atendimentos">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
 
-  <main class="care-page" id="conteudo">
-    <section class="care-hero" aria-labelledby="care-title">
-      <figure class="care-hero-visual">
+  <main class="care-page" id="conteudo" data-movimento>
+    <div class="leitura-progresso" data-leitura-progresso aria-hidden="true"><span></span></div>
+    <svg class="fio-da-jornada" data-fio-da-jornada aria-hidden="true" focusable="false">
+      <path class="fio-da-jornada__trilha"></path>
+      <path class="fio-da-jornada__traco"></path>
+      <g data-fio-nos></g>
+    </svg>
+
+    <section class="care-hero" id="inicio" data-capitulo="inicio" aria-labelledby="care-title">
+      <figure class="care-hero-visual" data-recorte>
         <img src="media/atendimentos-acolhimento.webp"
           alt="Profissional e visitante conversam em um momento de acolhimento"
           width="1440" height="1800" fetchpriority="high" decoding="async">
+        <figcaption>“Escuta também é um caminho.”</figcaption>
       </figure>
 
-      <div class="care-hero-copy">
-        <p class="care-kicker">O cuidado</p>
-        <h1 id="care-title">Atendimentos</h1>
-        <p class="care-subtitle">&amp; caminhos para cuidar</p>
-        <p class="care-lead">Cada pessoa chega com uma história diferente. Antes de indicar uma técnica, importa compreender o momento, escutar a necessidade e reconhecer possibilidades.</p>
-        <a class="care-action" href="#orientacao">Encontrar um primeiro caminho <span aria-hidden="true">↓</span></a>
+      <div class="care-hero-content">
+        <div class="care-hero-copy" data-fio-alvo>
+          <p class="care-kicker" data-revelar="0">03 · O cuidado</p>
+          <h1 id="care-title" data-revelar="1">Atendimentos</h1>
+          <p class="care-subtitle" data-revelar="2">&amp; caminhos para cuidar</p>
+          <p class="care-hero-statement" data-revelar="3">Cada pessoa chega com uma história diferente.</p>
+          <p class="care-lead" data-revelar="4">Antes de indicar uma técnica, importa compreender o momento, escutar a necessidade e reconhecer possibilidades.</p>
+        </div>
+
+        <nav class="care-indice" data-revelar="5" aria-label="Capítulos desta página">
+          <p class="care-kicker">Nesta página</p>
+          <ol>
+            <li><a href="#caminhos" data-capitulo-link="caminhos"><span>01</span>Encontrar um caminho</a></li>
+            <li><a href="#orientacao" data-capitulo-link="orientacao"><span>02</span>Antes da técnica</a></li>
+            <li><a href="#possibilidades" data-capitulo-link="possibilidades"><span>03</span>Espectro do cuidado</a></li>
+            <li><a href="#oraculos" data-capitulo-link="oraculos"><span>04</span>Oráculos</a></li>
+            <li><a href="#acesso" data-capitulo-link="acesso"><span>05</span>Formas de chegar</a></li>
+            <li><a href="#primeiro-passo" data-capitulo-link="primeiro-passo"><span>06</span>Primeiro passo</a></li>
+          </ol>
+        </nav>
+
+        <p class="care-rolagem" aria-hidden="true"><i></i>role para atravessar</p>
       </div>
     </section>
 
-    <section class="care-orientation" id="orientacao" aria-labelledby="orientation-title">
-      <div class="care-heading">
-        <p class="care-index">01</p>
-        <p class="care-kicker">Antes da técnica</p>
-        <h2 id="orientation-title">Compreender vem antes de escolher.</h2>
+    <section class="care-caminhos" id="caminhos" data-capitulo="caminhos" aria-labelledby="caminhos-title">
+      <header class="care-faixa-head" data-fio-alvo>
+        <p class="care-index" data-revelar="0">01</p>
+        <div>
+          <p class="care-kicker" data-revelar="0">Praça de caminhos</p>
+          <h2 id="caminhos-title" data-revelar="1">Como você deseja começar?</h2>
+          <p class="care-faixa-lead" data-revelar="2">Antes de escolher uma técnica, queremos ajudar você a compreender sua necessidade e encontrar um caminho de cuidado consciente.</p>
+        </div>
+      </header>
+
+      <div class="care-caminhos-grade" data-revelar="0">
+        <div class="care-resource-hero" data-resource-hero="atendimentos" data-resource-hide-prompt="true"
+          data-resource-secondary-label="Ver todos os atendimentos" data-resource-secondary-href="#possibilidades"></div>
+      </div>
+    </section>
+
+    <section class="care-orientation" id="orientacao" data-capitulo="orientacao" aria-labelledby="orientation-title">
+      <div class="care-heading" data-fio-alvo>
+        <p class="care-index" data-revelar="0">02</p>
+        <p class="care-kicker" data-revelar="0">Antes da técnica</p>
+        <h2 id="orientation-title" data-revelar="1">Compreender vem antes de escolher.</h2>
       </div>
       <div class="care-prose">
-        <p>Algumas necessidades são físicas; outras atravessam emoções, relações ou perguntas sobre a própria vida. Nem sempre quem chega já sabe nomear aquilo que procura.</p>
-        <p>Por isso, esta página não começa como um catálogo. Ela apresenta famílias de cuidado e oferece uma conversa inicial para que a escolha possa acontecer com mais clareza.</p>
-        <a class="care-text-link" href="recepcao.html">Começar pela Recepção <span aria-hidden="true">↗</span></a>
+        <p data-revelar="0">Algumas necessidades são físicas; outras atravessam emoções, relações ou perguntas sobre a própria vida. Nem sempre quem chega já sabe nomear aquilo que procura.</p>
+        <p data-revelar="1">Por isso, esta página não começa como um catálogo. Ela apresenta famílias de cuidado e oferece uma conversa inicial para que a escolha possa acontecer com mais clareza.</p>
+        <a class="care-text-link" href="recepcao.html" data-revelar="2">Começar pela Recepção <span aria-hidden="true">↗</span></a>
       </div>
     </section>
 
-    <section class="care-possibilities" id="possibilidades" aria-labelledby="possibilities-title">
-      <header class="care-section-head">
-        <p class="care-kicker">Um ecossistema de cuidado</p>
-        <h2 id="possibilities-title">Mais de 150 possibilidades, sem uma resposta única.</h2>
-        <p>O Instituto reúne atendimentos, terapias e vivências de diferentes tradições. A variedade existe para respeitar que pessoas e momentos também são diferentes.</p>
+    <section class="care-possibilities" id="possibilidades" data-capitulo="possibilidades" aria-labelledby="possibilities-title">
+      <header class="care-section-head" data-fio-alvo>
+        <p class="care-index" data-revelar="0">03</p>
+        <p class="care-kicker" data-revelar="0">Um ecossistema de cuidado</p>
+        <h2 id="possibilities-title" data-revelar="1">Mais de 150 possibilidades, sem uma resposta única.</h2>
+        <p data-revelar="2">O Instituto reúne atendimentos, terapias e vivências de diferentes tradições. A variedade existe para respeitar que pessoas e momentos também são diferentes.</p>
       </header>
 
       <div class="care-spectrum">
-        <article>
-          <span>01</span>
+        <article data-foco tabindex="0" data-revelar="0">
+          <span class="care-spectrum__num">01</span>
           <h3>Corpo</h3>
           <p>Práticas manuais, corporais e integrativas voltadas ao equilíbrio, ao movimento e ao bem-estar.</p>
+          <span class="care-spectrum__arco" aria-hidden="true"></span>
         </article>
-        <article>
-          <span>02</span>
+        <article data-foco tabindex="0" data-revelar="1">
+          <span class="care-spectrum__num">02</span>
           <h3>Emoções e relações</h3>
           <p>Abordagens de escuta e autoconhecimento para compreender padrões, vínculos e experiências.</p>
+          <span class="care-spectrum__arco" aria-hidden="true"></span>
         </article>
-        <article>
-          <span>03</span>
+        <article data-foco tabindex="0" data-revelar="2">
+          <span class="care-spectrum__num">03</span>
           <h3>Energia e presença</h3>
           <p>Práticas energéticas e contemplativas que convidam à pausa, à percepção e ao cuidado de si.</p>
+          <span class="care-spectrum__arco" aria-hidden="true"></span>
         </article>
-        <article>
-          <span>04</span>
+        <article data-foco tabindex="0" data-revelar="3">
+          <span class="care-spectrum__num">04</span>
           <h3>Orientação</h3>
           <p>Conversas e leituras que ajudam a organizar perguntas e reconhecer caminhos possíveis.</p>
+          <span class="care-spectrum__arco" aria-hidden="true"></span>
         </article>
       </div>
     </section>
 
-    <section class="care-oracles" id="oraculos" aria-labelledby="oracles-title">
-      <div>
-        <p class="care-index">02</p>
-        <p class="care-kicker">Outras formas de olhar</p>
+    <section class="care-oracles" id="oraculos" data-capitulo="oraculos" aria-labelledby="oracles-title">
+      <div class="care-oracles-orbita" aria-hidden="true">
+        <svg viewBox="0 0 420 420" focusable="false">
+          <circle cx="210" cy="210" r="204"></circle>
+          <circle cx="210" cy="210" r="146"></circle>
+          <circle cx="210" cy="210" r="86"></circle>
+        </svg>
+      </div>
+      <div class="care-oracles-marca" data-fio-alvo>
+        <p class="care-index" data-revelar="0">04</p>
+        <p class="care-kicker" data-revelar="0">Outras formas de olhar</p>
       </div>
       <div class="care-oracles-copy">
-        <h2 id="oracles-title">Oráculos e linguagens de autoconhecimento.</h2>
-        <p>Astrologia, numerologia, mapas e outras leituras integram os Atendimentos como possibilidades de reflexão. Cada linguagem parte de uma pergunta diferente; nenhuma precisa ser escolhida sem orientação.</p>
-        <a class="care-text-link care-text-link--light" href="https://www.institutopotala.com/oraculos" rel="noreferrer">Conhecer os oráculos <span aria-hidden="true">↗</span></a>
+        <h2 id="oracles-title" data-revelar="0">Oráculos e linguagens de autoconhecimento.</h2>
+        <p data-revelar="1">Astrologia, numerologia, mapas e outras leituras integram os Atendimentos como possibilidades de reflexão. Cada linguagem parte de uma pergunta diferente; nenhuma precisa ser escolhida sem orientação.</p>
+        <a class="care-text-link care-text-link--light" href="https://www.institutopotala.com/oraculos" rel="noreferrer" data-revelar="2">Conhecer os oráculos <span aria-hidden="true">↗</span></a>
       </div>
     </section>
 
-    <section class="care-access" id="acesso" aria-labelledby="access-title">
-      <header class="care-section-head care-section-head--compact">
-        <p class="care-kicker">Formas de chegar</p>
-        <h2 id="access-title">O cuidado precisa caber na vida real.</h2>
+    <section class="care-access" id="acesso" data-capitulo="acesso" aria-labelledby="access-title">
+      <header class="care-section-head care-section-head--compact" data-fio-alvo>
+        <p class="care-index" data-revelar="0">05</p>
+        <p class="care-kicker" data-revelar="0">Formas de chegar</p>
+        <h2 id="access-title" data-revelar="1">O cuidado precisa caber na vida real.</h2>
       </header>
 
       <div class="care-access-list">
-        <article>
+        <article data-revelar="0">
           <span>01</span>
           <div><h3>Presencial e online</h3><p>Parte dos atendimentos pode acontecer no Instituto ou à distância, conforme a técnica e o profissional.</p></div>
         </article>
-        <article>
+        <article data-revelar="1">
           <span>02</span>
           <div><h3>Ambulatórios</h3><p>Atendimentos com valores reduzidos, ligados a processos de formação e acompanhamento.</p></div>
         </article>
-        <article>
+        <article data-revelar="2">
           <span>03</span>
           <div><h3>Atendimento solidário</h3><p>Iniciativas de orientação e cuidado que ampliam o acesso aos recursos do Instituto.</p></div>
         </article>
       </div>
     </section>
 
-    <section class="care-closing" aria-labelledby="closing-title">
-      <div>
-        <p class="care-kicker">Seu primeiro passo</p>
-        <h2 id="closing-title">Você não precisa escolher sozinho.</h2>
+    <section class="care-closing" id="primeiro-passo" data-capitulo="primeiro-passo" aria-labelledby="closing-title">
+      <div class="care-closing-atmosfera" aria-hidden="true">
+        <img src="media/profissionais-encontro.webp" alt=""
+          width="1600" height="1000" loading="lazy" decoding="async">
+      </div>
+      <div class="care-closing-marca" data-fio-alvo>
+        <p class="care-index" data-revelar="0">06</p>
+        <p class="care-kicker" data-revelar="0">Seu primeiro passo</p>
       </div>
       <div class="care-closing-copy">
-        <p>Uma conversa pode ajudar a compreender possibilidades, disponibilidade e o tipo de acompanhamento que faz sentido para o seu momento.</p>
-        <div class="care-closing-actions">
+        <h2 id="closing-title" data-revelar="0">Você não precisa escolher sozinho.</h2>
+        <p data-revelar="1">Uma conversa pode ajudar a compreender possibilidades, disponibilidade e o tipo de acompanhamento que faz sentido para o seu momento.</p>
+        <div class="care-closing-actions" data-revelar="2">
           <a href="recepcao.html">Falar com a Recepção <span aria-hidden="true">↗</span></a>
           <a href="https://www.institutopotala.com/terapias" rel="noreferrer">Ver todas as terapias <span aria-hidden="true">↗</span></a>
         </div>

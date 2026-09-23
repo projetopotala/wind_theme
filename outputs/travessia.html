@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#c7b79f">
+  <meta name="description" content="Percorra o Ecossistema Potala: cuidado, conhecimento, atividades, pessoas, cultura e inspiração.">
+  <title>Instituto Potala — A Travessia</title>
+  <script>
+    document.documentElement.classList.add("js");
+    try {
+      const handoff = JSON.parse(sessionStorage.getItem("potala.travessia.v1") || "{}");
+      if (["scroll", "drag", "keyboard"].includes(handoff.entry)) {
+        document.documentElement.classList.add("entry-pending");
+      }
+    } catch {}
+  </script>
+  <link rel="stylesheet" href="css/secoes.css">
+  <link rel="stylesheet" href="css/living-footer.css">
+  <link rel="stylesheet" href="css/portal-discovery.css">
+  <link rel="stylesheet" href="css/section-panel.css">
+  <script type="importmap">
+    {"imports":{"three":"./vendor/three.module.min.js"}}
+  </script>
+  <script src="vendor/supabase.js"></script>
+  <script type="module" src="js/secoes.js"></script>
+</head>
+<body data-story-page="true">
+  <a class="skip-link" href="#journey-root">Ir para a jornada</a>
+  <!--
+    A paisagem sai do `body` e vira ELEMENTO.
+    Um `background-attachment: fixed` não pode ser animado, e a travessia
+    precisa deslocá-la horizontalmente. Em repouso este elemento pinta
+    exatamente o que o body pintava, então nada muda visualmente até alguém
+    abrir um bloco. Ele é uma camada só: a cena nunca é trocada por outra.
+  -->
+  <div class="journey-landscape" id="journey-landscape" aria-hidden="true">
+    <!--
+      O vídeo anda com a rolagem: descer adianta a câmera, subir rebobina.
+
+      Ele vive DENTRO da paisagem porque a travessia desloca esse elemento para o
+      lado quando um bloco abre, e ele é de propósito mais largo que a tela para
+      a borda nunca aparecer. Um vídeo irmão, fixo por conta própria, ficaria
+      parado enquanto a cena anda.
+
+      O endereço está em `data-src`, e não em `src`: assim o navegador não gasta
+      banda com sete megabytes enquanto ainda desenha o que a pessoa precisa ver
+      primeiro. Quem o promove a `src` é o `landscape-video.js`, depois de
+      decidir se vale — no telefone, com movimento reduzido ou em conexão
+      medida, ele nunca chega a ser pedido, e o fundo segue sendo a webp que já
+      está por trás.
+    -->
+    <video class="journey-landscape-video" data-src="media/home-travessia.mp4"
+      muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
+  </div>
+  <canvas class="journey-road journey-path" id="journey-road" aria-hidden="true"></canvas>
+  <div class="journey-entry-veil" id="journey-entry-veil" aria-hidden="true"></div>
+  <main id="journey-root" aria-label="Travessia pelo Ecossistema Potala"></main>
+
+  <noscript>
+    <section class="journey-noscript" aria-labelledby="journey-noscript-title">
+      <h1 id="journey-noscript-title">Ecossistema Potala</h1>
+      <p>Escolha um caminho para continuar:</p>
+      <!--
+        A LISTA COMPLETA, e não a que sobrou.
+
+        Ela tinha nove das treze seções: faltavam Recepção, Saúde Integrativa e
+        Blog, e ninguém notou porque a lista só aparece sem JavaScript. Enquanto
+        as páginas de seção carregavam um menu com as treze, o buraco era
+        contornável; agora que a barra do topo mudou de assunto, este é o único
+        caminho de quem não tem script, e uma seção fora daqui não existe.
+      -->
+      <ul>
+        <li><a href="quem-somos.html">Quem somos</a></li>
+        <li><a href="recepcao.html">Recepção</a></li>
+        <li><a href="atendimentos.html">Atendimentos</a></li>
+        <li><a href="cursos.html">Cursos</a></li>
+        <li><a href="atividades.html">Atividades</a></li>
+        <li><a href="profissionais.html">Profissionais</a></li>
+        <li><a href="saude-integrativa.html">Saúde Integrativa</a></li>
+        <li><a href="programacao.html">Programação</a></li>
+        <li><a href="cultura.html">Arte e cultura</a></li>
+        <li><a href="marketplace.html">Marketplace</a></li>
+        <li><a href="inspiracao.html">Inspiração</a></li>
+        <li><a href="revista.html">Revista</a></li>
+        <li><a href="blog.html">Blog</a></li>
+      </ul>
+      <p>E o que acontece fora da grade de aulas:</p>
+      <ul>
+        <li><a href="especialistas.html">Especialistas</a></li>
+        <li><a href="workshops.html">Workshops</a></li>
+        <li><a href="grupos-de-estudo.html">Grupos de estudo</a></li>
+        <li><a href="mentorias.html">Mentorias</a></li>
+        <li><a href="eventos.html">Eventos futuros</a></li>
+      </ul>
+    </section>
+  </noscript>
+</body>
+</html>

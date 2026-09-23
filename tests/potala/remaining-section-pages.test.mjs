@@ -146,7 +146,9 @@ test("Atividades convida à prática e à aula experimental", async () => {
    * perguntar, e o defeito não aparece na tela: as outras vinte e uma
    * respondem, e a lista parece completa.
    */
-  const familias = [...html.matchAll(/<article data-reveal>[\s\S]*?<\/article>/g)].map(([b]) => b);
+  /* As famílias são os artigos da lista; o atributo de revelação muda com o desenho. */
+  const lista = /<div class="photo-rows">[\s\S]*?<section/.exec(html)?.[0] || html;
+  const familias = [...lista.matchAll(/<article[^>]*>[\s\S]*?<\/article>/g)].map(([b]) => b);
   assert.ok(familias.length >= 5, `só ${familias.length} famílias`);
 
   let aulas = 0;

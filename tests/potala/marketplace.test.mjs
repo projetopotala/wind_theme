@@ -51,7 +51,7 @@ test("Marketplace aparece no indice das secoes e no fallback sem script", async 
    */
   const jornada = await readFile("outputs/js/home/journey-data.js", "utf8");
   assert.match(jornada, /id: "marketplace"[\s\S]*?href: "marketplace\.html"/);
-  const home = await readFile("outputs/transcendido.html", "utf8");
+  const home = await readFile("outputs/travessia.html", "utf8");
   assert.match(home, /marketplace\.html/);
 });
 

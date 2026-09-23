@@ -10,45 +10,59 @@
   <link rel="preload" href="media/saude-integrativa-escuta.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/section-photographic.css">
+  <link rel="stylesheet" href="css/saude-integrativa-redesign.css">
   <script type="module" src="js/secoes.js"></script>
+  <script type="module" src="js/sections/resource-hero.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
+  <script type="module" src="js/sections/movimento.js"></script>
 </head>
 <body data-section="saude-integrativa" data-entry="left" data-right="programacao.html">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-  <main class="photo-page" id="conteudo" data-section-family="photographic">
-    <section class="photo-hero" aria-labelledby="integrative-title">
-      <figure class="photo-hero-visual" data-reveal><img src="media/saude-integrativa-escuta.webp" alt="Duas mulheres conversam com atenção em um ambiente de cuidado integrativo" width="1600" height="1000" fetchpriority="high" decoding="async"></figure>
-      <div class="photo-hero-copy" data-reveal>
-        <p class="photo-kicker">Uma visão ampliada</p>
+  <main class="photo-page" id="conteudo" data-section-family="photographic" data-movimento>
+    <div class="leitura-progresso" data-leitura-progresso aria-hidden="true"><span></span></div>
+    <svg class="fio-da-jornada" data-fio-da-jornada aria-hidden="true" focusable="false">
+      <path class="fio-da-jornada__trilha"></path>
+      <path class="fio-da-jornada__traco"></path>
+      <g data-fio-nos></g>
+    </svg>
+
+    <section class="photo-hero" aria-labelledby="integrative-title" data-capitulo="inicio">
+      <figure class="photo-hero-visual" data-recorte data-fio-alvo data-revelar="0">
+        <img src="media/saude-integrativa-escuta.webp" alt="Duas mulheres conversam com atenção em um ambiente de cuidado integrativo" width="1600" height="1000" fetchpriority="high" decoding="async">
+        <figcaption>Encontros que integram.</figcaption>
+      </figure>
+      <div class="photo-hero-copy" data-revelar="1">
+        <p class="photo-kicker">09 · Uma visão ampliada</p>
         <h1 id="integrative-title">Saúde Integrativa</h1>
         <p class="photo-subtitle">corpo, mente e relações</p>
         <p class="photo-lead">Cuidar da pessoa inteira significa reconhecer que sintomas, emoções, vínculos, hábitos e contexto podem fazer parte da mesma história.</p>
-        <a class="photo-action" href="#integrar">Compreender essa visão <span aria-hidden="true">↓</span></a>
+        <noscript><a class="photo-action" href="#integrar">Compreender essa visão <span aria-hidden="true">↓</span></a></noscript>
       </div>
+      <div class="health-resource-hero" data-resource-hero="saude-integrativa" data-resource-secondary-label="Conversar com a Recepção" data-resource-secondary-href="recepcao.html"></div>
     </section>
 
-    <section class="photo-intro" id="integrar" aria-labelledby="integrative-intro-title">
+    <section class="photo-intro" id="integrar" aria-labelledby="integrative-intro-title" data-capitulo="abertura">
       <p class="photo-index">01</p>
-      <div data-reveal><p class="photo-kicker">Integrar, não substituir</p><h2 id="integrative-intro-title">Diferentes saberes podem conversar.</h2></div>
-      <div class="photo-prose" data-reveal><p>A Saúde Integrativa articula cuidado convencional, práticas complementares e escolhas de vida de forma responsável. Não promete uma resposta única e não substitui acompanhamento médico quando ele é necessário.</p></div>
+      <div data-fio-alvo data-revelar="0"><p class="photo-kicker">Integrar, não substituir</p><h2 id="integrative-intro-title">Diferentes saberes podem conversar.</h2></div>
+      <div class="photo-prose" data-revelar="1"><p>A Saúde Integrativa articula cuidado convencional, práticas complementares e escolhas de vida de forma responsável. Não promete uma resposta única e não substitui acompanhamento médico quando ele é necessário.</p></div>
     </section>
 
-    <section class="photo-list" aria-labelledby="integrative-list-title">
-      <header class="photo-list-head" data-reveal><div><p class="photo-kicker">Dimensões conectadas</p><h2 id="integrative-list-title">Uma pessoa não cabe em um sintoma.</h2></div><p>As possibilidades são apresentadas como famílias de cuidado, sempre respeitando limites, contexto e individualidade.</p></header>
+    <section class="photo-list" aria-labelledby="integrative-list-title" data-capitulo="possibilidades">
+      <header class="photo-list-head" data-fio-alvo data-revelar="0"><div><p class="photo-kicker">Dimensões conectadas</p><h2 id="integrative-list-title">Uma pessoa não cabe em um sintoma.</h2></div><p>As possibilidades são apresentadas como famílias de cuidado, sempre respeitando limites, contexto e individualidade.</p></header>
       <div class="photo-rows">
-        <article data-reveal><span>01</span><h3>Corpo</h3><p>Movimento, práticas manuais e tradições de cuidado corporal podem apoiar equilíbrio e bem-estar.</p></article>
-        <article data-reveal><span>02</span><h3>Mente e emoções</h3><p>Abordagens de escuta, autoconhecimento e atenção ajudam a compreender experiências e padrões.</p></article>
-        <article data-reveal><span>03</span><h3>Relações e contexto</h3><p>Vínculos, ambiente e história também participam da forma como cada pessoa vive saúde e sofrimento.</p></article>
-        <article data-reveal><span>04</span><h3>Presença e sentido</h3><p>Práticas contemplativas podem ampliar percepção e autonomia sem impor crenças ou respostas.</p></article>
+        <article data-foco data-revelar="1"><span>01</span><h3>Corpo</h3><p>Movimento, práticas manuais e tradições de cuidado corporal podem apoiar equilíbrio e bem-estar.</p></article>
+        <article data-foco data-revelar="2"><span>02</span><h3>Mente e emoções</h3><p>Abordagens de escuta, autoconhecimento e atenção ajudam a compreender experiências e padrões.</p></article>
+        <article data-foco data-revelar="3"><span>03</span><h3>Relações e contexto</h3><p>Vínculos, ambiente e história também participam da forma como cada pessoa vive saúde e sofrimento.</p></article>
+        <article data-foco data-revelar="4"><span>04</span><h3>Presença e sentido</h3><p>Práticas contemplativas podem ampliar percepção e autonomia sem impor crenças ou respostas.</p></article>
       </div>
     </section>
 
-    <section class="photo-dark" aria-labelledby="integrative-safety-title">
-      <div data-reveal><p class="photo-kicker">Cuidado responsável</p><h2 id="integrative-safety-title">Complementaridade exige clareza.</h2></div>
-      <div class="photo-dark-copy" data-reveal><p>Cada prática tem alcance e limites próprios. A orientação inicial ajuda a reconhecer o que pode complementar outros cuidados e quando é importante procurar um profissional de saúde habilitado.</p><a class="photo-link" href="recepcao.html">Conversar com a Recepção ↗</a></div>
+    <section class="photo-dark" aria-labelledby="integrative-safety-title" data-capitulo="cuidado">
+      <div data-fio-alvo data-revelar="0"><p class="photo-kicker">Cuidado responsável</p><h2 id="integrative-safety-title">Complementaridade exige clareza.</h2></div>
+      <div class="photo-dark-copy" data-revelar="1"><p>Cada prática tem alcance e limites próprios. A orientação inicial ajuda a reconhecer o que pode complementar outros cuidados e quando é importante procurar um profissional de saúde habilitado.</p><a class="photo-link" href="recepcao.html">Conversar com a Recepção ↗</a></div>
     </section>
 
-    <section class="photo-closing" aria-labelledby="integrative-closing-title"><div data-reveal><p class="photo-kicker">Seu caminho</p><h2 id="integrative-closing-title">O cuidado pode mudar com o tempo.</h2></div><div class="photo-closing-copy" data-reveal><p>Conheça as possibilidades de atendimento e construa uma escolha orientada para o momento presente.</p><div class="photo-connections"><a class="photo-link" href="atendimentos.html">Atendimentos ↗</a><a class="photo-link" href="https://www.institutopotala.com/terapias" rel="noreferrer">Terapias no site oficial ↗</a></div></div></section>
+    <section class="photo-closing" aria-labelledby="integrative-closing-title" data-capitulo="continuar"><div data-fio-alvo data-revelar="0"><p class="photo-kicker">Seu caminho</p><h2 id="integrative-closing-title">O cuidado pode mudar com o tempo.</h2></div><div class="photo-closing-copy" data-revelar="1"><p>Conheça as possibilidades de atendimento e construa uma escolha orientada para o momento presente.</p><div class="photo-connections"><a class="photo-link" href="atendimentos.html">Atendimentos ↗</a><a class="photo-link" href="https://www.institutopotala.com/terapias" rel="noreferrer">Terapias no site oficial ↗</a></div></div></section>
     <footer class="photo-footer"><p>Instituto Cultural Potala · Indaiatuba, SP</p><a href="transcendido.html">Voltar à travessia</a></footer>
   </main>
 </body>

@@ -10,38 +10,49 @@
   <link rel="preload" href="media/home-travessia.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/section-guided.css">
+  <link rel="stylesheet" href="css/programacao-redesign.css">
   <script type="module" src="js/secoes.js"></script>
+  <script type="module" src="js/sections/resource-hero.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
+  <script type="module" src="js/sections/movimento.js"></script>
   <script type="module" src="js/sections/programacao-categorias.js"></script>
 </head>
 <body data-section="programacao" data-entry="down" data-left="saude-integrativa.html" data-right="cultura.html">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-  <main class="guided-page" id="conteudo" data-section-family="guided">
-    <section class="guided-hero" aria-labelledby="schedule-title">
+  <main class="guided-page" id="conteudo" data-section-family="guided" data-movimento>
+    <div class="leitura-progresso" data-leitura-progresso aria-hidden="true"><span></span></div>
+    <svg class="fio-da-jornada" data-fio-da-jornada aria-hidden="true" focusable="false">
+      <path class="fio-da-jornada__trilha"></path>
+      <path class="fio-da-jornada__traco"></path>
+      <g data-fio-nos></g>
+    </svg>
+
+    <section class="guided-hero" aria-labelledby="schedule-title" data-capitulo="inicio">
       <img class="guided-hero-image" src="media/home-travessia.webp" alt="Caminho iluminado pela paisagem que representa a agenda viva do Instituto" width="1600" height="900" fetchpriority="high" decoding="async">
-      <div class="guided-hero-copy" data-reveal>
-        <p class="guided-kicker">O Potala está vivo</p>
+      <div class="guided-hero-copy" data-fio-alvo data-revelar="0">
+        <p class="guided-kicker">07 · O Potala está vivo</p>
         <h1 id="schedule-title">Programação</h1>
         <p class="guided-lead">Aulas, atendimentos, cursos e encontros mudam com a vida da casa. Encontre uma forma simples de começar.</p>
-        <a class="guided-scroll" href="#orientacao">Explorar a agenda <span aria-hidden="true">↓</span></a>
+        <noscript><a class="guided-scroll" href="#orientacao">Explorar a agenda <span aria-hidden="true">↓</span></a></noscript>
       </div>
+      <div class="schedule-resource-hero" data-resource-hero="programacao" data-resource-secondary-label="Falar com a Recepção" data-resource-secondary-href="recepcao.html"></div>
     </section>
 
-    <section class="guided-intro" aria-labelledby="schedule-intro-title">
+    <section class="guided-intro" aria-labelledby="schedule-intro-title" data-capitulo="abertura">
       <p class="guided-index">01</p>
-      <div data-reveal><p class="guided-kicker">Uma agenda em movimento</p><h2 id="schedule-intro-title">Cada semana abre novas possibilidades.</h2></div>
-      <div class="guided-prose" data-reveal>
+      <div data-fio-alvo data-revelar="0"><p class="guided-kicker">Uma agenda em movimento</p><h2 id="schedule-intro-title">Cada semana abre novas possibilidades.</h2></div>
+      <div class="guided-prose" data-revelar="1">
         <p>A programação reúne o que acontece no Instituto sem reduzir a experiência a um calendário. Você pode chegar por uma necessidade, uma curiosidade ou simplesmente pela vontade de participar.</p>
         <p>Como horários e turmas mudam, os detalhes atuais permanecem no site oficial.</p>
       </div>
     </section>
 
-    <section class="guided-categorias" id="orientacao" aria-labelledby="schedule-categories-title" data-categorias>
-      <header class="guided-choice-head" data-reveal>
+    <section class="guided-categorias" id="orientacao" aria-labelledby="schedule-categories-title" data-categorias data-capitulo="categorias">
+      <header class="guided-choice-head" data-fio-alvo data-revelar="0">
         <div><p class="guided-kicker">Programação por categoria</p><h2 id="schedule-categories-title">Tudo o que acontece na casa.</h2></div>
         <p>Atendimentos, cursos, atividades, eventos culturais, grupos de estudo, oficinas e mentorias — as 16 modalidades do Instituto, cada uma levando à página em que os horários e as condições estão escritos.</p>
       </header>
-      <div class="guided-category-filter" data-reveal>
+      <div class="guided-category-filter" data-revelar="1">
         <p class="guided-category-filter-label" id="category-filter-label">Encontrar por categoria</p>
         <div class="guided-category-filter-options" role="group" aria-labelledby="category-filter-label">
           <button type="button" data-categoria="todas" aria-pressed="true">Tudo</button>
@@ -56,14 +67,14 @@
         <p class="guided-category-filter-status" data-categorias-aviso aria-live="polite">16 modalidades no Instituto.</p>
       </div>
       <div class="guided-indice">
-        <div class="guided-grupo" data-grupo="atendimentos" data-grupo-itens="2" data-reveal>
+        <div class="guided-grupo" data-foco data-grupo="atendimentos" data-grupo-itens="2" data-revelar="2">
           <h3 id="categoria-atendimentos">Atendimentos <span aria-hidden="true">02</span></h3>
           <ul aria-labelledby="categoria-atendimentos">
             <li><a href="atendimentos.html"><strong>Atendimentos individuais</strong><span>Sessões marcadas uma a uma, com hora combinada e sem obrigação de continuidade.</span><em aria-hidden="true">→</em></a></li>
             <li><a href="saude-integrativa.html"><strong>Terapias integrativas</strong><span>Práticas que acompanham o cuidado convencional em vez de substituí-lo.</span><em aria-hidden="true">→</em></a></li>
           </ul>
         </div>
-        <div class="guided-grupo" data-grupo="cursos" data-grupo-itens="3" data-reveal>
+        <div class="guided-grupo" data-foco data-grupo="cursos" data-grupo-itens="3" data-revelar="3">
           <h3 id="categoria-cursos">Cursos <span aria-hidden="true">03</span></h3>
           <ul aria-labelledby="categoria-cursos">
             <li><a href="cursos.html"><strong>Cursos livres</strong><span>Um tema, um ciclo com começo e fim, sem pré-requisito de formação.</span><em aria-hidden="true">→</em></a></li>
@@ -71,7 +82,7 @@
             <li><a href="cursos.html"><strong>Monte seu curso</strong><span>Turmas que nascem de um grupo que se juntou e pediu — e não do calendário.</span><em aria-hidden="true">→</em></a></li>
           </ul>
         </div>
-        <div class="guided-grupo" data-grupo="atividades" data-grupo-itens="5" data-reveal>
+        <div class="guided-grupo" data-foco data-grupo="atividades" data-grupo-itens="5" data-revelar="4">
           <h3 id="categoria-atividades">Atividades <span aria-hidden="true">05</span></h3>
           <ul aria-labelledby="categoria-atividades">
             <li><a href="atividades.html"><strong>Corpo e consciência</strong><span>Yoga, pilates, alongamento e consciência corporal, de segunda a sexta.</span><em aria-hidden="true">→</em></a></li>
@@ -81,7 +92,7 @@
             <li><a href="atividades.html"><strong>Mente e expressão</strong><span>Desenho, pintura, violão, violino, canto, xadrez, escrita, teatro e fotografia.</span><em aria-hidden="true">→</em></a></li>
           </ul>
         </div>
-        <div class="guided-grupo" data-grupo="culturais" data-grupo-itens="3" data-reveal>
+        <div class="guided-grupo" data-foco data-grupo="culturais" data-grupo-itens="3" data-revelar="5">
           <h3 id="categoria-culturais">Eventos culturais <span aria-hidden="true">03</span></h3>
           <ul aria-labelledby="categoria-culturais">
             <li><a href="cultura.html"><strong>Cine Potala</strong><span>Sessões com conversa depois, abertas a quem não estuda na casa.</span><em aria-hidden="true">→</em></a></li>
@@ -89,19 +100,19 @@
             <li><a href="eventos.html"><strong>Eventos futuros</strong><span>Mostras, torneios, saraus e retiros — os marcos maiores do calendário.</span><em aria-hidden="true">→</em></a></li>
           </ul>
         </div>
-        <div class="guided-grupo" data-grupo="grupos" data-grupo-itens="1" data-reveal>
+        <div class="guided-grupo" data-foco data-grupo="grupos" data-grupo-itens="1" data-revelar="6">
           <h3 id="categoria-grupos">Grupos de estudo <span aria-hidden="true">01</span></h3>
           <ul aria-labelledby="categoria-grupos">
             <li><a href="grupos-de-estudo.html"><strong>Grupos de estudo</strong><span>Permanentes, sem começo de turma: quem entra em março não está atrasado.</span><em aria-hidden="true">→</em></a></li>
           </ul>
         </div>
-        <div class="guided-grupo" data-grupo="oficinas" data-grupo-itens="1" data-reveal>
+        <div class="guided-grupo" data-foco data-grupo="oficinas" data-grupo-itens="1" data-revelar="7">
           <h3 id="categoria-oficinas">Oficinas <span aria-hidden="true">01</span></h3>
           <ul aria-labelledby="categoria-oficinas">
             <li><a href="workshops.html"><strong>Workshops de fim de semana</strong><span>Encontro único, um assunto, o suficiente para continuar sozinho depois.</span><em aria-hidden="true">→</em></a></li>
           </ul>
         </div>
-        <div class="guided-grupo" data-grupo="mentorias" data-grupo-itens="1" data-reveal>
+        <div class="guided-grupo" data-foco data-grupo="mentorias" data-grupo-itens="1" data-revelar="8">
           <h3 id="categoria-mentorias">Mentorias <span aria-hidden="true">01</span></h3>
           <ul aria-labelledby="categoria-mentorias">
             <li><a href="mentorias.html"><strong>Mentorias</strong><span>Acompanhamento individual em ciclos declarados, de quatro a doze meses.</span><em aria-hidden="true">→</em></a></li>
@@ -110,9 +121,9 @@
       </div>
     </section>
 
-    <section class="guided-closing" aria-labelledby="schedule-closing-title">
-      <div data-reveal><p class="guided-kicker">Chegar com calma</p><h2 id="schedule-closing-title">Você não precisa participar de tudo.</h2></div>
-      <div class="guided-closing-copy" data-reveal><p>Escolha apenas o que faz sentido agora. Outros caminhos continuarão disponíveis quando seu momento mudar.</p><!--
+    <section class="guided-closing" aria-labelledby="schedule-closing-title" data-capitulo="continuar">
+      <div data-fio-alvo data-revelar="0"><p class="guided-kicker">Chegar com calma</p><h2 id="schedule-closing-title">Você não precisa participar de tudo.</h2></div>
+      <div class="guided-closing-copy" data-revelar="1"><p>Escolha apenas o que faz sentido agora. Outros caminhos continuarão disponíveis quando seu momento mudar.</p><!--
         OS DOIS LINKS DESCERAM PARA CÁ, e não foram apagados junto com o bloco.
 
         A introdução desta página diz que "os detalhes atuais permanecem no site

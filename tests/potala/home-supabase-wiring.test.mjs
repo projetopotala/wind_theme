@@ -5,7 +5,7 @@ import test from "node:test";
 const read = (path) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
 test("Home carrega o SDK público antes do módulo de entrada", async () => {
-  const html = await read("outputs/transcendido.html");
+  const html = await read("outputs/travessia.html");
   const sdkIndex = html.indexOf('src="vendor/supabase.js"');
   const entryIndex = html.indexOf('src="js/secoes.js"');
 

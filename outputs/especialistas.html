@@ -9,8 +9,10 @@
   <script>document.documentElement.classList.add("js");</script>
   <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/comunidade.css">
+  <link rel="stylesheet" href="css/especialistas-redesign.css">
   <script type="module" src="js/secoes.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
+  <script type="module" src="js/comunidade/especialistas-filter.js"></script>
 </head>
 <body data-section="especialistas">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
@@ -22,7 +24,24 @@
       <div class="com-lead"><p>São 16 pessoas, e entre elas cobrem as 22 aulas do Instituto. Cada ficha traz a formação, o que a pessoa fez antes de ensinar e as turmas que conduz hoje.</p>
       <p>A ordem é a das famílias de prática, do corpo à expressão — a mesma de <a href="atividades.html">Atividades</a>. Quem procura uma aula específica chega mais rápido por lá; quem quer saber com quem vai aprender, fica aqui.</p></div>
       <p class="com-aviso" role="note">Os perfis, turmas e datas desta página são fictícios, criados para o desenho do Portal. Nenhum nome corresponde a uma pessoa real.</p>
+      <div class="specialists-hero-art" aria-hidden="true">
+        <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="42"/><path d="M18 58c16-22 34-22 60 0M25 67c14-15 29-15 46 0"/><circle cx="48" cy="30" r="4"/></svg>
+        <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="42"/><path d="M48 73V35m0 20c-14-1-22-8-23-21 13 1 21 8 23 21Zm0 8c14-1 22-8 23-21-13 1-21 8-23 21Z"/><circle cx="48" cy="24" r="4"/></svg>
+        <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="42"/><path d="M19 57c14-25 31-25 58 0M23 65c17-18 34-18 50 0M30 72c11-11 24-11 36 0"/><circle cx="48" cy="29" r="4"/></svg>
+        <p>Conheça a formação, o percurso e as práticas de cada pessoa.</p>
+      </div>
     </header>
+    <div class="specialists-filter" data-specialists-filter>
+      <p>Filtrar por área</p>
+      <div role="group" aria-label="Filtrar especialistas por área">
+        <button type="button" data-specialist-area="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-specialist-area="corpo" aria-pressed="false">Corpo e movimento</button>
+        <button type="button" data-specialist-area="orientais" aria-pressed="false">Práticas orientais</button>
+        <button type="button" data-specialist-area="expressao" aria-pressed="false">Expressão</button>
+        <button type="button" data-specialist-area="escuta" aria-pressed="false">Escuta e presença</button>
+      </div>
+      <span data-specialist-status role="status" aria-live="polite">16 especialistas · 22 aulas</span>
+    </div>
     <section class="com-lista" aria-label="Especialistas do Instituto">
       <article class="com-ficha" data-reveal>
         <div class="com-selo"><svg class="selo" viewBox="0 0 160 160" role="img" aria-hidden="true" focusable="false"><rect fill="currentColor" opacity=".05" width="160" height="160" rx="10"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.1999999999999997" opacity="0.45999999999999996"

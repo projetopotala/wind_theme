@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const chegada = await readFile("outputs/transcender.html", "utf8");
-const home = await readFile("outputs/transcendido.html", "utf8");
+const home = await readFile("outputs/travessia.html", "utf8");
 const homeJs = await readFile("outputs/js/secoes.js", "utf8");
 
 test("respiração é opt-in e o fallback visual existe", () => {

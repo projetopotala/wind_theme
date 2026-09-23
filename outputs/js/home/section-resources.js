@@ -89,6 +89,19 @@ export const SECTION_RESOURCES = {
   },
 };
 
+// Páginas relacionadas ao ecossistema, mas que não ocupam uma das 12 posições
+// da Travessia. Mantê-las separadas preserva o mapa editorial sem duplicar o
+// mecanismo de busca, filtros, ícones e benefícios usado nas páginas centrais.
+export const SUPPLEMENTAL_SECTION_RESOURCES = {
+  "saude-integrativa": {
+    prompt: "Que dimensão pede atenção?", intro: "Corpo, emoções, vínculos, hábitos e contexto podem fazer parte da mesma história. Conheça caminhos complementares com informação e cuidado.",
+    search: "Busque abordagem, cuidado ou necessidade…", primary: ["Conhecer as abordagens", "saude-integrativa.html#integrar"],
+    chips: [["Corpo", "movement"], ["Emoções", "heart"], ["Energia", "sun"], ["Hábitos", "leaf"], ["Relações", "people"]], related: ["atendimentos", "profissionais", "recepcao"],
+    benefits: [benefit("Cuidado complementar", "Integra sem substituir acompanhamento médico", "heart", "saude-integrativa.html#integrative-safety-title"), benefit("Escolha informada", "Conheça alcances e limites", "book", "saude-integrativa.html#integrar"), benefit("Rede de profissionais", "Encontre trajetórias de cuidado", "people", "profissionais.html")],
+    resources: [resource("Cuidado corporal", "saude-integrativa.html#integrar", "movement", "Movimento, práticas manuais e atenção ao corpo."), resource("Emoções e vínculos", "saude-integrativa.html#integrar", "heart", "Escuta, autoconhecimento e relações."), resource("Energia e presença", "saude-integrativa.html#integrar", "sun", "Práticas contemplativas e percepção."), resource("Hábitos e cotidiano", "saude-integrativa.html#integrar", "leaf", "Escolhas de vida e contexto."), resource("Escuta integrativa", "atendimentos.html", "chat", "Conheça possibilidades de acompanhamento."), resource("Orientação inicial", "recepcao.html", "compass", "Converse antes de escolher um caminho.")],
+  },
+};
+
 export function sectionResourcesFor(region) {
   // Usa o destino além do ID para não acoplar a seleção ao título editável.
   const entry = SECTION_RESOURCES[region.id];

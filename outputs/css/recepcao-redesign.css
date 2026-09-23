@@ -1,0 +1,413 @@
+:root {
+  --reception-ink: #30231c;
+  --reception-ivory: #f7f1e7;
+  --reception-ivory-bright: #fcf9f2;
+  --reception-forest: #2f4735;
+  --reception-brass: #b08a4b;
+}
+
+body[data-section="recepcao"] .portal-header { color: var(--reception-ivory); }
+body[data-section="recepcao"] .portal-header__nav a { color: rgba(247, 241, 231, .7); }
+body[data-section="recepcao"] .portal-header__nav a:hover { color: var(--reception-ivory); }
+body[data-section="recepcao"] .portal-header__account.conta-gatilho {
+  border-color: rgba(247, 241, 231, .22);
+  color: var(--reception-ivory);
+  background: rgba(35, 25, 20, .55);
+}
+
+.reception-hero {
+  box-sizing: border-box;
+  grid-template-columns: minmax(420px, .98fr) minmax(500px, 1.02fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100svh;
+  min-height: 760px;
+  padding: 92px 0 0;
+  background:
+    radial-gradient(circle at 88% 22%, rgba(176, 138, 75, .1), transparent 34%),
+    var(--reception-ink);
+}
+
+.reception-hero::after {
+  right: -12%;
+  left: auto;
+  width: min(39vw, 590px);
+  background: repeating-radial-gradient(circle at 115% 45%, transparent 0 46px, rgba(176, 138, 75, .14) 47px 48px);
+}
+
+.reception-portrait {
+  position: relative;
+  align-self: stretch;
+  min-height: 0;
+  margin: 0;
+}
+
+.reception-portrait img {
+  filter: saturate(.9) contrast(1.02) brightness(.9);
+  object-position: 50% 43%;
+}
+
+.reception-portrait::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(24, 17, 13, .03) 45%, rgba(24, 17, 13, .66));
+  content: "";
+  pointer-events: none;
+}
+
+.reception-portrait-words,
+.reception-portrait figcaption {
+  position: absolute;
+  z-index: 2;
+  margin: 0;
+  color: rgba(247, 241, 231, .78);
+  font-family: Arial, Helvetica, sans-serif;
+  text-transform: uppercase;
+}
+
+.reception-portrait-words {
+  top: 16%;
+  right: 8%;
+  font-size: .58rem;
+  letter-spacing: .31em;
+  line-height: 2.05;
+}
+
+.reception-portrait-words::after {
+  display: block;
+  width: 30px;
+  height: 1px;
+  margin-top: 22px;
+  background: var(--reception-brass);
+  content: "";
+}
+
+.reception-portrait figcaption {
+  right: 9%;
+  bottom: 34px;
+  left: 9%;
+  font-size: .6rem;
+  letter-spacing: .25em;
+}
+
+.reception-hero-copy {
+  align-self: center;
+  margin: 0;
+  padding: 62px clamp(44px, 6vw, 104px) 48px;
+}
+
+.reception-hero h1 {
+  font-size: clamp(6.6rem, 10.2vw, 10.5rem);
+  line-height: .78;
+  letter-spacing: -.075em;
+}
+
+.reception-lead {
+  max-width: 18ch;
+  margin: 48px 0 0;
+  font-size: clamp(2rem, 2.8vw, 3.25rem);
+  line-height: 1.02;
+}
+
+.reception-summary { max-width: 44ch; margin-top: 24px; }
+
+.reception-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 34px;
+  align-items: center;
+  margin-top: 30px;
+}
+
+.reception-primary-action,
+.reception-secondary-action {
+  display: inline-flex;
+  align-items: center;
+  color: var(--reception-ivory);
+  text-decoration: none;
+}
+
+.reception-primary-action {
+  min-height: 52px;
+  gap: 24px;
+  padding: 0 24px;
+  border: 1px solid #d5b66f;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #a98340, #c4a45c);
+  font: 400 1rem/1 Georgia, "Times New Roman", serif;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.reception-primary-action:hover { box-shadow: 0 12px 32px rgba(176, 138, 75, .25); transform: translateY(-2px); }
+.reception-secondary-action {
+  padding: 10px 0 8px;
+  border-bottom: 1px solid var(--reception-brass);
+  font: 400 .96rem/1 Georgia, "Times New Roman", serif;
+}
+
+.reception-wayfinding {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: .72fr repeat(4, 1fr);
+  min-height: 178px;
+  padding: 0 clamp(30px, 4.4vw, 72px);
+  color: var(--reception-ink);
+  background: var(--reception-ivory-bright);
+}
+
+.reception-wayfinding > p,
+.reception-wayfinding > a {
+  margin: 0;
+  padding: 30px clamp(18px, 2.3vw, 38px);
+  border-right: 1px solid rgba(48, 35, 28, .14);
+}
+
+.reception-wayfinding > p {
+  align-self: stretch;
+  padding-left: 0;
+  color: rgba(48, 35, 28, .62);
+  font: 700 .62rem/1.7 Arial, Helvetica, sans-serif;
+  letter-spacing: .21em;
+  text-transform: uppercase;
+}
+
+.reception-wayfinding > p span { display: block; color: var(--reception-brass); }
+.reception-wayfinding > a {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-content: center;
+  color: inherit;
+  text-decoration: none;
+  transition: color .25s ease, background .25s ease;
+}
+.reception-wayfinding > a:last-child { border-right: 0; }
+.reception-wayfinding > a:hover { color: var(--reception-ivory); background: var(--reception-forest); }
+.reception-wayfinding svg {
+  grid-column: 1 / -1;
+  width: 29px;
+  height: 29px;
+  margin-bottom: 13px;
+  fill: none;
+  stroke: var(--reception-forest);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.45;
+}
+.reception-wayfinding > a:hover svg { stroke: #d8bb77; }
+.reception-wayfinding strong {
+  display: block;
+  max-width: 18ch;
+  font: 400 clamp(1.03rem, 1.35vw, 1.3rem)/1.12 Georgia, "Times New Roman", serif;
+}
+.reception-wayfinding small {
+  grid-column: 1 / -1;
+  max-width: 24ch;
+  margin-top: 8px;
+  color: rgba(48, 35, 28, .57);
+  font: 400 .75rem/1.45 Arial, Helvetica, sans-serif;
+}
+.reception-wayfinding > a:hover small { color: rgba(247, 241, 231, .68); }
+.reception-wayfinding i { align-self: end; color: var(--reception-brass); font-style: normal; }
+
+.reception-intro,
+.reception-paths,
+.reception-contact,
+.reception-assistant,
+.reception-feedback { padding: clamp(104px, 11vw, 174px) clamp(28px, 8vw, 132px); }
+
+.reception-intro { position: relative; background: var(--reception-ivory-bright); }
+.reception-intro::before {
+  position: absolute;
+  top: 0;
+  right: clamp(28px, 8vw, 132px);
+  left: clamp(28px, 8vw, 132px);
+  height: 1px;
+  background: rgba(48, 35, 28, .13);
+  content: "";
+}
+.reception-index {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  place-items: center;
+  border: 1px solid rgba(176, 138, 75, .36);
+  border-radius: 50%;
+}
+
+.reception-paths { background: var(--reception-ivory); }
+.reception-path-list { border-color: rgba(48, 35, 28, .14); }
+.reception-path { transition: background .25s ease, padding .25s ease; }
+.reception-path:not(.reception-path--featured):hover {
+  margin-inline: calc(clamp(28px, 8vw, 132px) * -.18);
+  padding-inline: calc(clamp(28px, 8vw, 132px) * .18);
+  background: rgba(255, 255, 255, .36);
+}
+.reception-path--featured { background: var(--reception-forest); }
+.reception-path--urgent { box-shadow: inset 3px 0 0 var(--reception-brass); }
+
+.reception-assistant { background: var(--reception-ink); }
+.reception-contact { background: var(--reception-ivory-bright); }
+.reception-feedback { background: var(--reception-forest); }
+.reception-closing { background: radial-gradient(circle at 50% 45%, rgba(176, 138, 75, .13), transparent 40%), var(--reception-ink); }
+
+/* ------------------------------------------------------------------
+ * A TRAVESSIA DESTA PÁGINA
+ *
+ * A Recepção é a mais longa e a mais funcional da área: oito portas, uma
+ * prévia de conversa, contatos e um retorno. O índice dela já existe — são as
+ * quatro rotas do hero. O que faltava era ritmo: peso diferente entre as
+ * portas, sinal de progresso e passagens entre os ambientes.
+ * ------------------------------------------------------------------ */
+
+body[data-section="recepcao"] {
+  --progresso-cor: var(--reception-brass, #b08a4b);
+  --fio-cor: rgba(176, 138, 75, .7);
+  --fio-cor-fraca: rgba(48, 35, 28, .14);
+}
+
+/* Nos territórios escuros o fio clareia. */
+.reception-page[data-capitulo-ativo="inicio"],
+.reception-page[data-capitulo-ativo="assistente"],
+.reception-page[data-capitulo-ativo="retorno"],
+.reception-page[data-capitulo-ativo="encerramento"] {
+  --fio-cor: rgba(216, 187, 119, .78);
+  --fio-cor-fraca: rgba(247, 241, 231, .14);
+}
+
+.reception-page { position: relative; }
+.reception-page .fio-da-jornada { left: clamp(6px, 1.6vw, 26px); }
+
+.reception-copy-abertura {
+  color: var(--reception-earth, #30231c);
+  font-size: clamp(1.1rem, 1.5vw, 1.4rem);
+  line-height: 1.6;
+}
+
+/* ------------------------------------------------------------------
+ * As oito portas
+ *
+ * Eram oito linhas idênticas de título gigante: a página inteira gritando no
+ * mesmo tom. Seis viram pares em duas colunas, em escala de leitura; as duas
+ * que têm rótulo próprio — orientação solidária e acolhimento prioritário —
+ * atravessam a largura e continuam grandes. Nada foi escondido: mudou o peso.
+ * ------------------------------------------------------------------ */
+
+.reception-path-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(30px, 4.5vw, 84px);
+}
+
+.reception-path {
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: clamp(16px, 2vw, 30px);
+  padding: clamp(30px, 3.4vw, 48px) 0;
+  transition: none;
+}
+
+.reception-path h3 { font-size: clamp(1.55rem, 2.3vw, 2.5rem); }
+.reception-path p:not(.reception-path-number, .reception-path-label) { margin-top: 14px; font-size: clamp(.9rem, 1vw, 1rem); }
+
+.reception-path > a {
+  grid-column: 2;
+  justify-self: start;
+  margin-top: 20px;
+}
+
+/* As duas portas com rótulo mantêm a escala e a largura inteira. */
+.reception-path--featured,
+.reception-path--urgent {
+  grid-column: 1 / -1;
+  grid-template-columns: 72px minmax(320px, 1.1fr) minmax(170px, .55fr);
+  gap: clamp(26px, 5vw, 82px);
+  /* O recuo lateral é o da base: a porta em destaque sangra a largura inteira. */
+  padding-block: clamp(42px, 5vw, 76px);
+}
+
+.reception-path--featured h3,
+.reception-path--urgent h3 { font-size: clamp(2.1rem, 3.6vw, 4.2rem); }
+
+.reception-path--featured > a,
+.reception-path--urgent > a { grid-column: 3; justify-self: end; margin-top: 4px; }
+
+.reception-path-number {
+  transform-origin: left center;
+  transition: transform var(--movimento-medio) var(--movimento-saida), color var(--movimento-medio) var(--movimento-saida);
+}
+
+/* A porta que está sendo lida ganha peso pelo número, não por cor de fundo. */
+.reception-path.is-ativa .reception-path-number {
+  color: var(--reception-brass, #b08a4b);
+  transform: scale(1.45);
+}
+
+.reception-path:not(.reception-path--featured):hover { background: none; }
+
+@media (max-width: 1100px) {
+  .reception-path-list { grid-template-columns: minmax(0, 1fr); }
+  .reception-path,
+  .reception-path--featured,
+  .reception-path--urgent { grid-column: 1; grid-template-columns: 52px minmax(0, 1fr); gap: clamp(16px, 3vw, 30px); }
+  .reception-path--featured > a,
+  .reception-path--urgent > a { grid-column: 2; justify-self: start; margin-top: 20px; }
+  .reception-path--featured h3,
+  .reception-path--urgent h3 { font-size: clamp(1.9rem, 4vw, 3rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reception-path-number { transition: none; }
+  .reception-path.is-ativa .reception-path-number { transform: none; }
+}
+
+@media (max-width: 1100px) {
+  .reception-hero { grid-template-columns: minmax(360px, .9fr) minmax(430px, 1.1fr); }
+  .reception-wayfinding { grid-template-columns: repeat(4, 1fr); }
+  .reception-wayfinding > p { display: none; }
+}
+
+@media (max-width: 820px) {
+  body[data-section="recepcao"] .portal-header__brand,
+  body[data-section="recepcao"] .portal-header__account.conta-gatilho { color: var(--reception-ivory); }
+  .reception-hero {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    height: auto;
+    min-height: 0;
+    padding-top: 76px;
+  }
+  .reception-portrait { min-height: 58svh; }
+  .reception-hero-copy { margin: -62px 0 0; padding: 0 22px 62px; }
+  .reception-hero h1 { font-size: clamp(5rem, 20vw, 8rem); white-space: normal; }
+  .reception-lead { margin-top: 44px; }
+  .reception-wayfinding { grid-template-columns: repeat(2, 1fr); padding: 0 18px; }
+  .reception-wayfinding > a:nth-child(2n) { border-right: 0; }
+  .reception-wayfinding > a { border-bottom: 1px solid rgba(48, 35, 28, .14); }
+}
+
+@media (max-width: 560px) {
+  .reception-portrait { min-height: 54svh; }
+  .reception-portrait-words,
+  .reception-portrait figcaption { display: none; }
+  .reception-hero-copy { padding-inline: 20px; }
+  .reception-hero h1 { font-size: clamp(4.65rem, 22vw, 6.4rem); line-height: .82; }
+  .reception-lead { max-width: 17ch; font-size: clamp(1.8rem, 9vw, 2.7rem); }
+  .reception-summary { font-size: .95rem; }
+  .reception-hero-actions { align-items: stretch; flex-direction: column; }
+  .reception-primary-action { justify-content: space-between; }
+  .reception-secondary-action { align-self: flex-start; }
+  .reception-wayfinding { grid-template-columns: 1fr; }
+  .reception-wayfinding > a { min-height: 166px; border-right: 0; }
+  .reception-intro,
+  .reception-paths,
+  .reception-contact,
+  .reception-assistant,
+  .reception-feedback { padding: 86px 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reception-primary-action,
+  .reception-wayfinding > a,
+  .reception-path { transition: none; }
+}

@@ -1,0 +1,1105 @@
+:root {
+  --motion-fast: 180ms;
+  --motion-medium: 420ms;
+  --motion-slow: 850ms;
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+html,
+body {
+  overflow-x: clip;
+}
+
+.proto {
+  display: none;
+}
+
+.top-actions .top-action-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.top-action-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.top-action-icon--profile svg {
+  width: 21px;
+  height: 21px;
+}
+
+.top-actions .top-action-icon.conta-gatilho {
+  border: 0;
+  color: #fff;
+  background: var(--ink);
+  box-shadow: 0 12px 30px rgba(24, 54, 47, .18);
+}
+
+.top-actions .top-action-icon.conta-gatilho:hover {
+  border-color: transparent;
+}
+
+.hero-card {
+  align-self: end;
+}
+
+.hero-card__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  margin: 0 0 20px;
+  border-radius: 20px;
+  object-fit: cover;
+  object-position: center 42%;
+}
+
+.editorial-subtitle {
+  margin: 10px 0 18px;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.source-discovery-lanes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(18px, 3vw, 34px);
+  margin-top: clamp(48px, 7vw, 90px);
+}
+
+.source-discovery-lanes article {
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+}
+
+.source-discovery-lanes article > span,
+.person-copy > span,
+.oracle-editorial > span {
+  color: var(--gold);
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.source-discovery-lanes h3,
+.oracle-editorial h3 {
+  margin: 18px 0 14px;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 3.2vw, 3.35rem);
+  font-weight: 500;
+  line-height: 1.02;
+}
+
+.source-discovery-lanes p,
+.oracle-editorial p {
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.oracle-editorial {
+  max-width: 860px;
+  margin: 0 0 clamp(40px, 6vw, 76px) auto;
+  padding: clamp(28px, 4vw, 52px);
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 28px;
+  background: rgba(255,255,255,.05);
+}
+
+.oracle-editorial p {
+  color: rgba(255,255,255,.7);
+}
+
+.person-copy > span {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.person-copy small {
+  display: block;
+  margin-top: 12px;
+  color: var(--ink-soft);
+}
+
+.virtual-steps {
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.virtual-steps li {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.virtual-steps li > span {
+  color: var(--gold);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+
+.virtual-steps strong,
+.virtual-steps small {
+  display: block;
+}
+
+.virtual-steps strong {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.virtual-steps small {
+  margin-top: 3px;
+  color: var(--ink-soft);
+}
+
+.carepaths {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 24%, rgba(198, 215, 204, .7), transparent 28%),
+    linear-gradient(145deg, #f6f3ea, #e9eee8);
+}
+
+.people-scene {
+  position: relative;
+  min-height: min(62vw, 650px);
+  margin: 0 0 24px;
+  overflow: hidden;
+  border-radius: 34px;
+}
+
+.people-scene img {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+}
+
+.people-scene figcaption {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  max-width: 360px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: rgba(246,243,234,.9);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.25rem;
+}
+
+.screen {
+  overflow: hidden;
+  padding: 0;
+}
+
+.virtual-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.virtual-caption {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 32px 22px 20px;
+  background: linear-gradient(transparent, rgba(12,33,28,.92));
+  color: #fff;
+}
+
+.virtual-caption .small {
+  margin-top: 7px;
+  color: rgba(255,255,255,.72);
+}
+
+.mural-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.mural-form label {
+  display: grid;
+  gap: 5px;
+  color: rgba(255,255,255,.7);
+  font-size: .68rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.mural-form input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgba(255,255,255,.34);
+  background: transparent;
+  color: #fff;
+  padding: 8px 0;
+}
+
+.mural-form .btn {
+  justify-self: start;
+  margin-top: 6px;
+}
+
+.mural-feedback,
+.book-summary {
+  margin: 10px 0 0;
+  color: inherit;
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.book-summary {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(24,54,47,.07);
+}
+
+.book-summary strong {
+  display: block;
+  margin-bottom: 5px;
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
+:where(a, button, input, select, summary):focus-visible {
+  outline: 3px solid #b38b4d;
+  outline-offset: 4px;
+}
+
+@media (max-width: 980px) {
+  .source-reading__body {
+    column-count: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-card__image {
+    aspect-ratio: 4 / 3;
+  }
+
+  .source-reading summary {
+    min-height: 66px;
+    font-size: .66rem;
+  }
+
+  .source-discovery-lanes {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .people-scene {
+    min-height: 74vw;
+    border-radius: 24px;
+  }
+
+  .people-scene figcaption {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+*::before,
+*::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+/* ==================================================================
+ * PUBLICAÇÃO VIVA
+ *
+ * A página é percorrida como uma revista: cada matéria abre com uma prévia
+ * grande — título, abertura em letra de livro, capitular — e ao lado as
+ * imagens da pauta, em slides. Quem quiser ler abre a matéria: o texto corre
+ * à esquerda e a imagem à direita acompanha o que está sendo lido.
+ *
+ * Depois de cada matéria vem um instante com a pessoa (uma pergunta, uma
+ * reflexão para levar) e, ao lado, para onde ir no Portal.
+ * ================================================================== */
+
+#main {
+  position: relative;
+  isolation: isolate;
+}
+
+/*
+ * A LINHA PASSA POR TRÁS.
+ *
+ * Três camadas: o fundo de cada seção embaixo, a linha no meio e o conteúdo
+ * por cima. O conteúdo não tem fundo próprio, então a linha aparece nos
+ * espaços vazios e some atrás de cada letra e de cada imagem.
+ */
+#main > section > .shell,
+#main > .hero > .shell {
+  position: relative;
+  z-index: 2;
+}
+
+.journey-thread {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.journey-thread [data-journey-path] {
+  fill: none;
+  stroke: rgba(167, 136, 85, .5);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.journey-thread__ponta {
+  fill: #a78855;
+  opacity: .85;
+}
+
+/* ------------------------------------------------------------------
+ * A matéria
+ * ------------------------------------------------------------------ */
+
+.materia-secao {
+  padding-block: clamp(90px, 11vw, 168px);
+}
+
+.materia-cabeca {
+  margin-bottom: clamp(34px, 4.5vw, 64px);
+}
+
+.materia {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+  gap: clamp(36px, 6vw, 96px);
+  align-items: start;
+}
+
+.source-reading {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+}
+
+.source-reading summary {
+  display: block;
+  padding: 0;
+  cursor: pointer;
+  list-style: none;
+  text-transform: none;
+}
+
+.source-reading summary::-webkit-details-marker {
+  display: none;
+}
+
+.source-reading__preview {
+  display: grid;
+  justify-items: start;
+}
+
+.source-reading__preview small {
+  color: var(--gold);
+  font: 700 .68rem/1.2 var(--sans);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.source-reading__preview strong {
+  display: block;
+  max-width: 16ch;
+  margin-top: 18px;
+  color: var(--ink);
+  font: 500 clamp(2.6rem, 4.6vw, 4.8rem)/.96 var(--serif);
+  letter-spacing: -.035em;
+}
+
+/*
+ * A abertura é a prévia: texto grande, em letra de livro, com capitular. Ela
+ * mostra o suficiente para a pessoa saber do que se trata — e esmaece onde a
+ * leitura continua.
+ */
+.materia-abertura {
+  display: block;
+  max-width: 31em;
+  max-height: calc(1.44em * 7);
+  margin-top: clamp(24px, 3vw, 36px);
+  overflow: hidden;
+  color: var(--ink);
+  font: italic 400 clamp(1.45rem, 2.2vw, 2.1rem)/1.44 var(--serif);
+  mask-image: linear-gradient(180deg, #000 58%, transparent);
+}
+
+.materia-abertura::first-letter {
+  float: left;
+  margin: .1em .12em 0 -.02em;
+  color: var(--gold);
+  font-size: 4.1em;
+  font-style: normal;
+  font-weight: 500;
+  line-height: .74;
+}
+
+.source-reading__preview b {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: clamp(22px, 3vw, 32px);
+  padding: 14px 22px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--ink);
+  font: 700 .72rem/1 var(--sans);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  transition: background var(--motion-fast) ease, transform var(--motion-fast) ease;
+}
+
+.source-reading summary:hover b {
+  background: var(--moss);
+  transform: translateY(-2px);
+}
+
+/* O sinal de "+" já está no botão; o círculo antigo sobraria como segundo botão. */
+.source-reading__symbol {
+  display: none;
+}
+
+.source-reading[open] .materia-abertura {
+  max-height: none;
+  mask-image: none;
+}
+
+.source-reading[open] .source-reading__preview b {
+  color: var(--ink);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.source-reading[open] .source-reading__body {
+  display: block;
+  padding-top: clamp(22px, 3vw, 36px);
+  animation: reading-open var(--motion-slow) var(--motion-ease) both;
+}
+
+@keyframes reading-open {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+.source-reading__text > p {
+  max-width: 36em;
+  margin: 0 0 1.15em;
+  color: var(--ink-soft);
+  font: 400 clamp(1.16rem, 1.4vw, 1.34rem)/1.7 var(--serif);
+  text-wrap: pretty;
+}
+
+/* A leitura continua a abertura: em vez de uma segunda capitular, a primeira linha em versalete. */
+.source-reading__text > p:first-child::first-line {
+  font-variant: small-caps;
+  letter-spacing: .03em;
+}
+
+.materia-referencias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 34px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-size: .78rem;
+}
+
+.materia-referencias span {
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.materia-referencias a {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.materia-recolher {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+  padding: 12px 20px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  font: 700 .7rem/1 var(--sans);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.materia-recolher:hover { border-color: var(--ink); }
+
+/* Uma linha fina, em vez de cinco caixas, para o percurso de investigar. */
+.materia-fluxo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 26px;
+  margin: 0 0 clamp(34px, 4vw, 52px);
+  padding: 16px 0;
+  border-block: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: .86rem;
+}
+
+.materia-fluxo b {
+  color: var(--ink);
+  font: 500 1.08rem/1 var(--serif);
+}
+
+/* ------------------------------------------------------------------
+ * Slides da pauta
+ *
+ * Os slides ficam empilhados na mesma célula da grade: a moldura tem a altura
+ * do maior deles e nada pula quando a imagem troca.
+ * ------------------------------------------------------------------ */
+
+.materia-slides {
+  position: sticky;
+  top: 96px;
+  min-width: 0;
+  margin: 0;
+}
+
+.materia-slides__rotulo {
+  margin: 0 0 14px;
+  color: var(--gold);
+  font: 700 .66rem/1.2 var(--sans);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.materia-slides__quadro {
+  display: grid;
+}
+
+.materia-slide {
+  display: grid;
+  grid-area: 1 / 1;
+  align-content: start;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--motion-slow) ease, visibility 0s linear var(--motion-slow);
+}
+
+.materia-slide.is-ativo {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--motion-slow) ease, visibility 0s;
+}
+
+.materia-slide__foto {
+  display: block;
+  overflow: hidden;
+  border-radius: 24px;
+}
+
+.materia-slide img {
+  display: block;
+  width: 100%;
+  /* O atributo height="1000" vira altura fixa se não for desfeito aqui. */
+  height: auto;
+  aspect-ratio: 5 / 4;
+  object-fit: cover;
+  transform: scale(1.05);
+  transition: transform 7s cubic-bezier(.2, .6, .2, 1);
+}
+
+/* A imagem em cena se aproxima devagar: imersão, não efeito. */
+.materia-slide.is-ativo img {
+  transform: scale(1);
+}
+
+.materia-slide figcaption {
+  display: grid;
+  gap: 8px;
+  padding-top: 18px;
+}
+
+.materia-slide figcaption small {
+  color: var(--gold);
+  font: 700 .64rem/1.2 var(--sans);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.materia-slide figcaption strong {
+  color: var(--ink);
+  font: 500 clamp(1.3rem, 1.8vw, 1.6rem)/1.12 var(--serif);
+}
+
+.materia-slide figcaption span {
+  color: var(--ink-soft);
+  font-size: .9rem;
+  line-height: 1.6;
+}
+
+.materia-slide figcaption ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-soft);
+  font-size: .76rem;
+}
+
+.materia-slide figcaption li::before {
+  margin-right: 6px;
+  color: var(--gold);
+  content: "·";
+}
+
+.materia-slides__controles {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.materia-slides__seta {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  font: 400 1rem/1 var(--sans);
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
+}
+
+.materia-slides__seta:hover {
+  border-color: var(--ink);
+  background: rgba(255, 255, 255, .6);
+}
+
+.materia-slides__pontos {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.materia-slides__pontos button {
+  width: 100%;
+  min-width: 18px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.materia-slides__pontos button::before {
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--line);
+  content: "";
+  transition: background var(--motion-medium) ease;
+}
+
+.materia-slides__pontos button[aria-current="true"]::before {
+  background: var(--gold);
+}
+
+/* ------------------------------------------------------------------
+ * Conexão: um instante com a pessoa e, ao lado, para onde ir
+ * ------------------------------------------------------------------ */
+
+.conexao {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(260px, .85fr);
+  gap: clamp(30px, 5vw, 84px);
+  margin-top: clamp(64px, 8vw, 116px);
+  padding: clamp(26px, 3.6vw, 48px);
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, .62);
+}
+
+.conexao__rotulo {
+  margin: 0 0 12px;
+  color: var(--gold);
+  font: 700 .66rem/1.2 var(--sans);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.conexao h3 {
+  margin: 0;
+  color: var(--ink);
+  font: 500 clamp(2rem, 3.2vw, 2.9rem)/1 var(--serif);
+  letter-spacing: -.02em;
+}
+
+.conexao__nota {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: .9rem;
+}
+
+.conexao__resposta {
+  min-height: 1.4em;
+  margin: 20px 0 0;
+  color: var(--ink);
+  font: italic 400 clamp(1.2rem, 1.7vw, 1.5rem)/1.4 var(--serif);
+}
+
+.conexao__resposta a {
+  color: var(--gold);
+  font-style: normal;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.conexao__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.conexao__botoes button {
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  background: #fff;
+  cursor: pointer;
+  font: 700 .72rem/1 var(--sans);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.conexao__botoes button:hover { border-color: var(--ink); }
+
+/* Saúde: quatro perguntas, três respostas cada. */
+.conexao-check fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  padding: 14px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.conexao-check fieldset:first-of-type { margin-top: 22px; border-top: 1px solid var(--line); }
+
+/* Legenda flutuante: vira um item da linha, ao lado das respostas. */
+.conexao-check legend {
+  float: left;
+  width: 132px;
+  padding: 0;
+  color: var(--ink);
+  font: 500 1.22rem/1 var(--serif);
+}
+
+
+.conexao-check input,
+.conexao-anotacoes input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.conexao-check label span {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  background: #fff;
+  cursor: pointer;
+  font-size: .8rem;
+  transition: color var(--motion-fast) ease, background var(--motion-fast) ease, border-color var(--motion-fast) ease;
+}
+
+.conexao-check input:checked + span {
+  border-color: var(--ink);
+  color: #fff;
+  background: var(--ink);
+}
+
+.conexao-check input:focus-visible + span,
+.conexao-anotacoes input:focus-visible + span {
+  outline: 3px solid #b38b4d;
+  outline-offset: 3px;
+}
+
+/* Reflexão para levar. */
+.conexao-reflexao blockquote {
+  position: relative;
+  margin: 26px 0 0;
+  padding-left: 26px;
+  border-left: 2px solid var(--gold);
+  color: var(--ink);
+  font: italic 400 clamp(1.5rem, 2.3vw, 2.1rem)/1.32 var(--serif);
+}
+
+/* Perguntas para levar a uma conversa. */
+.conexao-anotacoes__lista {
+  display: grid;
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.conexao-anotacoes__lista label {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.conexao-anotacoes__lista span {
+  color: var(--ink-soft);
+  font: 400 1.15rem/1.35 var(--serif);
+}
+
+.conexao-anotacoes__lista span::before {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 14px;
+  border: 1px solid var(--ink-soft);
+  border-radius: 4px;
+  content: "";
+  vertical-align: -2px;
+}
+
+.conexao-anotacoes__lista input:checked + span { color: var(--ink); }
+.conexao-anotacoes__lista input:checked + span::before { border-color: var(--ink); background: var(--ink); box-shadow: inset 0 0 0 3px #fff; }
+
+/* Ao lado: indicações do Portal e leituras do Blog. */
+.conexao__indicacoes {
+  display: grid;
+  align-content: start;
+}
+
+.conexao__indicacoes .conexao__rotulo:not(:first-child) { margin-top: 30px; }
+
+.conexao__portal a {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font: 500 clamp(1.3rem, 1.9vw, 1.7rem)/1.1 var(--serif);
+  transition: color var(--motion-fast) ease, transform var(--motion-fast) ease;
+}
+
+.conexao__portal a:first-child { border-top: 1px solid var(--line); }
+
+.conexao__portal a:hover {
+  color: var(--gold);
+  transform: translateX(6px);
+}
+
+.conexao__artigo {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font: 500 1.08rem/1.25 var(--serif);
+}
+
+.conexao__artigo small {
+  color: var(--gold);
+  font: 700 .62rem/1.2 var(--sans);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.conexao__artigo:hover { color: var(--moss); }
+
+/* A reflexão do capítulo 04 é a mesma conexão, no território escuro. */
+.reflection {
+  display: grid;
+  align-items: center;
+  min-height: auto;
+  padding-block: clamp(80px, 10vw, 140px);
+  overflow: hidden;
+  color: #f4eee1;
+  background:
+    radial-gradient(circle at 84% 18%, rgba(185, 200, 187, .18), transparent 34%),
+    #17372f;
+}
+
+.conexao--escura {
+  margin-top: 0;
+  border-color: rgba(255, 255, 255, .16);
+  background: rgba(255, 255, 255, .04);
+}
+
+.conexao--escura h3,
+.conexao--escura .conexao__portal a,
+.conexao--escura .conexao__artigo { color: #f4eee1; }
+.conexao--escura .conexao__nota { color: rgba(255, 255, 255, .64); }
+.conexao--escura .conexao__portal a,
+.conexao--escura .conexao__artigo,
+.conexao--escura .conexao__portal a:first-child { border-color: rgba(255, 255, 255, .16); }
+.conexao--escura .conexao__rotulo,
+.conexao--escura .conexao__artigo small { color: #d8c49a; }
+.conexao--escura .conexao__portal a:hover { color: #d8c49a; }
+
+.reflection-choices {
+  display: grid;
+  margin-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, .2);
+}
+
+.reflection-choices button {
+  display: flex;
+  width: 100%;
+  min-height: 60px;
+  padding: 14px 40px 14px 0;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .16);
+  color: rgba(255, 255, 255, .74);
+  background: transparent;
+  cursor: pointer;
+  font: 400 1.25rem/1.3 var(--serif);
+  text-align: left;
+  transition: color var(--motion-fast) ease, transform var(--motion-fast) ease;
+}
+
+.reflection-choices button::before {
+  width: 20px;
+  margin-right: 16px;
+  color: #d8c49a;
+  content: "○";
+}
+
+.reflection-choices button:hover,
+.reflection-choices button[aria-pressed="true"] {
+  color: #fff;
+  transform: translateX(8px);
+}
+
+.reflection-choices button[aria-pressed="true"]::before { content: "●"; }
+
+.reflection-feedback {
+  min-height: 3em;
+  margin: 24px 0 0;
+  color: #d8c49a;
+  font: italic 400 clamp(1.3rem, 2vw, 1.8rem)/1.35 var(--serif);
+}
+
+/* ------------------------------------------------------------------
+ * Telas menores
+ * ------------------------------------------------------------------ */
+
+@media (max-width: 980px) {
+  .materia,
+  .conexao {
+    grid-template-columns: 1fr;
+  }
+
+  /* No celular a imagem vem logo depois da prévia e não fica presa na tela. */
+  .materia-slides {
+    position: relative;
+    top: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .journey-thread [data-journey-path] { stroke-width: 1.1; }
+
+  .source-reading__preview strong { font-size: clamp(2.3rem, 11vw, 3.2rem); }
+
+  .materia-abertura {
+    max-height: calc(1.44em * 8);
+    font-size: 1.32rem;
+  }
+
+  .source-reading__text > p { font-size: 1.14rem; }
+
+  .conexao { padding: 22px; border-radius: 22px; }
+
+  .conexao-check legend { width: 100%; margin-bottom: 4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .materia-slide,
+  .materia-slide.is-ativo,
+  .materia-slide img,
+  .reflection-choices button,
+  .conexao__portal a { transition: none; }
+
+  .materia-slide img,
+  .materia-slide.is-ativo img { transform: none; }
+
+  .journey-thread__ponta { display: none; }
+}
+
+/* ==================================================================
+ * Como Home
+ * ================================================================== */
+
+/* A gaveta também leva às outras seções do Portal: rola por dentro quando não cabe. */
+.drawer{max-height:calc(100dvh - 94px);overflow-y:auto;overscroll-behavior:contain}
+.drawer-portal-titulo{margin-top:18px}
+
+/* Entrada vinda da Chegada: o escuro do véu se abre sobre a página. */
+html.entry-pending body::before{content:"";position:fixed;inset:0;z-index:2000;background:#0d100e;pointer-events:none;animation:entrada-veu 1.6s cubic-bezier(.22,.72,.24,1) both}
+@keyframes entrada-veu{from{opacity:1;visibility:visible}to{opacity:0;visibility:hidden}}
+@media(prefers-reduced-motion:reduce){html.entry-pending body::before{animation-duration:.35s}}

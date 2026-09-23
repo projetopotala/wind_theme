@@ -10,45 +10,59 @@
   <link rel="preload" href="media/marketplace-contexto.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/section-photographic.css">
+  <link rel="stylesheet" href="css/marketplace-redesign.css">
   <script type="module" src="js/secoes.js"></script>
+  <script type="module" src="js/sections/resource-hero.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
+  <script type="module" src="js/sections/movimento.js"></script>
 </head>
 <body data-section="marketplace">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-  <main class="photo-page" id="conteudo" data-section-family="photographic">
-    <section class="photo-hero" aria-labelledby="market-title">
-      <figure class="photo-hero-visual" data-reveal><img src="media/marketplace-contexto.webp" alt="Visitante lê um livro diante de uma seleção cuidadosa de produtos naturais" width="1600" height="1000" fetchpriority="high" decoding="async"></figure>
-      <div class="photo-hero-copy" data-reveal>
-        <p class="photo-kicker">Escolhas com contexto</p>
+  <main class="photo-page" id="conteudo" data-section-family="photographic" data-movimento>
+    <div class="leitura-progresso" data-leitura-progresso aria-hidden="true"><span></span></div>
+    <svg class="fio-da-jornada" data-fio-da-jornada aria-hidden="true" focusable="false">
+      <path class="fio-da-jornada__trilha"></path>
+      <path class="fio-da-jornada__traco"></path>
+      <g data-fio-nos></g>
+    </svg>
+
+    <section class="photo-hero" aria-labelledby="market-title" data-capitulo="inicio">
+      <figure class="photo-hero-visual" data-recorte data-fio-alvo data-revelar="0">
+        <img src="media/marketplace-contexto.webp" alt="Visitante lê um livro diante de uma seleção cuidadosa de produtos naturais" width="1600" height="1000" fetchpriority="high" decoding="async">
+        <figcaption>Escolhas que continuam uma descoberta.</figcaption>
+      </figure>
+      <div class="photo-hero-copy" data-revelar="1">
+        <p class="photo-kicker">10 · Escolhas com contexto</p>
         <h1 id="market-title">Marketplace</h1>
         <p class="photo-subtitle">conhecimento antes da compra</p>
         <p class="photo-lead">Produtos aparecem como continuidade de uma prática, de um estudo ou de uma orientação — nunca como atalhos para o cuidado.</p>
-        <a class="photo-action" href="#colecao">Conhecer a curadoria <span aria-hidden="true">↓</span></a>
+        <noscript><a class="photo-action" href="#colecao">Conhecer a curadoria <span aria-hidden="true">↓</span></a></noscript>
       </div>
+      <div class="market-resource-hero" data-resource-hero="marketplace" data-resource-secondary-label="Pedir orientação" data-resource-secondary-href="recepcao.html#fale-conosco"></div>
     </section>
 
-    <section class="photo-intro" aria-labelledby="market-intro-title">
+    <section class="photo-intro" aria-labelledby="market-intro-title" data-capitulo="abertura">
       <p class="photo-index">01</p>
-      <div data-reveal><p class="photo-kicker">Levar algo consigo</p><h2 id="market-intro-title">O objeto importa quando a escolha faz sentido.</h2></div>
-      <div class="photo-prose" data-reveal><p>A curadoria reúne itens relacionados à vida do Instituto. Um livro pode aprofundar um curso; um óleo essencial pode acompanhar uma orientação; um objeto pode recordar uma prática.</p></div>
+      <div data-fio-alvo data-revelar="0"><p class="photo-kicker">Levar algo consigo</p><h2 id="market-intro-title">O objeto importa quando a escolha faz sentido.</h2></div>
+      <div class="photo-prose" data-revelar="1"><p>A curadoria reúne itens relacionados à vida do Instituto. Um livro pode aprofundar um curso; um óleo essencial pode acompanhar uma orientação; um objeto pode recordar uma prática.</p></div>
     </section>
 
-    <section class="photo-list" id="colecao" aria-labelledby="market-list-title">
-      <header class="photo-list-head" data-reveal><div><p class="photo-kicker">Uma curadoria viva</p><h2 id="market-list-title">Descobertas para continuar em casa.</h2></div><p>O acervo e a disponibilidade mudam. As categorias abaixo mostram a relação entre os produtos e as experiências do Ecossistema.</p></header>
+    <section class="photo-list" id="colecao" aria-labelledby="market-list-title" data-capitulo="possibilidades">
+      <header class="photo-list-head" data-fio-alvo data-revelar="0"><div><p class="photo-kicker">Uma curadoria viva</p><h2 id="market-list-title">Descobertas para continuar em casa.</h2></div><p>O acervo e a disponibilidade mudam. As categorias abaixo mostram a relação entre os produtos e as experiências do Ecossistema.</p></header>
       <div class="photo-rows">
-        <article data-reveal><span>01</span><h3>Livros</h3><p>Leituras que acompanham cursos, grupos de estudo, cultura e processos de autoconhecimento.</p></article>
-        <article data-reveal><span>02</span><h3>Óleos essenciais</h3><p>Itens ligados à aromaterapia, apresentados com contexto e orientação de uso responsável.</p></article>
-        <article data-reveal><span>03</span><h3>Cristais e objetos</h3><p>Peças escolhidas por sua relação com práticas, simbolismos e interesses pessoais.</p></article>
-        <article data-reveal><span>04</span><h3>Bem-estar cotidiano</h3><p>Incensos, produtos naturais e outros itens para apoiar rituais simples de presença.</p></article>
+        <article data-foco data-revelar="1"><span>01</span><h3>Livros</h3><p>Leituras que acompanham cursos, grupos de estudo, cultura e processos de autoconhecimento.</p></article>
+        <article data-foco data-revelar="2"><span>02</span><h3>Óleos essenciais</h3><p>Itens ligados à aromaterapia, apresentados com contexto e orientação de uso responsável.</p></article>
+        <article data-foco data-revelar="3"><span>03</span><h3>Cristais e objetos</h3><p>Peças escolhidas por sua relação com práticas, simbolismos e interesses pessoais.</p></article>
+        <article data-foco data-revelar="4"><span>04</span><h3>Bem-estar cotidiano</h3><p>Incensos, produtos naturais e outros itens para apoiar rituais simples de presença.</p></article>
       </div>
     </section>
 
-    <section class="photo-dark" aria-labelledby="market-context-title">
-      <div data-reveal><p class="photo-kicker">Antes de escolher</p><h2 id="market-context-title">Curadoria não é prescrição.</h2></div>
-      <div class="photo-dark-copy" data-reveal><p>Produtos não substituem atendimento, diagnóstico ou tratamento. Quando houver dúvida, converse com a equipe ou procure orientação profissional adequada.</p><a class="photo-link" href="recepcao.html">Pedir orientação ↗</a></div>
+    <section class="photo-dark" aria-labelledby="market-context-title" data-capitulo="cuidado">
+      <div data-fio-alvo data-revelar="0"><p class="photo-kicker">Antes de escolher</p><h2 id="market-context-title">Curadoria não é prescrição.</h2></div>
+      <div class="photo-dark-copy" data-revelar="1"><p>Produtos não substituem atendimento, diagnóstico ou tratamento. Quando houver dúvida, converse com a equipe ou procure orientação profissional adequada.</p><a class="photo-link" href="recepcao.html">Pedir orientação ↗</a></div>
     </section>
 
-    <section class="photo-closing" aria-labelledby="market-closing-title"><div data-reveal><p class="photo-kicker">Conexões</p><h2 id="market-closing-title">Descubra primeiro. Escolha depois.</h2></div><div class="photo-closing-copy" data-reveal><p>Explore cursos, cultura e atendimentos que dão significado às escolhas reunidas aqui.</p><div class="photo-connections"><a class="photo-link" href="cursos.html">Cursos ↗</a><a class="photo-link" href="cultura.html">Arte e Cultura ↗</a><a class="photo-link" href="atendimentos.html">Atendimentos ↗</a></div></div></section>
+    <section class="photo-closing" aria-labelledby="market-closing-title" data-capitulo="continuar"><div data-fio-alvo data-revelar="0"><p class="photo-kicker">Conexões</p><h2 id="market-closing-title">Descubra primeiro. Escolha depois.</h2></div><div class="photo-closing-copy" data-revelar="1"><p>Explore cursos, cultura e atendimentos que dão significado às escolhas reunidas aqui.</p><div class="photo-connections"><a class="photo-link" href="cursos.html">Cursos ↗</a><a class="photo-link" href="cultura.html">Arte e Cultura ↗</a><a class="photo-link" href="atendimentos.html">Atendimentos ↗</a></div></div></section>
     <footer class="photo-footer"><p>Rua 24 de Maio, 748 — Centro, Indaiatuba/SP · (19) 3834-6147</p><a class="article-back" href="transcendido.html">Voltar à travessia</a></footer>
   </main>
 </body>

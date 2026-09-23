@@ -42,7 +42,7 @@ test("a Revista é uma seção permanente editável da Home", async () => {
   assert.equal(block?.published, true);
   assert.equal(JOURNEY_DISCOVERIES.some((item) => item.id === "revista"), false);
 
-  const home = await readFile(new URL("transcendido.html", outputs), "utf8");
+  const home = await readFile(new URL("travessia.html", outputs), "utf8");
   assert.match(home, /href="revista\.html"[^>]*>Revista</);
 });
 

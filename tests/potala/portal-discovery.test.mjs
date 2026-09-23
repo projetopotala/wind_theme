@@ -62,6 +62,6 @@ test("efeitos respeitam movimento reduzido e estilos carregam apenas na Home", (
   assert.match(css, /\[hidden\].*display: none !important/);
   const arrival = readFileSync(new URL("../../outputs/transcender.html", import.meta.url), "utf8");
   assert.doesNotMatch(arrival, /portal-discovery/);
-  const home = readFileSync(new URL("../../outputs/transcendido.html", import.meta.url), "utf8");
+  const home = readFileSync(new URL("../../outputs/travessia.html", import.meta.url), "utf8");
   assert.match(home, /css\/portal-discovery.css/);
 });

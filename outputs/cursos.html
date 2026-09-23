@@ -11,60 +11,72 @@
   <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/section-editorial.css">
   <link rel="stylesheet" href="css/course-learning-studio.css">
+  <link rel="stylesheet" href="css/cursos-redesign.css">
   <link rel="stylesheet" href="css/section-transition.css">
   <script type="module" src="js/secoes.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
+  <script type="module" src="js/sections/resource-hero.js"></script>
   <script type="module" src="js/courses/learning-studio.js"></script>
+  <script type="module" src="js/sections/movimento.js"></script>
 </head>
 <body data-section="cursos" data-entry="right" data-return-section="atendimentos" data-left="transcendido.html#atendimentos">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-  <main class="editorial-page" id="conteudo" data-section-family="editorial">
-    <section class="editorial-hero" aria-labelledby="courses-title">
-      <div class="editorial-hero-copy" data-reveal>
-        <p class="editorial-kicker">O conhecimento</p>
-        <h1 id="courses-title">Cursos</h1>
-        <p class="editorial-lead">Aprender, no Potala, é transformar conhecimento em experiência — com tempo para estudar, praticar e integrar.</p>
-        <a class="editorial-action" href="#formatos">Conhecer os caminhos <span aria-hidden="true">↓</span></a>
+  <main class="editorial-page" id="conteudo" data-section-family="editorial" data-movimento>
+    <div class="leitura-progresso" data-leitura-progresso aria-hidden="true"><span></span></div>
+    <svg class="fio-da-jornada" data-fio-da-jornada aria-hidden="true" focusable="false">
+      <path class="fio-da-jornada__trilha"></path>
+      <path class="fio-da-jornada__traco"></path>
+      <g data-fio-nos></g>
+    </svg>
+
+    <section class="editorial-hero" id="inicio" data-capitulo="inicio" aria-labelledby="courses-title">
+      <div class="editorial-hero-copy" data-fio-alvo>
+        <p class="editorial-kicker" data-revelar="0">04 · O conhecimento</p>
+        <h1 id="courses-title" data-revelar="1">Cursos</h1>
+        <p class="courses-hero-statement" data-revelar="2">Conhecimento que se torna caminho.</p>
+        <p class="editorial-lead" data-revelar="3">Aprender, no Potala, é transformar conhecimento em experiência — com tempo para estudar, praticar e integrar.</p>
       </div>
-      <figure class="editorial-hero-visual" data-reveal>
+      <figure class="editorial-hero-visual" data-revelar="1" data-recorte>
         <img src="media/journey-quem-somos.webp" alt="Pessoas reunidas em uma paisagem contemplativa que representa estudo e descoberta" width="1600" height="900" fetchpriority="high" decoding="async">
         <figcaption>Conhecimento que se torna caminho</figcaption>
       </figure>
+      <div class="courses-resource-hero" data-resource-hero="cursos"
+        data-resource-secondary-label="Conhecer os formatos" data-resource-secondary-href="#formatos"></div>
     </section>
 
-    <section class="editorial-chapter" aria-labelledby="courses-opening-title">
-      <p class="editorial-index">01</p>
-      <div data-reveal><p class="editorial-kicker">Aprender por inteiro</p><h2 id="courses-opening-title">Cuidar também é aprender.</h2></div>
-      <div class="editorial-prose" data-reveal>
+    <section class="editorial-chapter" id="abertura" data-capitulo="abertura" aria-labelledby="courses-opening-title">
+      <p class="editorial-index" data-fio-alvo>01</p>
+      <div data-revelar="0"><p class="editorial-kicker">Aprender por inteiro</p><h2 id="courses-opening-title">Cuidar também é aprender.</h2></div>
+      <div class="editorial-prose" data-revelar="1">
         <p>Os cursos aproximam tradições de cuidado, arte, filosofia e práticas integrativas. A proposta não é apenas transmitir uma técnica, mas criar compreensão, autonomia e presença.</p>
         <p>Cada percurso respeita o ritmo de quem chega: há encontros breves para experimentar e formações extensas para aprofundar uma escolha.</p>
       </div>
     </section>
 
-    <section class="editorial-collection" id="formatos" aria-labelledby="courses-formats-title">
-      <header class="editorial-collection-head" data-reveal>
+    <section class="editorial-collection" id="formatos" data-capitulo="formatos" aria-labelledby="courses-formats-title">
+      <header class="editorial-collection-head" data-fio-alvo data-revelar="0">
         <div><p class="editorial-kicker">Formatos de aprendizagem</p><h2 id="courses-formats-title">Um caminho para cada momento.</h2></div>
         <p>As turmas mudam ao longo do ano. Esta página apresenta as formas de aprender; a programação mostra o que está aberto agora.</p>
       </header>
       <div class="editorial-grid">
-        <article data-reveal><span>01</span><h3>Cursos livres</h3><p>Encontros acessíveis para conhecer um tema, experimentar uma prática e ampliar repertórios.</p></article>
-        <article data-reveal><span>02</span><h3>Formações profissionais</h3><p>Percursos mais longos, com base conceitual, acompanhamento e prática supervisionada.</p></article>
-        <article data-reveal><span>03</span><h3>Vivências e oficinas</h3><p>Aprendizagem pela experiência: corpo, criação, escuta e convivência em movimento.</p></article>
-        <article data-reveal><span>04</span><h3>Grupos de estudo</h3><p>Espaços contínuos para ler, dialogar e amadurecer conhecimento em comunidade.</p></article>
-        <article data-reveal><span>05</span><h3>Monte seu curso</h3><p>Possibilidade de construir percursos para grupos, equipes e interesses específicos.</p></article>
-        <article data-reveal><span>06</span><h3>Aprender e cuidar</h3><p>Cursos podem se conectar a atendimentos, atividades e conteúdos relacionados.</p></article>
+        <article data-revelar="0"><span>01</span><h3>Cursos livres</h3><p>Encontros acessíveis para conhecer um tema, experimentar uma prática e ampliar repertórios.</p></article>
+        <article data-revelar="1"><span>02</span><h3>Formações profissionais</h3><p>Percursos mais longos, com base conceitual, acompanhamento e prática supervisionada.</p></article>
+        <article data-revelar="2"><span>03</span><h3>Vivências e oficinas</h3><p>Aprendizagem pela experiência: corpo, criação, escuta e convivência em movimento.</p></article>
+        <article data-revelar="3"><span>04</span><h3>Grupos de estudo</h3><p>Espaços contínuos para ler, dialogar e amadurecer conhecimento em comunidade.</p></article>
+        <article data-revelar="4"><span>05</span><h3>Monte seu curso</h3><p>Possibilidade de construir percursos para grupos, equipes e interesses específicos.</p></article>
+        <article data-revelar="5"><span>06</span><h3>Aprender e cuidar</h3><p>Cursos podem se conectar a atendimentos, atividades e conteúdos relacionados.</p></article>
       </div>
     </section>
 
-    <section class="learning-studio" data-learning-studio aria-labelledby="learning-studio-title">
-      <header class="learning-studio-intro" data-reveal>
+    <section class="learning-studio" id="atelie" data-capitulo="atelie" data-learning-studio aria-labelledby="learning-studio-title">
+      <header class="learning-studio-intro" data-fio-alvo data-revelar="0">
         <p class="learning-studio-overline">Ateliê de aprendizagem</p>
         <h2 id="learning-studio-title">Uma escolha pode começar com uma conversa.</h2>
         <p>Antes da inscrição, o Potala aproxima dúvidas, interesses e pessoas experientes. Aqui, o visitante pode compreender caminhos, imaginar uma nova turma e acompanhar como uma experiência coletiva começa a existir.</p>
       </header>
 
       <div class="learning-studio-journey">
-        <article class="learning-studio-step learning-studio-advice" aria-labelledby="learning-advice-title">
+        <article data-foco class="learning-studio-step learning-studio-advice" aria-labelledby="learning-advice-title">
           <div class="learning-studio-copy" data-reveal>
             <span class="learning-studio-number" aria-hidden="true">01</span>
             <p class="learning-studio-overline">Aconselhamento Holístico</p>
@@ -92,7 +104,7 @@
           </div>
         </article>
 
-        <article class="learning-studio-step learning-studio-builder" id="monte-seu-curso" aria-labelledby="course-builder-title">
+        <article data-foco class="learning-studio-step learning-studio-builder" id="monte-seu-curso" aria-labelledby="course-builder-title">
           <div class="learning-studio-copy" data-reveal>
             <span class="learning-studio-number" aria-hidden="true">02</span>
             <p class="learning-studio-overline">Monte seu Curso</p>
@@ -148,7 +160,7 @@
           </form>
         </article>
 
-        <article class="learning-studio-step learning-studio-cohort" aria-labelledby="cohort-title">
+        <article data-foco class="learning-studio-step learning-studio-cohort" aria-labelledby="cohort-title">
           <div class="learning-studio-copy" data-reveal>
             <span class="learning-studio-number" aria-hidden="true">03</span>
             <p class="learning-studio-overline">Turma em formação</p>
@@ -186,10 +198,10 @@
       </div>
     </section>
 
-    <section class="editorial-quote" aria-label="Síntese dos cursos"><blockquote data-reveal>O conhecimento ganha sentido quando encontra a vida.</blockquote></section>
+    <section class="editorial-quote" data-capitulo="sintese" aria-label="Síntese dos cursos"><blockquote data-fio-alvo data-revelar="0">O conhecimento ganha sentido quando encontra a vida.</blockquote></section>
 
-    <section class="editorial-closing" aria-labelledby="courses-closing-title">
-      <div data-reveal><p class="editorial-kicker">Continue a jornada</p><h2 id="courses-closing-title">Comece pelo que desperta curiosidade.</h2></div>
+    <section class="editorial-closing" id="continuar" data-capitulo="continuar" aria-labelledby="courses-closing-title">
+      <div data-fio-alvo data-revelar="0"><p class="editorial-kicker">Continue a jornada</p><h2 id="courses-closing-title">Comece pelo que desperta curiosidade.</h2></div>
       <div class="editorial-closing-copy" data-reveal>
         <p>Veja as turmas atuais ou conheça os atendimentos que dialogam com esses saberes.</p>
         <div class="editorial-connections">

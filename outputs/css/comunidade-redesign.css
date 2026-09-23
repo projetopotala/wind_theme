@@ -1,0 +1,137 @@
+body[data-section="workshops"] { --community-accent: #8d633d; }
+body[data-section="grupos-de-estudo"] { --community-accent: #526047; }
+body[data-section="mentorias"] { --community-accent: #876243; }
+body[data-section="eventos"] { --community-accent: #985f3f; }
+
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .site-nav {
+  min-height: 78px;
+  padding: 0 clamp(28px, 5vw, 76px);
+  border-bottom: 1px solid rgba(86, 60, 45, .14);
+  background: rgba(248, 243, 234, .95);
+  backdrop-filter: blur(16px);
+}
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .site-nav-marca img { width: 34px; }
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .site-nav-link { min-height: 78px; }
+
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-page {
+  --com-cream: #f6f0e7;
+  --com-paper: #e9ddcd;
+  --com-brown: #4a3024;
+  --com-ink: #261b15;
+  --com-gold: var(--community-accent);
+  padding-top: calc(78px + clamp(48px, 6vw, 84px));
+}
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-hero {
+  grid-template-columns: minmax(0, .85fr) minmax(400px, .72fr);
+  gap: 0 clamp(54px, 8vw, 120px);
+  padding-bottom: clamp(42px, 5vw, 72px);
+}
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-hero > .com-kicker,
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-hero > h1,
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-hero > .com-subtitulo,
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-hero > .com-lead,
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-hero > .com-aviso { grid-column: 1; }
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-hero > .com-lead { grid-row: auto; margin-top: 26px; }
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-hero h1 {
+  max-width: 8.6ch;
+  font-size: clamp(4.6rem, 7.6vw, 7.5rem);
+  line-height: .86;
+  letter-spacing: -.065em;
+}
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-subtitulo { max-width: 18ch; font-size: clamp(1.55rem, 2.5vw, 2.6rem); line-height: 1.08; }
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-lead p:last-child { display: none; }
+
+.community-hero-diagram {
+  grid-column: 2;
+  grid-row: 1 / span 6;
+  align-self: center;
+  padding: clamp(30px, 4vw, 54px);
+  border: 1px solid rgba(74, 48, 36, .18);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--community-accent) 14%, transparent), transparent 40%),
+    rgba(255, 253, 248, .48);
+}
+.community-hero-diagram > p { margin: 0 0 24px; color: var(--community-accent); font: 700 .62rem/1.4 Arial, sans-serif; letter-spacing: .19em; text-transform: uppercase; }
+.community-hero-diagram > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.community-hero-diagram article { position: relative; display: grid; min-width: 0; justify-items: center; gap: 7px; padding: 20px 7px; border: 1px solid rgba(74, 48, 36, .14); border-radius: 999px 999px 22px 22px; text-align: center; }
+.community-hero-diagram article + article::before { position: absolute; top: 44px; left: -16px; color: var(--community-accent); content: "→"; }
+.community-hero-diagram svg,
+.community-benefits svg { width: 28px; height: 28px; fill: none; stroke: var(--community-accent); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.4; }
+.community-hero-diagram article span { color: rgba(74, 48, 36, .42); font: 700 .52rem/1 Arial, sans-serif; letter-spacing: .13em; }
+.community-hero-diagram article strong { color: var(--com-ink); font: 400 .92rem/1.15 Georgia, serif; }
+.community-hero-diagram blockquote { max-width: 26ch; margin: 28px 0 0; color: var(--com-ink); font: italic 400 clamp(1.35rem, 2vw, 2.1rem)/1.25 Georgia, serif; }
+
+.community-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--com-line);
+}
+.community-benefits article { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: center; padding: 8px clamp(18px, 3vw, 42px); border-right: 1px solid var(--com-line); }
+.community-benefits article:first-child { padding-left: 0; }
+.community-benefits article:last-child { border-right: 0; }
+.community-benefits svg { width: 36px; height: 36px; padding: 8px; border: 1px solid var(--com-line); border-radius: 50%; }
+.community-benefits strong { color: var(--com-ink); font: 400 1.03rem/1.2 Georgia, serif; }
+.community-benefits p { margin: 4px 0 0; color: rgba(74, 48, 36, .6); font-size: .74rem; line-height: 1.4; }
+
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-lista {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding-top: 30px;
+}
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-ficha {
+  display: flex;
+  min-height: 610px;
+  flex-direction: column;
+  gap: 0;
+  padding: 11px;
+  border: 1px solid var(--com-line);
+  border-radius: 15px;
+  background: rgba(255, 253, 248, .46);
+}
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-selo {
+  display: grid;
+  min-height: 185px;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--community-accent);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--community-accent) 14%, #f7f0e5), rgba(233, 221, 205, .45));
+}
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-ficha:nth-child(3n + 2) .com-selo { background: linear-gradient(145deg, rgba(169, 117, 54, .14), rgba(247, 240, 229, .5)); }
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-selo .selo { width: 132px; height: 132px; }
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-ficha-corpo { display: flex; flex: 1; flex-direction: column; padding: 22px 9px 9px; }
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-ficha h2 { font-size: clamp(1.6rem, 2vw, 2.15rem); }
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-texto { min-height: 7.2em; }
+body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-cv { margin-top: auto; padding: 20px 0 0; border-top: 1px solid var(--com-line); border-left: 0; }
+
+body[data-section="eventos"] .com-lista { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body[data-section="eventos"] .com-ficha { min-height: 570px; }
+
+@media (max-width: 1040px) {
+  body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .site-nav { min-height: 62px; padding: 0 18px; }
+  body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .site-nav-list { overflow-x: auto; flex-wrap: nowrap; }
+  body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .site-nav-link { min-height: 62px; white-space: nowrap; }
+  body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-page { padding: 102px 20px 0; }
+  body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-hero { display: block; }
+  body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-hero h1 { max-width: none; font-size: clamp(3.45rem, 15vw, 4.3rem); }
+  body[data-section="grupos-de-estudo"] .com-hero h1,
+  body[data-section="eventos"] .com-hero h1 { max-width: 8ch; }
+  body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-subtitulo { font-size: 1.75rem; }
+  .community-hero-diagram { margin-top: 38px; padding: 25px 20px; }
+  .community-hero-diagram > div { gap: 7px; }
+  .community-hero-diagram article { padding: 16px 4px; }
+  .community-hero-diagram article + article::before { display: none; }
+  .community-hero-diagram blockquote { font-size: 1.35rem; }
+  .community-benefits { grid-template-columns: 1fr; padding: 10px 0; }
+  .community-benefits article { padding: 14px 0; border-right: 0; border-bottom: 1px solid var(--com-line); }
+  .community-benefits article:last-child { border-bottom: 0; }
+  body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-lista { grid-template-columns: 1fr; }
+  body:is([data-section="workshops"], [data-section="grupos-de-estudo"], [data-section="mentorias"], [data-section="eventos"]) .com-ficha { min-height: auto; }
+}

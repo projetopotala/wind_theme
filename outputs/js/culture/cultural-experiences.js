@@ -90,6 +90,11 @@ export function mountCulturalExperience(root = document, locationLike = globalTh
 
   const slug = new URLSearchParams(locationLike?.search || "").get("experiencia") || "cine-potala";
   const experience = culturalExperienceFor(slug);
+  shell.querySelectorAll("[data-cultural-navigation] a[href*='experiencia=']").forEach((link) => {
+    const isCurrent = new URL(link.href, locationLike?.href || "http://localhost/").searchParams.get("experiencia") === experience.slug;
+    if (isCurrent) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
   setText(shell, "[data-cultural-eyebrow]", experience.eyebrow);
   setText(shell, "[data-cultural-title]", experience.title);
   setText(shell, "[data-cultural-lead]", experience.lead);

@@ -7,7 +7,7 @@ import { MOTIVOS_DISPONIVEIS, seloDoEspecialista } from "../../outputs/js/comuni
 const outputs = new URL("../../outputs/", import.meta.url);
 const ler = (arquivo) => readFile(new URL(arquivo, outputs), "utf8");
 
-const home = await ler("transcendido.html");
+const home = await ler("travessia.html");
 const profissionais = await ler("profissionais.html");
 const especialistas = await ler("especialistas.html");
 const secoes = await ler("js/secoes.js");

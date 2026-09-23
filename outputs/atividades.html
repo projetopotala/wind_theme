@@ -11,48 +11,47 @@
   <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/section-photographic.css">
   <link rel="stylesheet" href="css/assistente.css">
+  <link rel="stylesheet" href="css/atividades-redesign.css">
   <link rel="stylesheet" href="css/section-transition.css">
   <script type="module" src="js/secoes.js"></script>
+  <script type="module" src="js/sections/resource-hero.js"></script>
+  <script type="module" src="js/sections/movimento.js"></script>
   <script type="module" src="js/shared/assistente.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
 </head>
 <body data-section="atividades" data-entry="left" data-return-section="atendimentos" data-right="transcendido.html#atendimentos">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-  <main class="photo-page" id="conteudo" data-section-family="photographic">
-    <section class="photo-hero" aria-labelledby="activities-title">
-      <figure class="photo-hero-visual" data-reveal><img src="media/atividades-pratica.webp" alt="Grupo diverso pratica movimentos conscientes em um jardim acolhedor" width="1600" height="1000" fetchpriority="high" decoding="async"></figure>
-      <div class="photo-hero-copy" data-reveal>
-        <p class="photo-kicker">O movimento</p>
-        <h1 id="activities-title">Atividades</h1>
-        <p class="photo-subtitle">&amp; experiências para viver</p>
-        <!--
-          Três parágrafos, e não um só com quebras.
+  <main class="photo-page" id="conteudo" data-section-family="photographic" data-movimento>
+    <div class="leitura-progresso" data-leitura-progresso aria-hidden="true"><span></span></div>
+    <svg class="fio-da-jornada" data-fio-da-jornada aria-hidden="true" focusable="false">
+      <path class="fio-da-jornada__trilha"></path>
+      <path class="fio-da-jornada__traco"></path>
+      <g data-fio-nos></g>
+    </svg>
 
-          O texto tem três movimentos — o encontro que muda de uma vez, o
-          processo que pede tempo, e o convite. Emendados num parágrafo só, o
-          leitor perde as duas pausas que separam as ideias; com `<br>`, ganha
-          as pausas e perde a estrutura, porque quebra de linha não é começo de
-          parágrafo para quem ouve a página em vez de vê-la.
-
-          A margem inferior do `.photo-lead` vale para todos, então o último
-          fica com o espaço que o botão embaixo já esperava, e os dois de cima
-          se separam pela mesma medida.
-        -->
-        <p class="photo-lead">Algumas mudanças acontecem em um único encontro — uma conversa, uma descoberta, um instante capaz de abrir novos caminhos.</p>
-        <p class="photo-lead">Outras precisam de algo diferente: presença, disciplina, repetição e tempo.</p>
-        <p class="photo-lead">Cada processo tem seu próprio ritmo. Aqui, o convite é para caminhar com atenção, respeitar esse tempo e permitir que cada experiência encontre espaço para se transformar em algo que permaneça.</p>
-        <a class="photo-action" href="#possibilidades">Conhecer possibilidades <span aria-hidden="true">↓</span></a>
+    <section class="photo-hero" id="inicio" data-capitulo="inicio" aria-labelledby="activities-title">
+      <figure class="photo-hero-visual" data-revelar="1" data-recorte>
+        <img src="media/atividades-pratica.webp" alt="Grupo diverso pratica movimentos conscientes em um jardim acolhedor" width="1600" height="1000" fetchpriority="high" decoding="async">
+        <figcaption>Movimento é encontro.</figcaption>
+      </figure>
+      <div class="photo-hero-copy" data-fio-alvo>
+        <p class="photo-kicker" data-revelar="0">05 · O movimento</p>
+        <h1 id="activities-title" data-revelar="1">Atividades</h1>
+        <p class="photo-subtitle" data-revelar="2">&amp; experiências para viver</p>
+        <p class="activities-hero-statement" data-revelar="3">Experiências para viver no corpo, na mente e em comunidade.</p>
+        <p class="photo-lead" data-revelar="4">Cada processo tem seu ritmo. Encontre uma prática para começar, continuar ou descobrir algo que ainda não conhecia.</p>
       </div>
+      <div class="activities-resource-hero" data-resource-hero="atividades" data-resource-secondary-label="Agendar uma aula" data-resource-secondary-href="#agendar-canais"></div>
     </section>
 
-    <section class="photo-intro" aria-labelledby="activities-intro-title">
-      <p class="photo-index">01</p>
+    <section class="photo-intro" id="abertura" data-capitulo="abertura" aria-labelledby="activities-intro-title">
+      <p class="photo-index" data-fio-alvo>01</p>
       <div data-reveal><p class="photo-kicker">Prática e presença</p><h2 id="activities-intro-title">Mover-se também é compreender.</h2></div>
       <div class="photo-prose" data-reveal><p>Há quem chegue para fortalecer o corpo, quem procure silêncio e quem encontre na turma um espaço de companhia. As atividades acolhem essas diferenças sem separar bem-estar, descoberta e relação.</p></div>
     </section>
 
-    <section class="photo-list" id="possibilidades" aria-labelledby="activities-list-title">
-      <header class="photo-list-head" data-reveal><div><p class="photo-kicker">Formas de participar</p><h2 id="activities-list-title">Corpo, Mente, Expressão e Convivência.</h2></div><!--
+    <section class="photo-list" id="possibilidades" data-capitulo="possibilidades" aria-labelledby="activities-list-title">
+      <header class="photo-list-head" data-fio-alvo data-revelar="0"><div><p class="photo-kicker">Formas de participar</p><h2 id="activities-list-title">Corpo, Mente, Expressão e Convivência.</h2></div><!--
           O convite é um BOTÃO, e não um parágrafo.
 
           Escrito como frase, "agende uma aula" era só uma sugestão no meio do
@@ -76,7 +75,7 @@
           </div>
         </div></header>
       <div class="photo-rows">
-        <article data-reveal>
+        <article data-foco data-revelar="0">
           <span>01</span>
           <h3>Corpo e consciência</h3>
           <p>Yoga, pilates, alongamento e práticas de percepção aproximam movimento, respiração e atenção.</p>
@@ -102,7 +101,7 @@
             </div>
           </details>
         </article>
-        <article data-reveal>
+        <article data-foco data-revelar="1">
           <span>02</span>
           <h3>Práticas orientais</h3>
           <p>Tai chi chuan, qi gong e artes marciais trabalham presença, coordenação e continuidade.</p>
@@ -124,7 +123,7 @@
             </div>
           </details>
         </article>
-        <article data-reveal>
+        <article data-foco data-revelar="2">
           <span>03</span>
           <h3>Dança e expressão</h3>
           <p>Diferentes linguagens de dança convidam à criação, à escuta do corpo e ao encontro.</p>
@@ -146,7 +145,7 @@
             </div>
           </details>
         </article>
-        <article data-reveal>
+        <article data-foco data-revelar="3">
           <span>04</span>
           <h3>Convivência</h3>
           <p>Meditação, rodas de conversa e outras experiências mostram que concentração e troca também fazem parte do cuidado.</p>
@@ -176,7 +175,7 @@
           um índice de famílias e viraria exemplos que se cruzam — e quem
           procura xadrez encontraria duas portas para o mesmo lugar.
         -->
-        <article data-reveal>
+        <article data-foco data-revelar="4">
           <span>05</span>
           <h3>Mente e expressão</h3>
           <p>Desenho, pintura, violão, violino, canto, xadrez, escrita, teatro e fotografia. Práticas em que a atenção se organiza fazendo — e o estudo de uma técnica vira um jeito de dizer o que ainda não tinha forma.</p>
@@ -234,7 +233,7 @@
       <p class="photo-rotina-nota">Turmas abrem e fecham ao longo do ano, e os horários mudam nas férias. Confirme o dia da sua antes da primeira aula — é para isso que o botão acima existe.</p>
     </section>
 
-    <section class="photo-dark" aria-labelledby="activities-first-title">
+    <section class="photo-dark" id="primeira-vez" data-capitulo="primeira-vez" aria-labelledby="activities-first-title">
       <div data-reveal><p class="photo-kicker">Primeiro movimento</p><h2 id="activities-first-title">Experimente antes de decidir.</h2></div>
       <div class="photo-dark-copy" data-reveal><p>Consulte as turmas abertas e pergunte sobre uma aula experimental. O mais importante é perceber como a prática encontra você.</p><a class="photo-link" href="https://www.institutopotala.com/atividadescorporais" rel="noreferrer">Ver atividades atuais ↗</a></div>
     </section>
@@ -252,7 +251,7 @@
       pergunta de alguém e a descarta em silêncio é pior do que campo nenhum:
       a pessoa vai embora achando que perguntou.
     -->
-    <section class="assistente" id="assistente" aria-labelledby="activities-assistant-title">
+    <section class="assistente" id="assistente" data-capitulo="assistente" aria-labelledby="activities-assistant-title">
       <div class="assistente-copy">
         <p class="assistente-kicker">Prévia do assistente</p>
         <h2 id="activities-assistant-title">Posso ajudar você?</h2>
@@ -273,7 +272,7 @@
       </form>
     </section>
 
-    <section class="photo-closing" aria-labelledby="activities-closing-title"><div data-reveal><p class="photo-kicker">Outros caminhos</p><h2 id="activities-closing-title">Uma prática pode abrir novas curiosidades.</h2></div><div class="photo-closing-copy" data-reveal><p>Conheça também os cursos e os acontecimentos que ampliam a experiência.</p><div class="photo-connections"><a class="photo-link" href="cursos.html">Cursos ↗</a><a class="photo-link" href="programacao.html">Programação ↗</a></div></div></section>
+    <section class="photo-closing" id="continuar" data-capitulo="continuar" aria-labelledby="activities-closing-title"><div data-fio-alvo data-revelar="0"><p class="photo-kicker">Outros caminhos</p><h2 id="activities-closing-title">Uma prática pode abrir novas curiosidades.</h2></div><div class="photo-closing-copy" data-reveal><p>Conheça também os cursos e os acontecimentos que ampliam a experiência.</p><div class="photo-connections"><a class="photo-link" href="cursos.html">Cursos ↗</a><a class="photo-link" href="programacao.html">Programação ↗</a></div></div></section>
 
     <div class="section-transition-pause" aria-hidden="true"></div>
 

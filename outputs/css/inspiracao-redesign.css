@@ -1,0 +1,193 @@
+body[data-section="inspiracao"] {
+  --inspiration-cream: #f3eadc;
+  --inspiration-gold: #d0a15d;
+  --inspiration-dark: #171915;
+}
+
+body[data-section="inspiracao"] .portal-header { color: var(--inspiration-cream); }
+body[data-section="inspiracao"] .portal-header__nav a { color: rgba(243, 234, 220, .68); }
+body[data-section="inspiracao"] .portal-header__nav a:hover,
+body[data-section="inspiracao"] .portal-header__nav a.is-active { color: var(--inspiration-cream); }
+body[data-section="inspiracao"] .portal-header__nav a::after { background: var(--inspiration-gold); }
+body[data-section="inspiracao"] .portal-header__account.conta-gatilho {
+  border-color: rgba(243, 234, 220, .32);
+  color: var(--inspiration-cream);
+  background: rgba(19, 22, 19, .48);
+  backdrop-filter: blur(16px);
+}
+
+body[data-section="inspiracao"] .guided-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(390px, .72fr);
+  grid-template-rows: 1fr auto;
+  gap: 32px clamp(48px, 8vw, 132px);
+  align-items: center;
+  min-height: 100svh;
+  padding: 128px clamp(28px, 5.5vw, 88px) 0;
+}
+
+body[data-section="inspiracao"] .guided-hero::after {
+  background:
+    linear-gradient(90deg, rgba(12, 16, 14, .82), rgba(12, 16, 14, .3) 55%, rgba(12, 16, 14, .66)),
+    linear-gradient(0deg, rgba(12, 16, 14, .66), transparent 45%);
+}
+
+body[data-section="inspiracao"] .guided-hero-image { object-position: center 52%; }
+body[data-section="inspiracao"] .guided-hero-copy { align-self: center; max-width: 720px; padding: 8vh 0 7vh; }
+body[data-section="inspiracao"] .guided-hero-copy .guided-kicker::before {
+  display: inline-block;
+  width: 46px;
+  height: 1px;
+  margin: 0 18px 3px 0;
+  background: var(--inspiration-gold);
+  content: "";
+}
+
+body[data-section="inspiracao"] .guided-hero h1 {
+  max-width: none;
+  margin: 0 0 22px;
+  font-size: clamp(5.4rem, 9vw, 9.5rem);
+  line-height: .86;
+  letter-spacing: -.065em;
+}
+
+body[data-section="inspiracao"] .guided-lead {
+  max-width: 51ch;
+  color: rgba(243, 234, 220, .86);
+  font: 400 clamp(1.12rem, 1.45vw, 1.42rem)/1.55 Georgia, "Times New Roman", serif;
+}
+
+body[data-section="inspiracao"] .guided-scroll {
+  display: inline-flex;
+  min-width: 220px;
+  margin-top: 25px;
+  padding: 17px 22px;
+  justify-content: space-between;
+  border: 1px solid var(--inspiration-gold);
+  border-radius: 999px;
+  color: #1e1c17;
+  background: var(--inspiration-gold);
+  font-size: .7rem;
+  text-decoration: none;
+  transition: transform .2s ease, background .2s ease;
+}
+body[data-section="inspiracao"] .guided-scroll:hover { background: #dfb87e; transform: translateY(-2px); }
+
+.inspiration-hero-practices {
+  align-self: center;
+  padding: clamp(28px, 3.5vw, 48px);
+  border: 1px solid rgba(243, 234, 220, .22);
+  border-radius: 28px;
+  background: rgba(16, 20, 17, .74);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(20px);
+}
+
+.inspiration-hero-practices .guided-kicker { margin-bottom: 10px; }
+.inspiration-hero-practices h2 {
+  margin: 0 0 18px;
+  font-size: clamp(2rem, 2.8vw, 3.1rem);
+  line-height: 1.05;
+  letter-spacing: -.04em;
+}
+
+.inspiration-hero-practices .guided-options { display: grid; border-top: 1px solid rgba(243, 234, 220, .17); }
+.inspiration-hero-practices .guided-option {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 2px 16px;
+  align-items: center;
+  min-height: 74px;
+  padding: 13px 0;
+  border: 0;
+  border-right: 0;
+  border-bottom: 1px solid rgba(243, 234, 220, .17);
+  color: var(--inspiration-cream);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.inspiration-hero-practices .guided-option > span { grid-row: 1 / span 2; color: var(--inspiration-gold); }
+.inspiration-hero-practices .guided-option svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.35;
+}
+.inspiration-hero-practices .guided-option strong { font: 400 1.05rem/1.2 Georgia, serif; }
+.inspiration-hero-practices .guided-option small { color: rgba(243, 234, 220, .48); font-size: .73rem; }
+.inspiration-hero-practices .guided-option em { grid-column: 3; grid-row: 1 / span 2; color: var(--inspiration-gold); font-style: normal; }
+.inspiration-hero-practices .guided-option:hover,
+.inspiration-hero-practices .guided-option:focus-visible,
+.inspiration-hero-practices .guided-option.is-selected { color: #f8d59e; background: rgba(208, 161, 93, .08); }
+
+.inspiration-hero-benefits {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin: 0 calc(clamp(28px, 5.5vw, 88px) * -1);
+  padding: 23px clamp(28px, 5.5vw, 88px);
+  color: #4f3b2c;
+  background: rgba(245, 237, 226, .97);
+}
+.inspiration-hero-benefits article { display: grid; grid-template-columns: 44px 1fr; gap: 15px; padding: 7px clamp(18px, 3vw, 46px); border-right: 1px solid rgba(79, 59, 44, .14); }
+.inspiration-hero-benefits article:first-child { padding-left: 0; }
+.inspiration-hero-benefits article:last-child { border-right: 0; }
+.inspiration-hero-benefits article > span { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; color: #657047; background: rgba(101, 112, 71, .1); }
+.inspiration-hero-benefits strong { font: 400 1.08rem/1.2 Georgia, serif; }
+.inspiration-hero-benefits p { margin: 5px 0 0; color: rgba(79, 59, 44, .66); font-size: .76rem; line-height: 1.45; }
+
+body[data-section="inspiracao"] .inspiration-studio {
+  min-height: auto;
+  padding-top: clamp(90px, 10vw, 145px);
+  background:
+    radial-gradient(circle at 14% 18%, rgba(208, 161, 93, .08), transparent 32%),
+    var(--inspiration-dark);
+}
+body[data-section="inspiracao"] .inspiration-studio .guided-choice-head h2 { max-width: 9ch; }
+body[data-section="inspiracao"] .practice-stage { border-radius: 30px; background: rgba(208, 161, 93, .045); }
+body[data-section="inspiracao"] .practice-orb { box-shadow: 0 0 90px rgba(208, 161, 93, .08); }
+
+@media (max-width: 980px) {
+  body[data-section="inspiracao"] .guided-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(330px, .8fr);
+    gap: 30px;
+    padding-right: 28px;
+    padding-left: 28px;
+  }
+  .inspiration-hero-benefits { margin-right: -28px; margin-left: -28px; padding-right: 28px; padding-left: 28px; }
+}
+
+@media (max-width: 760px) {
+  body[data-section="inspiracao"] .guided-hero {
+    display: block;
+    min-height: auto;
+    padding: 100px 20px 0;
+  }
+  body[data-section="inspiracao"] .guided-hero::after {
+    background: linear-gradient(0deg, rgba(13, 16, 14, .96) 15%, rgba(13, 16, 14, .42) 78%, rgba(13, 16, 14, .68));
+  }
+  body[data-section="inspiracao"] .guided-hero-image { height: 520px; object-position: 58% top; }
+  body[data-section="inspiracao"] .guided-hero-copy { padding: 180px 0 42px; }
+  body[data-section="inspiracao"] .guided-hero h1 { font-size: clamp(3.9rem, 19vw, 5.2rem); }
+  body[data-section="inspiracao"] .guided-lead { max-width: 31ch; font-size: 1.04rem; }
+  .inspiration-hero-practices { padding: 24px 22px; border-radius: 22px; }
+  .inspiration-hero-practices h2 { max-width: 12ch; font-size: 2.1rem; }
+  .inspiration-hero-benefits {
+    grid-template-columns: 1fr;
+    margin: 32px -20px 0;
+    padding: 18px 20px;
+  }
+  .inspiration-hero-benefits article { padding: 15px 0; border-right: 0; border-bottom: 1px solid rgba(79, 59, 44, .14); }
+  .inspiration-hero-benefits article:last-child { border-bottom: 0; }
+  body[data-section="inspiracao"] .inspiration-studio { padding-top: 78px; }
+  body[data-section="inspiracao"] .practice-stage { border-radius: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-section="inspiracao"] .guided-scroll { transition: none; }
+}

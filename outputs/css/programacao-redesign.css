@@ -1,0 +1,206 @@
+:root {
+  --schedule-cream: #f1e5d2;
+  --schedule-gold: #ddb267;
+  --schedule-ink: #191714;
+}
+
+body[data-section="programacao"] .portal-header { color: var(--schedule-cream); }
+body[data-section="programacao"] .portal-header__nav a { color: rgba(241, 229, 210, .74); }
+body[data-section="programacao"] .portal-header__nav a:hover,
+body[data-section="programacao"] .portal-header__nav a.is-active { color: var(--schedule-cream); }
+body[data-section="programacao"] .portal-header__nav a::after { background: var(--schedule-gold); }
+body[data-section="programacao"] .portal-header__account.conta-gatilho {
+  border-color: rgba(241, 229, 210, .38);
+  color: var(--schedule-cream);
+  background: rgba(25, 23, 20, .38);
+}
+
+body[data-section="programacao"] .guided-hero {
+  min-height: 100svh;
+  grid-template-columns: minmax(520px, 1.18fr) minmax(380px, .82fr);
+  grid-template-rows: auto auto auto;
+  gap: 0 clamp(54px, 7vw, 112px);
+  align-items: start;
+  padding: clamp(126px, 10vw, 154px) clamp(30px, 5vw, 80px) 32px;
+}
+body[data-section="programacao"] .guided-hero::after {
+  background:
+    linear-gradient(90deg, rgba(22, 18, 14, .94), rgba(22, 18, 14, .4) 55%, rgba(18, 17, 14, .84)),
+    linear-gradient(0deg, rgba(18, 17, 14, .76), transparent 32%);
+}
+body[data-section="programacao"] .guided-hero-copy {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+  max-width: 760px;
+}
+body[data-section="programacao"] .guided-kicker { margin-bottom: 15px; }
+body[data-section="programacao"] .guided-hero h1 {
+  margin-bottom: 16px;
+  color: var(--schedule-cream);
+  font-size: clamp(5rem, 8.2vw, 8.5rem);
+  line-height: .83;
+}
+body[data-section="programacao"] .guided-lead {
+  max-width: 48ch;
+  margin-bottom: 0;
+  color: rgba(241, 229, 210, .82);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.12rem, 1.45vw, 1.38rem);
+  line-height: 1.5;
+}
+
+.schedule-resource-hero {
+  --resource-paper: var(--schedule-cream);
+  --resource-ink: var(--schedule-ink);
+  --resource-accent: var(--schedule-gold);
+  --resource-muted: rgba(241, 229, 210, .62);
+  --resource-line: rgba(241, 229, 210, .21);
+  --resource-control-line: rgba(241, 229, 210, .48);
+  --resource-chip-line: rgba(221, 178, 103, .58);
+  --resource-primary: linear-gradient(135deg, #e6bc70, #c99547);
+  display: contents;
+}
+body[data-section="programacao"] .resource-hero__tools {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  align-self: start;
+  max-width: 760px;
+  margin-top: 28px;
+}
+body[data-section="programacao"] .resource-hero__search { background: rgba(22, 18, 14, .35); }
+body[data-section="programacao"] .resource-hero__actions a { font-family: Georgia, "Times New Roman", serif; font-size: .9rem; font-weight: 400; }
+body[data-section="programacao"] .resource-hero__actions a:first-child { color: var(--schedule-ink); }
+
+body[data-section="programacao"] .resource-hero__panel {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-width: 0;
+  padding: 8px 0 0 clamp(30px, 4vw, 64px);
+  border-left: 1px solid var(--resource-line);
+}
+body[data-section="programacao"] .resource-hero__panel h2 {
+  max-width: none;
+  margin-bottom: 19px;
+  color: var(--schedule-cream);
+  font-size: clamp(1.7rem, 2.35vw, 2.4rem);
+}
+body[data-section="programacao"] .resource-hero__item {
+  grid-template-columns: 46px 1fr 18px;
+  min-height: 70px;
+  gap: 14px;
+}
+body[data-section="programacao"] .resource-hero__item-icon {
+  width: 42px;
+  height: 42px;
+  border-color: rgba(221, 178, 103, .74);
+}
+body[data-section="programacao"] .resource-hero__item-icon svg { width: 21px; height: 21px; }
+body[data-section="programacao"] .resource-hero__item strong { font-family: Georgia, "Times New Roman", serif; font-size: .96rem; }
+body[data-section="programacao"] .resource-hero__item small {
+  display: block;
+  margin-top: 4px;
+  color: var(--resource-muted);
+  font: 400 .67rem/1.35 Arial, Helvetica, sans-serif;
+}
+
+body[data-section="programacao"] .resource-hero__benefits {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  margin-top: 24px;
+  padding-top: 18px;
+  background: rgba(18, 17, 14, .18);
+}
+body[data-section="programacao"] .resource-hero__benefits a:not(:last-child) { border-right: 1px solid var(--resource-line); }
+body[data-section="programacao"] .resource-hero__benefits a { padding-left: 24px; }
+body[data-section="programacao"] .resource-hero__benefits a:first-child { padding-left: 0; }
+
+body[data-section="programacao"] .guided-intro { background: #eadbc6; }
+body[data-section="programacao"] .guided-categorias { background: #242019; }
+body[data-section="programacao"] .guided-category-filter { position: sticky; z-index: 5; top: 0; background: #242019; }
+body[data-section="programacao"] .guided-closing { background: #deccb5; }
+
+@media (max-width: 1050px) {
+  body[data-section="programacao"] .guided-hero { grid-template-columns: minmax(440px, 1fr) minmax(340px, .9fr); gap: 0 44px; }
+  body[data-section="programacao"] .resource-hero__panel { padding-left: 32px; }
+  body[data-section="programacao"] .resource-hero__item { min-height: 66px; }
+}
+
+@media (max-width: 820px) {
+  body[data-section="programacao"] .portal-header__brand { color: var(--schedule-cream); }
+  body[data-section="programacao"] .guided-hero {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    min-height: auto;
+    width: 100%;
+    min-width: 0;
+    padding: 116px 20px 44px;
+  }
+  body[data-section="programacao"] .guided-hero > *,
+  body[data-section="programacao"] .guided-hero-copy,
+  body[data-section="programacao"] .resource-hero__tools,
+  body[data-section="programacao"] .resource-hero__panel,
+  body[data-section="programacao"] .resource-hero__benefits { min-width: 0; max-width: 100%; }
+  body[data-section="programacao"] .guided-hero-copy { grid-column: 1; grid-row: 1; padding-top: 22svh; }
+  body[data-section="programacao"] .resource-hero__tools { grid-column: 1; grid-row: 2; margin-top: 30px; }
+  body[data-section="programacao"] .resource-hero__panel {
+    grid-column: 1;
+    grid-row: 3;
+    margin-top: 40px;
+    padding: 28px 0 0;
+    border-top: 1px solid var(--resource-line);
+    border-left: 0;
+  }
+  body[data-section="programacao"] .resource-hero__benefits { grid-column: 1; grid-row: 4; margin-top: 30px; }
+  body[data-section="programacao"] .guided-hero::after { background: linear-gradient(0deg, rgba(22, 18, 14, .97), rgba(22, 18, 14, .42) 75px, rgba(22, 18, 14, .76)); }
+  body[data-section="programacao"] .guided-hero-image { object-position: 46% top; }
+}
+
+@media (max-width: 600px) {
+  body[data-section="programacao"] .guided-hero h1 { font-size: clamp(3rem, 13vw, 3.6rem); letter-spacing: -.07em; }
+  body[data-section="programacao"] .guided-lead { max-width: 30ch; font-size: 1.08rem; }
+  body[data-section="programacao"] .resource-hero__panel h2 { font-size: 1.75rem; }
+  body[data-section="programacao"] .resource-hero__benefits a { padding-left: 0; border-right: 0 !important; }
+}
+
+/* ------------------------------------------------------------------
+ * A travessia desta página
+ *
+ * Programação é uma agenda: o gesto é a régua que marca, na lateral, o grupo
+ * de categorias que está sendo lido — como o dedo que corre a lista.
+ * ------------------------------------------------------------------ */
+
+body[data-section="programacao"] {
+  --progresso-cor: var(--guided-brass, #a87d46);
+  --fio-cor: rgba(168, 125, 70, .66);
+  --fio-cor-fraca: rgba(52, 38, 28, .12);
+}
+
+body[data-section="programacao"] .guided-page { position: relative; }
+body[data-section="programacao"] .fio-da-jornada { left: clamp(6px, 1.4vw, 24px); }
+
+.guided-grupo {
+  position: relative;
+  transition: none;
+}
+
+.guided-grupo::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--guided-regua, 14px) * -1);
+  width: 2px;
+  background: var(--guided-brass, #a87d46);
+  content: "";
+  opacity: 0;
+  transform: scaleY(.4);
+  transform-origin: top center;
+  transition: opacity var(--movimento-medio) var(--movimento-saida), transform var(--movimento-lento) var(--movimento-saida);
+}
+
+.guided-grupo.is-ativa::before { opacity: .85; transform: scaleY(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .guided-grupo::before { transition: none; }
+}
