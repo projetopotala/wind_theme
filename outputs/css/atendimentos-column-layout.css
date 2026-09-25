@@ -1,0 +1,45 @@
+/* Ajustes de composição das cenas preservadas da Home. */
+
+/* Os cinco ambientes visuais conservam a janela e o fio da jornada. A
+   diferença de escala entre título, fotografia e moldura fica mais nítida. */
+@media (min-width: 901px) {
+  .home-scene__stage {
+    grid-template-columns: minmax(0, 1.06fr) minmax(320px, .94fr);
+    column-gap: clamp(48px, 7vw, 130px);
+  }
+  .home-scene__copy {
+    max-width: 620px;
+  }
+  .home-scene__copy h2 {
+    font-size: clamp(5.2rem, 8vw, 9.3rem);
+    max-width: 12ch;
+    margin-bottom: clamp(24px, 3.5vw, 47px);
+  }
+  .home-scene__number {
+    top: -115px;
+    left: -34px;
+    font-size: clamp(11rem, 22vw, 23rem);
+  }
+  .home-scene__detail-image {
+    width: clamp(145px, 15vw, 270px);
+    height: clamp(200px, 29vh, 335px);
+  }
+  .home-scene--care .home-scene__detail-image,
+  .home-scene--knowledge .home-scene__detail-image,
+  .home-scene--together .home-scene__detail-image {
+    width: clamp(145px, 15vw, 270px);
+    height: clamp(200px, 29vh, 335px);
+  }
+}
+
+#ensaio-convivencia .home-scene__links {
+  grid-template-columns: 1fr;
+  max-width: 340px;
+}
+
+@media (min-width: 701px) {
+  #ensaio-convivencia {
+    height: 110svh;
+    min-height: 700px;
+  }
+}

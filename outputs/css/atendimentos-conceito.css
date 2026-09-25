@@ -14,6 +14,16 @@ body {
   display: none;
 }
 
+.topbar .topbar-row {
+  width: auto;
+  max-width: none;
+  margin-inline: clamp(16px, 3.2vw, 72px);
+}
+
+.topbar .brand {
+  gap: 12px;
+}
+
 .top-actions .top-action-icon {
   display: grid;
   width: 46px;
@@ -1103,3 +1113,565 @@ body {
 html.entry-pending body::before{content:"";position:fixed;inset:0;z-index:2000;background:#0d100e;pointer-events:none;animation:entrada-veu 1.6s cubic-bezier(.22,.72,.24,1) both}
 @keyframes entrada-veu{from{opacity:1;visibility:visible}to{opacity:0;visibility:hidden}}
 @media(prefers-reduced-motion:reduce){html.entry-pending body::before{animation-duration:.35s}}
+
+/* Abertura da Home: a descrição do Instituto e, ao lado, o convite para conhecê-lo. */
+.hero-boas-vindas{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:clamp(22px,3vw,40px);align-items:end;margin:30px 0 26px}
+.hero-copy .hero-boas-vindas .lead{margin:0}
+.hero-recepcao{white-space:nowrap;padding:15px 24px}
+.hero-recepcao span{transition:transform .25s ease}
+.hero-recepcao:hover span,.hero-recepcao:focus-visible span{transform:translate(3px,-3px)}
+.hero-recepcao:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+@media(max-width:760px){.hero-boas-vindas{grid-template-columns:1fr;align-items:start}.hero-recepcao{justify-self:start}}
+
+/* ==================================================================
+ * Portas para as seções do Portal
+ *
+ * Depois de uma matéria, um painel escuro e sem número abre a seção
+ * correspondente: não é mais leitura, é passagem. Fica dentro do .shell,
+ * então a linha da jornada passa por trás dele.
+ * ================================================================== */
+
+.materia-secao:has(+ .porta-secao){padding-bottom:clamp(40px,5vw,72px)}
+.porta-secao{padding:0 0 clamp(90px,11vw,160px);background:var(--paper)}
+.porta{position:relative;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(28px,5vw,84px);align-items:end;padding:clamp(34px,5.2vw,76px);border-radius:36px;overflow:hidden;color:#f6f1e6;background:radial-gradient(circle at 90% 8%,rgba(185,200,187,.2),transparent 40%),radial-gradient(circle at 6% 100%,rgba(216,196,154,.14),transparent 36%),var(--moss);box-shadow:0 30px 70px -42px rgba(20,42,39,.7)}
+.porta::after{content:"";position:absolute;right:-90px;bottom:-150px;width:360px;aspect-ratio:1;border:1px solid rgba(246,241,230,.12);border-radius:50%;pointer-events:none}
+.porta__rotulo{margin:0 0 18px;color:#d8c49a;font:700 .68rem/1.2 var(--sans);letter-spacing:.2em;text-transform:uppercase}
+.porta__titulo{margin:0;color:#f6f1e6;font-family:var(--serif);font-size:clamp(3.8rem,8.4vw,7.6rem);font-weight:500;line-height:.88;letter-spacing:-.035em}
+.porta__subtitulo{margin:14px 0 0;color:rgba(246,241,230,.7);font:italic 400 clamp(1.2rem,1.8vw,1.55rem)/1.2 var(--serif)}
+.porta__corpo{position:relative;z-index:1;display:grid;justify-items:start;gap:30px}
+.porta__corpo p{max-width:44ch;margin:0;color:rgba(246,241,230,.78);font-size:clamp(1rem,1.25vw,1.12rem)}
+.porta__botao{padding:15px 24px;color:var(--ink);background:#f6f1e6}
+.porta__botao span{transition:transform .25s ease}
+.porta__botao:hover span,.porta__botao:focus-visible span{transform:translateX(4px)}
+.porta__botao:focus-visible{outline:2px solid #d8c49a;outline-offset:4px}
+@media(max-width:860px){.porta{grid-template-columns:1fr;align-items:start;border-radius:28px}}
+@media(max-width:480px){.porta{padding:30px 24px 26px}.porta__corpo{justify-items:stretch}.porta__botao{justify-content:space-between;padding:15px 20px;font-size:.92rem}}
+/* Desenhos de fundo das portas: traço fino, sem preenchimento, abaixo do texto.
+   Quando o painel entra na tela os traços se desenham uma vez e os pontos
+   aparecem depois; o círculo de respiro da Saúde pulsa devagar. Com movimento
+   reduzido, tudo aparece pronto.
+   Os seletores usam classes, não [pathLength]: o Chrome não reestiliza um
+   elemento SVG por atributo com maiúscula quando a classe do ancestral muda. */
+.porta__cabeca{position:relative;z-index:1}
+.porta__desenho{position:absolute;z-index:0;pointer-events:none;fill:none;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.porta__ponto{stroke:none}
+.porta__desenho--saude{right:-2%;bottom:-100px;width:min(62%,640px);stroke:rgba(246,241,230,.16)}
+.porta__desenho--saude .porta__ponto{fill:rgba(216,196,154,.4)}
+.porta__desenho--saude .porta__traco-destaque{stroke:rgba(216,196,154,.3)}
+.porta__desenho--saude .porta__respiro{stroke:rgba(246,241,230,.1)}
+.porta__desenho--cursos{left:-3%;bottom:-60px;width:min(50%,540px);stroke:rgba(24,54,47,.13)}
+.porta__desenho--cursos .porta__ponto{fill:rgba(138,106,61,.4)}
+.porta__desenho--cursos .porta__traco-destaque{stroke:rgba(138,106,61,.32)}
+.porta__desenho :is(path,.porta__respiro circle){stroke-dasharray:1;stroke-dashoffset:1}
+.porta.in .porta__desenho :is(path,.porta__respiro circle){animation:porta-traco 2.6s cubic-bezier(.4,0,.2,1) both}
+.porta.in .porta__desenho :is(path,.porta__respiro circle):nth-child(2n){animation-delay:.25s}
+.porta.in .porta__desenho :is(path,.porta__respiro circle):nth-child(3n){animation-delay:.5s}
+@keyframes porta-traco{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+.porta__ponto{opacity:0;transition:opacity 1.2s ease 1.4s}
+.porta.in .porta__ponto{opacity:1}
+.porta__respiro{transform-box:fill-box;transform-origin:center;animation:porta-respiro 9s ease-in-out infinite}
+@keyframes porta-respiro{0%,100%{transform:scale(1);opacity:.75}50%{transform:scale(1.045);opacity:1}}
+@media(max-width:860px){.porta__desenho--saude{right:-26%;bottom:-4%;width:120%;opacity:.8}.porta__desenho--cursos{left:auto;right:-24%;bottom:-3%;width:110%;opacity:.75}}
+@media(prefers-reduced-motion:reduce){.porta__desenho :is(path,.porta__respiro circle),.porta.in .porta__desenho :is(path,.porta__respiro circle){stroke-dasharray:none;animation:none}.porta__ponto{opacity:1;transition:none}.porta__respiro{animation:none}}
+
+/* Variante clara com catálogo: a porta de Cursos lista o que se encontra lá. */
+.porta--clara{color:var(--ink);background:radial-gradient(circle at 94% 6%,rgba(167,136,85,.18),transparent 40%),radial-gradient(circle at 4% 100%,rgba(120,148,129,.14),transparent 38%),#ece3d2;box-shadow:none}
+.porta--clara::after{border-color:rgba(138,106,61,.2)}
+.porta--clara .porta__rotulo{color:#8a6a3d}
+.porta--clara .porta__titulo{color:var(--ink)}
+.porta--clara .porta__subtitulo{color:var(--ink-soft)}
+.porta--clara .porta__corpo p{color:var(--ink-soft)}
+.porta--clara .porta__botao{color:#f6f1e6;background:var(--ink)}
+.porta--clara .porta__botao:focus-visible{outline-color:#8a6a3d}
+.porta--catalogo{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);grid-template-areas:"cabeca catalogo" "corpo catalogo";align-items:start;row-gap:clamp(28px,4vw,52px)}
+.porta--catalogo .porta__cabeca{grid-area:cabeca}
+.porta--catalogo .porta__corpo{grid-area:corpo;align-self:end}
+.porta__catalogo{grid-area:catalogo;position:relative;z-index:1;margin:0;padding:0;list-style:none;border-top:1px solid rgba(24,54,47,.16)}
+.porta__catalogo li{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:12px;padding:18px 0;border-bottom:1px solid rgba(24,54,47,.16)}
+.porta__catalogo span{grid-row:span 2;color:#8a6a3d;font:700 .74rem/2.1 var(--sans);letter-spacing:.1em}
+.porta__catalogo strong{color:var(--ink);font:500 clamp(1.3rem,1.9vw,1.62rem)/1.15 var(--serif)}
+.porta__catalogo small{margin-top:4px;color:var(--ink-soft);font-size:.92rem;line-height:1.5}
+@media(max-width:860px){.porta--catalogo{grid-template-columns:1fr;grid-template-areas:"cabeca" "catalogo" "corpo"}}
+/* Variante terra com as famílias em linha: a porta de Atividades.
+   Cabeça e texto em cima, as cinco famílias numa faixa de colunas embaixo. */
+.porta--terra{background:radial-gradient(circle at 88% 8%,rgba(236,200,150,.2),transparent 40%),radial-gradient(circle at 6% 100%,rgba(120,148,129,.16),transparent 38%),#6d4535;box-shadow:0 30px 70px -42px rgba(58,32,24,.75)}
+.porta--terra .porta__rotulo{color:#ecc896}
+.porta--terra .porta__botao{color:#4a2c22}
+.porta--terra .porta__botao:focus-visible{outline-color:#ecc896}
+.porta--familias{grid-template-areas:"cabeca corpo" "familias familias";row-gap:clamp(40px,5vw,64px)}
+.porta--familias .porta__cabeca{grid-area:cabeca}
+.porta--familias .porta__titulo{font-size:clamp(3.2rem,6.8vw,5.8rem)}
+.porta--familias .porta__corpo{grid-area:corpo}
+.porta__familias{grid-area:familias;position:relative;z-index:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin:0;padding:0;list-style:none;border-top:1px solid rgba(246,241,230,.22)}
+.porta__familias li{display:grid;align-content:start;gap:6px;padding:22px 16px 0 0}
+.porta__familias li+li{padding-left:16px;border-left:1px solid rgba(246,241,230,.14)}
+.porta__familias span{color:#ecc896;font:700 .72rem/1.4 var(--sans);letter-spacing:.1em}
+.porta__familias strong{color:#f6f1e6;font:500 clamp(1.22rem,1.6vw,1.45rem)/1.12 var(--serif)}
+.porta__familias small{color:rgba(246,241,230,.7);font-size:.86rem;line-height:1.45}
+.porta__desenho--atividades{top:-70px;right:-60px;width:min(68%,760px);stroke:rgba(246,236,224,.15)}
+.porta__desenho--atividades .porta__traco-destaque{stroke:rgba(236,200,150,.34)}
+.porta__desenho--atividades .porta__ponto{fill:rgba(236,200,150,.5)}
+@media(max-width:980px){.porta__familias{grid-template-columns:1fr}.porta__familias li,.porta__familias li+li{grid-template-columns:44px minmax(0,1fr);column-gap:12px;padding:16px 0;border-left:0;border-bottom:1px solid rgba(246,241,230,.14)}.porta__familias span{grid-row:span 2;line-height:2.1}}
+@media(max-width:860px){.porta--familias{grid-template-areas:"cabeca" "familias" "corpo"}.porta__desenho--atividades{top:-50px;right:-45%;width:150%;opacity:.8}}
+/* Variante névoa com contato: a porta da Recepção.
+   À esquerda, as formas de chegar como atalhos; à direita, onde e como falar
+   com alguém. O desenho é uma porta em arco e um sino dos ventos pendurado
+   na borda de cima. */
+.porta--nevoa{color:var(--ink);background:radial-gradient(circle at 92% 4%,rgba(255,255,255,.7),transparent 38%),radial-gradient(circle at 4% 100%,rgba(167,136,85,.14),transparent 40%),#dfe9e2;box-shadow:none}
+.porta--nevoa::after{border-color:rgba(24,54,47,.1)}
+.porta--nevoa .porta__rotulo{color:#56705f}
+.porta--nevoa .porta__titulo{color:var(--ink)}
+.porta--nevoa .porta__subtitulo{color:var(--ink-soft)}
+.porta--nevoa .porta__corpo p{color:var(--ink-soft)}
+.porta--nevoa .porta__botao{color:#f6f1e6;background:var(--ink)}
+.porta--nevoa .porta__botao:focus-visible{outline-color:#56705f}
+.porta--recepcao{grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);grid-template-areas:"cabeca contato" "corpo contato";align-items:start;row-gap:clamp(26px,3.4vw,40px)}
+.porta--recepcao .porta__cabeca{grid-area:cabeca}
+.porta--recepcao .porta__corpo{grid-area:corpo;gap:24px}
+.porta__chegadas{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.porta__chegadas a{display:inline-block;padding:8px 14px;border:1px solid rgba(24,54,47,.18);border-radius:999px;background:rgba(255,255,255,.5);color:var(--ink);font-size:.86rem;line-height:1.3;transition:background .2s ease,border-color .2s ease}
+.porta__chegadas a:hover,.porta__chegadas a:focus-visible{border-color:rgba(24,54,47,.4);background:#fff}
+.porta__chegadas a:focus-visible{outline:2px solid #56705f;outline-offset:2px}
+.porta__contato{grid-area:contato;align-self:end;position:relative;z-index:1;display:grid;padding:clamp(24px,2.6vw,32px);border:1px solid rgba(24,54,47,.1);border-radius:24px;background:rgba(255,255,255,.72);font-style:normal}
+.porta__contato .porta__rotulo{margin-bottom:14px}
+.porta__endereco{margin:0 0 18px;color:var(--ink);font:500 clamp(1.25rem,1.7vw,1.5rem)/1.25 var(--serif)}
+.porta__contato a{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid rgba(24,54,47,.12);color:var(--ink);font-size:.92rem;overflow-wrap:anywhere}
+.porta__contato a small{color:#56705f;font-weight:700;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;line-height:1.9}
+.porta__contato a:hover{color:var(--moss)}
+.porta__desenho--recepcao{top:-6px;right:3%;width:min(40%,440px);stroke:rgba(24,54,47,.14)}
+.porta__desenho--recepcao .porta__traco-destaque{stroke:rgba(138,106,61,.34)}
+.porta__desenho--recepcao .porta__ponto{fill:rgba(138,106,61,.45)}
+@media(max-width:860px){.porta--recepcao{grid-template-columns:1fr;grid-template-areas:"cabeca" "corpo" "contato"}.porta__contato{align-self:stretch}.porta__desenho--recepcao{right:-8%;width:72%;opacity:.8}}
+
+/* Depois da reflexão escura a porta continua no mesmo fundo: o painel claro
+   aparece entre dois trechos escuros em vez de abrir uma faixa de papel. */
+.reflection:has(+ .porta-secao){padding-bottom:clamp(40px,5vw,72px)}
+.reflection + .porta-secao{background:#17372f}
+
+@media(prefers-reduced-motion:reduce){.porta__botao span{transition:none}}
+
+/* Explore por categorias: duas linhas à vista e um botão para ver o resto. */
+.cards-mais{display:flex;justify-content:center;margin-top:24px}
+.cards-mais[hidden]{display:none}
+.cards-mais__botao{display:inline-flex;align-items:center;gap:10px;padding:13px 24px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font:700 .9rem/1.2 var(--sans);cursor:pointer;transition:background .2s ease,border-color .2s ease}
+.cards-mais__botao:hover{border-color:rgba(24,54,47,.3);background:var(--mist)}
+.cards-mais__botao:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.cards-mais__seta{display:inline-block;transition:transform .25s ease}
+.cards-mais__botao[aria-expanded="true"] .cards-mais__seta{transform:rotate(180deg)}
+.therapy-card.is-chegando{animation:card-chega .45s cubic-bezier(.22,.72,.24,1) both}
+@keyframes card-chega{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.therapy-card.is-chegando{animation:none}.cards-mais__seta{transition:none}}
+
+/* ==================================================================
+ * Praça: mais respiro e cards que se classificam
+ *
+ * Cada card diz a categoria, o foco do cuidado (com uma cor) e os formatos
+ * em que acontece. A legenda por foco, acima da grade, conta e filtra.
+ * ================================================================== */
+[data-foco="corpo"],[data-foco-filtro="corpo"]{--foco:#6f8f79}
+[data-foco="mente"],[data-foco-filtro="mente"]{--foco:#a16f5a}
+[data-foco="energia"],[data-foco-filtro="energia"]{--foco:#b08a4a}
+[data-foco="autoconhecimento"],[data-foco-filtro="autoconhecimento"]{--foco:#6c7896}
+[data-foco="avaliacao"],[data-foco-filtro="avaliacao"]{--foco:#8a8a80}
+
+.plaza .category-strip{gap:12px;padding:6px 0 26px}
+.plaza .discovery-hero{gap:24px;margin:20px 0 64px}
+.plaza .shelf-title{gap:24px;margin:76px 0 22px}
+.plaza .discovery-hero + .shelf-title{margin-top:0}
+
+.foco-legenda{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin:0 0 30px}
+.foco-legenda__rotulo{color:var(--ink-soft);font:700 .66rem/1 var(--sans);letter-spacing:.16em;text-transform:uppercase}
+#focoLegenda{display:flex;flex-wrap:wrap;gap:8px}
+#focoLegenda button{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font-size:.82rem;cursor:pointer;transition:background .2s ease,color .2s ease,border-color .2s ease}
+#focoLegenda button i{width:9px;height:9px;border-radius:50%;background:var(--foco)}
+#focoLegenda button span{color:var(--ink-soft);font-size:.74rem;font-variant-numeric:tabular-nums}
+#focoLegenda button:hover{border-color:rgba(24,54,47,.3)}
+#focoLegenda button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:#fff}
+#focoLegenda button[aria-pressed="true"] span{color:rgba(255,255,255,.7)}
+#focoLegenda button:disabled{opacity:.4;cursor:default}
+#focoLegenda button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+.cards{gap:clamp(18px,2vw,26px)}
+.horizontal-shelf{gap:clamp(18px,2vw,24px)}
+.horizontal-shelf .therapy-card{min-width:300px}
+.therapy-card{min-height:0;padding:24px 24px 20px;justify-content:flex-start}
+.therapy-card::before{background:color-mix(in srgb,var(--foco,#b9c8bb) 16%,#fff)}
+.therapy-card__topo{position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.therapy-card__cat{color:var(--gold);font:700 .64rem/1.3 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.therapy-card__foco{display:inline-flex;align-items:center;gap:7px;color:var(--ink);font-size:.72rem;font-weight:600;white-space:nowrap}
+.therapy-card__foco::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--foco)}
+.therapy-card h4{margin:22px 0 10px}
+.therapy-card p{margin:0 0 22px;line-height:1.55}
+.therapy-card__ficha{position:relative;z-index:2;margin:auto 0 0;padding-top:14px;border-top:1px solid var(--line)}
+.therapy-card__ficha div{display:grid;gap:9px}
+.therapy-card__ficha dt{color:var(--ink-soft);font:700 .6rem/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.therapy-card__ficha dd{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+.therapy-card__ficha dd span{padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--paper);font-size:.72rem;white-space:nowrap}
+.therapy-card .card-foot{position:relative;z-index:2;margin-top:14px;padding-top:14px}
+.cards-mais{margin-top:34px}
+@media(max-width:680px){.plaza .shelf-title{display:grid;gap:6px;margin-top:56px}.foco-legenda{margin-bottom:22px}}
+
+/* ==================================================================
+ * ARQUITETURA EDITORIAL
+ *
+ * A classificação aparece antes da forma: cada bloco informa se é leitura,
+ * reflexão, ferramenta, catálogo ou diretório. O ritmo usa uma única escala
+ * responsiva de espaço e mantém o texto em uma largura confortável.
+ * ================================================================== */
+:root {
+  --space-section: clamp(112px, 11vw, 176px);
+  --space-section-compact: clamp(68px, 7vw, 108px);
+  --space-content: clamp(42px, 6vw, 84px);
+  --reading-width: 68ch;
+}
+
+.content-kind {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 26px;
+  margin: 0;
+  padding: 5px 10px;
+  border: 1px solid rgba(24, 54, 47, .22);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font: 700 .61rem/1 var(--sans);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.content-kind--inverse {
+  border-color: rgba(255, 255, 255, .26);
+  color: #eadab9;
+}
+
+.section,
+.materia-secao {
+  padding-block: var(--space-section);
+}
+
+.porta-secao {
+  padding-block: var(--space-section-compact);
+}
+
+.section-head {
+  align-items: start;
+  gap: clamp(42px, 7vw, 110px);
+  margin-bottom: var(--space-content);
+}
+
+.section-head > :last-child {
+  max-width: 760px;
+}
+
+.section-head .lead,
+.plaza-head .lead,
+.virtual-wrap .lead {
+  max-width: var(--reading-width);
+  line-height: 1.78;
+}
+
+.section-meta {
+  display: grid;
+  gap: 17px;
+  align-content: start;
+}
+
+.section-meta__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-meta .section-num {
+  min-width: 34px;
+  color: var(--gold);
+  font-family: var(--sans);
+  font-size: .68rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .14em;
+}
+
+.materia-cabeca,
+.picshi .section-head,
+.oracles .section-head,
+.people .section-head,
+.special .section-head,
+.schedule .section-head {
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+}
+
+.picshi .section-head,
+.oracles .section-head,
+.schedule .section-head {
+  border-top-color: rgba(255, 255, 255, .18);
+}
+
+.materia {
+  gap: clamp(48px, 7vw, 108px);
+}
+
+.source-reading__preview {
+  max-width: var(--reading-width);
+}
+
+.source-reading__preview > small {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.source-reading__preview > strong {
+  max-width: 18ch;
+}
+
+.source-reading__preview > em {
+  max-width: 60ch;
+}
+
+.source-reading__text {
+  max-width: var(--reading-width);
+}
+
+.conexao {
+  margin-top: clamp(68px, 8vw, 120px);
+}
+
+.conexao__interacao > .content-kind {
+  margin-bottom: 18px;
+}
+
+.porta__rotulo span {
+  color: inherit;
+  font-weight: 500;
+  opacity: .62;
+}
+
+.plaza-head {
+  gap: clamp(42px, 7vw, 110px);
+  margin-bottom: clamp(58px, 7vw, 96px);
+}
+
+.plaza .category-strip {
+  padding-bottom: 34px;
+}
+
+.plaza .discovery-hero {
+  margin-bottom: clamp(72px, 9vw, 128px);
+}
+
+.plaza .shelf-title {
+  margin-top: clamp(92px, 10vw, 146px);
+}
+
+.cards,
+.people-grid,
+.special-grid,
+.oracle-grid {
+  gap: clamp(18px, 2.4vw, 30px);
+}
+
+.therapy-card__cat,
+.therapy-card__foco {
+  line-height: 1.45;
+}
+
+.people-scene {
+  margin-bottom: clamp(36px, 5vw, 68px);
+}
+
+.virtual-wrap,
+.schedule-box {
+  gap: clamp(34px, 6vw, 88px);
+}
+
+@media (max-width: 760px) {
+  :root {
+    --space-section: clamp(84px, 22vw, 112px);
+    --space-section-compact: clamp(58px, 15vw, 78px);
+    --space-content: 42px;
+  }
+
+  .section-head {
+    gap: 28px;
+  }
+
+  .materia-cabeca,
+  .picshi .section-head,
+  .oracles .section-head,
+  .people .section-head,
+  .special .section-head,
+  .schedule .section-head {
+    padding-top: 20px;
+  }
+
+  .conexao {
+    margin-top: 58px;
+  }
+
+  .source-reading__preview > strong {
+    max-width: 15ch;
+  }
+
+  .plaza .shelf-title {
+    margin-top: 72px;
+  }
+}
+
+/* A Praça oferece primeiro a busca e os atendimentos; as outras trilhas ficam a um gesto. */
+.plaza .category-strip { padding-bottom: 10px; }
+.category-strip:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+.category-hint {
+  margin: 0 0 42px;
+  color: var(--ink-soft);
+  font-size: .74rem;
+  letter-spacing: .04em;
+  text-align: right;
+}
+.category-hint span { color: var(--gold); }
+.plaza-more { margin-top: clamp(62px, 8vw, 100px); border-top: 1px solid var(--line); }
+.plaza-more > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 0;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+.plaza-more > summary::-webkit-details-marker { display: none; }
+.plaza-more > summary span:first-child { display: grid; gap: 5px; }
+.plaza-more > summary small {
+  color: var(--gold);
+  font-size: .67rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+.plaza-more > summary strong { font: 500 clamp(1.85rem, 3vw, 3rem)/1 var(--serif); }
+.plaza-more > summary em { color: var(--ink-soft); font-size: .85rem; font-style: normal; }
+.plaza-more__arrow {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 1.2rem;
+  transition: transform .25s ease, border-color .25s ease;
+}
+.plaza-more[open] .plaza-more__arrow { transform: rotate(180deg); }
+.plaza-more > summary:hover .plaza-more__arrow { border-color: var(--gold); }
+.plaza-more > summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 5px; }
+.plaza .plaza-more[open] > .shelf-title { margin-top: 42px; }
+@media (max-width: 680px) {
+  .category-hint { margin-bottom: 34px; }
+  .plaza-more > summary { padding: 24px 0; }
+  .plaza-more > summary strong { font-size: 2rem; }
+  .plaza-more > summary em { max-width: 27ch; line-height: 1.4; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plaza-more__arrow { transition: none; }
+}
+
+/* ==================================================================
+ * "Bem-vindo" em partículas (js/texto-de-particulas.js, do ParticleText
+ * do React Bits). O título guarda a altura de uma linha; a área de desenho
+ * sangra além dele para as partículas espalhadas não serem cortadas, e não
+ * recebe cliques. O texto segue no título para leitores de tela.
+ * ================================================================== */
+.particle-text{position:relative;display:block;height:1.05em}
+.particle-text__canvas{position:absolute;display:block;pointer-events:none}
+.particle-text__sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* Antes do módulo rodar, o título não pisca como texto; se o JavaScript
+   falhar, ele aparece sozinho em 2,5 s. */
+.js [data-texto-particulas]:not(.particle-text--pronto){color:transparent;animation:particulas-reserva 0s 2.5s forwards}
+@keyframes particulas-reserva{to{color:var(--ink)}}
+
+/* ==================================================================
+ * Tela de entrada: só o "Bem-vindo" em partículas e o texto do Instituto.
+ * Cabeçalho e linha da jornada esperam a primeira rolagem (html.na-entrada,
+ * posta no <head>); o resto da abertura vem logo abaixo.
+ * ================================================================== */
+.entrada{--entrada-vpad:clamp(56px,7vh,78px);position:relative;display:grid;place-items:center;min-height:100svh;overflow:hidden;padding:var(--entrada-vpad) clamp(28px,8vw,142px);text-align:left;background:radial-gradient(ellipse at 50% 42%,rgba(255,255,255,.72),transparent 62%),var(--paper)}
+.entrada__conteudo{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,.8fr) auto minmax(0,.6fr) auto minmax(0,1.4fr);align-self:stretch;width:min(1240px,100%);min-height:calc(100svh - 2 * var(--entrada-vpad))}
+.entrada__conteudo::before,.entrada__conteudo::after{content:"";position:absolute;pointer-events:none;border-color:rgba(167,136,85,.44);border-style:solid;border-width:0}
+.entrada__conteudo::before{top:30%;right:0;width:43%;height:31%;border-top-width:1px;border-right-width:1px}
+.entrada__conteudo::after{left:0;bottom:22%;width:54%;height:24%;border-left-width:1px;border-bottom-width:1px}
+.entrada__titulo{grid-column:1/-1;grid-row:2;width:100%;font-size:clamp(6.8rem,12.5vw,11.4rem);line-height:1.02}
+.entrada__texto{grid-column:2;grid-row:4;justify-self:end;width:min(100%,38rem);max-width:100%;margin:0;padding:0 0 0 clamp(22px,2vw,32px);border-left:1px solid var(--gold);color:var(--ink-soft);font-size:clamp(1.2rem,1.8vw,1.5rem);line-height:1.52;animation:entrada-texto 1.2s cubic-bezier(.22,.72,.24,1) 1.1s both}
+.entrada__scrollhint{z-index:3;bottom:clamp(20px,3.5svh,38px);padding:8px 14px;border:1px solid rgba(167,136,85,.3);border-radius:999px;background:rgba(246,243,234,.86);color:var(--ink);white-space:nowrap}
+@media(max-width:760px){.entrada{--entrada-vpad:clamp(58px,8vh,76px);padding-inline:clamp(24px,6vw,38px)}.entrada__conteudo{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,.8fr) auto minmax(0,.9fr) auto minmax(0,1.1fr)}.entrada__conteudo::before{top:24%;width:24%;height:25%}.entrada__conteudo::after{bottom:11%;width:55%;height:17%}.entrada__titulo{grid-column:1;font-size:clamp(3.4rem,16.5vw,6.8rem);line-height:.98}.entrada__texto{grid-column:1;justify-self:start;width:min(31ch,100%);margin-left:clamp(20px,5vw,34px);padding-left:clamp(18px,4vw,26px);font-size:clamp(1.05rem,4.4vw,1.2rem);line-height:1.6}.entrada__scrollhint{bottom:16px;padding:7px 12px;font-size:.68rem}}
+@keyframes entrada-texto{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.topbar,.journey-thread{transition:opacity .6s ease}
+.na-entrada .topbar{opacity:0;pointer-events:none}
+.na-entrada .topbar:focus-within{opacity:1;pointer-events:auto}
+.na-entrada .journey-thread{opacity:0}
+/* O marcador "A pessoa vem antes da técnica" virou o título da abertura. */
+.hero-titulo{margin:24px 0 0;font-size:clamp(2.6rem,5.2vw,5.2rem);line-height:.95}
+.hero[data-essay-scene] .hero-copy h2.hero-titulo{font-size:clamp(2.6rem,5.2vw,5.2rem);line-height:.95}
+@media(prefers-reduced-motion:reduce){.entrada__texto{animation:none}.topbar,.journey-thread{transition:none}}
+
+/* Frase da entrada digitada (js/texto-digitado.js, do TextType do React Bits).
+   Molde e texto vivo dividem a mesma célula: o molde, invisível, é a frase
+   inteira e reserva o espaço; o texto vivo cresce e encolhe por cima dele. */
+.text-type{display:grid}
+.text-type__molde,.text-type__vivo{grid-area:1/1}
+.text-type__molde{visibility:hidden}
+.text-type__sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.text-type__cursor{display:inline-block;margin-left:.1em;color:var(--gold);animation:text-type-piscar .5s cubic-bezier(.455,.03,.515,.955) infinite alternate}
+.text-type__cursor--hidden{display:none}
+@keyframes text-type-piscar{from{opacity:1}to{opacity:0}}
+/* Digitado uma vez (js/texto-digitado.js, digitarUmaVez): as letras que faltam só ficam transparentes, e o cursor é do CSS. */
+.digitado__letra--oculta{color:transparent}
+.digitado__letra--cursor{position:relative}
+.digitado__letra--cursor::after{content:"|";position:absolute;left:100%;margin-left:.08em;color:var(--gold);animation:text-type-piscar .5s cubic-bezier(.455,.03,.515,.955) infinite alternate}
+@media(prefers-reduced-motion:reduce){.text-type__cursor,.digitado__letra--cursor::after{animation:none}}
+
+/* Detalhes de fundo da entrada: uma malha de pontos que se apaga no centro
+   (eco da referência editorial), anéis que respiram atrás do título, a linha
+   de uma serra no rodapé e ramos em traço nos cantos. Tudo decorativo
+   (aria-hidden), sob o texto e sem receber cliques. Os traços se desenham na
+   chegada; com movimento reduzido, ficam prontos e parados. */
+.entrada::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background-image:radial-gradient(rgba(24,54,47,.2) 1px,transparent 1.3px);background-size:26px 26px;-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 46%,transparent 34%,#000 82%);mask-image:radial-gradient(ellipse 70% 60% at 50% 46%,transparent 34%,#000 82%);opacity:.25}
+.entrada::after{content:"";position:absolute;inset:auto 0 0;z-index:1;height:clamp(96px,17svh,180px);pointer-events:none;background:linear-gradient(180deg,rgba(246,243,234,0),#f6f3ea 92%)}
+.entrada__fundo{position:absolute;inset:0;z-index:0;pointer-events:none}
+.entrada__fundo::before{content:"";position:absolute;inset:-2%;z-index:0;background:#f6f3ea url("../media/atendimentos-conceito/bem-vindo-relevo.webp") center bottom/cover no-repeat;animation:entrada-relevo 18s ease-in-out infinite alternate}
+.entrada__respiro{position:relative;min-height:clamp(190px,28svh,320px);margin-top:-2px;background:linear-gradient(180deg,#f6f3ea 0%,#f5f3ea 36%,#edf1e9 76%,#e8eee8 100%)}
+.hero[data-essay-scene]::before{content:"";position:absolute;inset:0 0 auto;z-index:0;height:clamp(140px,24svh,260px);pointer-events:none;background:linear-gradient(180deg,#e8eee8,rgba(232,238,232,0))}
+.entrada__fundo svg{position:relative;z-index:1;display:block;width:100%;height:100%;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.entrada__traco{stroke-width:1.1;stroke-dasharray:1;stroke-dashoffset:0;animation:entrada-traco 2.6s cubic-bezier(.4,0,.2,1) .3s both}
+.entrada__aneis{stroke:rgba(167,136,85,.24);filter:drop-shadow(0 2px 2px rgba(89,71,49,.18)) drop-shadow(0 -1px 0 rgba(255,255,255,.9));transform-box:fill-box;transform-origin:center;animation:entrada-respiro 11s ease-in-out 2.8s infinite}
+.entrada__aneis .entrada__traco:nth-child(2){stroke:rgba(167,136,85,.18);animation-delay:.5s}
+.entrada__aneis .entrada__traco:nth-child(3){stroke:rgba(167,136,85,.11);animation-delay:.7s}
+.entrada__serra{stroke:rgba(24,54,47,.035);animation-delay:.9s}
+.entrada__serra--funda{stroke:rgba(24,54,47,.02);animation-delay:1.1s}
+.entrada__pontos circle{fill:rgba(167,136,85,.5);animation:entrada-ponto 1.4s ease 2.2s both}
+@keyframes entrada-traco{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes entrada-relevo{from{transform:translate3d(0,0,0) scale(1.01)}to{transform:translate3d(0,-8px,0) scale(1.035)}}
+@keyframes entrada-respiro{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.035);opacity:1}}
+@keyframes entrada-ponto{from{opacity:0}to{opacity:1}}
+@media(max-width:760px){.entrada::before{background-size:22px 22px}.entrada__respiro{min-height:clamp(128px,22svh,190px)}}
+@media(prefers-reduced-motion:reduce){.entrada__fundo *, .entrada__fundo::before{animation:none}}
+
+/* Linha que acompanha a rolagem, em destaque: traço dourado cheio sobre um
+   halo largo e suave (aparece nos vãos claros e nos trechos escuros), e uma
+   ponta maior com aura que pulsa devagar. Sem movimento: sem ponta e sem aura. */
+.journey-thread [data-journey-path]{stroke:#a78855;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.journey-thread__halo{fill:none;stroke:rgba(167,136,85,.17);stroke-width:10;stroke-linecap:round;stroke-linejoin:round}
+.journey-thread__ponta{fill:#a78855;opacity:1;stroke:#fbf7ee;stroke-width:1.6}
+.journey-thread__aura{fill:rgba(167,136,85,.24);transform-box:fill-box;transform-origin:center;animation:linha-aura 2.4s ease-in-out infinite}
+@keyframes linha-aura{0%,100%{transform:scale(.7);opacity:.95}50%{transform:scale(1.3);opacity:.35}}
+@media(max-width:760px){.journey-thread [data-journey-path]{stroke-width:2}.journey-thread__halo{stroke-width:7}}
+@media(prefers-reduced-motion:reduce){.journey-thread__aura{display:none;animation:none}}
+
+/* O fio fica à frente dos fundos e véus do ensaio. O clipPath no SVG o oculta
+   somente nas janelas fotográficas e nas imagens de detalhe. */
+.journey-thread{z-index:2}

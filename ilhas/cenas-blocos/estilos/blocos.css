@@ -1,0 +1,118 @@
+/* BLOCOS DA CENA — pequenos, de borda discreta, abaixo do texto de cada cena
+   (ilhas/cenas-blocos/BlocosDaCena.jsx). A luz que segue o mouse é do
+   SpotlightCard (../reactbits/SpotlightCard.css); aqui ficam a forma do bloco
+   e o que muda no hover. */
+.cena-blocos-ilha { margin: 0 0 30px; }
+
+.cena-blocos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 540px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cena-bloco {
+  --spotlight-color: rgba(201, 164, 106, .38);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 58px;
+  padding: 10px 12px 10px 13px;
+  border: 1px solid rgba(43, 39, 31, .12);
+  border-radius: 12px;
+  background: rgba(255, 253, 247, .3);
+  color: #2b271f;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  container-type: inline-size;
+  transition: border-color .35s ease, background-color .35s ease, box-shadow .35s ease, transform .45s cubic-bezier(.22, .72, .24, 1);
+}
+
+.cena-bloco:hover,
+.cena-bloco:focus-visible {
+  border-color: rgba(167, 136, 85, .6);
+  background: rgba(255, 253, 247, .62);
+  box-shadow: 0 12px 26px -20px rgba(60, 45, 20, .55);
+  transform: translateY(-2px);
+}
+
+.cena-bloco:focus-visible { outline: 2px solid #a78855; outline-offset: 3px; }
+
+/* O conteúdo fica acima da luz (o ::before do SpotlightCard). */
+.cena-bloco > * { position: relative; z-index: 1; }
+
+.cena-bloco__icone {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  overflow: visible;
+  fill: none;
+  stroke: #a78855;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* pathLength="1" em cada forma: o traço inteiro mede 1, e o GSAP o redesenha
+   levando o deslocamento de 1 a 0. Parado, o ícone aparece inteiro. */
+.cena-bloco__icone > * { stroke-dasharray: 1; stroke-dashoffset: 0; }
+
+.cena-bloco__texto { display: grid; gap: 2px; min-width: 0; }
+
+.cena-bloco__rotulo {
+  font: 600 .84rem/1.25 var(--sans, "Manrope", system-ui, sans-serif);
+  letter-spacing: -.005em;
+}
+
+.cena-bloco__dica {
+  color: #6d6a5b;
+  font: 400 .72rem/1.3 var(--sans, "Manrope", system-ui, sans-serif);
+}
+
+.cena-bloco__seta {
+  align-self: flex-start;
+  margin-left: auto;
+  color: #86612a;
+  font: 400 .78rem/1 var(--sans, "Manrope", system-ui, sans-serif);
+  opacity: .35;
+  transition: opacity .3s ease;
+}
+
+.cena-bloco:hover .cena-bloco__seta,
+.cena-bloco:focus-visible .cena-bloco__seta { opacity: 1; }
+
+/* Em duas colunas estreitas, rótulo e dica quebrariam em várias linhas e o
+   bloco deixaria de ser pequeno: no celular, um por linha. */
+@media (max-width: 560px) {
+  .cena-blocos { grid-template-columns: 1fr; gap: 6px; }
+  .cena-bloco { min-height: 52px; padding-block: 8px; }
+  .cena-bloco__texto { grid-template-columns: auto 1fr; align-items: baseline; column-gap: 8px; }
+}
+@media (max-width: 360px) {
+  .cena-bloco__texto { grid-template-columns: 1fr; }
+}
+
+/* Bloco estreito (coluna de texto apertada): a dica quebraria em várias
+   linhas; fica só o rótulo, e o bloco continua pequeno. */
+@container (max-width: 230px) {
+  .cena-bloco__dica { display: none; }
+}
+
+/* No computador de tela baixa, o texto da cena precisa caber no palco (que
+   fica preso à tela): os blocos ficam só com ícone e rótulo. */
+@media (min-width: 981px) and (max-height: 820px) {
+  .cena-blocos-ilha { margin-bottom: 20px; }
+  .cena-bloco { min-height: 44px; padding-block: 7px; }
+  .cena-bloco__dica { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cena-bloco { transition: border-color .2s ease, background-color .2s ease; }
+  .cena-bloco:hover,
+  .cena-bloco:focus-visible { transform: none; }
+}

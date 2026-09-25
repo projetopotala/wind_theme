@@ -1,0 +1,826 @@
+/* Ensaio visual da Home. O fundo original da abertura permanece sob as fotos. */
+:root {
+  --essay-paper: #f6f1e6;
+  --essay-ink: #2b271f;
+  --essay-gold: #a78855;
+  --essay-motion-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+.hero[data-essay-scene] {
+  display: block;
+  height: 142svh;
+  min-height: 0;
+  padding: 0;
+  overflow: clip;
+}
+
+.hero-stage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  align-items: center;
+  height: 100svh;
+  min-height: 650px;
+  padding: clamp(88px, 10vh, 120px) 0 46px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* O palco da abertura fica acima da linha da jornada (z-index 2): onde ele é
+   transparente a linha aparece; onde há texto, cartão ou foto, ela passa por
+   trás. Preso (sticky), o palco é um contexto de empilhamento próprio — só
+   subindo o palco inteiro os blocos dele ficam acima da linha. */
+.hero[data-essay-scene] .hero-stage { z-index: 3; }
+
+.hero-visual {
+  position: absolute;
+  z-index: 0;
+  top: clamp(92px, 12vh, 138px);
+  right: clamp(20px, 4vw, 76px);
+  bottom: clamp(74px, 9vh, 110px);
+  width: min(59vw, 940px);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.hero-visual > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 55%;
+  filter: saturate(.78) sepia(.08);
+  box-shadow: 0 25px 60px -45px rgba(25, 30, 24, .55);
+}
+
+.hero-visual__frame {
+  position: absolute;
+  inset: -24px 24px 24px -24px;
+  z-index: -1;
+  border: 1px solid rgba(67, 67, 48, .45);
+}
+
+.hero[data-essay-scene] .hero-grid {
+  position: relative;
+  z-index: 2;
+  width: min(1320px, calc(100% - 8vw));
+  grid-template-columns: minmax(0, 1fr) minmax(275px, .62fr);
+  gap: clamp(24px, 4vw, 72px);
+  align-items: end;
+}
+
+.hero[data-essay-scene] .hero-copy {
+  max-width: 770px;
+  padding: clamp(26px, 3.2vw, 48px) clamp(20px, 2.6vw, 38px);
+  background: rgba(246, 243, 234, .94);
+  border-left: 1px solid rgba(167, 136, 85, .6);
+}
+
+.hero[data-essay-scene] .hero-copy .display {
+  color: var(--essay-ink);
+  font-size: clamp(4.8rem, 9vw, 9.2rem);
+  line-height: .82;
+}
+
+.hero[data-essay-scene] .hero-route {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 0;
+  color: #816a48;
+}
+
+.hero[data-essay-scene] .hero-route::after {
+  content: "";
+  width: 66px;
+  border-top: 1px solid rgba(167, 136, 85, .55);
+}
+
+.hero[data-essay-scene] .hero-copy h2.hero-titulo {
+  max-width: 10ch;
+  margin-top: clamp(24px, 3vw, 40px);
+  font-size: clamp(4.2rem, 7.1vw, 8rem);
+  line-height: .9;
+}
+
+.hero[data-essay-scene] .hero-boas-vindas {
+  display: block;
+  margin: 28px 0 0;
+}
+
+.hero[data-essay-scene] .hero-copy .lead {
+  max-width: 54ch;
+  color: #3b453b;
+  font-size: clamp(.97rem, 1.14vw, 1.13rem);
+  line-height: 1.7;
+}
+
+.hero[data-essay-scene] .hero-recepcao {
+  margin-top: 0;
+}
+
+.hero[data-essay-scene] .hero-note {
+  max-width: min(43ch, 27vw);
+  margin-top: clamp(26px, 3vw, 38px);
+  padding: 22px 0 0;
+  border-left: 0;
+  border-top: 1px solid rgba(167, 136, 85, .45);
+  font-size: clamp(.96rem, 1.15vw, 1.12rem);
+  line-height: 1.65;
+}
+
+.hero[data-essay-scene] .hero-card {
+  justify-self: end;
+  width: min(100%, 320px);
+  padding: 19px;
+  border: 1px solid rgba(246, 241, 230, .95);
+  border-radius: 5px;
+  background: rgba(249, 246, 237, .96);
+  box-shadow: 0 18px 42px -32px rgba(20, 42, 39, .5);
+  backdrop-filter: none;
+}
+
+.hero[data-essay-scene] .hero-card__image {
+  height: 132px;
+  margin-bottom: 13px;
+  border-radius: 2px;
+  object-position: center 40%;
+}
+
+.hero[data-essay-scene] .hero-card h3 {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.hero[data-essay-scene] .hero-card .small {
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.hero[data-essay-scene] .hero-index {
+  gap: 0;
+  margin-top: 7px;
+}
+
+.hero[data-essay-scene] .hero-index a {
+  padding: 7px 0;
+  font-size: .76rem;
+}
+
+.hero[data-essay-scene] .hero-index a:focus-visible {
+  outline: 2px solid var(--essay-gold);
+  outline-offset: 2px;
+}
+
+.hero[data-essay-scene] .hero-orb,
+.hero[data-essay-scene] .botanical {
+  opacity: .12;
+}
+
+html.has-essay-motion .hero-visual > img {
+  transform: translate3d(0, var(--essay-image-y, 18px), 0) scale(1.035);
+}
+
+html.has-essay-motion .hero-visual__frame {
+  transform: translate3d(0, var(--essay-frame-y, 10px), 0);
+}
+
+/* Uma cena por seção do portal. As cinco composições — who, care, knowledge,
+   movement e together — são moldes: cada cena usa um deles (com a janela de
+   data-essay-variant correspondente), alternando o lado da fotografia. */
+.home-essay {
+  position: relative;
+  background: var(--essay-paper);
+}
+
+#saude { scroll-margin-top: 105px; }
+
+.home-scene {
+  --scene-surface: #efe9dc;
+  /* Um intervalo antes de cada cena: nele o fundo passa do tom da cena
+     anterior ao desta (.home-scene::before e ::after). */
+  --intervalo: clamp(140px, 22svh, 240px);
+  --superficie-anterior: var(--essay-paper);
+  position: relative;
+  z-index: 1;
+  height: 138svh;
+  min-height: 900px;
+  margin: 0;
+  margin-top: var(--intervalo);
+  background: var(--scene-surface);
+  isolation: isolate;
+}
+
+.home-scene--care { --scene-surface: #e5e5d9; }
+.home-scene--knowledge { --scene-surface: #e9e2d4; }
+.home-scene--movement { --scene-surface: #d6d2bd; }
+.home-scene--together { --scene-surface: #e7dccc; }
+
+/* A cena seguinte recebe o tom da anterior (os mesmos tons dos moldes acima),
+   para o intervalo começar nele. */
+.home-scene--who + .home-scene { --superficie-anterior: #efe9dc; }
+.home-scene--care + .home-scene { --superficie-anterior: #e5e5d9; }
+.home-scene--knowledge + .home-scene { --superficie-anterior: #e9e2d4; }
+.home-scene--movement + .home-scene { --superficie-anterior: #d6d2bd; }
+.home-scene--together + .home-scene { --superficie-anterior: #e7dccc; }
+
+/* A passagem fosca: um degradê de um tom ao outro com um véu claro no meio
+   e, por cima, um grão fino que se apaga nas pontas — o aspecto de vidro
+   fosco, sem desfoque (nada de backdrop-filter, que pesa na rolagem). */
+.home-scene::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  /* 1 px a mais, sobre o fim da cena anterior (no mesmo tom): o intervalo em
+     svh é fracionado, e sem isso sobrava uma costura clara na junção. */
+  height: calc(var(--intervalo) + 1px);
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, transparent, rgba(255, 253, 247, .42) 50%, transparent),
+    linear-gradient(to bottom, var(--superficie-anterior), var(--scene-surface));
+}
+
+.home-scene::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: var(--intervalo);
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .27 0 0 0 0 .2 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+}
+
+.home-scene__stage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(320px, .88fr);
+  align-items: center;
+  column-gap: clamp(48px, 8vw, 160px);
+  width: 100%;
+  height: 100svh;
+  min-height: 650px;
+  padding: clamp(90px, 12vh, 130px) clamp(38px, 7vw, 132px) clamp(70px, 9vh, 110px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.home-scene__stage::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: var(--scene-surface);
+}
+
+.home-scene__stage::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: var(--scene-surface);
+  pointer-events: none;
+  /* O contorno externo fica 2 px para fora do palco: na borda exata, a
+     suavização do recorte deixava escapar um fio da foto (no celular ela
+     começa no topo do palco), visto como uma linha escura entre as cenas. */
+  clip-path: polygon(evenodd,
+    -2px -2px, calc(100% + 2px) -2px, calc(100% + 2px) calc(100% + 2px), -2px calc(100% + 2px), -2px -2px,
+    var(--essay-window-left, 6%) var(--essay-window-top, 90%),
+    var(--essay-window-left, 6%) var(--essay-window-bottom, 163%),
+    var(--essay-window-right, 53%) var(--essay-window-bottom, 163%),
+    var(--essay-window-right, 53%) var(--essay-window-top, 90%),
+    var(--essay-window-left, 6%) var(--essay-window-top, 90%));
+}
+
+.home-scene__media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.home-scene__photo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.home-scene__main-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(.84);
+}
+
+.home-scene__frame {
+  position: absolute;
+  z-index: 2;
+  /* A moldura é a janela da foto, do mesmo tamanho, deslocada para cima e
+     para fora (js/home/editorial-essay.js, molduraDaJanela). */
+  top: var(--essay-frame-top, var(--essay-window-top, 90%));
+  left: var(--essay-frame-left, var(--essay-window-left, 6%));
+  width: calc(var(--essay-frame-right, var(--essay-window-right, 53%)) - var(--essay-frame-left, var(--essay-window-left, 6%)));
+  height: calc(var(--essay-frame-bottom, var(--essay-window-bottom, 163%)) - var(--essay-frame-top, var(--essay-window-top, 90%)));
+  border: 1px solid rgba(93, 75, 54, .48);
+  pointer-events: none;
+}
+
+/* Como na abertura, a moldura fica "atrás" da foto: o trecho dela que cairia
+   sobre a janela é recortado, e só o canto de fora aparece. O furo é a
+   janela vista da moldura: o deslocamento ao contrário. */
+html.has-essay-motion .home-scene__frame {
+  --furo-x: calc(0px - var(--essay-frame-dx, 24px));
+  --furo-y: calc(0px - var(--essay-frame-dy, -24px));
+  clip-path: polygon(evenodd,
+    -2px -2px, calc(100% + 2px) -2px, calc(100% + 2px) calc(100% + 2px), -2px calc(100% + 2px), -2px -2px,
+    var(--furo-x) var(--furo-y), calc(100% + var(--furo-x)) var(--furo-y),
+    calc(100% + var(--furo-x)) calc(100% + var(--furo-y)), var(--furo-x) calc(100% + var(--furo-y)),
+    var(--furo-x) var(--furo-y));
+}
+
+.home-scene__detail-image {
+  position: absolute;
+  z-index: 2;
+  right: 44%;
+  bottom: 8%;
+  width: 16%;
+  height: 28%;
+  object-fit: cover;
+  object-position: center;
+  border: 7px solid var(--scene-surface);
+  box-shadow: 0 20px 40px -32px rgba(31, 28, 22, .65);
+  pointer-events: none;
+}
+
+.home-scene__copy {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: 570px;
+  grid-column: 2;
+  grid-row: 1;
+  padding: 22px 0;
+  color: var(--essay-ink);
+}
+
+.home-scene__number {
+  position: absolute;
+  z-index: -1;
+  top: -93px;
+  left: -28px;
+  color: rgba(78, 61, 41, .095);
+  font: 400 clamp(9rem, 19vw, 18rem)/1 var(--serif);
+  letter-spacing: -.08em;
+  pointer-events: none;
+}
+
+.home-scene__eyebrow {
+  margin: 0 0 17px;
+  color: #84673d;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.home-scene__copy h2 {
+  max-width: 11ch;
+  margin: 0 0 25px;
+  font: 400 clamp(4.1rem, 6.8vw, 8rem)/.88 var(--serif);
+  letter-spacing: -.035em;
+}
+
+.home-scene__copy h2 em { font-weight: 400; }
+
+/* Títulos que se desenham e textos digitados (js/home/titulo-traco.js). Com
+   movimento, os dois começam escondidos desde o primeiro quadro (a classe
+   vem do <head>) e só aparecem quando o módulo os escreve: nunca parados
+   antes do efeito. O h2 fica transparente enquanto a camada de traço,
+   posta sobre as mesmas palavras, desenha; o parágrafo, até ser digitado. */
+html.cenas-escritas .home-scene__copy h2:not([data-escrito]) { -webkit-text-fill-color: transparent; }
+html.cenas-escritas .home-scene__copy > p:not(.home-scene__eyebrow):not([data-escrito]) { color: transparent; }
+/* Os blocos da seção sobem um a um quando o texto começa a ser digitado. */
+.cena-blocos-ilha li {
+  transition: opacity .6s ease calc(.3s + var(--i, 0) * .09s), transform .7s cubic-bezier(.22, .72, .24, 1) calc(.3s + var(--i, 0) * .09s);
+}
+html.cenas-escritas .cena-blocos-ilha:not([data-escrito]) li { opacity: 0; transform: translateY(10px); }
+.titulo-traco {
+  position: absolute;
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.home-scene__copy > p:not(.home-scene__eyebrow) {
+  max-width: 44ch;
+  margin: 0 0 29px;
+  color: #4b4c42;
+  font-size: clamp(.98rem, 1.15vw, 1.13rem);
+  line-height: 1.76;
+}
+
+/* Só o título pode cruzar a fotografia. Sobretítulo, parágrafo e links ficam
+   sempre sobre o papel, sem fundo próprio: é a janela da foto e a foto de
+   detalhe que se afastam deles (js/home/editorial-essay.js). */
+.home-scene.is-janela-fechada .home-scene__frame { opacity: 0; }
+
+/* (Os blocos das cenas também são links dentro da cópia: ficam de fora.) */
+/* O convite de cada cena fala na voz dos títulos, em serifa itálica, e leva a
+   seta num selo dourado com um anel tracejado que gira devagar, como um
+   carimbo. No hover o selo se enche de verde, a seta vira para a frente e um
+   traço dourado corre sob o texto. */
+.home-scene__copy a:not(.cena-bloco) {
+  --convite-selo: #1c352f;
+  --convite-ease: cubic-bezier(.22, .72, .24, 1);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 64px;
+  color: #1c352f;
+  font: italic 500 clamp(1.3rem, 1.75vw, 1.62rem)/1.15 var(--serif);
+  letter-spacing: -.005em;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-scene__copy a:not(.cena-bloco)::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 12px;
+  width: 26px;
+  height: 1px;
+  background: #a78855;
+  transition: width .5s var(--convite-ease);
+}
+
+.home-scene__copy a:not(.cena-bloco) span {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(167, 136, 85, .72);
+  color: #86612a;
+  font: 400 1.22rem/1 var(--sans, system-ui, sans-serif);
+  transition: background-color .35s ease, border-color .35s ease, color .35s ease, transform .5s var(--convite-ease);
+}
+
+.home-scene__copy a:not(.cena-bloco) span::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 1px dashed rgba(167, 136, 85, .42);
+  border-radius: 50%;
+  animation: convite-anel 36s linear infinite;
+  transition: inset .5s var(--convite-ease), border-color .35s ease;
+}
+
+.home-scene__copy a:not(.cena-bloco):is(:hover, :focus-visible)::after { width: calc(100% - 66px); }
+
+.home-scene__copy a:not(.cena-bloco):is(:hover, :focus-visible) span {
+  background: var(--convite-selo);
+  border-color: var(--convite-selo);
+  color: #f6f3ea;
+  transform: rotate(45deg);
+}
+
+.home-scene__copy a:not(.cena-bloco):is(:hover, :focus-visible) span::before {
+  inset: -10px;
+  border-color: rgba(167, 136, 85, .78);
+}
+
+.home-scene__copy a:not(.cena-bloco):active span { transform: rotate(45deg) scale(.93); }
+
+@keyframes convite-anel { to { transform: rotate(1turn); } }
+
+.home-scene__copy a:not(.cena-bloco):focus-visible {
+  outline: 2px solid #a78855;
+  outline-offset: 4px;
+}
+
+.home-scene__links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 24px;
+  max-width: 480px;
+}
+
+.home-scene--care .home-scene__copy,
+.home-scene--knowledge .home-scene__copy { grid-column: 1; }
+.home-scene--care .home-scene__detail-image {
+  right: 7%;
+  bottom: 8%;
+  width: 15%;
+  height: 29%;
+  object-position: center 28%;
+}
+.home-scene--knowledge .home-scene__copy {
+  padding: 46px 0;
+}
+@media (min-width: 981px) {
+  .home-scene--knowledge .home-scene__copy h2 {
+    margin-left: clamp(16px, 2vw, 30px);
+    font-size: clamp(4rem, 6.3vw, 5.4rem);
+  }
+}
+.home-scene--knowledge .home-scene__detail-image {
+  right: 7%;
+  bottom: 8%;
+  width: 15%;
+  height: 26%;
+}
+.home-scene--movement .home-scene__stage {
+  display: block;
+  padding-left: clamp(30px, 6vw, 110px);
+  padding-right: clamp(30px, 6vw, 110px);
+}
+.home-scene--movement .home-scene__media {
+  width: 100%;
+  height: 100%;
+}
+.home-scene--movement .home-scene__main-image { object-position: center 45%; }
+.home-scene--movement .home-scene__copy {
+  position: absolute;
+  left: clamp(48px, 8vw, 150px);
+  bottom: clamp(55px, 9vh, 120px);
+  max-width: min(490px, 42vw);
+  padding: clamp(24px, 3vw, 44px) 0;
+}
+.home-scene--movement .home-scene__copy h2 { font-size: clamp(3.3rem, 5.3vw, 6.4rem); }
+.home-scene--movement .home-scene__detail-image {
+  right: 7%;
+  bottom: 8%;
+  width: 18%;
+  height: 30%;
+}
+.home-scene--together .home-scene__detail-image {
+  right: 40%;
+  bottom: 7%;
+  width: 17%;
+  height: 30%;
+  object-position: center 30%;
+}
+
+html:not(.has-essay-motion) .home-scene__stage::after { display: none; }
+html:not(.has-essay-motion) .home-scene__media {
+  position: relative;
+  inset: auto;
+  height: min(68svh, 700px);
+  min-height: 415px;
+}
+html:not(.has-essay-motion) .home-scene--care .home-scene__media,
+html:not(.has-essay-motion) .home-scene--knowledge .home-scene__media { grid-column: 2; }
+/* Sem a janela, a panorâmica vem inteira e o texto segue abaixo dela. */
+html:not(.has-essay-motion) .home-scene--movement .home-scene__copy {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  max-width: 570px;
+}
+html:not(.has-essay-motion) .home-scene__frame {
+  z-index: -1;
+  inset: -22px 22px 22px -22px;
+  width: auto;
+  height: auto;
+}
+html.has-essay-motion .home-scene__detail-image {
+  opacity: var(--essay-detail-opacity, 1);
+  transform: translate3d(var(--essay-detail-x, 0px), var(--essay-detail-y, 0px), 0);
+}
+html.has-essay-motion .home-scene__copy {
+  opacity: var(--essay-copy-opacity, 1);
+  transform: translate3d(0, var(--essay-copy-y, 0px), 0);
+}
+
+html.has-essay-motion .is-near .hero-visual > img { will-change: transform; }
+html.has-essay-motion .is-near .home-scene__detail-image,
+html.has-essay-motion .is-near .home-scene__copy,
+html.has-essay-motion .is-near .home-scene__frame,
+html.has-essay-motion .is-near .hero-visual__frame { will-change: transform, opacity; }
+
+.home-scene__copy:focus-within { opacity: 1 !important; transform: none !important; }
+
+@media (max-width: 1100px) {
+  .home-scene__stage {
+    grid-template-columns: minmax(0, 1.04fr) minmax(300px, .96fr);
+    column-gap: 45px;
+    padding-left: 48px;
+    padding-right: 48px;
+  }
+  .home-scene__copy h2 { font-size: clamp(3.5rem, 6.5vw, 6.2rem); }
+  .home-scene--movement .home-scene__copy { max-width: 470px; }
+}
+
+@media (max-width: 980px) {
+  .home-scene,
+  .home-scene + .home-scene {
+    /* A faixa de cima do palco, onde a foto aparece; o texto vem logo abaixo. */
+    --faixa-foto: min(64svh, 540px);
+    --intervalo: clamp(64px, 10svh, 110px);
+    height: auto;
+    min-height: 0;
+    margin-top: var(--intervalo);
+  }
+  .home-scene__stage,
+  .home-scene--movement .home-scene__stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: auto;
+    min-height: 800px;
+    /* À direita, uma faixa livre para a linha da jornada (TRILHO no JS). */
+    padding: var(--faixa-foto) 34px 82px 17px;
+  }
+  /* A foto cobre só a faixa, não o palco inteiro: coberto um palco de ~1000px
+     de altura, a janela mostrava uma fatia estreita do meio da imagem (a
+     parede, a planta) e cortava as pessoas. Cada foto diz onde está o assunto
+     (--foco, na marcação) para o recorte estreito do celular. */
+  .home-scene__media,
+  .home-scene--movement .home-scene__media {
+    position: absolute;
+    inset: 0 0 auto;
+    width: 100%;
+    height: var(--faixa-foto);
+    min-height: 0;
+    margin: 0;
+  }
+  .home-scene .home-scene__main-image { object-position: var(--foco, center); }
+  html:not(.has-essay-motion) .home-scene__stage,
+  html:not(.has-essay-motion) .home-scene--movement .home-scene__stage {
+    gap: 35px;
+    min-height: 0;
+    padding: 68px 17px 82px;
+  }
+  html:not(.has-essay-motion) .home-scene__media,
+  html:not(.has-essay-motion) .home-scene--movement .home-scene__media {
+    position: relative;
+    inset: auto;
+    flex: 0 0 auto;
+    width: calc(100% - 12px);
+    height: clamp(330px, 52svh, 520px);
+    min-height: 0;
+    margin-right: 12px;
+  }
+  html:not(.has-essay-motion) .home-scene__frame { inset: -11px 11px 11px -11px; }
+  .home-scene__detail-image,
+  .home-scene--care .home-scene__detail-image,
+  .home-scene--knowledge .home-scene__detail-image,
+  .home-scene--movement .home-scene__detail-image,
+  .home-scene--together .home-scene__detail-image {
+    /* No canto de baixo da foto, em retrato; o JS a sobe se encostar no texto. */
+    right: 36px;
+    left: auto;
+    bottom: 5%;
+    width: 30%;
+    height: 36%;
+    border-width: 4px;
+  }
+  .home-scene__copy,
+  .home-scene--knowledge .home-scene__copy,
+  .home-scene--movement .home-scene__copy {
+    position: relative;
+    inset: auto;
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 24px 11px 0;
+  }
+  .home-scene__number { top: -35px; left: 0; font-size: 8.5rem; }
+  .home-scene__copy h2,
+  .home-scene--movement .home-scene__copy h2 {
+    max-width: 12ch;
+    font-size: clamp(3.6rem, 14vw, 6rem);
+  }
+  .home-scene--knowledge .home-scene__copy h2 {
+    margin-left: 14px;
+    font-size: clamp(2.8rem, 12vw, 5.6rem);
+  }
+  .home-scene__copy > p:not(.home-scene__eyebrow) { max-width: 55ch; font-size: 1rem; }
+  .home-scene__links { gap: 0 17px; }
+  html.has-essay-motion .home-scene__copy { transform: none; opacity: 1; }
+}
+
+@media (max-width: 420px) {
+  .home-scene__links { grid-template-columns: 1fr; }
+  .home-scene__copy h2,
+  .home-scene--movement .home-scene__copy h2 { font-size: 3.8rem; }
+  .home-scene__detail-image { width: 31%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-scene__main-image,
+  .home-scene__detail-image,
+  .home-scene__frame,
+  .home-scene__copy {
+    clip-path: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    will-change: auto !important;
+  }
+  .home-scene__stage::before { opacity: 1 !important; }
+  .home-scene__stage::after { display: none !important; }
+  .home-scene__copy a:not(.cena-bloco) span::before { animation: none; }
+}
+
+@media (max-width: 980px) {
+  .hero[data-essay-scene] .hero-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, .46fr);
+    gap: 16px;
+  }
+  .hero[data-essay-scene] .hero-copy .display { font-size: clamp(4.6rem, 10vw, 7.4rem); }
+  .hero[data-essay-scene] .hero-card { width: 260px; }
+  .hero-visual { width: 68vw; }
+}
+
+@media (max-width: 700px) {
+  .hero[data-essay-scene] { height: auto; min-height: 0; }
+  .hero-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    min-height: 0;
+    padding: 86px 0 62px;
+    overflow: hidden;
+  }
+  .hero-visual {
+    position: relative;
+    inset: auto;
+    /* Como nas cenas, a foto termina 30 px antes da borda: ali corre a linha. */
+    width: calc(100% - 47px);
+    height: clamp(215px, 30svh, 300px);
+    min-height: 0;
+    margin: 0 30px 0 auto;
+  }
+  .hero-visual__frame { inset: -12px 16px 12px -12px; }
+  .hero[data-essay-scene] .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: auto;
+    max-width: 560px;
+    margin-top: -105px;
+    margin-left: max(14px, calc((100% - 560px) / 2));
+    margin-right: max(34px, calc((100% - 560px) / 2));
+    gap: 26px;
+  }
+  .hero[data-essay-scene] .hero-copy {
+    padding: 24px 21px;
+    border-left: 0;
+    border-top: 1px solid var(--essay-gold);
+  }
+  .hero[data-essay-scene] .hero-copy h2.hero-titulo { font-size: clamp(3.8rem, 13vw, 6rem); }
+  .hero[data-essay-scene] .hero-note { max-width: 43ch; }
+  .hero[data-essay-scene] .hero-card {
+    justify-self: stretch;
+    width: 100%;
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(100px, .72fr) 1fr;
+    align-items: start;
+    column-gap: 18px;
+  }
+  .hero[data-essay-scene] .hero-card__image {
+    grid-row: span 4;
+    width: 100%;
+    height: 100%;
+    min-height: 170px;
+    margin: 0;
+  }
+  .hero[data-essay-scene] .hero-index { grid-column: 1 / -1; }
+  html.has-essay-motion .hero-visual > img { transform: none; }
+}
+
+@media (max-width: 700px) {
+  .hero[data-essay-scene] .hero-grid { margin-top: -34px; }
+}
+
+@media (max-width: 440px) {
+  .hero[data-essay-scene] .hero-card { grid-template-columns: 1fr; }
+  .hero[data-essay-scene] .hero-card__image { grid-row: auto; height: 160px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero[data-essay-scene] .hero-visual > img,
+  .hero[data-essay-scene] .hero-visual__frame {
+    clip-path: none !important;
+    transform: none !important;
+    will-change: auto !important;
+  }
+}

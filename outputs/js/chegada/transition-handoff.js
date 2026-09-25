@@ -14,7 +14,7 @@ export function handoffDelayForMotion({ reducedMotion = false } = {}) {
 export function crossTo({
   entry,
   soundEnabled = false,
-  destination = "transcendido.html",
+  destination = "atendimentos-conceito.html",
 } = {}) {
   if (document.documentElement.dataset.transitioning === "true") return false;
   document.documentElement.dataset.transitioning = "true";
@@ -32,5 +32,5 @@ export function crossTo({
 
 /** A passagem da Chegada. Mantida por nome porque é a que o controlador chama. */
 export function enterHome(options = {}) {
-  return crossTo({ destination: "transcendido.html", ...options });
+  return crossTo({ destination: "atendimentos-conceito.html", ...options });
 }

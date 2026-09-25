@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#173f36" />
+<title>Atendimentos — Instituto Potala</title>
+<script>
+  /* Com JavaScript, o "Bem-vindo" espera as partículas em vez de piscar como texto. */
+  document.documentElement.classList.add("js");
+  /* Títulos e textos das cenas se escrevem ao chegar (js/home/titulo-traco.js).
+     Ficam escondidos desde o primeiro quadro, para não aparecerem parados e
+     depois sumirem; se o módulo não carregar, voltam a aparecer. */
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.documentElement.classList.add("cenas-escritas");
+    setTimeout(() => {
+      if (!document.documentElement.classList.contains("cenas-escritas-prontas")) document.documentElement.classList.remove("cenas-escritas");
+    }, 4000);
+  }
+  /* Ao entrar, só o "Bem-vindo" e o texto: cabeçalho e linha da jornada chegam
+     com a primeira rolagem e somem de novo quando se volta ao topo. Quem chega
+     a uma seção por link (com âncora) vê a página inteira desde o início. */
+  if (!location.hash) {
+    const entrada = () => document.documentElement.classList.toggle("na-entrada", window.scrollY <= 4);
+    entrada();
+    window.addEventListener("scroll", entrada, { passive: true });
+  }
+  /* Vindo da Chegada, a página nasce coberta pelo mesmo escuro do véu e se
+     abre devagar: a troca de documento fica escondida, como na Travessia.
+     Só a entrada é consumida; a preferência de som continua guardada. */
+  try {
+    const chave = "potala.travessia.v1";
+    const estado = JSON.parse(sessionStorage.getItem(chave) || "{}");
+    if (["scroll", "drag", "keyboard"].includes(estado.entry)) {
+      document.documentElement.classList.add("entry-pending");
+      const guarda = typeof estado.soundEnabled === "boolean" ? { soundEnabled: estado.soundEnabled } : {};
+      sessionStorage.setItem(chave, JSON.stringify(guarda));
+    }
+  } catch {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#18362f;
+  --ink-soft:#39534c;
+  --paper:#f6f3ea;
+  --paper-2:#efeadd;
+  --mist:#e4eee8;
+  --moss:#284d40;
+  --sage:#789481;
+  --sage-2:#b9c8bb;
+  --gold:#a78855;
+  --clay:#a16f5a;
+  --night:#142a27;
+  --line:rgba(24,54,47,.14);
+  --shadow:0 22px 60px rgba(24,54,47,.12);
+  --radius:28px;
+  --serif:"Cormorant Garamond", Georgia, serif;
+  --sans:"Manrope", Arial, sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit}
+::selection{background:#dfe9df;color:var(--ink)}
+.skip{position:fixed;left:16px;top:-60px;z-index:9999;background:#fff;padding:10px 14px;border-radius:10px;box-shadow:var(--shadow)}
+.skip:focus{top:16px}
+.shell{width:min(1180px,calc(100% - 40px));margin:auto}
+.eyebrow{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--gold)}
+.display{font-family:var(--serif);font-size:clamp(3rem,7vw,6.8rem);line-height:.9;font-weight:500;letter-spacing:-.035em;margin:0}
+.h2{font-family:var(--serif);font-size:clamp(2.2rem,4.2vw,4.6rem);line-height:1;font-weight:500;letter-spacing:-.02em;margin:0}
+.lead{font-size:clamp(1.05rem,1.5vw,1.25rem);max-width:720px;color:var(--ink-soft)}
+.small{font-size:.88rem;color:var(--ink-soft)}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:rgba(255,255,255,.5);backdrop-filter:blur(12px);border-radius:999px;padding:9px 14px;font-size:.82rem;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.btn{border:0;border-radius:999px;padding:13px 18px;cursor:pointer;display:inline-flex;gap:10px;align-items:center;justify-content:center;transition:.25s ease;font-weight:700}
+.btn:hover{transform:translateY(-2px)}
+.btn-primary{background:var(--ink);color:#fff;box-shadow:0 12px 30px rgba(24,54,47,.18)}
+.btn-soft{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.icon{width:18px;height:18px;display:inline-block}
+
+/* top navigation */
+.topbar{position:fixed;inset:0 0 auto 0;z-index:1000;padding:14px 0;transition:.25s ease}
+.topbar.scrolled{background:rgba(246,243,234,.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);padding:9px 0}
+.topbar-row{display:flex;align-items:center;gap:18px;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700}
+.brand-mark{width:44px;height:36px;display:block;flex:none}
+.brand-mark img{display:block;width:100%;height:100%;object-fit:contain}
+.top-actions{display:flex;gap:8px;align-items:center}
+.progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--gold);width:0}
+
+/* jump drawer */
+.drawer{position:fixed;top:74px;right:20px;z-index:900;width:min(420px,calc(100vw - 40px));background:rgba(251,249,243,.97);backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:var(--shadow);transform:translateY(-10px) scale(.98);opacity:0;pointer-events:none;transition:.2s ease}
+.drawer.open{opacity:1;transform:none;pointer-events:auto}
+.drawer-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.drawer a{border:1px solid var(--line);border-radius:14px;padding:10px 11px;font-size:.82rem;background:#fff}
+.drawer a:hover{background:var(--mist)}
+.page-search{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}
+.page-search input{min-width:0;border:1px solid var(--line);border-radius:999px;padding:12px 14px;background:#fff;outline:none}
+.page-search input:focus{box-shadow:0 0 0 4px rgba(120,148,129,.15)}
+
+/* hero */
+.hero{min-height:100svh;position:relative;display:grid;align-items:end;padding:130px 0 72px;overflow:hidden;background:
+radial-gradient(circle at 78% 18%, rgba(184,204,189,.72), transparent 28%),
+radial-gradient(circle at 15% 30%, rgba(229,238,230,.85), transparent 34%),
+linear-gradient(180deg,#f7f4eb 0%,#f2eee3 72%,#e8eee8 100%)}
+.hero-orb{position:absolute;border-radius:50%;filter:blur(2px);opacity:.7;animation:float 10s ease-in-out infinite}
+.hero-orb.one{width:430px;height:430px;right:-110px;top:120px;border:1px solid rgba(24,54,47,.14)}
+.hero-orb.two{width:260px;height:260px;right:80px;top:255px;border:1px solid rgba(24,54,47,.18);animation-delay:-3s}
+.hero-orb.three{width:120px;height:120px;right:250px;top:150px;background:rgba(255,255,255,.35);animation-delay:-6s}
+@keyframes float{50%{transform:translateY(-18px) translateX(8px)}}
+.botanical{position:absolute;right:-10px;bottom:-25px;width:min(43vw,600px);opacity:.22;color:var(--ink);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.7fr);gap:52px;align-items:end}
+.hero-copy{position:relative;z-index:2}
+.hero-copy .lead{margin:30px 0 26px}
+.hero-note{border-left:1px solid var(--gold);padding-left:18px;margin-top:28px;max-width:550px;color:var(--ink-soft)}
+.hero-card{position:relative;z-index:2;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.85);backdrop-filter:blur(20px);border-radius:32px;padding:24px;box-shadow:var(--shadow)}
+.hero-card h3{font-family:var(--serif);font-size:2rem;font-weight:500;margin:4px 0 12px}
+.hero-index{display:grid;gap:7px;margin-top:14px}
+.hero-index a{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.hero-index a span{color:var(--gold)}
+.scrollhint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.scrollhint i{display:block;width:24px;height:36px;border:1px solid var(--line);border-radius:999px;position:relative}
+.scrollhint i::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;border-radius:4px;background:var(--gold);transform:translateX(-50%);animation:wheel 1.8s infinite}
+@keyframes wheel{0%{opacity:0;transform:translate(-50%,0)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,12px)}}
+
+/* sections */
+.section{padding:110px 0;position:relative}
+.section-head{display:grid;grid-template-columns:.8fr 1.2fr;gap:46px;align-items:end;margin-bottom:54px}
+.section-num{font-family:var(--serif);font-size:5rem;line-height:.8;color:rgba(24,54,47,.16)}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .75s ease, transform .75s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* health */
+.health{background:#f6f4ed}
+.health-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:28px}
+.health-story{border-top:1px solid var(--line);padding-top:22px}
+.health-story p{font-size:1.08rem;color:var(--ink-soft);max-width:700px}
+.phase-line{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:34px}
+.phase{padding:18px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.48)}
+.phase b{font-family:var(--serif);font-size:1.8rem;font-weight:500;display:block;margin-bottom:6px}
+.research-board{background:var(--ink);color:#f8f6ef;border-radius:var(--radius);padding:30px;min-height:410px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.research-board::after{content:"";position:absolute;inset:auto -80px -100px auto;width:280px;height:280px;border:1px solid rgba(255,255,255,.14);border-radius:50%}
+.research-board h3{font-family:var(--serif);font-size:2.55rem;line-height:1;font-weight:500;margin:10px 0 20px;max-width:360px}
+.research-board p{color:rgba(255,255,255,.74)}
+.research-lines{display:grid;gap:10px;margin-top:28px}
+.research-line{display:flex;justify-content:space-between;gap:15px;border-top:1px solid rgba(255,255,255,.16);padding-top:10px;font-size:.8rem}
+.research-line span:last-child{color:#d7c6a0}
+
+/* experience */
+.experience{background:linear-gradient(180deg,#e7eee9 0%,#edf0ea 55%,#f6f3ea 100%);overflow:hidden}
+.inner-map{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center}
+.orbit{aspect-ratio:1;border-radius:50%;position:relative;display:grid;place-items:center;max-width:520px;margin:auto;background:radial-gradient(circle,rgba(255,255,255,.8) 0 22%,transparent 22% 100%)}
+.orbit::before,.orbit::after{content:"";position:absolute;border:1px solid rgba(24,54,47,.18);border-radius:50%}
+.orbit::before{inset:17%}
+.orbit::after{inset:3%}
+.center-self{width:138px;height:138px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;text-align:center;padding:16px;z-index:2;font-family:var(--serif);font-size:1.35rem;line-height:1}
+.orbit-tag{position:absolute;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.84);border:1px solid var(--line);font-size:.75rem;box-shadow:0 12px 26px rgba(24,54,47,.08)}
+.t1{top:8%;left:50%;transform:translateX(-50%)}.t2{right:-1%;top:32%}.t3{right:4%;bottom:19%}.t4{left:12%;bottom:3%}.t5{left:-1%;top:40%}.t6{left:17%;top:18%}
+.experience-copy h3{font-family:var(--serif);font-size:clamp(2rem,3.4vw,3.5rem);line-height:1.02;font-weight:500;margin:0 0 20px}
+.experience-copy p{color:var(--ink-soft);font-size:1.05rem}
+.quote-box{margin-top:28px;border-left:2px solid var(--gold);padding:8px 0 8px 20px;font-family:var(--serif);font-size:1.55rem;line-height:1.15}
+.topic-shelf{display:flex;gap:14px;overflow:auto;padding:18px 4px 14px;scroll-snap-type:x mandatory;margin-top:50px;scrollbar-width:thin}
+.topic{scroll-snap-align:start;min-width:240px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.9);border-radius:22px;padding:20px;min-height:170px;display:flex;flex-direction:column;justify-content:space-between}
+.topic strong{font-family:var(--serif);font-size:1.6rem;font-weight:500}
+.topic span{font-size:.8rem;color:var(--ink-soft)}
+.breathe{margin-top:36px;border-radius:28px;padding:26px;background:linear-gradient(120deg,#fff,rgba(255,255,255,.5));border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:20px}
+.breathe-ball{width:64px;height:64px;border-radius:50%;border:1px solid var(--sage);animation:breathe 5s ease-in-out infinite;box-shadow:0 0 0 0 rgba(120,148,129,.16)}
+@keyframes breathe{50%{transform:scale(1.25);box-shadow:0 0 0 22px rgba(120,148,129,0)}}
+
+/* investigate */
+.investigate{padding:85px 0;background:#fbfaf5}
+.investigate-wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:56px;align-items:center}
+.signal-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;align-items:center}
+.signal-step{height:118px;border:1px solid var(--line);border-radius:20px;padding:16px;background:#fff;display:flex;flex-direction:column;justify-content:space-between;font-size:.78rem}
+.signal-step b{font-family:var(--serif);font-size:1.35rem;font-weight:500}
+.signal-step:not(:last-child)::after{content:"→";position:absolute}
+
+/* potala role */
+.picshi{background:var(--night);color:#f7f4ec;overflow:hidden}
+.picshi .section-head .lead{color:rgba(255,255,255,.68)}
+.picshi .section-num{color:rgba(255,255,255,.12)}
+.map-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center}
+.picshi-map{aspect-ratio:1;position:relative;width:100%;max-width:560px;margin:auto;display:grid;place-items:center}
+.picshi-core{width:170px;height:170px;border-radius:50%;background:#f4efe1;color:var(--ink);display:grid;place-items:center;text-align:center;z-index:3;padding:20px;font-family:var(--serif);font-size:1.6rem;line-height:1}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.16)}
+.r1{inset:12%}.r2{inset:2%}
+.map-node{position:absolute;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.07);color:#fff;border-radius:999px;padding:9px 13px;font-size:.76rem;cursor:pointer;transition:.2s ease}
+.map-node:hover,.map-node.active{background:#f4efe1;color:var(--ink);transform:scale(1.05)}
+.n1{top:4%;left:50%;translate:-50% 0}.n2{right:1%;top:27%}.n3{right:7%;bottom:18%}.n4{left:10%;bottom:4%}.n5{left:-1%;top:33%}.n6{left:16%;top:15%}
+.map-caption{min-height:330px;border:1px solid rgba(255,255,255,.14);border-radius:28px;padding:30px;background:rgba(255,255,255,.05)}
+.map-caption h3{font-family:var(--serif);font-size:2.5rem;font-weight:500;line-height:1;margin:10px 0 16px}
+.map-caption p{color:rgba(255,255,255,.67)}
+.map-caption .note{margin-top:30px;padding-top:18px;border-top:1px solid rgba(255,255,255,.14);font-size:.8rem;color:#ddcaa1}
+.case{margin-top:48px;border-top:1px solid rgba(255,255,255,.15);padding-top:24px;display:grid;grid-template-columns:.55fr 1.45fr;gap:34px;align-items:start}
+.case h3{font-family:var(--serif);font-size:2.2rem;font-weight:500;margin:0}
+.case-lenses{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.lens{border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:15px;background:rgba(255,255,255,.04);font-size:.78rem;color:rgba(255,255,255,.72)}
+.lens b{display:block;color:#fff;margin-bottom:6px}
+
+/* praça */
+.plaza{background:#f5f2e8;padding-top:120px;overflow:hidden}
+.plaza-head{display:flex;justify-content:space-between;align-items:end;gap:30px;margin-bottom:32px}
+.plaza-head .lead{max-width:590px}
+.plaza-toolbar{position:sticky;top:62px;z-index:40;background:rgba(245,242,232,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px 0;margin-bottom:42px}
+.toolbar-row{display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(170px,.7fr) auto;gap:10px}
+.toolbar-row input,.toolbar-row select{width:100%;border:1px solid var(--line);background:#fff;border-radius:999px;padding:12px 15px;outline:none;color:var(--ink)}
+.category-strip{display:flex;gap:10px;overflow:auto;padding:4px 0 18px;scrollbar-width:none}
+.category-strip::-webkit-scrollbar{display:none}
+.cat-btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 14px;cursor:pointer;white-space:nowrap;transition:.2s ease;color:var(--ink)}
+.cat-btn:hover,.cat-btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.discovery-hero{display:grid;grid-template-columns:1.25fr .75fr;gap:18px;margin:12px 0 42px}
+.feature{min-height:360px;border-radius:30px;position:relative;overflow:hidden;background:linear-gradient(135deg,#a9bea9 0%,#dde6dc 45%,#f5f2e8 100%);padding:32px;display:flex;flex-direction:column;justify-content:flex-end}
+.feature::after{content:"";position:absolute;width:330px;height:330px;border-radius:50%;border:1px solid rgba(24,54,47,.18);right:-90px;top:-70px}
+.feature .tag{align-self:flex-start;background:rgba(255,255,255,.7);border-radius:999px;padding:7px 10px;font-size:.72rem}
+.feature h3{font-family:var(--serif);font-size:3rem;line-height:.95;font-weight:500;margin:14px 0 8px;max-width:480px}
+.feature p{max-width:530px;color:var(--ink-soft)}
+.side-feature{border-radius:30px;background:var(--clay);color:#fff;padding:28px;display:flex;flex-direction:column;justify-content:space-between;min-height:360px;position:relative;overflow:hidden}
+.side-feature::after{content:"";position:absolute;right:-20px;bottom:-70px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.12)}
+.side-feature h3{font-family:var(--serif);font-size:2.4rem;font-weight:500;line-height:1;margin:16px 0}
+.side-feature p{color:rgba(255,255,255,.8)}
+.shelf-title{display:flex;justify-content:space-between;align-items:end;margin:44px 0 14px}
+.shelf-title h3{font-family:var(--serif);font-size:2.2rem;font-weight:500;margin:0}
+.shelf-title small{color:var(--ink-soft)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.therapy-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;min-height:225px;display:flex;flex-direction:column;justify-content:space-between;transition:.22s ease;position:relative;overflow:hidden}
+.therapy-card:hover{transform:translateY(-4px);box-shadow:0 18px 38px rgba(24,54,47,.10)}
+.therapy-card::before{content:"";position:absolute;right:-55px;top:-55px;width:125px;height:125px;border-radius:50%;background:var(--mist)}
+.therapy-card .mini{font-size:.67rem;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);position:relative;z-index:2}
+.therapy-card h4{font-family:var(--serif);font-size:1.85rem;font-weight:500;line-height:1;margin:12px 0 8px;position:relative;z-index:2}
+.therapy-card p{font-size:.82rem;color:var(--ink-soft);position:relative;z-index:2}
+.therapy-card .card-foot{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;border-top:1px solid var(--line);padding-top:10px}
+.hidden{display:none!important}
+.horizontal-shelf{display:flex;gap:14px;overflow:auto;scroll-snap-type:x mandatory;padding:3px 2px 18px;scrollbar-width:thin}
+.horizontal-shelf .therapy-card{min-width:280px;scroll-snap-align:start}
+.az{margin:56px 0 20px;border-top:1px solid var(--line);padding-top:30px}
+.az-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}
+.az button{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:#fff;cursor:pointer}
+.az button:hover,.az button.active{background:var(--ink);color:#fff}
+.no-results{padding:28px;border:1px dashed var(--line);border-radius:20px;color:var(--ink-soft);display:none}
+
+/* bank */
+.bank{margin-top:60px;background:#e6eee7;border-radius:34px;padding:34px;display:grid;grid-template-columns:.8fr 1.2fr;gap:34px}
+.bank h3{font-family:var(--serif);font-size:2.7rem;font-weight:500;line-height:1;margin:8px 0 14px}
+.faq{display:grid;gap:8px}
+.faq button{width:100%;text-align:left;border:1px solid rgba(24,54,47,.12);background:rgba(255,255,255,.7);border-radius:16px;padding:14px 16px;cursor:pointer;color:var(--ink);font-weight:600}
+.answer{display:none;padding:4px 16px 12px;font-size:.86rem;color:var(--ink-soft)}
+.answer.open{display:block}
+
+/* oracles */
+.oracles{background:linear-gradient(180deg,#162827 0%,#0f1e1e 100%);color:#f7f3e9;overflow:hidden}
+.oracles .section-num{color:rgba(255,255,255,.1)}
+.oracles .lead{color:rgba(255,255,255,.65)}
+.oracle-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.oracle-card{min-height:290px;border:1px solid rgba(255,255,255,.14);border-radius:26px;padding:24px;background:radial-gradient(circle at 85% 10%,rgba(255,255,255,.09),transparent 30%),rgba(255,255,255,.035);display:flex;flex-direction:column;justify-content:flex-end}
+.oracle-card .sigil{font-family:var(--serif);font-size:4rem;color:#d5c19a;line-height:1}
+.oracle-card h3{font-family:var(--serif);font-size:2rem;font-weight:500;margin:12px 0 6px}
+.oracle-card p{color:rgba(255,255,255,.62);font-size:.84rem}
+
+/* people */
+.people{background:#f6f3ea}
+.people-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.person{background:#fff;border:1px solid var(--line);border-radius:26px;overflow:hidden}
+.portrait{aspect-ratio:1.1;background:linear-gradient(135deg,#dbe5dc,#a9bcae);display:grid;place-items:center;position:relative}
+.portrait svg{width:90px;height:90px;opacity:.28}
+.person-copy{padding:20px}
+.person-copy h3{font-family:var(--serif);font-size:1.8rem;font-weight:500;margin:0 0 8px}
+.person-copy p{font-size:.82rem;color:var(--ink-soft)}
+
+/* special */
+.special{background:#e8efe8}
+.special-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.special-card{border-radius:28px;padding:26px;background:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.95);min-height:280px;display:flex;flex-direction:column;justify-content:space-between}
+.special-card h3{font-family:var(--serif);font-size:2rem;font-weight:500;line-height:1;margin:14px 0 8px}
+.special-card p{font-size:.84rem;color:var(--ink-soft)}
+.candle-card{background:var(--night);color:#fff;position:relative;overflow:hidden}
+.candle-card p{color:rgba(255,255,255,.68)}
+.candle{width:44px;height:92px;border-radius:8px 8px 12px 12px;background:linear-gradient(90deg,#d9c8a4,#fff3cb,#c7b589);position:relative;margin:8px auto 0;box-shadow:0 15px 30px rgba(0,0,0,.18)}
+.flame{position:absolute;width:25px;height:38px;left:50%;top:-31px;transform:translateX(-50%) rotate(5deg);border-radius:55% 45% 60% 40%;background:radial-gradient(circle at 50% 70%,#fff 0 18%,#ffd978 25%,#d8953c 60%,transparent 63%);filter:drop-shadow(0 0 12px #f2bd5d);animation:flicker 1.8s ease-in-out infinite}
+@keyframes flicker{0%,100%{transform:translateX(-50%) rotate(5deg) scale(1)}50%{transform:translateX(-50%) rotate(-3deg) scale(.92,1.08)}}
+
+/* virtual & schedule */
+.virtual{background:#f8f5ed}
+.virtual-wrap{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center}
+.portal-window{aspect-ratio:1.25;border-radius:34px;background:linear-gradient(160deg,#203d36,#17312b);padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.portal-window::before{content:"";position:absolute;inset:12%;border:1px solid rgba(255,255,255,.15);border-radius:50%}
+.portal-window::after{content:"";position:absolute;inset:24%;border:1px solid rgba(255,255,255,.1);border-radius:50%}
+.screen{position:absolute;inset:18% 14%;border-radius:22px;border:1px solid rgba(255,255,255,.18);background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.02));display:grid;place-items:center;color:#fff;text-align:center;padding:20px;z-index:2}
+.screen strong{font-family:var(--serif);font-size:2rem;font-weight:500}
+.schedule{background:var(--ink);color:#fff}
+.schedule .lead{color:rgba(255,255,255,.7)}
+.schedule-box{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-top:38px}
+.book-panel{border-radius:30px;padding:28px;background:#fff;color:var(--ink)}
+.book-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+.book-grid label{font-size:.72rem;font-weight:700;color:var(--ink-soft)}
+.book-grid select{width:100%;margin-top:5px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;color:var(--ink)}
+.book-note{border-radius:30px;padding:28px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;justify-content:space-between}
+.book-note h3{font-family:var(--serif);font-size:2.4rem;line-height:1;font-weight:500;margin:10px 0}
+.book-note p{color:rgba(255,255,255,.68)}
+
+/* footer */
+footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
+.footer-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:40px}
+.footer-grid h2{font-family:var(--serif);font-size:3rem;font-weight:500;line-height:1;margin:0 0 18px}
+.footer-links{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.footer-links a{border-bottom:1px solid rgba(255,255,255,.12);padding:8px 0;color:rgba(255,255,255,.7);font-size:.84rem}
+.footer-bottom{margin-top:38px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;gap:20px;color:rgba(255,255,255,.45);font-size:.72rem}
+
+/* prototype badge */
+.proto{position:fixed;right:18px;bottom:18px;z-index:1000;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:999px;padding:9px 12px;font-size:.7rem;color:var(--ink-soft)}
+
+@media(max-width:980px){
+  .hero-grid,.section-head,.health-grid,.inner-map,.investigate-wrap,.map-grid,.case,.discovery-hero,.bank,.virtual-wrap,.schedule-box,.footer-grid{grid-template-columns:1fr}
+  .hero{padding-top:120px}.hero-card{max-width:650px}.section-head{gap:16px}.section-num{font-size:3.5rem}
+  .cards{grid-template-columns:repeat(2,1fr)}.case-lenses{grid-template-columns:repeat(2,1fr)}.people-grid,.special-grid,.oracle-grid{grid-template-columns:1fr 1fr}.toolbar-row{grid-template-columns:1fr 1fr}.toolbar-row .btn{grid-column:1/-1}
+  .signal-flow{grid-template-columns:repeat(5,minmax(120px,1fr));overflow:auto;padding-bottom:10px}
+}
+@media(max-width:680px){
+  .shell{width:min(100% - 28px,1180px)}.top-actions .btn-soft{display:none}.drawer{top:66px;right:14px;width:calc(100vw - 28px)}
+  .drawer-grid{grid-template-columns:1fr}.hero{min-height:auto;padding:112px 0 72px}.hero-grid{gap:24px}.display{font-size:3.7rem}.hero-orb.one{width:280px;height:280px}.botanical{width:90vw;right:-30vw}
+  .section{padding:78px 0}.section-head{margin-bottom:34px}.phase-line{grid-template-columns:1fr 1fr}.orbit{max-width:360px}.orbit-tag{font-size:.64rem;padding:6px 8px}.center-self{width:112px;height:112px;font-size:1.1rem}.t2{right:-4%}.t5{left:-4%}
+  .breathe{align-items:flex-start}.map-caption{min-height:auto}.picshi-core{width:136px;height:136px;padding:14px;font-size:1.28rem}.map-node{padding:8px 11px;font-size:.7rem}.case-lenses{grid-template-columns:1fr 1fr}.plaza-head{display:block}.plaza-toolbar{top:56px}.toolbar-row{grid-template-columns:1fr}.toolbar-row .btn{grid-column:auto}.cards{grid-template-columns:1fr}.feature h3{font-size:2.45rem}.feature,.side-feature{min-height:300px}.people-grid,.special-grid,.oracle-grid{grid-template-columns:1fr}.book-grid{grid-template-columns:1fr}.footer-links{grid-template-columns:1fr}.footer-bottom{display:block}.proto{display:none}
+}
+@media(max-width:400px){
+  .picshi-core{width:112px;height:112px;padding:10px;font-size:1.05rem}.map-node{padding:7px 9px;font-size:.64rem}.n6{left:3%;top:17%}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}
+}
+</style>
+<meta name="description" content="Instituto Potala: saúde, cuidado e autoconhecimento — matérias para ler com calma, caminhos de atendimento, profissionais e formas de acesso.">
+<link rel="stylesheet" href="css/atendimentos-conceito.css?v=cabecalho-lateral-5">
+<link rel="stylesheet" href="css/home-editorial-essay.css">
+<link rel="stylesheet" href="css/atendimentos-column-layout.css">
+<link rel="stylesheet" href="css/home-page-editor.css">
+<link rel="stylesheet" href="js/cenas-blocos/blocos.css">
+</head>
+<body data-editor-page="atendimentos-conceito">
+<a class="skip" href="#main">Pular para o conteúdo</a>
+<header class="topbar" id="topbar">
+  <div class="shell topbar-row">
+    <a class="brand" href="#boas-vindas" aria-label="Potala - início da página">
+      <span class="brand-mark" aria-hidden="true"><img src="media/potala-mark-header.webp" alt="" width="44" height="36" decoding="async"></span>
+      <span>Potala</span>
+    </a>
+    <div class="top-actions">
+      <button class="btn btn-soft page-edit-trigger" type="button" data-page-edit-button hidden
+        aria-label="Editar esta página" aria-expanded="false" title="Editar esta página">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L9 19H5v-4L16.5 3.5Z"/></svg>
+        <span>Editar</span>
+      </button>
+      <button class="btn btn-soft top-action-icon" id="searchOpen" type="button" aria-label="Buscar na página" title="Buscar na página" aria-controls="drawer" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.25 4.25"/></svg>
+      </button>
+      <button class="btn btn-primary top-action-icon top-action-icon--profile conta-gatilho" type="button"
+        data-conta-gatilho data-keeps-expansion aria-haspopup="dialog" aria-expanded="false"
+        aria-label="Seu espaço no Potala" title="Seu espaço no Potala">
+        <svg class="conta-icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Zm0 1.8c-3.6 0-7.4 1.8-7.4 4.6V20h14.8v-1.4c0-2.8-3.8-4.6-7.4-4.6Z"/></svg>
+        <span class="conta-iniciais" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+  <div class="progress" id="progress"></div>
+</header>
+
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="eyebrow">Navegação livre</div>
+  <div class="page-search">
+    <input id="pageSearch" type="search" placeholder="Ex.: cuidado, cursos, cultura..." aria-label="Buscar nesta página" />
+    <button class="btn btn-primary" id="pageSearchBtn">Buscar</button>
+  </div>
+  <div class="drawer-grid">
+    <a href="#inicio">01 Instituto Potala</a><a href="#ensaio-quem-somos">02 Quem somos</a>
+    <a href="#ensaio-atendimentos">03 Atendimentos</a><a href="#ensaio-saude-integrativa">04 Saúde integrativa</a>
+    <a href="#ensaio-profissionais">05 Profissionais</a><a href="#ensaio-cursos">06 Cursos</a>
+    <a href="#ensaio-atividades">07 Atividades</a><a href="#ensaio-programacao">08 Programação</a>
+    <a href="#ensaio-cultura">09 Arte e cultura</a><a href="#ensaio-inspiracao">10 Inspiração</a>
+    <a href="#ensaio-blog">11 Blog</a><a href="#ensaio-revista">12 Revista</a>
+    <a href="#ensaio-loja">13 Loja</a><a href="#ensaio-convivencia">14 Convivência</a>
+  </div>
+  <div class="eyebrow drawer-portal-titulo">Pelo Portal</div>
+  <nav class="drawer-grid drawer-portal" aria-label="Seções do Portal Potala">
+    <a href="quem-somos.html">Quem somos</a><a href="recepcao.html">Recepção</a>
+    <a href="atendimentos.html">Atendimentos</a><a href="saude-integrativa.html">Saúde integrativa</a>
+    <a href="profissionais.html">Profissionais</a><a href="cursos.html">Cursos</a>
+    <a href="atividades.html">Atividades</a><a href="programacao.html">Programação</a>
+    <a href="cultura.html">Cultura</a><a href="inspiracao.html">Inspiração</a>
+    <a href="blog.html">Blog</a><a href="revista.html">Revista</a>
+    <a href="marketplace.html">Loja</a><a href="travessia.html">A Travessia</a>
+  </nav>
+</div>
+
+<main id="main">
+<svg class="journey-thread" data-journey-thread aria-hidden="true" focusable="false"><defs><clipPath id="journey-photo-clip" clipPathUnits="userSpaceOnUse"><path data-journey-photo-clip clip-rule="evenodd"></path></clipPath></defs><g clip-path="url(#journey-photo-clip)"><path class="journey-thread__halo" data-journey-halo></path><path data-journey-path></path><circle class="journey-thread__aura" data-journey-aura r="13"></circle><circle class="journey-thread__ponta" data-journey-tip r="5"></circle></g></svg>
+<section class="entrada" id="boas-vindas" aria-labelledby="boas-vindas-titulo">
+  <div class="entrada__fundo" aria-hidden="true">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" focusable="false">
+      <g class="entrada__aneis">
+        <circle class="entrada__traco" cx="720" cy="430" r="250" pathLength="1"/>
+        <circle class="entrada__traco" cx="720" cy="430" r="340" pathLength="1"/>
+        <circle class="entrada__traco" cx="720" cy="430" r="440" pathLength="1"/>
+      </g>
+      <path class="entrada__serra entrada__traco" pathLength="1" d="M0 760L120 700L210 735L330 640L430 690L560 610L660 668L760 600L880 660L1000 590L1110 650L1230 610L1340 670L1440 630"/>
+      <path class="entrada__serra entrada__serra--funda entrada__traco" pathLength="1" d="M0 812C200 772 330 802 480 772S760 742 900 782S1200 802 1440 762"/>
+      <g class="entrada__pontos">
+        <circle cx="470" cy="250" r="2.4"/><circle cx="1010" cy="300" r="1.8"/><circle cx="380" cy="560" r="1.6"/>
+        <circle cx="1080" cy="560" r="2.2"/><circle cx="720" cy="170" r="1.6"/><circle cx="240" cy="340" r="1.4"/><circle cx="1220" cy="420" r="1.4"/>
+      </g>
+    </svg>
+  </div>
+  <div class="entrada__conteudo">
+    <h1 class="display entrada__titulo" id="boas-vindas-titulo" data-texto-particulas="esquerda">Bem-vindo</h1>
+    <p class="entrada__texto" data-texto-digitado>O Instituto Cultural Potala é um lugar de encontro entre cuidado, conhecimento e cultura.</p>
+  </div>
+  <div class="scrollhint entrada__scrollhint" aria-hidden="true"><i></i> role para explorar</div>
+</section>
+
+<div class="entrada__respiro" aria-hidden="true"></div>
+
+<section class="hero" id="inicio" data-essay-scene data-essay-variant="opening" data-search="recepção primeira visita não sei por onde começar dúvidas orientação cuidado conhecimento movimento cultura convivência">
+ <div class="hero-stage">
+  <div class="hero-visual" aria-hidden="true"><img src="media/home-travessia.webp" alt="" width="1536" height="1024" fetchpriority="high"><span class="hero-visual__frame"></span></div>
+  <div class="hero-orb one"></div><div class="hero-orb two"></div><div class="hero-orb three"></div>
+  <svg class="botanical" viewBox="0 0 500 420" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <path d="M448 410C362 343 324 259 329 168C332 112 357 65 398 24"/><path d="M331 184C277 166 246 133 236 87C281 91 315 112 337 149"/><path d="M335 229C388 203 433 201 470 222C436 250 392 260 344 247"/><path d="M351 296C299 288 260 263 236 220C283 216 324 232 355 268"/><path d="M386 357C424 321 461 306 498 314C474 351 440 372 398 379"/>
+  </svg>
+  <div class="shell hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow hero-route">Recepção · Instituto Potala</p>
+      <h2 class="display hero-titulo">Não sabe o que procura?</h2>
+      <p class="hero-note">A Recepção escuta sua pergunta, apresenta os caminhos do Instituto e ajuda você a reconhecer por onde começar, sem precisar escolher sozinho.</p>
+      <div class="hero-boas-vindas">
+        <a class="btn btn-primary hero-recepcao" href="recepcao.html">Conversar com a Recepção <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+    <aside class="hero-card"><img class="hero-card__image" src="media/atendimentos-acolhimento.webp" alt="Profissional acolhe uma pessoa em uma conversa de cuidado" width="1440" height="1800">
+      <div class="eyebrow">Você encontrará aqui</div>
+      <h3>Um universo organizado</h3>
+      <p class="small">Quem somos, atendimentos, saúde, cursos, atividades, cultura, leituras e a loja.</p>
+      <div class="hero-index">
+        <a href="#ensaio-quem-somos">Quem somos <span>↘</span></a>
+        <a href="#ensaio-atendimentos">Atendimentos <span>↘</span></a>
+        <a href="#ensaio-cursos">Cursos <span>↘</span></a>
+        <a href="#ensaio-programacao">Programação <span>↘</span></a>
+      </div>
+    </aside>
+  </div>
+ </div>
+</section>
+
+<div class="home-essay" aria-label="Caminhos pelo Instituto Potala">
+  <section class="home-scene home-scene--who" id="ensaio-quem-somos" data-essay-scene data-essay-variant="bottom" aria-labelledby="ensaio-quem-somos-titulo" data-search="quem somos instituto propósito pessoas encontro história">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 35% 40%" src="media/quem-somos-acolhimento.webp" alt="Pessoas conversam ao ar livre, junto à natureza" width="1600" height="900" loading="eager" decoding="async" fetchpriority="low"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/journey-quem-somos.webp" alt="" width="1600" height="900" loading="eager" decoding="async" fetchpriority="low">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">02</span>
+        <p class="home-scene__eyebrow">O lugar e seu propósito</p>
+        <h2 id="ensaio-quem-somos-titulo">Quem somos</h2>
+        <p>Um lugar de encontro entre cuidado, conhecimento e cultura. Desde 2012, pessoas se reúnem no Potala para aprender, compartilhar experiências e cuidar de si e do outro.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-quem-somos"><!--blocos:ensaio-quem-somos--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="quem-somos.html#visao"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 14h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16" pathLength="1"></path><path d="m14.45 13.39 5.05-4.694C20.196 8 21 6.85 21 5.75a2.75 2.75 0 0 0-4.797-1.837.276.276 0 0 1-.406 0A2.75 2.75 0 0 0 11 5.75c0 1.2.802 2.248 1.5 2.946L16 11.95" pathLength="1"></path><path d="m2 15 6 6" pathLength="1"></path><path d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a1 1 0 0 0-2.75-2.91" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Uma visão de cuidado</span><span class="cena-bloco__dica">Saberes que conversam</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="quem-somos.html#historia"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 18v-7" pathLength="1"></path><path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z" pathLength="1"></path><path d="M14 18v-7" pathLength="1"></path><path d="M18 18v-7" pathLength="1"></path><path d="M3 22h18" pathLength="1"></path><path d="M6 18v-7" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Origem em 2012</span><span class="cena-bloco__dica">Indaiatuba, 26 de maio</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="quem-somos.html#historia"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" pathLength="1"></path><circle cx="12" cy="12" r="3" pathLength="1"></circle></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">A lenda</span><span class="cena-bloco__dica">Avalokiteshvara e a escuta</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="quem-somos.html#ecossistema"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="16" y="16" width="6" height="6" rx="1" pathLength="1"></rect><rect x="2" y="16" width="6" height="6" rx="1" pathLength="1"></rect><rect x="9" y="2" width="6" height="6" rx="1" pathLength="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" pathLength="1"></path><path d="M12 12V8" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Ecossistema</span><span class="cena-bloco__dica">Cuidar, aprender, conviver</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-quem-somos--></div>
+        <a href="quem-somos.html">Conhecer o Instituto <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--care" id="ensaio-atendimentos" data-essay-scene data-essay-variant="left" aria-labelledby="ensaio-atendimentos-titulo" data-search="atendimentos cuidado técnicas primeira conversa escuta terapias oráculos">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 60% 60%" src="media/atendimentos-conceito/ambiente.webp" alt="Sala de atendimento com maca, plantas e luz natural" width="1600" height="900" loading="lazy" decoding="async"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/ensaio-atendimentos-detalhe.webp" alt="" width="520" height="660" loading="lazy" decoding="async">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">03</span>
+        <p class="home-scene__eyebrow">Cuidado com contexto</p>
+        <h2 id="ensaio-atendimentos-titulo">Atendimentos</h2>
+        <p>Cada pessoa chega com uma história diferente. Antes de indicar uma técnica, a casa escuta o momento, apresenta cada forma de cuidado com clareza e ajuda você a reconhecer por onde começar.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-atendimentos"><!--blocos:ensaio-atendimentos--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="atendimentos.html#possibilidades"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z" pathLength="1"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12" pathLength="1"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Mais de 150 técnicas</span><span class="cena-bloco__dica">Corpo, emoções, energia</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="atendimentos.html#oraculos"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 5h4" pathLength="1"></path><path d="M20 3v4" pathLength="1"></path><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Oráculos</span><span class="cena-bloco__dica">Linguagens de autoconhecimento</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="atendimentos.html#acesso"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h8" pathLength="1"></path><path d="M10 19v-3.96 3.15" pathLength="1"></path><path d="M7 19h5" pathLength="1"></path><rect width="6" height="10" x="16" y="12" rx="2" pathLength="1"></rect></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Presencial e online</span><span class="cena-bloco__dica">E iniciativas solidárias</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="atendimentos.html#primeiro-passo"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" pathLength="1"></path><path d="M7.828 13.07A3 3 0 0 1 12 8.764a3 3 0 0 1 5.004 2.224 3 3 0 0 1-.832 2.083l-3.447 3.62a1 1 0 0 1-1.45-.001z" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Primeira conversa</span><span class="cena-bloco__dica">Escolher com companhia</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-atendimentos--></div>
+        <a href="atendimentos.html">Conhecer os atendimentos <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--together" id="ensaio-saude-integrativa" data-essay-scene data-essay-variant="cross" aria-labelledby="ensaio-saude-integrativa-titulo" data-search="saúde integrativa corpo mente relações prevenção sono alimentação ayurveda">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 18% 22%" src="media/saude-integrativa-escuta.webp" alt="Duas pessoas conversam durante um encontro de cuidado" width="1600" height="1000" loading="lazy" decoding="async"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/ensaio-saude-detalhe.webp" alt="" width="520" height="660" loading="lazy" decoding="async">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">04</span>
+        <p class="home-scene__eyebrow">Corpo, mente e relações</p>
+        <h2 id="ensaio-saude-integrativa-titulo">Saúde integrativa</h2>
+        <p>Sintomas, emoções, vínculos e hábitos podem fazer parte da mesma história. A Saúde Integrativa articula cuidado convencional e práticas complementares, sem prometer uma resposta única.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-saude-integrativa"><!--blocos:ensaio-saude-integrativa--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="saude-integrativa.html#integrar"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="1" pathLength="1"></circle><path d="m9 20 3-6 3 6" pathLength="1"></path><path d="m6 8 6 2 6-2" pathLength="1"></path><path d="M12 10v4" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Corpo</span><span class="cena-bloco__dica">Movimento e práticas manuais</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="saude-integrativa.html#integrar"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 18V5" pathLength="1"></path><path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4" pathLength="1"></path><path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5" pathLength="1"></path><path d="M17.997 5.125a4 4 0 0 1 2.526 5.77" pathLength="1"></path><path d="M18 18a4 4 0 0 0 2-7.464" pathLength="1"></path><path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517" pathLength="1"></path><path d="M6 18a4 4 0 0 1-2-7.464" pathLength="1"></path><path d="M6.003 5.125a4 4 0 0 0-2.526 5.77" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Mente e emoções</span><span class="cena-bloco__dica">Escuta e autoconhecimento</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="saude-integrativa.html#integrar"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 21a8 8 0 0 0-16 0" pathLength="1"></path><circle cx="10" cy="8" r="5" pathLength="1"></circle><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Relações e contexto</span><span class="cena-bloco__dica">Vínculos, ambiente, história</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="saude-integrativa.html#integrar"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4" pathLength="1"></circle><path d="M12 2v2" pathLength="1"></path><path d="M12 20v2" pathLength="1"></path><path d="m4.93 4.93 1.41 1.41" pathLength="1"></path><path d="m17.66 17.66 1.41 1.41" pathLength="1"></path><path d="M2 12h2" pathLength="1"></path><path d="M20 12h2" pathLength="1"></path><path d="m6.34 17.66-1.41 1.41" pathLength="1"></path><path d="m19.07 4.93-1.41 1.41" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Presença e sentido</span><span class="cena-bloco__dica">Práticas contemplativas</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-saude-integrativa--></div>
+        <a href="saude-integrativa.html">Compreender essa visão <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--knowledge" id="ensaio-profissionais" data-essay-scene data-essay-variant="behind" aria-labelledby="ensaio-profissionais-titulo" data-search="profissionais terapeutas especialistas trajetórias pessoas">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 72% 45%" src="media/profissionais-encontro.webp" alt="Profissionais conversam em roda em uma sala iluminada" width="1600" height="1000" loading="lazy" decoding="async"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/ensaio-profissionais-detalhe.webp" alt="" width="520" height="660" loading="lazy" decoding="async">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">05</span>
+        <p class="home-scene__eyebrow">Pessoas antes de especialidades</p>
+        <h2 id="ensaio-profissionais-titulo">Profissionais</h2>
+        <p>O Potala reúne pessoas com formações, trajetórias e modos de escutar diferentes. Conhecer quem cuida também faz parte de escolher um caminho.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-profissionais"><!--blocos:ensaio-profissionais--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="profissionais.html#encontro"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 1 1-7 0" pathLength="1"></path><path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 1 1 0 4" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Escuta e vínculo</span><span class="cena-bloco__dica">Psicoterapias e aconselhamento</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="profissionais.html#encontro"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" pathLength="1"></path><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" pathLength="1"></path><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" pathLength="1"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Corpo e movimento</span><span class="cena-bloco__dica">Práticas manuais e movimento</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="profissionais.html#encontro"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" pathLength="1"></path><path d="M20 2v4" pathLength="1"></path><path d="M22 4h-4" pathLength="1"></path><circle cx="4" cy="20" r="2" pathLength="1"></circle></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Energia e presença</span><span class="cena-bloco__dica">Tradições energéticas</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="profissionais.html#encontro"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v16" pathLength="1"></path><path d="M16 13h2" pathLength="1"></path><path d="M16 9h2" pathLength="1"></path><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" pathLength="1"></path><path d="M6 13h2" pathLength="1"></path><path d="M6 9h2" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Quem também ensina</span><span class="cena-bloco__dica">Cursos e vivências da casa</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-profissionais--></div>
+        <a href="profissionais.html">Conhecer quem cuida <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--who" id="ensaio-cursos" data-essay-scene data-essay-variant="bottom" aria-labelledby="ensaio-cursos-titulo" data-search="cursos formações estudo aprender conhecimento vivências grupos de estudo">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 50% 55%" src="media/palacio-master.webp" alt="Salão de madeira com arcos e lanternas, atravessado por pessoas" width="2048" height="1152" loading="lazy" decoding="async"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/quem-somos-avalokiteshvara.webp" alt="" width="420" height="460" loading="lazy" decoding="async">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">06</span>
+        <p class="home-scene__eyebrow">Conhecimento que se torna caminho</p>
+        <h2 id="ensaio-cursos-titulo">Cursos</h2>
+        <p>Tradições de cuidado, arte, filosofia e práticas integrativas, com tempo para estudar, praticar e integrar. Há encontros breves para experimentar e formações para aprofundar.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-cursos"><!--blocos:ensaio-cursos--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="cursos.html#formatos"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v16" pathLength="1"></path><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Cursos livres</span><span class="cena-bloco__dica">Para conhecer um tema</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="cursos.html#formatos"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" pathLength="1"></path><path d="M22 10v6" pathLength="1"></path><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Formações</span><span class="cena-bloco__dica">Com prática supervisionada</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="cursos.html#formatos"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" pathLength="1"></path><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" pathLength="1"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" pathLength="1"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" pathLength="1"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" pathLength="1"></circle></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Vivências e oficinas</span><span class="cena-bloco__dica">Aprender pela experiência</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="cursos.html#monte-seu-curso"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Monte seu curso</span><span class="cena-bloco__dica">Para grupos e equipes</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-cursos--></div>
+        <a href="cursos.html">Ver os cursos <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--movement" id="ensaio-atividades" data-essay-scene data-essay-variant="panorama" aria-labelledby="ensaio-atividades-titulo" data-search="atividades movimento corpo yoga dança prática turma">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 82% 50%" src="media/atividades-pratica.webp" alt="Grupo pratica movimentos suaves em um pátio cercado por árvores" width="1600" height="1000" loading="lazy" decoding="async"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/ensaio-atividades-detalhe.webp" alt="" width="520" height="660" loading="lazy" decoding="async">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">07</span>
+        <p class="home-scene__eyebrow">Movimento é encontro</p>
+        <h2 id="ensaio-atividades-titulo">Atividades</h2>
+        <p>Práticas para o corpo, a atenção e a convivência. Há quem chegue para se fortalecer, quem procure silêncio e quem encontre na turma um espaço de companhia.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-atividades"><!--blocos:ensaio-atividades--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="atividades.html#possibilidades"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Corpo e consciência</span><span class="cena-bloco__dica">Yoga, pilates, alongamento</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="atividades.html#possibilidades"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 20a10 10 0 0010-10 25.9 25.9 0 00-1.04-7.281 1 1 0 00-1.755-.325C15.833 5.5 13 5.5 9.8 6.1A7 7 0 0011 20" pathLength="1"></path><path d="M2 21a5 5 0 012.911-4.544C7.613 15.212 8.351 15.24 11 13" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Práticas orientais</span><span class="cena-bloco__dica">Tai chi chuan e qi gong</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="atividades.html#possibilidades"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 18V5l12-2v13" pathLength="1"></path><circle cx="6" cy="18" r="3" pathLength="1"></circle><circle cx="18" cy="16" r="3" pathLength="1"></circle></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Dança e expressão</span><span class="cena-bloco__dica">Linguagens do corpo</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="atividades.html#primeira-vez"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z" pathLength="1"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z" pathLength="1"></path><path d="M16 17h4" pathLength="1"></path><path d="M4 13h4" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Primeira aula</span><span class="cena-bloco__dica">Experimente antes de decidir</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-atividades--></div>
+        <a href="atividades.html">Encontrar uma prática <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--together" id="ensaio-programacao" data-essay-scene data-essay-variant="cross" aria-labelledby="ensaio-programacao-titulo" data-search="programação agenda horários turmas eventos encontros semana">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 55% 60%" src="media/chegada.webp" alt="Caminho iluminado atravessa a água até um pavilhão entre as árvores" width="1586" height="992" loading="lazy" decoding="async"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/ensaio-programacao-detalhe.webp" alt="" width="520" height="660" loading="lazy" decoding="async">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">08</span>
+        <p class="home-scene__eyebrow">O Potala está vivo</p>
+        <h2 id="ensaio-programacao-titulo">Programação</h2>
+        <p>Aulas, atendimentos, cursos e encontros mudam com a vida da casa. A agenda reúne o que acontece agora e mostra um jeito simples de começar.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-programacao"><!--blocos:ensaio-programacao--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="programacao.html#orientacao"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 2v3" pathLength="1"></path><path d="M16 2v3" pathLength="1"></path><rect x="3" y="3" width="18" height="18" rx="2" pathLength="1"></rect><path d="M3 9h18" pathLength="1"></path><path d="M8 13h.01" pathLength="1"></path><path d="M12 13h.01" pathLength="1"></path><path d="M16 13h.01" pathLength="1"></path><path d="M8 17h.01" pathLength="1"></path><path d="M12 17h.01" pathLength="1"></path><path d="M16 17h.01" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Agenda da semana</span><span class="cena-bloco__dica">16 modalidades num só lugar</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="eventos.html"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" pathLength="1"></path><path d="M13 5v2" pathLength="1"></path><path d="M13 17v2" pathLength="1"></path><path d="M13 11v2" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Eventos</span><span class="cena-bloco__dica">Mostras, retiros e encontros</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="workshops.html"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13 7 8.7 2.7a2.41 2.41 0 0 0-3.4 0L2.7 5.3a2.41 2.41 0 0 0 0 3.4L7 13" pathLength="1"></path><path d="m8 6 2-2" pathLength="1"></path><path d="m18 16 2-2" pathLength="1"></path><path d="m17 11 4.3 4.3c.94.94.94 2.46 0 3.4l-2.6 2.6c-.94.94-2.46.94-3.4 0L11 17" pathLength="1"></path><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" pathLength="1"></path><path d="m15 5 4 4" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Workshops</span><span class="cena-bloco__dica">Intensivos de fim de semana</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="mentorias.html"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="6" cy="19" r="3" pathLength="1"></circle><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" pathLength="1"></path><circle cx="18" cy="5" r="3" pathLength="1"></circle></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Mentorias</span><span class="cena-bloco__dica">Acompanhamento de longo prazo</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-programacao--></div>
+        <a href="programacao.html">Explorar a agenda <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--care" id="ensaio-cultura" data-essay-scene data-essay-variant="left" aria-labelledby="ensaio-cultura-titulo" data-search="cultura arte cinema música livros conversa exposições">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 72% 55%" src="media/journey-cultura.webp" alt="Varanda de um templo ao anoitecer, diante das montanhas" width="1920" height="1080" loading="lazy" decoding="async"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/ensaio-cultura-detalhe.webp" alt="" width="520" height="660" loading="lazy" decoding="async">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">09</span>
+        <p class="home-scene__eyebrow">A arte também cuida</p>
+        <h2 id="ensaio-cultura-titulo">Arte <em>e</em> cultura</h2>
+        <p>Cinema, música, livros e conversa abrem perguntas que nenhuma explicação abriria sozinha. Artistas, leitores e visitantes dividem o mesmo espaço.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-cultura"><!--blocos:ensaio-cultura--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="cultura.html#encontros"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12.296 3.464 3.02 3.956" pathLength="1"></path><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z" pathLength="1"></path><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" pathLength="1"></path><path d="m6.18 5.276 3.1 3.899" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Cine Potala</span><span class="cena-bloco__dica">Filme seguido de conversa</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="cultura.html#encontros"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><line x1="22" x2="2" y1="6" y2="6" pathLength="1"></line><line x1="22" x2="2" y1="18" y2="18" pathLength="1"></line><line x1="6" x2="6" y1="2" y2="22" pathLength="1"></line><line x1="18" x2="18" y1="2" y2="22" pathLength="1"></line></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Exposições</span><span class="cena-bloco__dica">Música, dança, artes visuais</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="cultura.html#encontros"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 2v2" pathLength="1"></path><path d="M14 2v2" pathLength="1"></path><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" pathLength="1"></path><path d="M6 2v2" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Café filosófico</span><span class="cena-bloco__dica">Pensar junto, sem formação</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="cultura.html#encontros"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m11 7.601-5.994 8.19a1 1 0 0 0 .1 1.298l.817.818a1 1 0 0 0 1.314.087L15.09 12" pathLength="1"></path><path d="M16.5 21.174C15.5 20.5 14.372 20 13 20c-2.058 0-3.928 2.356-6 2-2.072-.356-2.775-3.369-1.5-4.5" pathLength="1"></path><circle cx="16" cy="7" r="5" pathLength="1"></circle></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Saraus e lançamentos</span><span class="cena-bloco__dica">Poesia e novos livros</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-cultura--></div>
+        <a href="cultura.html">Entrar nesse espaço <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--who" id="ensaio-inspiracao" data-essay-scene data-essay-variant="bottom" aria-labelledby="ensaio-inspiracao-titulo" data-search="inspiração pausa respirar meditar silêncio reflexão">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 40% 55%" src="media/journey-inspiracao.webp" alt="Caminho de pedras ao lado de água calma e montanhas na névoa" width="1920" height="1080" loading="lazy" decoding="async"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/ensaio-inspiracao-detalhe.webp" alt="" width="520" height="660" loading="lazy" decoding="async">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">10</span>
+        <p class="home-scene__eyebrow">Uma pausa no caminho</p>
+        <h2 id="ensaio-inspiracao-titulo">Inspiração</h2>
+        <p>Nem toda visita precisa terminar em uma escolha. Respirar, meditar por um minuto, escutar os sons ou levar uma pergunta: práticas curtas, no seu tempo.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-inspiracao"><!--blocos:ensaio-inspiracao--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="inspiracao.html#pausa"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.8 19.6A2 2 0 1 0 14 16H2" pathLength="1"></path><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2" pathLength="1"></path><path d="M9.8 4.4A2 2 0 1 1 11 8H2" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Respiração 3·3·3</span><span class="cena-bloco__dica">Três ciclos, no seu ritmo</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="inspiracao.html#praticas"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z" pathLength="1"></path><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Frase do dia</span><span class="cena-bloco__dica">Um instante de presença</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="inspiracao.html#praticas"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 10v3" pathLength="1"></path><path d="M6 6v11" pathLength="1"></path><path d="M10 3v18" pathLength="1"></path><path d="M14 8v7" pathLength="1"></path><path d="M18 5v13" pathLength="1"></path><path d="M22 10v3" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Paisagem sonora</span><span class="cena-bloco__dica">Ouvir o Potala</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="inspiracao.html#mensagem-simbolica"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Mensagem simbólica</span><span class="cena-bloco__dica">Tarô, runas, I Ching</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-inspiracao--></div>
+        <a href="inspiracao.html">Fazer uma pausa <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--knowledge" id="ensaio-blog" data-essay-scene data-essay-variant="behind" aria-labelledby="ensaio-blog-titulo" data-search="blog caderno de travessia artigos leituras reflexões">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 58% 60%" src="media/blog-hero-caminhante.webp" alt="Pessoa caminha por uma trilha de pedras entre o capim, ao entardecer" width="1920" height="1280" loading="lazy" decoding="async"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/blog-caderno-vela.webp" alt="" width="900" height="1125" loading="lazy" decoding="async">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">11</span>
+        <p class="home-scene__eyebrow">Caderno de Travessia</p>
+        <h2 id="ensaio-blog-titulo">Blog</h2>
+        <p>Reflexões, práticas e caminhos escritos por quem vive a casa: ideias para atravessar o cotidiano com mais presença.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-blog"><!--blocos:ensaio-blog--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="blog.html?categoria=artigos"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" pathLength="1"></path><path d="M14 2v5a1 1 0 0 0 1 1h5" pathLength="1"></path><path d="M10 9H8" pathLength="1"></path><path d="M16 13H8" pathLength="1"></path><path d="M16 17H8" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Artigos</span><span class="cena-bloco__dica">Ideias para ler com calma</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="blog.html?categoria=praticas"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.086 18.412A2 2 0 0112.67 19H5v-7.672a2 2 0 01.586-1.414L11.75 3.75a6 6 0 118.49 8.49z" pathLength="1"></path><path d="M16 8 2 22" pathLength="1"></path><path d="M17.488 15H9" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Práticas</span><span class="cena-bloco__dica">Para fazer em casa</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="blog.html?categoria=terapias"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3" pathLength="1"></path><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4" pathLength="1"></path><path d="M5 21h14" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Terapias</span><span class="cena-bloco__dica">Como cada uma cuida</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="blog.html?categoria=cultura"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 11h.01" pathLength="1"></path><path d="M14 6h.01" pathLength="1"></path><path d="M18 6h.01" pathLength="1"></path><path d="M6.5 13.1h.01" pathLength="1"></path><path d="M22 5c0 9-4 12-6 12s-6-3-6-12c0-2 2-3 6-3s6 1 6 3" pathLength="1"></path><path d="M17.4 9.9c-.8.8-2 .8-2.8 0" pathLength="1"></path><path d="M10.1 7.1C9 7.2 7.7 7.7 6 8.6c-3.5 2-4.7 3.9-3.7 5.6 4.5 7.8 9.5 8.4 11.2 7.4.9-.5 1.9-2.1 1.9-4.7" pathLength="1"></path><path d="M9.1 16.5c.3-1.1 1.4-1.7 2.4-1.4" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Cultura</span><span class="cena-bloco__dica">Filmes, livros, encontros</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-blog--></div>
+        <a href="blog.html">Começar a leitura <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--together" id="ensaio-revista" data-essay-scene data-essay-variant="cross" aria-labelledby="ensaio-revista-titulo" data-search="revista atualidade ciência sociedade mundo edição">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 70% 60%" src="media/journey-cuidado.webp" alt="Varanda com poltronas voltadas para um vale entre montanhas" width="1920" height="1080" loading="lazy" decoding="async"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/ensaio-revista-detalhe.webp" alt="" width="520" height="660" loading="lazy" decoding="async">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">12</span>
+        <p class="home-scene__eyebrow">O presente pede contexto</p>
+        <h2 id="ensaio-revista-titulo">Revista</h2>
+        <p>Acontecimentos que merecem atenção, aproximados da ciência, da filosofia e da experiência humana. Uma edição para ler o nosso tempo com calma.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-revista"><!--blocos:ensaio-revista--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="revista.html#pautas"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 18h8" pathLength="1"></path><path d="M3 22h18" pathLength="1"></path><path d="M14 22a7 7 0 1 0 0-14h-1" pathLength="1"></path><path d="M9 14h2" pathLength="1"></path><path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z" pathLength="1"></path><path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Música e cérebro</span><span class="cena-bloco__dica">Ciência e saúde</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="revista.html#pautas"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" pathLength="1"></path><path d="M16 3.128a4 4 0 0 1 0 7.744" pathLength="1"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87" pathLength="1"></path><circle cx="9" cy="7" r="4" pathLength="1"></circle></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Longevidade</span><span class="cena-bloco__dica">Comportamento e sociedade</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="revista.html#pautas"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z" pathLength="1"></path><path d="M7 16v6" pathLength="1"></path><path d="M13 19v3" pathLength="1"></path><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Calor e sono</span><span class="cena-bloco__dica">Meio ambiente</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="revista.html#pautas"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m11 10 3 3" pathLength="1"></path><path d="M6.5 21A3.5 3.5 0 1 0 3 17.5a2.62 2.62 0 0 1-.708 1.792A1 1 0 0 0 3 21z" pathLength="1"></path><path d="M9.969 17.031 21.378 5.624a1 1 0 0 0-3.002-3.002L6.967 14.031" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Cultura e encontro</span><span class="cena-bloco__dica">Arte e cultura</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-revista--></div>
+        <a href="revista.html">Explorar a edição <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--care" id="ensaio-loja" data-essay-scene data-essay-variant="left" aria-labelledby="ensaio-loja-titulo" data-search="loja marketplace produtos livros óleos objetos curadoria">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 96% 45%" src="media/marketplace-contexto.webp" alt="Visitante lê um livro diante de uma seleção de produtos naturais" width="1600" height="1000" loading="lazy" decoding="async"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/ensaio-loja-detalhe.webp" alt="" width="520" height="660" loading="lazy" decoding="async">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">13</span>
+        <p class="home-scene__eyebrow">Escolhas com contexto</p>
+        <h2 id="ensaio-loja-titulo">Loja</h2>
+        <p>Livros, óleos e objetos que continuam uma prática, um estudo ou uma orientação — nunca atalhos para o cuidado. Cada item aparece com o sentido de estar ali.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-loja"><!--blocos:ensaio-loja--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="marketplace.html#colecao"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m16 6 4 14" pathLength="1"></path><path d="M12 6v14" pathLength="1"></path><path d="M8 8v12" pathLength="1"></path><path d="M4 4v16" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Livros</span><span class="cena-bloco__dica">Para cursos e grupos</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="marketplace.html#colecao"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z" pathLength="1"></path><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Óleos essenciais</span><span class="cena-bloco__dica">Aromaterapia com orientação</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="marketplace.html#colecao"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.5 3 8 9l4 13 4-13-2.5-6" pathLength="1"></path><path d="M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z" pathLength="1"></path><path d="M2 9h20" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Cristais e objetos</span><span class="cena-bloco__dica">Símbolos e práticas</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="marketplace.html#colecao"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1" pathLength="1"></path><circle cx="12" cy="8" r="2" pathLength="1"></circle><path d="M12 10v12" pathLength="1"></path><path d="M12 22c4.2 0 7-1.667 7-5-4.2 0-7 1.667-7 5Z" pathLength="1"></path><path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Bem-estar cotidiano</span><span class="cena-bloco__dica">Incensos e rituais simples</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-loja--></div>
+        <a href="marketplace.html">Conhecer a curadoria <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-scene home-scene--together" id="ensaio-convivencia" data-essay-scene data-essay-variant="cross" aria-labelledby="ensaio-convivencia-titulo" data-search="convivência encontro pessoas recepção instituto compartilhar">
+    <div class="home-scene__stage">
+      <div class="home-scene__media">
+        <div class="home-scene__photo"><img class="home-scene__main-image" style="--foco: 72% 40%" src="media/quem-somos-acolhimento.webp" alt="Pessoas compartilham uma conversa junto ao Instituto" width="1600" height="900" loading="eager" decoding="async" fetchpriority="low"></div>
+        <span class="home-scene__frame" aria-hidden="true"></span>
+        <img class="home-scene__detail-image" src="media/recepcao-acolhimento.webp" alt="" width="1200" height="1600" loading="eager" decoding="async" fetchpriority="low">
+      </div>
+      <div class="home-scene__copy">
+        <span class="home-scene__number" aria-hidden="true">14</span>
+        <p class="home-scene__eyebrow">A jornada continua entre pessoas</p>
+        <h2 id="ensaio-convivencia-titulo">Convivência</h2>
+        <p>O Potala é também o que acontece quando pessoas se encontram, conversam e seguem caminhos diferentes no mesmo lugar. Você pode explorar com calma ou começar por uma conversa.</p>
+        <div class="cena-blocos-ilha" data-blocos-cena="ensaio-convivencia"><!--blocos:ensaio-convivencia--><ul class="cena-blocos" aria-label="Nesta seção"><li style="--i:0"><a class="card-spotlight cena-bloco" href="grupos-de-estudo.html"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" pathLength="1"></path><path d="M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Grupos de estudo</span><span class="cena-bloco__dica">Ler, praticar, conversar</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:1"><a class="card-spotlight cena-bloco" href="cultura.html#comunidades"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 14a2 2 0 0 0 2-2V8h-2" pathLength="1"></path><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" pathLength="1"></path><path d="M8 14a2 2 0 0 0 2-2V8H8" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Rodas de conversa</span><span class="cena-bloco__dica">Depois de cada encontro</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:2"><a class="card-spotlight cena-bloco" href="recepcao.html#primeiro-passo"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" pathLength="1"></path><circle cx="12" cy="10" r="3" pathLength="1"></circle></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Primeira visita</span><span class="cena-bloco__dica">Rua 24 de Maio, 748</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li><li style="--i:3"><a class="card-spotlight cena-bloco" href="recepcao.html#fale-conosco"><svg class="cena-bloco__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384" pathLength="1"></path></svg><span class="cena-bloco__texto"><span class="cena-bloco__rotulo">Fale conosco</span><span class="cena-bloco__dica">Venha, escreva ou ligue</span></span><span class="cena-bloco__seta" aria-hidden="true">↗</span></a></li></ul><!--/blocos:ensaio-convivencia--></div>
+        <nav class="home-scene__links" aria-label="Continuar a jornada"><a href="recepcao.html">Conversar com a Recepção <span aria-hidden="true">↗</span></a></nav>
+      </div>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<script>
+const $ = (selector, root = document) => root.querySelector(selector);
+const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+const topbar = $('#topbar');
+const progress = $('#progress');
+function updateScroll() {
+  topbar.classList.toggle('scrolled', scrollY > 20);
+  const height = document.documentElement.scrollHeight - innerHeight;
+  progress.style.width = (height > 0 ? (scrollY / height) * 100 : 0) + '%';
+}
+addEventListener('scroll', updateScroll, { passive: true });
+updateScroll();
+
+const revealObserver = new IntersectionObserver(
+  entries => entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('in');
+  }),
+  { threshold: .12 }
+);
+$$('.reveal').forEach(element => revealObserver.observe(element));
+
+const drawer = $('#drawer');
+const searchOpen = $('#searchOpen');
+function setDrawer(open, focusSearch = false) {
+  drawer.classList.toggle('open', open);
+  drawer.setAttribute('aria-hidden', String(!open));
+  searchOpen.setAttribute('aria-expanded', String(open));
+  if (open && focusSearch) setTimeout(() => $('#pageSearch').focus(), 80);
+}
+searchOpen.addEventListener('click', () => setDrawer(true, true));
+$$('#drawer a').forEach(link => link.addEventListener('click', () => setDrawer(false)));
+addEventListener('keydown', event => {
+  if (event.key === 'Escape') setDrawer(false);
+});
+
+function searchPage() {
+  const query = $('#pageSearch').value.trim().toLowerCase();
+  if (!query) return;
+  const match = $$('[data-search]').find(element =>
+    (element.dataset.search + ' ' + element.innerText).toLowerCase().includes(query)
+  );
+  if (!match) return;
+  setDrawer(false);
+  match.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  match.animate(
+    [{ boxShadow: '0 0 0 0 rgba(167,136,85,0)' },
+     { boxShadow: '0 0 0 9px rgba(167,136,85,.18)' },
+     { boxShadow: '0 0 0 0 rgba(167,136,85,0)' }],
+    { duration: 1200 }
+  );
+}
+$('#pageSearchBtn').addEventListener('click', searchPage);
+$('#pageSearch').addEventListener('keydown', event => {
+  if (event.key === 'Enter') searchPage();
+});
+</script>
+<script type="module" src="js/atendimentos-conceito.js"></script>
+
+<script type="module" src="js/home/editorial-essay.js"></script>
+<script type="module" src="js/home/titulo-traco.js"></script>
+<script type="module" src="js/cenas-blocos/blocos.js"></script>
+<script type="module" src="js/home/page-editor.js"></script>
+<script type="module" src="js/texto-de-particulas.js"></script>
+<script type="module" src="js/texto-digitado.js"></script>
+</body>
+</html>

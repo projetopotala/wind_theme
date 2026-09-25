@@ -26,11 +26,16 @@
     "validate:portal": "node scripts/validate-portal-assets.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .worktrees --ignore-pattern outputs/vendor",
     "db:generate": "drizzle-kit generate",
-    "build:media-manifest": "node scripts/build-media-manifest.mjs"
+    "build:media-manifest": "node scripts/build-media-manifest.mjs",
+    "build:home": "node scripts/build-home-editorial.mjs",
+    "build:blocos": "node scripts/build-cenas-blocos.mjs",
+    "vendor:lucide-blocos": "node scripts/vendor-lucide-blocos.mjs"
   },
   "dependencies": {
+    "@gsap/react": "2.1.2",
     "@supabase/supabase-js": "2.57.4",
     "drizzle-orm": "0.45.2",
+    "gsap": "3.15.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "three": "0.185.1"

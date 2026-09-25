@@ -10,7 +10,7 @@ const ler = (path) => {
 };
 
 test("a experiência nasce em uma rota isolada", () => {
-  const html = ler("transcendido.html");
+  const html = ler("atendimentos-conceito.html");
   const atual = ler("atendimentos.html");
   assert.match(html, /css\/atendimentos-conceito\.css/);
   assert.match(html, /js\/atendimentos-conceito\.js/);
@@ -18,131 +18,15 @@ test("a experiência nasce em uma rota isolada", () => {
   assert.doesNotMatch(atual, /atendimentos-conceito/);
 });
 
-test("a página preserva a jornada integral da visão Tironi", () => {
-  const html = ler("transcendido.html");
-  const capitulos = ["inicio", "saude", "vivemos", "investigar", "caminhos-do-cuidado", "papel", "praca", "oraculos", "profissionais", "especiais", "virtual", "agendar"];
-  for (const id of capitulos) assert.match(html, new RegExp(`<section[^>]+id="${id}"`), `capítulo ausente: ${id}`);
-  assert.match(html, /<footer[^>]+id="encerramento"/);
-  for (const texto of [
-    "Você chegou à página de atendimentos do Instituto Potala",
-    "Tudo começa por compreender a saúde",
-    "Saúde é uma história em movimento",
-    "A vida não acontece do lado de fora",
-    "Sintoma não é diagnóstico",
-    "Nem todo cuidado começa no mesmo lugar",
-    "Cuidar não cabe em uma só gaveta",
-    "Muitos caminhos. Naturezas diferentes.",
-    "Grande Praça dos Atendimentos",
-    "Símbolos não substituem decisões",
-    "Técnicas são oferecidas por pessoas",
-    "Há formas de cuidado desenhadas para ampliar acesso",
-    "Alguns encontros podem atravessar a distância",
-    "Você não precisa sair daqui com todas as respostas",
-  ]) assert.ok(html.includes(texto), `conteúdo obrigatório ausente: ${texto}`);
-});
-
-test("matérias, Revista e Biblioteca continuam integradas à narrativa", () => {
-  const html = ler("transcendido.html");
-  assert.match(html, /MATÉRIA PRINCIPAL/i);
-  assert.match(html, /REVISTA POTALA/i);
-  assert.match(html, /Biblioteca Potala/i);
-  assert.match(html, /A dieta saudável está menos interessada em perfeição/i);
-  assert.match(html, /Destino, acaso e livre-arbítrio/i);
-  assert.match(html, /Responsabilidade não é a mesma coisa que culpa/i);
-  assert.match(html, /class="source-reading"/);
-});
-
-test("o conteúdo editorial do Tironi permanece integral e ganha prévias expansíveis", () => {
-  const html = ler("transcendido.html");
-  assert.equal((html.match(/<details class="source-reading"/g) || []).length, 4);
-  assert.equal((html.match(/<details class="source-reading" open>/g) || []).length, 0);
-  assert.equal((html.match(/Continuar a leitura/g) || []).length, 4);
-  assert.equal((html.match(/class="source-reading__text"/g) || []).length, 4);
-  /* A mídia de cada matéria agora é o conjunto de slides da pauta. */
-  assert.equal((html.match(/class="source-reading__media[ "]/g) || []).length, 4);
-
-  for (const requiredText of [
-    "A dieta saudável está menos interessada em perfeição — e mais em padrão",
-    "Talvez a regularidade do sono conte uma história que as horas, sozinhas, não contam",
-    "O corpo não precisa de performance para se beneficiar do movimento",
-    "Prevenir também é preservar aquilo que permite continuar vivendo a própria vida",
-    "Talvez aquilo que você esteja vivendo tenha mais de uma camada",
-    "Responsabilidade sem culpa",
-    "O que significa viver bem?",
-    "Quando uma explicação ajuda — e quando aprisiona",
-    "Quando houver preocupação, persistência ou impacto relevante",
-    "Depois de compreender o contexto, diferentes recursos podem ser combinados",
-    "psicologia e experiência humana",
-    "Muitos caminhos. Naturezas diferentes. Uma apresentação responsável",
-    "“Estou com dor lombar.”",
-    "Massoterapia",
-    "Atendimentos online",
-    "Pouco conhecidos",
-    "Uma pergunta pode mudar a forma de olhar para uma escolha",
-    "Baralho Cigano",
-    "Marina Oliveira",
-    "João Silva",
-    "Ana Costa",
-    "Atendimentos solidários",
-    "Regeneração Celular",
-    "Prepare o ambiente",
-    "Receba o acesso",
-    "Sua escolha",
-    ">Blog<",
-    ">Cursos<",
-    ">Atividades<",
-    ">Loja<",
-    ">Contato<",
-  ]) {
-    assert.ok(html.includes(requiredText), `conteúdo Tironi ausente: ${requiredText}`);
-  }
-});
-
-test("a apresentação adota a linguagem visual do segundo modelo", () => {
-  const html = ler("transcendido.html");
-  /*
-   * Os quadros que repetiam as pautas (research-board, inner-map, carepaths-layout)
-   * saíram a pedido: "visual mais moderno sem poluição visual". O conteúdo deles
-   * foi para as legendas dos slides de cada matéria.
-   */
-  for (const marker of ["hero-grid", "hero-card", "section-head", "picshi-map", "discovery-hero", "portal-window", "materia-slides", "conexao"]) {
-    assert.ok(html.includes(marker), `estrutura do segundo modelo ausente: ${marker}`);
-  }
-  assert.doesNotMatch(html, /hero-cinemagraph|hero-v4/);
-});
-
-test("a jornada conecta atmosfera, aprofundamento, reflexão e caminhos reais", () => {
-  const html = ler("transcendido.html");
-  assert.match(html, /data-journey-thread/);
-  assert.match(html, /data-journey-path/);
-  assert.match(html, /id="reflexao"/);
-  assert.match(html, /Como você tem cuidado de si\?/);
-  assert.match(html, /data-reflection-choice="pausa"/);
-  assert.match(html, /data-reflection-feedback/);
-  assert.match(html, /href="#praca"[^>]*>[^<]*Conheça os Atendimentos/i);
-  assert.match(html, /href="blog\.html"[^>]*>[^<]*Explorar conhecimento/i);
-  assert.match(html, /href="#profissionais"[^>]*>[^<]*Encontrar pessoas/i);
-});
-
 test("o prólogo de três maneiras de chegar foi removido", () => {
-  const html = ler("transcendido.html");
+  const html = ler("atendimentos-conceito.html");
   assert.doesNotMatch(html, /class="atmosphere-sequence"/);
   assert.doesNotMatch(html, /Três maneiras de chegar/i);
   assert.doesNotMatch(html, /Antes de escolher,\s*<br>permita-se observar/i);
 });
 
-test("as experiências funcionais permanecem identificáveis", () => {
-  const html = ler("transcendido.html");
-  for (const marker of ["id=\"therapySearch\"", "id=\"therapySort\"", "id=\"mapCaption\"", "id=\"muralName\"", "id=\"bookForm\"", "id=\"conciergeBtn\""]) {
-    assert.ok(html.includes(marker), `contrato ausente: ${marker}`);
-  }
-  assert.match(html, /<img[^>]+alt="[^"]+"/);
-  assert.match(html, /perfis abaixo são demonstrativos/i);
-  assert.match(html, /Nenhum horário, valor ou profissional apresentado aqui corresponde a disponibilidade real/i);
-});
-
 test("o cabeçalho usa busca compacta e o painel de conta da Home", () => {
-  const html = ler("transcendido.html");
+  const html = ler("atendimentos-conceito.html");
   const css = ler("css/atendimentos-conceito.css");
   const js = ler("js/atendimentos-conceito.js");
   const brand = html.match(/<a class="brand"[\s\S]*?<\/a>/);
@@ -203,7 +87,7 @@ test("o progresso da linha orgânica é limitado entre zero e um", async () => {
 });
 
 test("as imagens reais são locais e apresentadas em molduras editoriais", () => {
-  const html = ler("transcendido.html");
+  const html = ler("atendimentos-conceito.html");
   const hero = output("media/atendimentos-acolhimento.webp");
   const people = output("media/profissionais-encontro.webp");
   assert.ok(existsSync(hero) && existsSync(people), "imagens editoriais ausentes");
@@ -211,4 +95,23 @@ test("as imagens reais são locais e apresentadas em molduras editoriais", () =>
   assert.match(html, /media\/atendimentos-acolhimento\.webp/);
   assert.match(html, /media\/profissionais-encontro\.webp/);
   assert.match(html, /class="hero-card__image"/);
+});
+
+test("o convite para rolar fica no pé do Bem-vindo, centrado, e não sob a foto da Recepção", () => {
+  const html = ler("atendimentos-conceito.html");
+  const css = ler("css/atendimentos-conceito.css");
+  const entrada = html.slice(html.indexOf('<section class="entrada"'), html.indexOf("</section>", html.indexOf('<section class="entrada"')));
+  const hero = html.slice(html.indexOf('<section class="hero"'), html.indexOf("</section>", html.indexOf('<section class="hero"')));
+  assert.match(entrada, /class="scrollhint entrada__scrollhint"[^>]*>[\s\S]*?role para explorar/);
+  assert.doesNotMatch(hero, /scrollhint/, "a Recepção não repete o convite");
+  assert.equal(html.match(/role para explorar/g).length, 1);
+  assert.match(html, /\.scrollhint\{position:absolute;left:50%;bottom:[^;]+;transform:translateX\(-50%\)/);
+  assert.match(css, /\.entrada__scrollhint\{[^}]*bottom:/);
+});
+
+test("entre o Bem-vindo e a Recepção há um respiro que muda de cor aos poucos", () => {
+  const html = ler("atendimentos-conceito.html");
+  const css = ler("css/atendimentos-conceito.css");
+  assert.match(html, /<\/section>\s*<div class="entrada__respiro" aria-hidden="true"><\/div>\s*<section class="hero"/);
+  assert.match(css, /\.entrada__respiro\{[^}]*min-height:clamp\([^}]*background:linear-gradient\(180deg,[^}]*#f6f3ea[^}]*#e8eee8/);
 });

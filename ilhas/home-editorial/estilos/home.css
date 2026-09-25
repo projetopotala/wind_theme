@@ -1,0 +1,777 @@
+/*
+ * HOME EDITORIAL — ensaio visual do Instituto Potala.
+ *
+ * Camadas de cada cena, de trás para a frente: superfície (fundo), foto com
+ * máscara (clip-path), recorte e detalhe, moldura fina, texto. O movimento só
+ * mexe em transform, opacity e clip-path.
+ *
+ * Estados "encobertos" só existem com JavaScript (html.js) e sem pedido de
+ * movimento reduzido: sem JS, tudo fica à vista em ordem de leitura.
+ */
+
+:root {
+  --marfim: #faf6ef;
+  --areia: #efe6d8;
+  --areia-funda: #e2d4bf;
+  --terra: #6a5140;
+  --terra-escura: #3a2d23;
+  --tinta: #2e241c;
+  --tinta-suave: #6b5a4b;
+  --dourado: #a8844f;
+  --dourado-claro: #dcc28f;
+  --linha: rgba(46, 36, 28, 0.16);
+  --serif: "Cormorant Garamond", Georgia, serif;
+  --sans: "Manrope", system-ui, sans-serif;
+  --margem: clamp(20px, 5vw, 76px);
+  --cabecalho: 78px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--marfim);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: clip;
+  color: var(--tinta);
+  background: var(--marfim);
+  font-family: var(--sans);
+  line-height: 1.6;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+html.menu-aberto {
+  overflow: hidden;
+}
+
+.pular {
+  position: fixed;
+  top: -80px;
+  left: 16px;
+  z-index: 200;
+  padding: 10px 16px;
+  background: var(--marfim);
+  color: var(--tinta);
+}
+
+.pular:focus {
+  top: 16px;
+}
+
+/* Vinda da Chegada: o escuro do véu se abre sobre a página. */
+html.entry-pending body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #0d100e;
+  pointer-events: none;
+  animation: entrada-veu 1.6s cubic-bezier(0.22, 0.72, 0.24, 1) both;
+}
+
+@keyframes entrada-veu {
+  from { opacity: 1; visibility: visible; }
+  to { opacity: 0; visibility: hidden; }
+}
+
+/* ------------------------------------------------------------------
+ * Botões no estilo da referência: retângulos de contorno fino
+ * ------------------------------------------------------------------ */
+.botao-linha,
+.botao-cheio {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  border: 1px solid currentColor;
+  font: 600 0.7rem/1 var(--sans);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.botao-linha:hover {
+  border-color: var(--tinta);
+  background: var(--tinta);
+  color: var(--marfim);
+}
+
+.botao-linha--claro {
+  color: var(--marfim);
+}
+
+.botao-linha--claro:hover {
+  border-color: var(--marfim);
+  background: var(--marfim);
+  color: var(--tinta);
+}
+
+.botao-cheio {
+  border-color: var(--terra);
+  background: var(--terra);
+  color: var(--marfim);
+}
+
+.botao-cheio:hover {
+  border-color: var(--terra-escura);
+  background: var(--terra-escura);
+}
+
+.botao-linha:focus-visible,
+.botao-cheio:focus-visible,
+.cabecalho a:focus-visible,
+.cabecalho button:focus-visible,
+.rodape a:focus-visible {
+  outline: 2px solid var(--dourado);
+  outline-offset: 4px;
+}
+
+/* ------------------------------------------------------------------
+ * Cabeçalho e menu
+ * ------------------------------------------------------------------ */
+.cabecalho {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: var(--cabecalho);
+  padding: 0 var(--margem);
+  color: var(--marfim);
+  transition: background 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.cabecalho--solido {
+  background: rgba(250, 246, 239, 0.96);
+  color: var(--tinta);
+  box-shadow: 0 1px 0 var(--linha);
+}
+
+.cabecalho__marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font: 400 1.12rem/1 var(--serif);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.cabecalho__marca img {
+  width: 40px;
+  height: auto;
+}
+
+.cabecalho__marca strong {
+  font-weight: 600;
+}
+
+.cabecalho__acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cabecalho__botao {
+  padding: 11px 16px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font: 600 0.66rem/1 var(--sans);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cabecalho__conta {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cabecalho__conta svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.cabecalho__conta .conta-iniciais:empty {
+  display: none;
+}
+
+.menu-portal {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow-y: auto;
+  padding: calc(var(--cabecalho) + 40px) var(--margem) 48px;
+  background: var(--terra-escura);
+  color: var(--marfim);
+}
+
+.menu-portal[hidden] {
+  display: none;
+}
+
+.menu-portal ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 48px;
+  max-width: 1080px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu-portal a {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(250, 246, 239, 0.14);
+  font: 400 clamp(1.6rem, 3vw, 2.5rem)/1.1 var(--serif);
+  text-decoration: none;
+}
+
+.menu-portal a span {
+  color: var(--dourado-claro);
+  font: 600 0.7rem/1 var(--sans);
+  letter-spacing: 0.16em;
+}
+
+.menu-portal a:hover {
+  color: var(--dourado-claro);
+}
+
+/* ------------------------------------------------------------------
+ * Abertura
+ * ------------------------------------------------------------------ */
+/* A superfície por trás da paisagem é areia: é dela que a faixa se abre na
+   chegada, e é ela que aparece quando o panorama é recortado na saída. */
+.abertura {
+  position: relative;
+  height: 100svh;
+  background: var(--areia);
+}
+
+.abertura__palco {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  color: var(--marfim);
+}
+
+.abertura__janela,
+.abertura__panorama,
+.abertura__sombra,
+.abertura__nevoa {
+  position: absolute;
+  inset: 0;
+}
+
+.abertura__panorama {
+  overflow: hidden;
+}
+
+.abertura__panorama img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--foco);
+  transform-origin: 50% 62%;
+}
+
+.abertura__nevoa {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.abertura__sombra {
+  background: linear-gradient(180deg, rgba(40, 30, 22, 0.42) 0%, rgba(40, 30, 22, 0) 26%, rgba(40, 30, 22, 0) 42%, rgba(40, 30, 22, 0.62) 100%);
+}
+
+.abertura__moldura {
+  position: absolute;
+  top: 20svh;
+  left: var(--margem);
+  width: min(48vw, 680px);
+  height: 62svh;
+  border: 1px solid rgba(250, 246, 239, 0.34);
+  pointer-events: none;
+}
+
+.abertura__recorte {
+  position: absolute;
+  right: calc(var(--margem) + 3vw);
+  bottom: 12svh;
+  width: clamp(180px, 21vw, 330px);
+  aspect-ratio: 4 / 5;
+  margin: 0;
+  overflow: hidden;
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.65);
+}
+
+.abertura__recorte img,
+.cena__foto img,
+.cena__recorte img,
+.cena__detalhe img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--foco);
+}
+
+.abertura__texto {
+  position: absolute;
+  bottom: 15svh;
+  left: calc(var(--margem) + clamp(20px, 3vw, 48px));
+  width: min(46vw, 640px);
+}
+
+.abertura__kicker {
+  margin: 0 0 20px;
+  color: rgba(250, 246, 239, 0.82);
+  font: 600 0.7rem/1 var(--sans);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.abertura__titulo {
+  margin: 0;
+  color: var(--marfim);
+  font: 400 clamp(3.6rem, 8.4vw, 8.4rem)/0.86 var(--serif);
+  letter-spacing: -0.02em;
+}
+
+.abertura__frase {
+  max-width: 36ch;
+  margin: 26px 0 30px;
+  color: rgba(250, 246, 239, 0.94);
+  font: italic 400 clamp(1.15rem, 1.65vw, 1.5rem)/1.45 var(--serif);
+}
+
+.scroll-reveal .word {
+  display: inline-block;
+}
+
+.split-parent .split-word,
+.split-parent .split-char {
+  display: inline-block;
+}
+
+/* Com JavaScript e movimento permitido: a faixa se abre na chegada e o palco
+   ganha uma tela de permanência. O título espera a divisão em letras; se o
+   JavaScript falhar, aparece sozinho em 2,6 s. */
+@media (prefers-reduced-motion: no-preference) {
+  .js .abertura {
+    height: 200svh;
+  }
+
+  .js .abertura__janela {
+    clip-path: inset(40% 0 40% 0);
+    animation: abrir-janela 1.8s cubic-bezier(0.7, 0, 0.2, 1) 0.15s forwards;
+  }
+
+  .js .abertura__titulo:not([data-pronto]) {
+    opacity: 0;
+    animation: aparecer 0.01s 2.6s forwards;
+  }
+
+  /* O cabeçalho claro só chega quando já há paisagem por trás dele. */
+  .js .cabecalho {
+    animation: aparecer-suave 0.9s ease 1.2s both;
+  }
+}
+
+@keyframes abrir-janela {
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes aparecer {
+  to { opacity: 1; }
+}
+
+@keyframes aparecer-suave {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ------------------------------------------------------------------
+ * Cenas
+ * ------------------------------------------------------------------ */
+.cena {
+  position: relative;
+  background: var(--marfim);
+}
+
+.cena--lateral {
+  background: var(--areia);
+}
+
+.cena--panorama {
+  background: var(--terra-escura);
+  color: var(--marfim);
+}
+
+.cena__palco {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: center;
+  column-gap: clamp(16px, 2vw, 32px);
+  min-height: 100svh;
+  padding: calc(var(--cabecalho) + 28px) var(--margem) 48px;
+}
+
+.cena__foto,
+.cena__recorte,
+.cena__detalhe {
+  margin: 0;
+  overflow: hidden;
+}
+
+.cena__foto {
+  position: relative;
+  grid-row: 1;
+  height: min(72svh, 780px);
+}
+
+.cena__recorte,
+.cena__detalhe {
+  position: absolute;
+  z-index: 2;
+  box-shadow: 0 26px 50px -28px rgba(46, 36, 28, 0.55);
+}
+
+/* A superfície que cobre a foto da cena 03 antes de ela se recolher para
+   dentro do painel. Sem JavaScript fica recolhida (a foto à vista); a
+   coreografia a estende na montagem e a recolhe com a rolagem. */
+.cena__cortina {
+  position: absolute;
+  inset: 0;
+  background: var(--areia);
+  transform: scaleX(0);
+  transform-origin: right center;
+  pointer-events: none;
+}
+
+.cena__moldura {
+  position: absolute;
+  z-index: 1;
+  border: 1px solid rgba(168, 132, 79, 0.42);
+  pointer-events: none;
+}
+
+.cena__texto {
+  position: relative;
+  z-index: 3;
+  grid-row: 1;
+}
+
+.cena__numero {
+  display: block;
+  margin-bottom: -0.1em;
+  color: rgba(106, 81, 64, 0.15);
+  font: 300 clamp(4rem, min(10vw, 13svh), 9.5rem)/0.8 var(--serif);
+  letter-spacing: -0.04em;
+}
+
+.cena__kicker {
+  margin: 0 0 18px;
+  color: var(--dourado);
+  font: 700 0.68rem/1 var(--sans);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.cena__titulo {
+  margin: 0 0 clamp(14px, 2.6svh, 22px);
+  color: var(--tinta);
+  font: 400 clamp(2.1rem, min(4.1vw, 6.4svh), 4.2rem)/1.02 var(--serif);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.cena__descricao {
+  max-width: 46ch;
+  margin: 0 0 clamp(18px, 3.4svh, 30px);
+  color: var(--tinta-suave);
+  font-size: clamp(1rem, 1.12vw, 1.08rem);
+  line-height: 1.72;
+}
+
+.cena__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cena__escolha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 34px;
+  padding-top: 26px;
+  border-top: 1px solid var(--linha);
+}
+
+.cena__escolha p {
+  width: 100%;
+  margin: 0 0 4px;
+  font: italic 400 1.5rem/1.2 var(--serif);
+}
+
+/* Panorama: o texto é claro sobre a cena escura. */
+.cena--panorama .cena__titulo { color: var(--marfim); }
+.cena--panorama .cena__descricao { color: rgba(250, 246, 239, 0.8); }
+.cena--panorama .cena__kicker { color: var(--dourado-claro); }
+.cena--panorama .cena__numero { color: rgba(250, 246, 239, 0.16); }
+.cena--panorama .botao-linha:hover { border-color: var(--marfim); background: var(--marfim); color: var(--tinta); }
+
+@media (min-width: 861px) {
+  /* 01 · sobe — imagem à esquerda, recorte atravessando a borda direita. */
+  .cena--sobe .cena__foto { grid-column: 1 / 8; }
+  .cena--sobe .cena__texto { grid-column: 8 / 13; padding-left: clamp(0px, 2vw, 32px); }
+  .cena--sobe .cena__recorte { bottom: 9svh; left: 46%; width: clamp(150px, 13vw, 230px); aspect-ratio: 4 / 5; }
+  .cena--sobe .cena__moldura { top: 15svh; left: calc(58% - 2vw); width: 36vw; height: 64svh; }
+
+  /* 02 · lateral — texto à esquerda, retrato à direita, recorte na borda esquerda. */
+  .cena--lateral .cena__texto { grid-column: 1 / 6; }
+  .cena--lateral .cena__foto { grid-column: 7 / 12; height: min(78svh, 840px); }
+  .cena--lateral .cena__recorte { bottom: 10svh; left: 43%; width: clamp(200px, 19vw, 320px); aspect-ratio: 16 / 10; }
+  .cena--lateral .cena__moldura { top: 12svh; right: calc(var(--margem) - 16px); width: 36vw; height: 72svh; }
+
+  /* 03 · painel — imagem à esquerda, painel de texto por cima da borda. */
+  .cena--painel .cena__foto { grid-column: 1 / 9; height: min(74svh, 800px); }
+  .cena--painel .cena__texto {
+    grid-column: 8 / 13;
+    padding: clamp(24px, min(3vw, 4.4svh), 48px);
+    background: var(--areia);
+    box-shadow: 0 30px 60px -44px rgba(46, 36, 28, 0.5);
+  }
+  .cena--painel .cena__recorte { bottom: 5svh; left: calc(var(--margem) + 3vw); width: clamp(130px, 11vw, 190px); aspect-ratio: 4 / 5; }
+  .cena--painel .cena__moldura { top: 10svh; left: calc(var(--margem) - 16px); width: 58vw; height: 66svh; }
+
+  /* 04 · panorama — a paisagem ocupa a cena, o primeiro plano passa por cima. */
+  /* Foto absoluta sem área de grade: o bloco de referência é o palco inteiro,
+     não a linha 1 (que começa depois do espaço do cabeçalho). */
+  .cena--panorama .cena__foto { position: absolute; inset: 0; grid-row: auto; height: auto; }
+  .cena--panorama .cena__texto {
+    grid-column: 1 / 7;
+    align-self: end;
+    padding: clamp(28px, 3vw, 44px);
+    background: rgba(46, 36, 28, 0.8);
+  }
+  .cena--panorama .cena__titulo,
+  .cena--cruzamento .cena__titulo { font-size: clamp(2rem, min(3.3vw, 5.4svh), 3.3rem); }
+  .cena--panorama .cena__numero,
+  .cena--cruzamento .cena__numero { font-size: clamp(3.6rem, min(7vw, 10svh), 7rem); }
+  .cena--cruzamento .cena__descricao { margin-bottom: 22px; }
+  .cena--cruzamento .cena__escolha { margin-top: 22px; padding-top: 18px; }
+  .cena--panorama .cena__recorte { top: 14svh; right: 9vw; width: clamp(240px, 26vw, 420px); aspect-ratio: 16 / 10; }
+  .cena--panorama .cena__detalhe { top: 50svh; right: 38vw; width: clamp(140px, 13vw, 220px); aspect-ratio: 4 / 5; }
+  .cena--panorama .cena__moldura { inset: calc(var(--cabecalho) + 8px) var(--margem) 28px; border-color: rgba(250, 246, 239, 0.28); }
+
+  /* 05 · cruzamento — a segunda imagem nasce no espaço que a primeira ainda
+     não descobriu; quando a primeira se abre até a largura inteira, a segunda
+     desliza por trás dela. O texto fica na coluna da direita, fora do caminho. */
+  .cena--cruzamento .cena__foto {
+    position: absolute;
+    z-index: 2;
+    grid-row: auto;
+    top: calc(var(--cabecalho) + 4svh);
+    left: var(--margem);
+    width: 52vw;
+    height: 74svh;
+  }
+  .cena--cruzamento .cena__recorte { z-index: 1; top: calc(var(--cabecalho) + 18svh); left: calc(var(--margem) + 31vw); width: clamp(180px, 17vw, 280px); aspect-ratio: 4 / 5; }
+  .cena--cruzamento .cena__texto { grid-column: 8 / 13; padding-left: clamp(0px, 1.5vw, 24px); }
+  .cena--cruzamento .cena__moldura { top: calc(var(--cabecalho) - 6px); left: calc(var(--margem) + 3vw); width: 52vw; height: 80svh; }
+
+  /* Com JavaScript e movimento permitido: cada cena tem uma tela de
+     permanência e o palco fica preso enquanto ela dura. */
+  @media (prefers-reduced-motion: no-preference) {
+    .js .cena { height: 175svh; }
+    .js .cena--panorama { height: 240svh; }
+    .js .cena__palco { position: sticky; top: 0; height: 100svh; min-height: 0; overflow: clip; }
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Rodapé
+ * ------------------------------------------------------------------ */
+.rodape {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1.4fr;
+  gap: 40px;
+  padding: 72px var(--margem) 64px;
+  background: var(--terra-escura);
+  color: rgba(250, 246, 239, 0.86);
+}
+
+.rodape__marca img {
+  width: 56px;
+  height: auto;
+  margin-bottom: 18px;
+}
+
+.rodape__marca p {
+  display: grid;
+  margin: 0;
+  color: var(--marfim);
+  font: 400 1.6rem/1.2 var(--serif);
+}
+
+.rodape__marca span {
+  color: var(--dourado-claro);
+  font: 600 0.66rem/2.4 var(--sans);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.rodape__rotulo {
+  margin: 0 0 14px;
+  color: var(--dourado-claro);
+  font: 700 0.66rem/1 var(--sans);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.rodape__contato {
+  font-style: normal;
+}
+
+.rodape__endereco {
+  margin: 0 0 16px;
+  color: var(--marfim);
+  font: 400 1.3rem/1.3 var(--serif);
+}
+
+.rodape ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rodape__contato a {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(250, 246, 239, 0.14);
+  font-size: 0.9rem;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.rodape__contato small {
+  color: var(--dourado-claro);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.rodape__nav ul {
+  columns: 2;
+  column-gap: 32px;
+}
+
+.rodape__nav a {
+  display: block;
+  padding: 6px 0;
+  text-decoration: none;
+}
+
+.rodape__nav a:hover,
+.rodape__contato a:hover {
+  color: var(--dourado-claro);
+}
+
+/* ------------------------------------------------------------------
+ * Celular: uma coluna — imagem, título, texto, ação, passagem.
+ * ------------------------------------------------------------------ */
+@media (max-width: 860px) {
+  :root { --cabecalho: 66px; }
+
+  .cabecalho__botao--recepcao { display: none; }
+
+  .menu-portal ol { grid-template-columns: 1fr; }
+
+  .abertura__moldura { top: 13svh; right: 16px; left: 16px; width: auto; height: 74svh; }
+  .abertura__recorte { top: 15svh; right: 28px; bottom: auto; width: 34vw; }
+  .abertura__texto { right: 20px; bottom: 11svh; left: 20px; width: auto; }
+  .abertura__titulo { font-size: clamp(3rem, 15vw, 4.6rem); }
+  .abertura__panorama img { object-position: var(--foco-celular); }
+
+  .cena__palco {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 0;
+    padding: 72px 20px 80px;
+  }
+
+  .cena__foto { width: 100%; height: auto; aspect-ratio: 4 / 5; }
+  .cena--panorama .cena__foto { aspect-ratio: 3 / 4; }
+  .cena--cruzamento .cena__foto { aspect-ratio: 4 / 3; }
+  .cena__foto img,
+  .cena__recorte img { object-position: var(--foco-celular); }
+
+  .cena__recorte {
+    position: relative;
+    width: 44%;
+    aspect-ratio: 4 / 5;
+    margin: -24% 0 0 auto;
+  }
+
+  .cena--sobe .cena__recorte,
+  .cena--panorama .cena__recorte,
+  .cena--cruzamento .cena__recorte { aspect-ratio: 16 / 11; width: 56%; margin-top: -18%; }
+
+  .cena__detalhe,
+  .cena__moldura { display: none; }
+
+  .cena__texto { margin-top: 26px; }
+  .cena--painel .cena__texto { padding: 26px 22px; background: var(--areia); }
+  .cena__numero { font-size: 4.6rem; }
+  .cena__titulo { font-size: clamp(2.1rem, 8.6vw, 2.9rem); }
+
+  .rodape { grid-template-columns: 1fr; gap: 34px; padding: 56px 20px; }
+}
+
+@media (max-width: 420px) {
+  .cabecalho__marca span { display: none; }
+  .rodape__nav ul { columns: 1; }
+}
