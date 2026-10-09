@@ -11,6 +11,8 @@
     "start": "node scripts/run-vinext.mjs start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "test:portal": "node --test tests/potala/*.test.mjs",
+    "check:portal": "node --test tests/potala/preview-server.test.mjs tests/potala/portal-html.test.mjs tests/potala/supabase-client.test.mjs tests/potala/admin-auth.test.mjs",
+    "dev:portal": "node scripts/serve-outputs.mjs",
     "prepare:arrival-plate": "node scripts/prepare-arrival-plate-assets.mjs",
     "prepare:atendimentos": "node scripts/prepare-atendimentos-panes.mjs",
     "preview:portal": "node scripts/serve-outputs.mjs",
