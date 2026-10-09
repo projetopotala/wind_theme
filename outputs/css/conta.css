@@ -850,7 +850,7 @@
   cursor: pointer;
 }
 
-.mp-filtros ul { display: flex; gap: 8px; margin: 0 0 22px; padding: 2px 2px 4px; overflow-x: auto; list-style: none; scrollbar-width: none; }
+.mp-filtros ul { display: flex; gap: 8px; margin: 0 0 22px; padding: 2px 2px 4px; overflow-x: auto; contain: paint; list-style: none; scrollbar-width: none; }
 .mp-filtros ul::-webkit-scrollbar { display: none; }
 
 .mp-filtros a {
