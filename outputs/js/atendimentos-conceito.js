@@ -16,29 +16,42 @@ function setupMural(documentRef = document) {
   });
 }
 
+const CAMPOS_DO_RESUMO = [
+  ["atendimento", "uma técnica"],
+  ["profissional", "um profissional"],
+  ["modalidade", "uma modalidade"],
+  ["data", "uma data"],
+  ["horario", "um horário"],
+];
+
+function buildDemoScheduleSummary(values = {}) {
+  const faltantes = CAMPOS_DO_RESUMO.filter(([name]) => !String(values[name] || "").trim());
+  if (faltantes.length) {
+    return {
+      complete: false,
+      text: `Para ver o resumo demonstrativo, escolha ${faltantes.map(([, label]) => label).join(", ")}.`,
+    };
+  }
+  return {
+    complete: true,
+    text: [...CAMPOS_DO_RESUMO.map(([name]) => values[name]), values.investimento].filter(Boolean).join(" · "),
+  };
+}
+
 function setupDemoSchedule(documentRef = document) {
   const form = documentRef.querySelector("#bookForm");
   const button = documentRef.querySelector("#bookContinue");
   const summary = documentRef.querySelector("#bookSummary");
   if (!form || !button || !summary) return;
 
+  form.addEventListener("change", () => { summary.hidden = true; });
   button.addEventListener("click", () => {
-    const values = Object.fromEntries(new FormData(form));
-    const selection = [
-      values.atendimento,
-      values.profissional,
-      values.modalidade,
-      values.data,
-      values.horario,
-      values.investimento,
-    ]
-      .filter(Boolean)
-      .join(" · ");
+    const result = buildDemoScheduleSummary(Object.fromEntries(new FormData(form)));
     summary.replaceChildren();
     const title = documentRef.createElement("strong");
-    title.textContent = "Resumo demonstrativo";
+    title.textContent = result.complete ? "Resumo demonstrativo" : "Escolhas incompletas";
     const text = documentRef.createElement("span");
-    text.textContent = selection || "Escolha as opções acima para montar um resumo.";
+    text.textContent = result.text;
     const note = documentRef.createElement("p");
     note.textContent = "Nenhum agendamento foi criado. A disponibilidade real deve ser confirmada com a Recepção.";
     summary.append(title, text, note);
@@ -632,6 +645,7 @@ if (typeof document !== "undefined") {
 }
 
 export {
+  buildDemoScheduleSummary,
   caminhoDaJornada,
   journeyProgress,
   mountConceptEnhancements,

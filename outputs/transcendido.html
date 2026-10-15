@@ -940,15 +940,15 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
         <div class="eyebrow">Simulação de interface</div>
         <h3 style="font-family:var(--serif);font-size:2.4rem;font-weight:500;margin:8px 0">Encontrar um horário</h3>
         <div class="book-grid">
-          <label>Técnica<select name="atendimento"><option>Selecione uma técnica</option><option>Acupuntura</option><option>Reflexologia Palmar</option><option>Reiki</option></select></label>
-          <label>Profissional<select name="profissional"><option>Selecione um profissional</option><option>Marina Oliveira · demonstrativo</option><option>João Silva · demonstrativo</option><option>Ana Costa · demonstrativo</option></select></label>
-          <label>Modalidade<select name="modalidade"><option>Escolha uma modalidade</option><option>Presencial</option><option>Online</option></select></label>
-          <label>Data<select name="data"><option>Escolha uma data</option><option>Exemplo de agenda</option></select></label>
-          <label>Horário<select name="horario"><option>Escolha um horário</option><option>09:00 · demonstrativo</option><option>14:30 · demonstrativo</option><option>18:00 · demonstrativo</option></select></label>
+          <label>Técnica<select name="atendimento" required><option value="">Selecione uma técnica</option><option>Acupuntura</option><option>Reflexologia Palmar</option><option>Reiki</option></select></label>
+          <label>Profissional<select name="profissional" required><option value="">Selecione um profissional</option><option>Marina Oliveira · demonstrativo</option><option>João Silva · demonstrativo</option><option>Ana Costa · demonstrativo</option></select></label>
+          <label>Modalidade<select name="modalidade" required><option value="">Escolha uma modalidade</option><option>Presencial</option><option>Online</option></select></label>
+          <label>Data<select name="data" required><option value="">Escolha uma data</option><option>Exemplo de agenda</option></select></label>
+          <label>Horário<select name="horario" required><option value="">Escolha um horário</option><option>09:00 · demonstrativo</option><option>14:30 · demonstrativo</option><option>18:00 · demonstrativo</option></select></label>
           <label>Investimento<select name="investimento"><option>Consultar valor na ficha</option></select></label>
         </div>
         <p class="small">Nesta versão, o objetivo é testar fluxo e hierarquia — não disponibilidade real.</p>
-        <button class="btn btn-primary" id="bookContinue" type="button">Continuar com esta escolha →</button><div class="book-summary" id="bookSummary" tabindex="-1" aria-live="polite" hidden></div>
+        <button class="btn btn-primary" id="bookContinue" type="button">Ver resumo demonstrativo →</button><div class="book-summary" id="bookSummary" tabindex="-1" aria-live="polite" hidden></div>
       </form>
       <aside class="book-note"><div><div class="eyebrow" style="color:#d8c49a">Resumo</div><h3>Sua escolha</h3><p>Remarcação, cancelamento, pagamento e contato humano deverão aparecer no passo seguinte.</p></div><div class="small" style="color:rgba(255,255,255,.55)">Interface demonstrativa • sem integração com agenda real</div></aside>
     </div>

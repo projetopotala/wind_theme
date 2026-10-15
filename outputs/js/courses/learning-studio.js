@@ -53,6 +53,37 @@ export function buildCourseInterest(raw = {}) {
   };
 }
 
+export function createCourseInterestSender(sendInterest = enviarInteresse) {
+  let pending = false;
+  let lastSent = null;
+  return async (interest) => {
+    if (pending) return "pending";
+    const signature = JSON.stringify(interest);
+    if (signature === lastSent) return "duplicate";
+    pending = true;
+    try {
+      await sendInterest({ kind: "curso", subject: interest.topic, details: interest });
+      lastSent = signature;
+      return "sent";
+    } finally {
+      pending = false;
+    }
+  };
+}
+
+export function courseInterestFeedback(result) {
+  if (result === "sent") {
+    return { message: "Interesse enviado. A equipe do Instituto já pode ver sua proposta.", state: "success" };
+  }
+  if (result === "duplicate") {
+    return { message: "Este interesse já foi enviado. Altere os dados para enviar outra proposta.", state: "success" };
+  }
+  if (result === "pending") {
+    return { message: "Enviando ao Instituto…", state: "" };
+  }
+  throw new Error("Resultado de envio desconhecido.");
+}
+
 export function getCohortProgress(currentStage, totalStages) {
   const lastStage = Math.max(0, Number(totalStages) - 1);
   const safeStage = Math.min(lastStage, Math.max(0, Number(currentStage) || 0));
@@ -110,9 +141,12 @@ export function mountLearningStudio(root = document) {
 
   const form = studio.querySelector("[data-course-interest-form]");
   const status = studio.querySelector("[data-interest-status]");
+  const sendInterest = createCourseInterestSender();
+  let submitting = false;
   const onSubmit = async (event) => {
     event.preventDefault();
     const submit = form.querySelector('[type="submit"]');
+    if (submitting || submit?.disabled) return;
     let interest;
     try {
       interest = readInterestForm(form);
@@ -121,18 +155,21 @@ export function mountLearningStudio(root = document) {
       status.dataset.state = "error";
       return;
     }
+    submitting = true;
     submit?.setAttribute("disabled", "");
     status.textContent = "Enviando ao Instituto…";
     status.dataset.state = "";
     try {
-      await enviarInteresse({ kind: "curso", subject: interest.topic, details: interest });
-      renderInterestReview(studio, interest);
-      status.textContent = "Interesse enviado. A equipe do Instituto já pode ver sua proposta.";
-      status.dataset.state = "success";
+      const result = await sendInterest(interest);
+      if (result === "sent") renderInterestReview(studio, interest);
+      const feedback = courseInterestFeedback(result);
+      status.textContent = feedback.message;
+      status.dataset.state = feedback.state;
     } catch (error) {
       status.textContent = `Não foi possível enviar agora: ${error.message}`;
       status.dataset.state = "error";
     } finally {
+      submitting = false;
       submit?.removeAttribute("disabled");
     }
   };

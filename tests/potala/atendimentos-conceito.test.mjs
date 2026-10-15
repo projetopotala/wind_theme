@@ -86,6 +86,29 @@ test("o progresso da linha orgânica é limitado entre zero e um", async () => {
   assert.equal(journeyProgress(100, 0), 0);
 });
 
+test("agendamento demonstrativo não aceita seletores vazios como escolha", async () => {
+  const { buildDemoScheduleSummary } = await import("../../outputs/js/atendimentos-conceito.js");
+  const empty = buildDemoScheduleSummary({});
+  assert.equal(empty.complete, false);
+  assert.match(empty.text, /técnica.*profissional.*modalidade.*data.*horário/i);
+  const partial = buildDemoScheduleSummary({ atendimento: "Acupuntura" });
+  assert.equal(partial.complete, false);
+  assert.doesNotMatch(partial.text, /uma técnica/i);
+  const complete = buildDemoScheduleSummary({
+    atendimento: "Acupuntura", profissional: "Pessoa demonstrativa",
+    modalidade: "Online", data: "Exemplo de agenda", horario: "09:00 · demonstrativo",
+    investimento: "Consultar valor na ficha",
+  });
+  assert.equal(complete.complete, true);
+  assert.match(complete.text, /Acupuntura.*Online.*09:00/);
+  assert.doesNotMatch(complete.text, /Selecione|Escolha uma/);
+  const html = ler("transcendido.html");
+  assert.match(html, /id="bookContinue"[^>]*>Ver resumo demonstrativo/);
+  for (const name of ["atendimento", "profissional", "modalidade", "data", "horario"]) {
+    assert.match(html, new RegExp(`<select name="${name}" required><option value="">`));
+  }
+});
+
 test("as imagens reais são locais e apresentadas em molduras editoriais", () => {
   const html = ler("atendimentos-conceito.html");
   const hero = output("media/atendimentos-acolhimento.webp");
