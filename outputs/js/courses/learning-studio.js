@@ -25,6 +25,9 @@ const LABELS = {
   sábado: "Sábado",
 };
 
+const COURSE_MODALITIES = ["online", "presencial"];
+const COURSE_AVAILABILITY = ["manha", "tarde", "noite", "sábado"];
+
 export function resolveLearningAdvice(goal) {
   return { ...(ADVICE_PATHS[goal] || ADVICE_PATHS.choose) };
 }
@@ -39,7 +42,11 @@ export function buildCourseInterest(raw = {}) {
   if (topic.length < 3) {
     throw new Error("Conte qual tema você gostaria de aprender.");
   }
-  if (!LABELS[modalityKey] || availabilityKeys.length === 0) {
+  if (topic.length > 160) {
+    throw new Error("Resuma o tema em até 160 caracteres.");
+  }
+  if (!COURSE_MODALITIES.includes(modalityKey) || availabilityKeys.length === 0
+    || availabilityKeys.some((key) => !COURSE_AVAILABILITY.includes(key))) {
     throw new Error("Escolha uma modalidade e ao menos um período disponível.");
   }
 

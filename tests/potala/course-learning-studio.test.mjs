@@ -46,6 +46,25 @@ test("a proposta incompleta não produz uma confirmação enganosa", () => {
   );
 });
 
+test("a proposta aceita somente modalidades e períodos oferecidos no formulário", () => {
+  const valid = { topic: "Yoga", modality: "online", availability: ["noite"] };
+  for (const modality of ["manha", "constructor", "__proto__"]) {
+    assert.throws(() => buildCourseInterest({ ...valid, modality }), /modalidade/i);
+  }
+  for (const availability of [["online"], ["noite", "desconhecido"]]) {
+    assert.throws(() => buildCourseInterest({ ...valid, availability }), /período/i);
+  }
+  assert.equal(buildCourseInterest({ ...valid, modality: "presencial" }).modality, "Presencial");
+});
+
+test("o tema respeita o limite de serialização de 160 sem truncamento silencioso", () => {
+  const valid = { modality: "online", availability: ["noite"] };
+  assert.equal(buildCourseInterest({ ...valid, topic: "á".repeat(160) }).topic.length, 160);
+  assert.equal(buildCourseInterest({ ...valid, topic: "🌿".repeat(80) }).topic.length, 160);
+  assert.throws(() => buildCourseInterest({ ...valid, topic: "🌿".repeat(81) }), /160 caracteres/);
+  assert.throws(() => buildCourseInterest({ ...valid, topic: "á".repeat(161) }), /160 caracteres/);
+});
+
 test("o envio de interesse bloqueia repetição pendente e duplicata após sucesso", async () => {
   const calls = [];
   let release;
@@ -99,7 +118,7 @@ test("o acompanhamento situa a turma sem ultrapassar os limites", () => {
   assert.equal(getCohortProgress(-3, 5).percentage, 0);
 });
 
-test("o mesmo formulário libera nova tentativa depois de falha de rede", async () => {
+test("o mesmo formulário trata falhas de rede e HTTP, confirmação e nova proposta", async () => {
   const originalFetch = globalThis.fetch;
   const originalFormData = globalThis.FormData;
   const status = { textContent: "", dataset: {} };
@@ -112,6 +131,8 @@ test("o mesmo formulário libera nova tentativa depois de falha de rede", async 
   let onSubmit;
   let rejectFirst;
   let attempts = 0;
+  const values = { topic: "Yoga", modality: "online", goal: "", contact: "" };
+  const payloads = [];
   const form = {
     querySelector() { return button; },
     addEventListener(name, listener) { if (name === "submit") onSubmit = listener; },
@@ -133,15 +154,18 @@ test("o mesmo formulário libera nova tentativa depois de falha de rede", async 
 
   globalThis.FormData = class {
     constructor(target) { assert.equal(target, form); }
-    get(name) { return { topic: "Yoga", modality: "online", goal: "", contact: "" }[name] ?? null; }
+    get(name) { return values[name] ?? null; }
     getAll(name) { return name === "availability" ? ["noite"] : []; }
   };
   globalThis.fetch = (url, options) => {
     assert.match(String(url), /\/rest\/v1\/site_interests$/);
     assert.equal(options.method, "POST");
+    assert.equal(options.headers.Prefer, "return=minimal");
+    payloads.push(JSON.parse(options.body));
     attempts++;
     if (attempts === 1) return new Promise((_, reject) => { rejectFirst = reject; });
-    return Promise.resolve(new Response(null, { status: 204 }));
+    if (attempts === 2) return Promise.resolve(new Response(JSON.stringify({ message: "Envio recusado", code: "42501" }), { status: 403 }));
+    return Promise.resolve(new Response(null, { status: 201 }));
   };
 
   try {
@@ -160,8 +184,27 @@ test("o mesmo formulário libera nova tentativa depois de falha de rede", async 
     await onSubmit(event);
     assert.equal(attempts, 2);
     assert.equal(button.disabled, false);
+    assert.equal(status.dataset.state, "error");
+    assert.match(status.textContent, /Envio recusado/);
+    assert.equal(review.hidden, true);
+
+    await onSubmit(event);
+    assert.equal(attempts, 3);
+    assert.equal(button.disabled, false);
     assert.equal(status.dataset.state, "success");
     assert.equal(review.hidden, false);
+    assert.deepEqual(payloads[2], {
+      kind: "curso", subject: "Yoga", page: "",
+      details: { topic: "Yoga", modality: "Online", availability: ["Noite"], goal: "" },
+    });
+    await onSubmit(event);
+    assert.equal(attempts, 3, "repetição confirmada não faz outro POST");
+    assert.match(status.textContent, /já foi enviado/);
+    values.topic = "Meditação";
+    await onSubmit(event);
+    assert.equal(attempts, 4);
+    assert.equal(payloads[3].subject, "Meditação");
+    assert.equal(elements["[data-interest-topic]"].textContent, "Meditação");
     mounted.destroy();
   } finally {
     globalThis.fetch = originalFetch;
