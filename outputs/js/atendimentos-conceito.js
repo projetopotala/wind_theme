@@ -1,3 +1,5 @@
+import { setupAppointmentForm } from "./appointments/form.js";
+
 function setupMural(documentRef = document) {
   const form = documentRef.querySelector("#muralForm");
   const feedback = documentRef.querySelector("#muralFeedback");
@@ -13,50 +15,6 @@ function setupMural(documentRef = document) {
     }
     feedback.textContent = "Sua intenção foi acolhida nesta experiência local.";
     form.reset();
-  });
-}
-
-const CAMPOS_DO_RESUMO = [
-  ["atendimento", "uma técnica"],
-  ["profissional", "um profissional"],
-  ["modalidade", "uma modalidade"],
-  ["data", "uma data"],
-  ["horario", "um horário"],
-];
-
-function buildDemoScheduleSummary(values = {}) {
-  const faltantes = CAMPOS_DO_RESUMO.filter(([name]) => !String(values[name] || "").trim());
-  if (faltantes.length) {
-    return {
-      complete: false,
-      text: `Para ver o resumo demonstrativo, escolha ${faltantes.map(([, label]) => label).join(", ")}.`,
-    };
-  }
-  return {
-    complete: true,
-    text: [...CAMPOS_DO_RESUMO.map(([name]) => values[name]), values.investimento].filter(Boolean).join(" · "),
-  };
-}
-
-function setupDemoSchedule(documentRef = document) {
-  const form = documentRef.querySelector("#bookForm");
-  const button = documentRef.querySelector("#bookContinue");
-  const summary = documentRef.querySelector("#bookSummary");
-  if (!form || !button || !summary) return;
-
-  form.addEventListener("change", () => { summary.hidden = true; });
-  button.addEventListener("click", () => {
-    const result = buildDemoScheduleSummary(Object.fromEntries(new FormData(form)));
-    summary.replaceChildren();
-    const title = documentRef.createElement("strong");
-    title.textContent = result.complete ? "Resumo demonstrativo" : "Escolhas incompletas";
-    const text = documentRef.createElement("span");
-    text.textContent = result.text;
-    const note = documentRef.createElement("p");
-    note.textContent = "Nenhum agendamento foi criado. A disponibilidade real deve ser confirmada com a Recepção.";
-    summary.append(title, text, note);
-    summary.hidden = false;
-    summary.focus();
   });
 }
 
@@ -628,7 +586,7 @@ function setupReflection(documentRef = document) {
 
 function mountConceptEnhancements(documentRef = document) {
   setupMural(documentRef);
-  setupDemoSchedule(documentRef);
+  setupAppointmentForm(documentRef);
   setupReadingLabels(documentRef);
   setupJourneyThread(documentRef);
   setupReflection(documentRef);
@@ -645,11 +603,10 @@ if (typeof document !== "undefined") {
 }
 
 export {
-  buildDemoScheduleSummary,
   caminhoDaJornada,
   journeyProgress,
   mountConceptEnhancements,
-  setupDemoSchedule,
+  setupAppointmentForm,
   setupJourneyThread,
   setupMural,
   setupReadingLabels,

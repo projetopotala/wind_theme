@@ -275,9 +275,10 @@ linear-gradient(180deg,#f7f4eb 0%,#f2eee3 72%,#e8eee8 100%)}
 .schedule .lead{color:rgba(255,255,255,.7)}
 .schedule-box{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-top:38px}
 .book-panel{border-radius:30px;padding:28px;background:#fff;color:var(--ink)}
-.book-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+.book-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:20px 0;border:0;padding:0;min-width:0}
 .book-grid label{font-size:.72rem;font-weight:700;color:var(--ink-soft)}
-.book-grid select{width:100%;margin-top:5px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;color:var(--ink)}
+.book-grid select,.book-grid input{width:100%;min-width:0;margin-top:5px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;color:var(--ink);font:inherit}
+.book-grid label{min-width:0}.book-panel{min-width:0}.book-panel button{max-width:100%;white-space:normal}
 .book-note{border-radius:30px;padding:28px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;justify-content:space-between}
 .book-note h3{font-family:var(--serif);font-size:2.4rem;line-height:1;font-weight:500;margin:10px 0}
 .book-note p{color:rgba(255,255,255,.68)}
@@ -933,24 +934,25 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
   <div class="shell">
     <div class="section-head reveal">
       <div><div class="section-num" style="color:rgba(255,255,255,.12)">10</div><div class="eyebrow" style="color:#d8c49a">Agendamentos</div></div>
-      <div><h2 class="h2">Da descoberta para a ação.</h2><p class="lead">Este fluxo é demonstrativo. Nenhum horário, valor ou profissional apresentado aqui corresponde a disponibilidade real.</p></div>
+      <div><h2 class="h2">Da descoberta para a ação.</h2><p class="lead">Conte qual atendimento você procura. Suas preferências serão avaliadas pela equipe, sem garantia de disponibilidade ou reserva de horário.</p></div>
     </div>
     <div class="schedule-box reveal">
-      <form class="book-panel" id="bookForm">
-        <div class="eyebrow">Simulação de interface</div>
-        <h3 style="font-family:var(--serif);font-size:2.4rem;font-weight:500;margin:8px 0">Encontrar um horário</h3>
-        <div class="book-grid">
-          <label>Técnica<select name="atendimento" required><option value="">Selecione uma técnica</option><option>Acupuntura</option><option>Reflexologia Palmar</option><option>Reiki</option></select></label>
-          <label>Profissional<select name="profissional" required><option value="">Selecione um profissional</option><option>Marina Oliveira · demonstrativo</option><option>João Silva · demonstrativo</option><option>Ana Costa · demonstrativo</option></select></label>
-          <label>Modalidade<select name="modalidade" required><option value="">Escolha uma modalidade</option><option>Presencial</option><option>Online</option></select></label>
-          <label>Data<select name="data" required><option value="">Escolha uma data</option><option>Exemplo de agenda</option></select></label>
-          <label>Horário<select name="horario" required><option value="">Escolha um horário</option><option>09:00 · demonstrativo</option><option>14:30 · demonstrativo</option><option>18:00 · demonstrativo</option></select></label>
-          <label>Investimento<select name="investimento"><option>Consultar valor na ficha</option></select></label>
-        </div>
-        <p class="small">Nesta versão, o objetivo é testar fluxo e hierarquia — não disponibilidade real.</p>
-        <button class="btn btn-primary" id="bookContinue" type="button">Ver resumo demonstrativo →</button><div class="book-summary" id="bookSummary" tabindex="-1" aria-live="polite" hidden></div>
+      <form class="book-panel" id="bookForm" aria-describedby="bookSummary bookPrivacy">
+        <div class="eyebrow">Solicitação de atendimento</div>
+        <h3 id="bookTitle" style="font-family:var(--serif);font-size:2.4rem;font-weight:500;margin:8px 0">Seu atendimento</h3>
+        <fieldset class="book-grid" aria-labelledby="bookTitle" disabled>
+          <label>Serviço desejado<select name="service" required><option value="">Selecione um serviço</option><option>Acupuntura</option><option>Reflexologia Palmar</option><option>Reiki</option></select></label>
+          <label>Modalidade<select name="modality" required><option value="">Escolha uma modalidade</option><option value="presencial">Presencial</option><option value="online">Online</option></select></label>
+          <label>Preferência de data<input name="preferred_date" type="date" required></label>
+          <label>Preferência de período<select name="preferred_period" required><option value="">Escolha um período</option><option value="manha">Manhã</option><option value="tarde">Tarde</option><option value="noite">Noite</option></select></label>
+          <label>Seu nome<input name="requester_name" autocomplete="name" minlength="2" maxlength="100" required></label>
+          <label>Tipo de contato<select name="contact_type" required><option value="">Selecione o tipo</option><option value="email">E-mail</option><option value="telefone">Telefone</option></select></label>
+          <label>Contato<input name="contact" type="text" minlength="8" maxlength="254" aria-describedby="bookContactHelp" required><span id="bookContactHelp">E-mail ou telefone com DDD, somente dígitos e + opcional.</span></label>
+        </fieldset>
+        <p class="small" id="bookPrivacy">Use o contato pelo qual a equipe poderá falar com você. Não informe dados de saúde neste formulário.</p>
+        <button class="btn btn-primary" id="bookContinue" type="submit" disabled>Envio indisponível</button><div class="book-summary" id="bookSummary" tabindex="-1" role="status" aria-live="polite" aria-atomic="true">O envio de solicitações pelo site ainda não está disponível. Nenhuma solicitação ou reserva será criada por este formulário.</div>
       </form>
-      <aside class="book-note"><div><div class="eyebrow" style="color:#d8c49a">Resumo</div><h3>Sua escolha</h3><p>Remarcação, cancelamento, pagamento e contato humano deverão aparecer no passo seguinte.</p></div><div class="small" style="color:rgba(255,255,255,.55)">Interface demonstrativa • sem integração com agenda real</div></aside>
+      <aside class="book-note"><div><div class="eyebrow" style="color:#d8c49a">Preferências</div><h3>Sua escolha</h3><p>A equipe verificará serviço, modalidade e período antes de combinar o atendimento com você.</p></div><div class="small" style="color:rgba(255,255,255,.55)">Solicitação não é reserva • sujeita à disponibilidade</div></aside>
     </div>
   </div>
 </section>

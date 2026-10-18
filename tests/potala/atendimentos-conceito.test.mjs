@@ -72,7 +72,7 @@ test("o módulo complementar mantém interações locais e não chama rede", () 
   assert.doesNotMatch(materias, /fetch\(|XMLHttpRequest|supabase|localStorage|sessionStorage/);
   const js = ler("js/atendimentos-conceito.js");
   assert.match(js, /setupMural/);
-  assert.match(js, /setupDemoSchedule/);
+  assert.match(js, /setupAppointmentForm/);
   assert.match(js, /setupJourneyThread/);
   assert.match(js, /setupReflection/);
   assert.doesNotMatch(js, /fetch\(|XMLHttpRequest|supabase|localStorage|sessionStorage/);
@@ -86,26 +86,17 @@ test("o progresso da linha orgânica é limitado entre zero e um", async () => {
   assert.equal(journeyProgress(100, 0), 0);
 });
 
-test("agendamento demonstrativo não aceita seletores vazios como escolha", async () => {
-  const { buildDemoScheduleSummary } = await import("../../outputs/js/atendimentos-conceito.js");
-  const empty = buildDemoScheduleSummary({});
-  assert.equal(empty.complete, false);
-  assert.match(empty.text, /técnica.*profissional.*modalidade.*data.*horário/i);
-  const partial = buildDemoScheduleSummary({ atendimento: "Acupuntura" });
-  assert.equal(partial.complete, false);
-  assert.doesNotMatch(partial.text, /uma técnica/i);
-  const complete = buildDemoScheduleSummary({
-    atendimento: "Acupuntura", profissional: "Pessoa demonstrativa",
-    modalidade: "Online", data: "Exemplo de agenda", horario: "09:00 · demonstrativo",
-    investimento: "Consultar valor na ficha",
-  });
-  assert.equal(complete.complete, true);
-  assert.match(complete.text, /Acupuntura.*Online.*09:00/);
-  assert.doesNotMatch(complete.text, /Selecione|Escolha uma/);
+test("solicitação da Home nasce bloqueada e não oferece disponibilidade fictícia", () => {
   const html = ler("transcendido.html");
-  assert.match(html, /id="bookContinue"[^>]*>Ver resumo demonstrativo/);
-  for (const name of ["atendimento", "profissional", "modalidade", "data", "horario"]) {
+  const form = html.match(/<form[^>]*id="bookForm"[\s\S]*?<\/form>/)[0];
+  assert.match(form, /<fieldset[^>]*disabled/);
+  assert.match(form, /id="bookContinue"[^>]*disabled>Envio indisponível/);
+  assert.doesNotMatch(form, /demonstrativo|name="profissional"|name="horario"|Exemplo de agenda/);
+  for (const name of ["service", "modality", "preferred_period", "contact_type"]) {
     assert.match(html, new RegExp(`<select name="${name}" required><option value="">`));
+  }
+  for (const name of ["preferred_date", "requester_name", "contact"]) {
+    assert.match(form, new RegExp(`<label>[^<]+<input name="${name}"[^>]*required>`));
   }
 });
 
