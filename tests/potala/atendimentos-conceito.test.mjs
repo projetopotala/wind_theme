@@ -92,7 +92,7 @@ test("o módulo complementar mantém interações locais e não chama rede", () 
   assert.doesNotMatch(materias, /fetch\(|XMLHttpRequest|supabase|localStorage|sessionStorage/);
   const js = ler("js/atendimentos-conceito.js");
   assert.match(js, /setupMural/);
-  assert.match(js, /setupDemoSchedule/);
+  assert.match(js, /setupAppointmentForm/);
   assert.match(js, /setupJourneyThread/);
   assert.match(js, /setupReflection/);
   assert.doesNotMatch(js, /fetch\(|XMLHttpRequest|supabase|localStorage|sessionStorage/);
@@ -104,6 +104,20 @@ test("o progresso da linha orgânica é limitado entre zero e um", async () => {
   assert.equal(journeyProgress(500, 1000), 0.5);
   assert.equal(journeyProgress(1200, 1000), 1);
   assert.equal(journeyProgress(100, 0), 0);
+});
+
+test("solicitação da Home nasce bloqueada e não oferece disponibilidade fictícia", () => {
+  const html = ler("transcendido.html");
+  const form = html.match(/<form[^>]*id="bookForm"[\s\S]*?<\/form>/)[0];
+  assert.match(form, /<fieldset[^>]*disabled/);
+  assert.match(form, /id="bookContinue"[^>]*disabled>Envio indisponível/);
+  assert.doesNotMatch(form, /demonstrativo|name="profissional"|name="horario"|Exemplo de agenda/);
+  for (const name of ["service", "modality", "preferred_period", "contact_type"]) {
+    assert.match(html, new RegExp(`<select name="${name}" required><option value="">`));
+  }
+  for (const name of ["preferred_date", "requester_name", "contact"]) {
+    assert.match(form, new RegExp(`<label>[^<]+<input name="${name}"[^>]*required>`));
+  }
 });
 
 test("as imagens reais são locais e apresentadas em molduras editoriais", () => {
