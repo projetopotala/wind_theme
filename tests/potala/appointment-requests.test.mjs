@@ -105,11 +105,12 @@ test("adaptador administrativo não envia outros campos nem confirma zero linhas
     assert.equal(table, "appointment_requests");
     return { update(fields) {
       assert.deepEqual(fields, { status: "em_contato" });
-      return { eq: () => ({ select: () => ({ single: async () => ({ data: null, error: null }) }) }) };
+      const query = { eq: () => query, select: () => query, maybeSingle: async () => ({ data: null, error: null }) };
+      return query;
     } };
   } };
   await assert.rejects(updateAppointmentRequestStatus(client, receipt.id, "confirmada"), /inválido/);
-  await assert.rejects(updateAppointmentRequestStatus(client, receipt.id, "em_contato"), /não confirmada/);
+  await assert.rejects(updateAppointmentRequestStatus(client, receipt.id, "em_contato", "2026-10-18T12:00:00Z"), /não confirmada/);
 });
 
 const sql = readFileSync(new URL("../../supabase/migrations/202610160001_appointment_requests.sql", import.meta.url), "utf8");

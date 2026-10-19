@@ -101,7 +101,7 @@ function chaveDoBloco(bloco){
   return nome==='scope'?null:nome||null;
 }
 
-export function createOperationsController({root,client,onNavigate=()=>{},janela=globalThis.window}={}){
+export function createOperationsController({root,client,onNavigate=()=>{},onRendered=()=>{},janela=globalThis.window}={}){
   if(!root||!client)throw new TypeError('Painel e cliente operacional são obrigatórios.');
   const dialog=root.querySelector('[data-op-dialog]'),form=root.querySelector('[data-op-form]'),body=root.querySelector('[data-op-form-body]'),title=root.querySelector('[data-op-dialog-title]'),error=root.querySelector('[data-op-form-error]'),status=root.querySelector('[data-op-status]');
   const drawer=root.querySelector('[data-op-drawer]'),drawerBody=root.querySelector('[data-op-drawer-corpo]'),menu=root.querySelector('[data-op-menu-painel]');
@@ -126,6 +126,7 @@ export function createOperationsController({root,client,onNavigate=()=>{},janela
     const state=client.snapshot;
     const opcoes={...filters,agora:Date.now(),estreito:estreita(),recebidos};
     for(const node of root.querySelectorAll('[data-op-view]'))node.innerHTML=renderView(node.dataset.opView,state,opcoes);
+    onRendered();
     if(filtroAtivo){
       const alvo=[...root.querySelectorAll(`[data-op-filter="${filtroAtivo}"]`)].find(campo=>!campo.closest('[hidden]'));
       if(alvo){alvo.focus({preventScroll:true});if(cursor)try{alvo.setSelectionRange(...cursor);}catch{/* campos de data não têm cursor */}}
