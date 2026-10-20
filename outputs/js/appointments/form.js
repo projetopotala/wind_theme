@@ -1,5 +1,6 @@
 import { buildAppointmentRequest, createAppointmentRequestSender } from "../shared/appointment-requests.js";
-import { APPOINTMENT_REQUESTS_ENABLED } from "./config.js";
+import { APPOINTMENT_REQUESTS_ENABLED, APPOINTMENT_TURNSTILE_SITE_KEY } from "./config.js";
+import { createTurnstileTokenProvider } from "./turnstile.js";
 
 export const RECEIVED_MESSAGE = "Solicitação recebida. Nossa equipe entrará em contato para verificar a disponibilidade. O horário ainda não está confirmado.";
 export const DISABLED_MESSAGE = "O envio de solicitações pelo site ainda não está disponível. Nenhuma solicitação ou reserva será criada por este formulário.";
@@ -79,7 +80,10 @@ export function setupAppointmentForm(documentRef = document, {
     setBusy(true);
     show("Enviando sua solicitação…", "pending");
     try {
-      sender ||= send ?? createAppointmentRequestSender();
+      sender ||= send ?? createAppointmentRequestSender({ challenge: createTurnstileTokenProvider({
+        documentRef, sitekey: APPOINTMENT_TURNSTILE_SITE_KEY,
+        container: documentRef.querySelector("#appointmentTurnstile"),
+      }) });
       const result = await sender(request);
       if (result?.status === "pending") {
         show("Há um envio em andamento. Aguarde antes de tentar novamente.", "pending", true);
@@ -90,9 +94,11 @@ export function setupAppointmentForm(documentRef = document, {
       }
       received.add(signature);
       show(RECEIVED_MESSAGE, "received", true);
-    } catch {
+    } catch (error) {
       // Falha de rede pode ocorrer depois da gravação: não afirmar que nada foi enviado.
-      show("Não foi possível confirmar o recebimento. Confira sua conexão e tente novamente com os mesmos dados. Nenhum horário está confirmado.", "error", true);
+      show(error?.message?.startsWith("Verificação")
+        ? "Não foi possível concluir a verificação de segurança. Tente novamente com os mesmos dados. Nenhum horário está confirmado."
+        : "Não foi possível confirmar o recebimento. Confira sua conexão e tente novamente com os mesmos dados. Nenhum horário está confirmado.", "error", true);
     } finally {
       submitting = false;
       setBusy(false);
