@@ -1,0 +1,22 @@
+\set ON_ERROR_STOP on
+\ir appointment-f224-guard.sql
+begin;
+-- Repetição pelo administrador local; anon permanece bloqueado.
+do $$
+declare original jsonb; repeated jsonb;
+begin
+  repeated := public.submit_appointment_request(
+    '30000000-0000-4000-8000-000000000010','Reiki','online','Concorrente Fictício',
+    'email','concorrente@example.invalid',(now() at time zone 'America/Sao_Paulo')::date + 1,'manha');
+  if repeated->>'status' <> 'recebida' then raise exception 'Repetição concorrente inválida'; end if;
+end;
+$$;
+do $$
+begin
+  if (select count(*) from public.appointment_requests
+      where idempotency_key='30000000-0000-4000-8000-000000000010') <> 1 then
+    raise exception 'Concorrência criou duplicatas';
+  end if;
+end;
+$$;
+commit;

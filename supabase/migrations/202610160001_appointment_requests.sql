@@ -105,4 +105,6 @@ $$;
 revoke all on function public.submit_appointment_request(uuid,text,text,text,text,text,date,text) from public, anon, authenticated;
 grant execute on function public.submit_appointment_request(uuid,text,text,text,text,text,date,text) to anon, authenticated;
 
+revoke execute on function public.submit_appointment_request(uuid,text,text,text,text,text,date,text) from public, anon, authenticated;
+
 commit;

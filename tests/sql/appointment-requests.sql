@@ -18,7 +18,8 @@ begin
 end;
 $$;
 
-set local role anon;
+-- EXECUTE público permanece bloqueado; estes testes positivos usam o
+-- administrador do banco descartável e não comprovam acesso anônimo.
 do $$
 declare
   first_receipt jsonb;
@@ -49,14 +50,6 @@ begin
       'email', 'ficticio@example.invalid', day - 2, 'tarde');
     raise exception 'Deveria rejeitar data passada';
   exception when invalid_parameter_value then null; end;
-  begin
-    perform id from public.appointment_requests;
-    raise exception 'Leitura anônima deveria falhar';
-  exception when insufficient_privilege then null; end;
-  begin
-    update public.appointment_requests set status = 'encerrada';
-    raise exception 'Escrita anônima deveria falhar';
-  exception when insufficient_privilege then null; end;
   for i in 2..5 loop
     perform public.submit_appointment_request(gen_random_uuid(), 'Reiki', 'online', 'Pessoa Fictícia',
       'email', 'ficticio@example.invalid', day, 'tarde');
@@ -66,6 +59,29 @@ begin
       'email', 'ficticio@example.invalid', day, 'tarde');
     raise exception 'Limite por contato deveria recusar';
   exception when sqlstate 'PT429' then null; end;
+end;
+$$;
+set local role anon;
+do $$
+begin
+  if has_function_privilege('anon',
+      'public.submit_appointment_request(uuid,text,text,text,text,text,date,text)', 'EXECUTE') then
+    raise exception 'RPC pública não está bloqueada para anon';
+  end if;
+  begin
+    perform public.submit_appointment_request('10000000-0000-4000-8000-000000000099',
+      'Reiki', 'online', 'Pessoa Fictícia', 'email', 'bloqueado@example.invalid',
+      (now() at time zone 'America/Sao_Paulo')::date + 1, 'tarde');
+    raise exception 'Execução anônima deveria falhar';
+  exception when insufficient_privilege then null; end;
+  begin
+    perform id from public.appointment_requests;
+    raise exception 'Leitura anônima deveria falhar';
+  exception when insufficient_privilege then null; end;
+  begin
+    update public.appointment_requests set status = 'encerrada';
+    raise exception 'Escrita anônima deveria falhar';
+  exception when insufficient_privilege then null; end;
 end;
 $$;
 reset role;

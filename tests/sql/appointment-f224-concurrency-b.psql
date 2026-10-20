@@ -1,0 +1,15 @@
+\set ON_ERROR_STOP on
+\ir appointment-f224-guard.sql
+begin;
+-- Concorrência da função pelo administrador local; não simula acesso público.
+do $$
+begin
+  begin
+    perform public.submit_appointment_request(
+      '30000000-0000-4000-8000-000000000010','Reiki','online','Concorrente Fictício',
+      'email','concorrente@example.invalid',(now() at time zone 'America/Sao_Paulo')::date + 1,'manha');
+    raise exception 'Chamada concorrente não foi limitada';
+  exception when sqlstate 'PT429' then null; end;
+end;
+$$;
+rollback;

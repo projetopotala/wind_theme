@@ -1,0 +1,10 @@
+\set ON_ERROR_STOP on
+\ir appointment-f224-guard.sql
+\ir appointment-f224-bootstrap.sql
+\ir ../../supabase/migrations/202610160001_appointment_requests.sql
+\ir appointment-f224-guard.sql
+\ir appointment-f224-fixtures.sql
+\ir appointment-f224-guard.sql
+\ir appointment-f224-verify.sql
+\ir appointment-f224-guard.sql
+\ir appointment-f224-volume.sql
