@@ -3,8 +3,7 @@ import test from "node:test";
 import { webcrypto } from "node:crypto";
 import { setupAppointmentForm, validateAppointmentForm, appointmentDateRange, RECEIVED_MESSAGE, DISABLED_MESSAGE } from "../../outputs/js/appointments/form.js";
 import { APPOINTMENT_REQUESTS_ENABLED } from "../../outputs/js/appointments/config.js";
-import { createAppointmentRequestSender } from "../../outputs/js/shared/appointment-requests.js";
-import { criarRestPublico } from "../../outputs/js/supabase/rest.js";
+import { createAppointmentRequestSender, submitAppointmentRequest } from "../../outputs/js/shared/appointment-requests.js";
 
 const now = () => new Date("2026-10-18T12:00:00Z");
 const values = () => ({ service: "Reiki", modality: "online", preferred_date: "2026-10-19",
@@ -98,8 +97,9 @@ test("rede e HTTP falham sem sucesso, retry usa mesma chave e edição usa outra
   let saved = null;
   const keys = [];
   const bodies = [];
-  const rest = criarRestPublico({ config: { url: "https://teste.invalid", publishableKey: "ficticia" }, fetchImpl: async (url, options) => {
-    assert.equal(url, "https://teste.invalid/rest/v1/rpc/submit_appointment_request");
+  const submit = (args, token) => submitAppointmentRequest(args, token, {
+    config: { url: "https://teste.invalid", publishableKey: "ficticia" }, fetchImpl: async (url, options) => {
+    assert.equal(url, "https://teste.invalid/functions/v1/submit-appointment-request");
     assert.equal(options.method, "POST");
     const args = JSON.parse(options.body);
     keys.push(args.p_idempotency_key);
@@ -108,7 +108,9 @@ test("rede e HTTP falham sem sucesso, retry usa mesma chave e edição usa outra
     if (keys.length === 2) return new Response(JSON.stringify({ message: "Indisponível" }), { status: 503 });
     return new Response(JSON.stringify(receipt), { status: 200 });
   } });
-  const send = createAppointmentRequestSender({ rest, crypto: webcrypto, storage: { getItem: () => saved, setItem: (_, value) => { saved = value; } } });
+  let challengeCalls = 0;
+  const send = createAppointmentRequestSender({ submit, challenge: async () => `token-${++challengeCalls}`,
+    crypto: webcrypto, storage: { getItem: () => saved, setItem: (_, value) => { saved = value; } } });
   const f = fixture({ enabled: true, send });
   for (let i = 0; i < 2; i++) {
     await f.submit();
@@ -121,10 +123,14 @@ test("rede e HTTP falham sem sucesso, retry usa mesma chave e edição usa outra
   assert.equal(f.summary.textContent, RECEIVED_MESSAGE);
   assert.equal(keys[0], keys[1]);
   assert.equal(keys[1], keys[2]);
+  assert.equal(challengeCalls, 3);
   f.form.values.preferred_period = "manha";
   await f.submit();
+  assert.equal(challengeCalls, 4);
   assert.notEqual(keys[2], keys[3]);
-  const { p_idempotency_key, ...args } = bodies[0];
+  const { p_idempotency_key, turnstile_token, ...args } = bodies[0];
+  assert.equal(p_idempotency_key, keys[0]);
+  assert.equal(turnstile_token, "token-1");
   assert.deepEqual(args, Object.fromEntries(Object.entries(values()).map(([key, value]) => [`p_${key}`, value])));
 }));
 

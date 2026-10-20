@@ -2,8 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { webcrypto } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { buildAppointmentRequest, createAppointmentRequestSender } from "../../outputs/js/shared/appointment-requests.js";
-import { criarRestPublico } from "../../outputs/js/supabase/rest.js";
+import { buildAppointmentRequest, createAppointmentRequestSender, submitAppointmentRequest } from "../../outputs/js/shared/appointment-requests.js";
 import { updateAppointmentRequestStatus } from "../../outputs/js/admin/appointment-requests.js";
 
 const valid = { service: "Reiki", modality: "presencial", requester_name: "Pessoa Fictícia",
@@ -14,7 +13,10 @@ function memory() {
   return { getItem: () => value, setItem: (_, next) => { value = next; } };
 }
 function sender(rest, storage = memory()) {
-  return createAppointmentRequestSender({ rest, storage, crypto: webcrypto });
+  return createAppointmentRequestSender({ submit: (args, token) => {
+    assert.equal(token, "token-de-teste");
+    return rest.rpc("submit_appointment_request", args);
+  }, challenge: async () => "token-de-teste", storage, crypto: webcrypto });
 }
 
 test("solicitação normaliza dados e descarta estado administrativo fornecido pelo visitante", () => {
@@ -34,16 +36,19 @@ test("campos inválidos não alcançam a API", async () => {
   assert.equal(calls, 0);
 });
 
-test("contrato usa somente a RPC pública e exige comprovante recebido", async () => {
-  const rest = criarRestPublico({ config: { url: "https://isolado.invalid", publishableKey: "chave-ficticia" },
+test("contrato público usa somente a Edge Function e exige comprovante recebido", async () => {
+  const rest = { rpc: (_name, args) => submitAppointmentRequest(args, "token-de-teste", {
+    config: { url: "https://isolado.invalid", publishableKey: "chave-ficticia" },
     fetchImpl: async (url, options) => {
-      assert.equal(url, "https://isolado.invalid/rest/v1/rpc/submit_appointment_request");
+      assert.equal(url, "https://isolado.invalid/functions/v1/submit-appointment-request");
       assert.equal(options.method, "POST");
-      const { p_idempotency_key, ...args } = JSON.parse(options.body);
+      assert.equal(options.headers.apikey, "chave-ficticia");
+      const { p_idempotency_key, turnstile_token, ...fields } = JSON.parse(options.body);
+      assert.equal(turnstile_token, "token-de-teste");
       assert.match(p_idempotency_key, /^[a-f0-9-]{36}$/);
-      assert.deepEqual(args, Object.fromEntries(Object.entries(buildAppointmentRequest(valid)).map(([key, value]) => [`p_${key}`, value])));
+      assert.deepEqual(fields, Object.fromEntries(Object.entries(buildAppointmentRequest(valid)).map(([key, value]) => [`p_${key}`, value])));
       return new Response(JSON.stringify(receipt), { status: 200 });
-    } });
+    } }) };
   assert.deepEqual(await sender(rest)(valid), receipt);
 });
 
@@ -77,9 +82,10 @@ test("recarregar e repetir após resposta perdida conserva chave; proposta difer
 for (const code of [403, 409, 429, 500]) {
   test(`HTTP ${code} não confirma recebimento e permite nova tentativa`, async () => {
     let calls = 0;
-    const rest = criarRestPublico({ config: { url: "https://isolado.invalid", publishableKey: "ficticia" },
+    const rest = { rpc: (_name, args) => submitAppointmentRequest(args, "token-de-teste", {
+      config: { url: "https://isolado.invalid", publishableKey: "ficticia" },
       fetchImpl: async () => ++calls === 1 ? new Response(JSON.stringify({ message: "Recusado" }), { status: code })
-        : new Response(JSON.stringify(receipt), { status: 200 }) });
+        : new Response(JSON.stringify(receipt), { status: 200 }) }) };
     const send = sender(rest);
     await assert.rejects(send(valid), (error) => error.status === code);
     assert.deepEqual(await send(valid), receipt);
