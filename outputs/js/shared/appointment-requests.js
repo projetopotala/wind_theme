@@ -1,4 +1,5 @@
-import { criarRestPublico } from "../supabase/rest.js";
+import { SUPABASE_CONFIG } from "../supabase/config.js";
+import { RestError } from "../supabase/rest.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const STORAGE_KEY = "potala.appointment-request.v1";
@@ -29,7 +30,26 @@ export function buildAppointmentRequest(raw = {}) {
 // Não monta o formulário nem envia automaticamente. A data relativa é validada
 // no servidor; assim uma repetição idempotente continua válida após a data passar.
 // Guarda somente a chave e um resumo criptográfico, nunca os campos de contato.
-export function createAppointmentRequestSender({ rest, storage, crypto = globalThis.crypto } = {}) {
+export async function submitAppointmentRequest(args, token, {
+  config = SUPABASE_CONFIG, fetchImpl = globalThis.fetch?.bind(globalThis),
+} = {}) {
+  if (!config.url || !config.publishableKey || typeof fetchImpl !== "function") {
+    throw new RestError("Envio indisponível.");
+  }
+  let response;
+  try {
+    response = await fetchImpl(`${config.url.replace(/\/$/, "")}/functions/v1/submit-appointment-request`, {
+      method: "POST", headers: { apikey: config.publishableKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ ...args, turnstile_token: token }),
+    });
+  } catch { throw new RestError("Sem conexão com o Portal. Tente de novo em instantes."); }
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new RestError("Não foi possível receber a solicitação.", { status: response.status });
+  return data;
+}
+
+export function createAppointmentRequestSender({ submit = submitAppointmentRequest, challenge,
+  storage, crypto = globalThis.crypto } = {}) {
   let pending = false;
   return async (raw) => {
     if (pending) return { status: "pending" };
@@ -51,7 +71,10 @@ export function createAppointmentRequestSender({ rest, storage, crypto = globalT
       const key = previous?.fingerprint === fingerprint ? previous.key : crypto.randomUUID();
       store.setItem(STORAGE_KEY, JSON.stringify({ fingerprint, key }));
       const args = Object.fromEntries(Object.entries(request).map(([name, value]) => [`p_${name}`, value]));
-      const result = await (rest ?? criarRestPublico()).rpc("submit_appointment_request", { p_idempotency_key: key, ...args });
+      if (typeof challenge !== "function") throw new Error("Verificação indisponível.");
+      const token = await challenge();
+      if (!token) throw new Error("Verificação não concluída.");
+      const result = await submit({ p_idempotency_key: key, ...args }, token);
       if (!result || !UUID.test(result.id) || result.status !== "recebida") {
         throw new Error("Não foi possível confirmar o recebimento. Tente novamente com os mesmos dados.");
       }

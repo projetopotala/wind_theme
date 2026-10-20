@@ -1,0 +1,5 @@
+project_id = "potala_portal_local"
+
+[functions.submit-appointment-request]
+# Chaves publicáveis não são JWTs. O wrapper valida a chave em `apikey`.
+verify_jwt = false

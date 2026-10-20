@@ -960,7 +960,8 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
           <label>Contato<input name="contact" type="text" minlength="8" maxlength="254" aria-describedby="bookContactHelp" required><span id="bookContactHelp">E-mail ou telefone com DDD, somente dígitos e + opcional.</span></label>
         </fieldset>
         <p class="small" id="bookPrivacy">Use o contato pelo qual a equipe poderá falar com você. Não informe dados de saúde neste formulário.</p>
-         <button class="btn btn-primary" id="bookContinue" type="submit" disabled>Envio indisponível</button><div class="book-summary" id="bookSummary" tabindex="-1" role="status" aria-live="polite" aria-atomic="true">O envio de solicitações pelo site ainda não está disponível. Nenhuma solicitação ou reserva será criada por este formulário.</div>
+        <div id="appointmentTurnstile" aria-label="Verificação de segurança"></div>
+        <button class="btn btn-primary" id="bookContinue" type="submit" disabled>Envio indisponível</button><div class="book-summary" id="bookSummary" tabindex="-1" role="status" aria-live="polite" aria-atomic="true">O envio de solicitações pelo site ainda não está disponível. Nenhuma solicitação ou reserva será criada por este formulário.</div>
       </form>
       <aside class="book-note"><div><div class="eyebrow" style="color:#d8c49a">Preferências</div><h3>Sua escolha</h3><p>A equipe verificará serviço, modalidade e período antes de combinar o atendimento com você.</p></div><div class="small" style="color:rgba(255,255,255,.55)">Solicitação não é reserva • sujeita à disponibilidade</div></aside>
     </div>
