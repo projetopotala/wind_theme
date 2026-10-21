@@ -27,6 +27,7 @@ export const TABELAS = Object.freeze({
   inscricoes: "enrollments",
   progressos: "course_progress",
   agenda: "schedule_items",
+  atendimentos: "appointment_requests",
   notificacoes: "notifications",
   preferencias: "notification_preferences",
 });
@@ -38,6 +39,7 @@ const CAMPOS = Object.freeze({
   inscricoes: { id: "id", cursoRef: "course_ref", curso: "course_title", professor: "teacher_name", modalidade: "modality", status: "status", proximaAula: "next_session_at", conteudoHref: "content_href", imagem: "image_url", inscritoEm: "enrolled_at" },
   progressos: { inscricaoId: "enrollment_id", total: "lessons_total", concluidas: "lessons_done", ultimaAulaRef: "last_lesson_ref", ultimoAcesso: "last_access_at" },
   agenda: { id: "id", tipo: "kind", titulo: "title", inicio: "starts_at", fim: "ends_at", local: "location", origem: "origin", fonteRef: "source_ref", fonteHref: "source_href" },
+  atendimentos: { id: "id", servico: "service", modalidade: "modality", dataPreferida: "preferred_date", periodoPreferido: "preferred_period", status: "status", criadaEm: "created_at", atualizadaEm: "updated_at" },
   notificacoes: { id: "id", tipo: "kind", titulo: "title", corpo: "body", href: "href", criadaEm: "created_at", lidaEm: "read_at" },
   preferencias: { tipo: "kind", ativa: "enabled" },
 });
@@ -49,6 +51,7 @@ const ORDEM = Object.freeze({
   inscricoes: ["enrolled_at", false],
   progressos: ["last_access_at", false],
   agenda: ["starts_at", true],
+  atendimentos: ["created_at", false],
   notificacoes: ["created_at", false],
   preferencias: ["kind", true],
 });
@@ -261,12 +264,16 @@ export function criarDadosSupabase({ client } = {}) {
 
     async listar(colecao, usuarioId) {
       const [coluna, ascendente] = ORDEM[colecao] || ["id", true];
-      const { data, error } = await client.from(tabelaDe(colecao)).select("*").order(coluna, { ascending: ascendente });
+      const campos = colecao === "atendimentos"
+        ? "id,service,modality,preferred_date,preferred_period,status,created_at,updated_at"
+        : "*";
+      const { data, error } = await client.from(tabelaDe(colecao)).select(campos).order(coluna, { ascending: ascendente });
       if (error) throw falhouDados(error);
       return (data || []).map((linha) => paraModelo(colecao, linha, usuarioId));
     },
 
     async gravar(colecao, registro, usuarioId) {
+      if (colecao === "atendimentos") throw new TypeError("Solicitações são criadas somente pela RPC autenticada.");
       const tabela = tabelaDe(colecao);
       const linha = paraLinha(colecao, registro);
       const conflito = CONFLITO[colecao];
@@ -280,12 +287,14 @@ export function criarDadosSupabase({ client } = {}) {
     },
 
     async remover(colecao, id) {
+      if (colecao === "atendimentos") throw new TypeError("Solicitações de atendimento não podem ser removidas pelo navegador.");
       const { error } = await client.from(tabelaDe(colecao)).delete().eq(COLUNA_ID[colecao] || "id", id);
       if (error) throw falhouDados(error);
     },
 
     /* O PostgREST exige um filtro para apagar; a RLS garante que só sai o que é da pessoa. */
     async limpar(colecao) {
+      if (colecao === "atendimentos") throw new TypeError("Solicitações de atendimento não podem ser apagadas pelo navegador.");
       const { error } = await client.from(tabelaDe(colecao)).delete().not(COLUNA_ID[colecao] || "id", "is", null);
       if (error) throw falhouDados(error);
     },
@@ -294,6 +303,24 @@ export function criarDadosSupabase({ client } = {}) {
     async marcarLida(id, quando) {
       const { error } = await client.from(TABELAS.notificacoes).update({ read_at: quando }).eq("id", id);
       if (error) throw falhouDados(error);
+    },
+
+    async opcoesAtendimento() {
+      const { data, error } = await client.rpc("list_appointment_offerings");
+      if (error) throw falhouDados(error);
+      return Array.isArray(data) ? data : [];
+    },
+
+    async solicitarAtendimento({ idempotencia, ofertaId, modalidade, dataPreferida, periodoPreferido }) {
+      const { data, error } = await client.rpc("submit_authenticated_appointment_request", {
+        p_idempotency_key: idempotencia,
+        p_offering_id: ofertaId,
+        p_modality: modalidade,
+        p_preferred_date: dataPreferida,
+        p_preferred_period: periodoPreferido,
+      });
+      if (error) throw falhouDados(error);
+      return data;
     },
   };
 }

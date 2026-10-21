@@ -30,9 +30,12 @@ import historico from "./vistas/historico.js";
 import acompanhando from "./vistas/acompanhando.js";
 import notificacoes from "./vistas/notificacoes.js";
 import configuracoes from "./vistas/configuracoes.js";
+import atendimentos from "./vistas/atendimentos.js";
+import { APPOINTMENT_REQUESTS_ENABLED } from "../../appointments/config.js";
 
-export const VISTAS = Object.freeze({ inicio, perfil, cursos, agenda, salvos, historico, acompanhando, notificacoes, configuracoes });
-const COLECOES_DA_AREA = Object.freeze(["salvos", "historico", "acompanhando", "inscricoes", "progressos", "agenda", "notificacoes", "preferencias"]);
+export const VISTAS = Object.freeze({ inicio, perfil, cursos, agenda, atendimentos, salvos, historico, acompanhando, notificacoes, configuracoes });
+const COLECOES_DA_AREA = Object.freeze(["salvos", "historico", "acompanhando", "inscricoes", "progressos", "agenda", "notificacoes", "preferencias",
+  ...(APPOINTMENT_REQUESTS_ENABLED ? ["atendimentos"] : [])]);
 
 export async function montarMeuPotala({ documento = document, janela = window } = {}) {
   const palco = documento.querySelector("[data-meu-potala]");
@@ -64,12 +67,18 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     if (dados && dono === usuarioId) return Promise.resolve(dados);
     if (pedido?.usuarioId === usuarioId) return pedido.promessa;
 
-    const promessa = Promise.all(COLECOES_DA_AREA.map((nome) => sessao.colecao(nome).listar()
+    const leituras = COLECOES_DA_AREA.map((nome) => sessao.colecao(nome).listar()
       .then((lista) => ({ nome, lista }))
-      .catch((erro) => ({ nome, lista: [], erro }))))
+      .catch((erro) => ({ nome, lista: [], erro })));
+    if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.opcoesAtendimento()
+      .then((lista) => ({ nome: "opcoesAtendimento", lista }))
+      .catch((erro) => ({ nome: "opcoesAtendimento", lista: [], erro })));
+    const promessa = Promise.all(leituras)
       .then((respostas) => {
         if (sessao.obter().usuario?.id !== usuarioId) return null;
         dados = Object.fromEntries(respostas.map(({ nome, lista }) => [nome, lista]));
+        dados.atendimentos ||= [];
+        dados.opcoesAtendimento ||= [];
         dados.falhas = respostas.filter((resposta) => resposta.erro).map((resposta) => resposta.nome);
         dono = usuarioId;
         return dados;
@@ -166,7 +175,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     }
 
     const atual = sessao.obter();
-    const contexto = { ...dados, estado: atual, agora: new Date(), parametros: new URLSearchParams(janela.location.search) };
+    const contexto = { ...dados, estado: atual, agora: new Date(), parametros: new URLSearchParams(janela.location.search), atendimentoDisponivel: APPOINTMENT_REQUESTS_ENABLED };
     let corpo;
     try {
       corpo = VISTAS[rota.nome].renderizar(contexto);
@@ -286,6 +295,11 @@ export async function montarMeuPotala({ documento = document, janela = window } 
   };
 
   const aoMudarPreferencia = (evento) => {
+    const formulario = evento.target.closest?.("[data-form='atendimento']");
+    if (formulario) {
+      delete formulario.dataset.idempotencia;
+      return;
+    }
     const chave = evento.target.closest?.("[data-preferencia]");
     if (!chave) return;
     const tipo = chave.dataset.preferencia;
@@ -308,6 +322,42 @@ export async function montarMeuPotala({ documento = document, janela = window } 
   };
 
   const aoEnviar = (evento) => {
+    const pedido = evento.target.closest?.("[data-form='atendimento']");
+    if (pedido) {
+      evento.preventDefault();
+      const campos = Object.fromEntries(new FormData(pedido));
+      const aviso = pedido.querySelector("[data-form-status]");
+      if (!campos.ofertaId || !["presencial", "online"].includes(campos.modalidade)
+        || !/^\d{4}-\d{2}-\d{2}$/.test(campos.dataPreferida || "")
+        || !["manha", "tarde", "noite"].includes(campos.periodoPreferido)) {
+        aviso.textContent = "Escolha o serviço, a modalidade, a data e o período.";
+        return;
+      }
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      if (new Date(`${campos.dataPreferida}T12:00:00`) < hoje) {
+        aviso.textContent = "Escolha uma data de hoje em diante.";
+        return;
+      }
+      if (!globalThis.crypto?.randomUUID) {
+        aviso.textContent = "Seu navegador não oferece a proteção necessária para enviar agora.";
+        return;
+      }
+      pedido.dataset.idempotencia ||= globalThis.crypto.randomUUID();
+      agir(pedido.querySelector("[type='submit']"), async () => {
+        await sessao.solicitarAtendimento({
+          idempotencia: pedido.dataset.idempotencia,
+          ofertaId: campos.ofertaId,
+          modalidade: campos.modalidade,
+          dataPreferida: campos.dataPreferida,
+          periodoPreferido: campos.periodoPreferido,
+        });
+        delete pedido.dataset.idempotencia;
+        dados = null;
+        dono = null;
+      }, "Solicitação recebida. Ela ainda não é uma consulta confirmada.");
+      return;
+    }
     const form = evento.target.closest?.("[data-form='compromisso']");
     if (!form) return;
     evento.preventDefault();

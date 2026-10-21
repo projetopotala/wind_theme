@@ -223,5 +223,33 @@ export function criarDadosDemonstracao({
         lista(usuarioId, "notificacoes").map((aviso) => (aviso.id === id ? { ...aviso, lidaEm: quando } : aviso)),
       );
     },
+
+    async opcoesAtendimento() {
+      return [
+        { id: "demo-acupuntura", service: "Acupuntura", professional: "Profissional Potala", modality: "presencial" },
+        { id: "demo-reiki", service: "Reiki", professional: "Profissional Potala", modality: "presencial" },
+      ];
+    },
+
+    async solicitarAtendimento({ idempotencia, ofertaId, modalidade, dataPreferida, periodoPreferido }, usuarioId) {
+      const opcoes = await this.opcoesAtendimento();
+      const oferta = opcoes.find((item) => item.id === ofertaId);
+      if (!oferta) throw new TypeError("Serviço indisponível.");
+      const existente = lista(usuarioId, "atendimentos").find((item) => item.idempotencia === idempotencia);
+      if (existente) return { id: existente.id, status: existente.status };
+      const modelo = fabricaDe("atendimentos")({
+        id: `demo-atendimento-${idDoEmail(idempotencia)}`,
+        usuarioId,
+        servico: oferta.service,
+        modalidade,
+        dataPreferida,
+        periodoPreferido,
+        status: "recebida",
+        criadaEm: agora(),
+        atualizadaEm: agora(),
+      });
+      escrever(chave(usuarioId, "atendimentos"), [{ ...modelo, idempotencia }, ...lista(usuarioId, "atendimentos")]);
+      return { id: modelo.id, status: modelo.status };
+    },
   };
 }
