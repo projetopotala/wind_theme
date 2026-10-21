@@ -400,6 +400,31 @@ test("na agenda só sai o que a pessoa anotou; o que vem do Instituto fica", () 
   assert.match(html, /data-form="compromisso"/);
 });
 
+test("a agenda demonstrativa leva aulas inscritas aos cursos e os demais compromissos às áreas correspondentes", () => {
+  const dados = contexto();
+  const html = VISTAS.agenda.renderizar(dados);
+  const destinos = new Map([
+    ["demo-ag-meditacao", ["Meditação para iniciantes — aula 8", "/meu-potala/cursos"]],
+    ["demo-ag-taichi", ["Tai chi chuan", "/meu-potala/cursos"]],
+    ["demo-ag-roda", ["Roda de conversa", "/atividades.html"]],
+    ["demo-ag-cinema", ["Cinema e escuta", "/cultura.html"]],
+    ["demo-ag-consulta", ["Atendimento de acolhimento", "/atendimentos.html"]],
+    ["demo-ag-workshop", ["Fotografar o cotidiano", "/workshops.html"]],
+  ]);
+  assert.equal(dados.agenda.length, destinos.size);
+  for (const item of dados.agenda) {
+    const [titulo, href] = destinos.get(item.id);
+    assert.equal(item.fonteHref, href, titulo);
+    assert.ok(html.includes(`<a href="${href}">${titulo}</a>`), titulo);
+  }
+  for (const item of dados.agenda.filter((compromisso) => compromisso.fonteRef)) {
+    assert.ok(dados.inscricoes.some((inscricao) => inscricao.id === item.fonteRef));
+  }
+  const cursos = VISTAS.cursos.renderizar(dados);
+  assert.match(cursos, /Meditação para iniciantes/);
+  assert.match(cursos, /Tai chi chuan/);
+});
+
 test("os filtros de Salvos vivem no endereço e não empilham histórico", () => {
   assert.equal(filtroDoEndereco(new URLSearchParams("filtro=cursos")), "cursos");
   assert.equal(filtroDoEndereco(new URLSearchParams("filtro=javascript")), "tudo");

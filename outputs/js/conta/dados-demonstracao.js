@@ -57,8 +57,8 @@ export function sementeDeDemonstracao({ usuarioId, agora = new Date() } = {}) {
   ];
 
   const agenda = [
-    criarCompromisso({ id: "demo-ag-meditacao", usuarioId, tipo: "aula", titulo: "Meditação para iniciantes — aula 8", inicio: em(1, 19), fim: em(1, 20), local: "Online", origem: "instituto", fonteRef: "demo-insc-meditacao", fonteHref: "/inspiracao.html" }),
-    criarCompromisso({ id: "demo-ag-taichi", usuarioId, tipo: "aula", titulo: "Tai chi chuan", inicio: em(2, 8), fim: em(2, 9, 15), local: "Sala do jardim", origem: "instituto", fonteRef: "demo-insc-taichi", fonteHref: "/atividades.html" }),
+    criarCompromisso({ id: "demo-ag-meditacao", usuarioId, tipo: "aula", titulo: "Meditação para iniciantes — aula 8", inicio: em(1, 19), fim: em(1, 20), local: "Online", origem: "instituto", fonteRef: "demo-insc-meditacao", fonteHref: "/meu-potala/cursos" }),
+    criarCompromisso({ id: "demo-ag-taichi", usuarioId, tipo: "aula", titulo: "Tai chi chuan", inicio: em(2, 8), fim: em(2, 9, 15), local: "Sala do jardim", origem: "instituto", fonteRef: "demo-insc-taichi", fonteHref: "/meu-potala/cursos" }),
     criarCompromisso({ id: "demo-ag-roda", usuarioId, tipo: "atividade", titulo: "Roda de conversa", inicio: em(4, 10), fim: em(4, 11, 30), local: "Biblioteca Potala", origem: "instituto", fonteHref: "/atividades.html" }),
     criarCompromisso({ id: "demo-ag-cinema", usuarioId, tipo: "palestra", titulo: "Cinema e escuta", inicio: em(6, 19), fim: em(6, 22), local: "Cine Potala", origem: "instituto", fonteHref: "/cultura.html" }),
     criarCompromisso({ id: "demo-ag-consulta", usuarioId, tipo: "consulta", titulo: "Atendimento de acolhimento", inicio: em(9, 15), fim: em(9, 16), local: "Sala 2", origem: "pessoal", fonteHref: "/atendimentos.html" }),
