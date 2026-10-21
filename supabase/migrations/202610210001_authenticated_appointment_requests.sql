@@ -237,9 +237,27 @@ begin
   return receipt;
 end;
 $$;
+-- A tela permanece desligada e esta RPC não pode ser usada para contornar a
+-- Edge Function. Uma futura ativação exige uma migration específica e revisada
+-- que conceda EXECUTE a authenticated.
 revoke all on function public.submit_authenticated_appointment_request(uuid,text,text,date,text)
-  from public, anon;
-grant execute on function public.submit_authenticated_appointment_request(uuid,text,text,date,text)
-  to authenticated;
+  from public, anon, authenticated;
+
+do $$
+begin
+  if has_function_privilege(
+       'anon',
+       'public.submit_authenticated_appointment_request(uuid,text,text,date,text)',
+       'EXECUTE'
+     )
+     or has_function_privilege(
+       'authenticated',
+       'public.submit_authenticated_appointment_request(uuid,text,text,date,text)',
+       'EXECUTE'
+     ) then
+    raise exception 'A RPC autenticada de atendimentos deve permanecer bloqueada.';
+  end if;
+end;
+$$;
 
 commit;

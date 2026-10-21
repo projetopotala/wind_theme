@@ -49,8 +49,12 @@ test("a migration reutiliza operação, vincula Auth e mantém a solicitação s
   assert.match(sql, /appointment_requests_client_read[\s\S]*requester_user_id = \(select auth\.uid\(\)\)/i);
   assert.match(sql, /appointment_requests_professional_read[\s\S]*is_appointment_professional/i);
   assert.match(sql, /public\.submit_appointment_request\(/i, "a validação e os limites da F2.2 devem ser reutilizados");
-  assert.match(sql, /revoke all on function public\.submit_authenticated_appointment_request[\s\S]*from public, anon/i);
-  assert.match(sql, /grant execute on function public\.submit_authenticated_appointment_request[\s\S]*to authenticated/i);
+  assert.match(sql, /revoke all on function public\.submit_authenticated_appointment_request[\s\S]*from public, anon, authenticated/i);
+  assert.doesNotMatch(sql, /grant execute on function public\.submit_authenticated_appointment_request[\s\S]*to authenticated/i);
+  assert.match(sql, /has_function_privilege\([\s\S]*'anon'[\s\S]*submit_authenticated_appointment_request[\s\S]*'authenticated'/i);
+  const revokePosition = sql.search(/revoke all on function public\.submit_authenticated_appointment_request/i);
+  const commitPosition = sql.lastIndexOf("commit;");
+  assert.ok(revokePosition >= 0 && revokePosition < commitPosition, "o bloqueio deve ser atômico com a migration");
   assert.doesNotMatch(sql, /insert into public\.schedule_items/i, "pedido ainda não pode virar consulta automaticamente");
 });
 
