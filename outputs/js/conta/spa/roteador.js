@@ -43,6 +43,7 @@ export function resolverRota(pathname = "") {
     return { rota: null, encontrada: false };
   }
   limpo = limpo.replace(/\/+$/, "");
+  if (limpo === `${BASE}.html`) limpo = BASE;
   if (limpo !== BASE && !limpo.startsWith(`${BASE}/`)) return { rota: null, encontrada: false, fora: true };
   const resto = limpo.slice(BASE.length).replace(/^\/+/, "");
   const rota = ROTAS.find((candidata) => candidata.caminho === resto);
