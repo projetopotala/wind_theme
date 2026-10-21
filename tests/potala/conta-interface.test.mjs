@@ -95,6 +95,7 @@ test("as rotas do Meu Potala resolvem com e sem barra, com filtro, e recusam o r
   assert.equal(BASE, "/meu-potala");
   assert.equal(resolverRota("/meu-potala").rota.nome, "inicio");
   assert.equal(resolverRota("/meu-potala/").rota.nome, "inicio");
+  assert.equal(resolverRota("/meu-potala.html").rota.nome, "inicio", "o arquivo HTML direto deve abrir a área pessoal");
   assert.equal(resolverRota("/meu-potala/salvos?filtro=cursos").rota.nome, "salvos");
   assert.equal(resolverRota("/meu-potala/nada").encontrada, false);
   assert.equal(resolverRota("/meu-potala/jornada").encontrada, false, "a Jornada foi removida do Meu Potala");
