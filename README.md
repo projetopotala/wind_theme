@@ -1,6 +1,6 @@
 # Instituto Potala
 
-O site publicado é o portal estático em `outputs/`. O preview local serve essa pasta; `npm run dev` não sobe o Potala.
+O site publicado é o portal estático em `outputs/`. Para abrir o Potala localmente, use `npm run dev:portal`. Os comandos `npm run dev`, `npm run build`, `npm run start` e `npm test` ainda pertencem ao starter Vinext; não geram nem validam o portal. Confira o diretório de publicação antes de um deploy: o portal deve servir `outputs/` como raiz.
 
 ## Pré-requisitos
 
@@ -10,8 +10,10 @@ O site publicado é o portal estático em `outputs/`. O preview local serve essa
 
 ```bash
 npm install
-npm run preview:portal
+npm run dev:portal
 ```
+
+`npm run preview:portal` continua disponível como alias histórico. Antes de editar ou publicar, rode `npm run check:portal` para verificar a Chegada, a Home, as rotas do painel, a autenticação administrativa e a configuração pública do Supabase. Esse comando é uma verificação rápida local; `npm run test:portal` executa a suíte completa e pode apontar falhas independentes dessas rotas.
 
 O log da Vercel, no projeto já ligado, fica em `npm run logs`. Precisa da conta dona do projeto Potala. A sessão atual do CLI é `newstoresorteios-3937`, no time NewStore's projects, e esse time não tem o portal.
 

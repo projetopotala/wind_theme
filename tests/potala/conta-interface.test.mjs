@@ -65,13 +65,13 @@ test("a recuperação de senha não revela se o e-mail tem conta", () => {
   assert.doesNotMatch(enviada, /não encontr|inexistente|não existe/i);
 });
 
-test("o menu de quem entrou tem os dez destinos, e o nome vem escapado", () => {
+test("o menu de quem entrou tem todos os destinos, e o nome vem escapado", () => {
   const usuario = criarUsuario({ id: "u1", email: "ana@exemplo.com" });
   const perfil = criarPerfil({ usuarioId: "u1", nome: MALICIOSO });
   const menu = renderizarPainel("menu", { usuario, perfil, naoLidas: 2 });
 
   assert.ok(!menu.includes("<img src=x"), "o nome entrou sem escapar");
-  for (const destino of ["Meu Potala", "Meu perfil", "Meus cursos", "Minha agenda", "Salvos", "Histórico", "Acompanhando", "Notificações", "Configurações", "Sair"]) {
+  for (const destino of ["Meu Potala", "Meu perfil", "Meus cursos", "Minha agenda", "Meus atendimentos", "Salvos", "Histórico", "Acompanhando", "Notificações", "Configurações", "Sair"]) {
     assert.ok(menu.includes(destino), `faltou ${destino} no menu`);
   }
   assert.match(menu, /href="\/meu-potala\/salvos"/);
@@ -95,6 +95,7 @@ test("as rotas do Meu Potala resolvem com e sem barra, com filtro, e recusam o r
   assert.equal(BASE, "/meu-potala");
   assert.equal(resolverRota("/meu-potala").rota.nome, "inicio");
   assert.equal(resolverRota("/meu-potala/").rota.nome, "inicio");
+  assert.equal(resolverRota("/meu-potala.html").rota.nome, "inicio", "o arquivo HTML direto deve abrir a área pessoal");
   assert.equal(resolverRota("/meu-potala/salvos?filtro=cursos").rota.nome, "salvos");
   assert.equal(resolverRota("/meu-potala/nada").encontrada, false);
   assert.equal(resolverRota("/meu-potala/jornada").encontrada, false, "a Jornada foi removida do Meu Potala");
@@ -356,7 +357,7 @@ function contexto(extra = {}) {
   return { ...sementeDeDemonstracao({ usuarioId: USUARIO.id, agora: AGORA }), estado: ESTADO, agora: AGORA, parametros: new URLSearchParams(), ...extra };
 }
 
-test("as nove telas desenham com os dados de demonstração, sem sobras de dado ausente", () => {
+test("todas as telas desenham com os dados de demonstração, sem sobras de dado ausente", () => {
   assert.deepEqual(Object.keys(VISTAS).sort(), ROTAS.map((rota) => rota.nome).sort(), "cada rota precisa de uma tela");
   for (const [nome, vista] of Object.entries(VISTAS)) {
     const html = vista.renderizar(contexto());
@@ -397,6 +398,31 @@ test("na agenda só sai o que a pessoa anotou; o que vem do Instituto fica", () 
   assert.doesNotMatch(html, /data-id="inst-1"/);
   assert.match(html, /Amanhã/);
   assert.match(html, /data-form="compromisso"/);
+});
+
+test("a agenda demonstrativa leva aulas inscritas aos cursos e os demais compromissos às áreas correspondentes", () => {
+  const dados = contexto();
+  const html = VISTAS.agenda.renderizar(dados);
+  const destinos = new Map([
+    ["demo-ag-meditacao", ["Meditação para iniciantes — aula 8", "/meu-potala/cursos"]],
+    ["demo-ag-taichi", ["Tai chi chuan", "/meu-potala/cursos"]],
+    ["demo-ag-roda", ["Roda de conversa", "/atividades.html"]],
+    ["demo-ag-cinema", ["Cinema e escuta", "/cultura.html"]],
+    ["demo-ag-consulta", ["Atendimento de acolhimento", "/atendimentos.html"]],
+    ["demo-ag-workshop", ["Fotografar o cotidiano", "/workshops.html"]],
+  ]);
+  assert.equal(dados.agenda.length, destinos.size);
+  for (const item of dados.agenda) {
+    const [titulo, href] = destinos.get(item.id);
+    assert.equal(item.fonteHref, href, titulo);
+    assert.ok(html.includes(`<a href="${href}">${titulo}</a>`), titulo);
+  }
+  for (const item of dados.agenda.filter((compromisso) => compromisso.fonteRef)) {
+    assert.ok(dados.inscricoes.some((inscricao) => inscricao.id === item.fonteRef));
+  }
+  const cursos = VISTAS.cursos.renderizar(dados);
+  assert.match(cursos, /Meditação para iniciantes/);
+  assert.match(cursos, /Tai chi chuan/);
 });
 
 test("os filtros de Salvos vivem no endereço e não empilham histórico", () => {

@@ -563,3 +563,8 @@ body[data-section="recepcao"] .site-nav-link.is-active {
   .reception-path > a span { transition: none; }
   .reception-portrait:hover img { transform: scale(1.01); }
 }
+
+/* Uma barra vertical persistente reduz a largura útil de uma viewport de 320px. */
+@media (max-width: 335px) {
+  html, body[data-section="recepcao"], .reception-page { min-width: 0; }
+}

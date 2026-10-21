@@ -25,6 +25,9 @@ const LABELS = {
   sábado: "Sábado",
 };
 
+const COURSE_MODALITIES = ["online", "presencial"];
+const COURSE_AVAILABILITY = ["manha", "tarde", "noite", "sábado"];
+
 export function resolveLearningAdvice(goal) {
   return { ...(ADVICE_PATHS[goal] || ADVICE_PATHS.choose) };
 }
@@ -39,7 +42,11 @@ export function buildCourseInterest(raw = {}) {
   if (topic.length < 3) {
     throw new Error("Conte qual tema você gostaria de aprender.");
   }
-  if (!LABELS[modalityKey] || availabilityKeys.length === 0) {
+  if (topic.length > 160) {
+    throw new Error("Resuma o tema em até 160 caracteres.");
+  }
+  if (!COURSE_MODALITIES.includes(modalityKey) || availabilityKeys.length === 0
+    || availabilityKeys.some((key) => !COURSE_AVAILABILITY.includes(key))) {
     throw new Error("Escolha uma modalidade e ao menos um período disponível.");
   }
 
@@ -51,6 +58,37 @@ export function buildCourseInterest(raw = {}) {
     goal: String(raw.goal || "").trim(),
     ...(contact ? { contact } : {}),
   };
+}
+
+export function createCourseInterestSender(sendInterest = enviarInteresse) {
+  let pending = false;
+  let lastSent = null;
+  return async (interest) => {
+    if (pending) return "pending";
+    const signature = JSON.stringify(interest);
+    if (signature === lastSent) return "duplicate";
+    pending = true;
+    try {
+      await sendInterest({ kind: "curso", subject: interest.topic, details: interest });
+      lastSent = signature;
+      return "sent";
+    } finally {
+      pending = false;
+    }
+  };
+}
+
+export function courseInterestFeedback(result) {
+  if (result === "sent") {
+    return { message: "Interesse enviado. A equipe do Instituto já pode ver sua proposta.", state: "success" };
+  }
+  if (result === "duplicate") {
+    return { message: "Este interesse já foi enviado. Altere os dados para enviar outra proposta.", state: "success" };
+  }
+  if (result === "pending") {
+    return { message: "Enviando ao Instituto…", state: "" };
+  }
+  throw new Error("Resultado de envio desconhecido.");
 }
 
 export function getCohortProgress(currentStage, totalStages) {
@@ -110,9 +148,12 @@ export function mountLearningStudio(root = document) {
 
   const form = studio.querySelector("[data-course-interest-form]");
   const status = studio.querySelector("[data-interest-status]");
+  const sendInterest = createCourseInterestSender();
+  let submitting = false;
   const onSubmit = async (event) => {
     event.preventDefault();
     const submit = form.querySelector('[type="submit"]');
+    if (submitting || submit?.disabled) return;
     let interest;
     try {
       interest = readInterestForm(form);
@@ -121,18 +162,21 @@ export function mountLearningStudio(root = document) {
       status.dataset.state = "error";
       return;
     }
+    submitting = true;
     submit?.setAttribute("disabled", "");
     status.textContent = "Enviando ao Instituto…";
     status.dataset.state = "";
     try {
-      await enviarInteresse({ kind: "curso", subject: interest.topic, details: interest });
-      renderInterestReview(studio, interest);
-      status.textContent = "Interesse enviado. A equipe do Instituto já pode ver sua proposta.";
-      status.dataset.state = "success";
+      const result = await sendInterest(interest);
+      if (result === "sent") renderInterestReview(studio, interest);
+      const feedback = courseInterestFeedback(result);
+      status.textContent = feedback.message;
+      status.dataset.state = feedback.state;
     } catch (error) {
       status.textContent = `Não foi possível enviar agora: ${error.message}`;
       status.dataset.state = "error";
     } finally {
+      submitting = false;
       submit?.removeAttribute("disabled");
     }
   };

@@ -163,6 +163,8 @@ function dadosPreguicosos(fabricar) {
     remover: delegar("remover"),
     limpar: delegar("limpar"),
     marcarLida: delegar("marcarLida"),
+    opcoesAtendimento: delegar("opcoesAtendimento"),
+    solicitarAtendimento: delegar("solicitarAtendimento"),
   };
 }
 

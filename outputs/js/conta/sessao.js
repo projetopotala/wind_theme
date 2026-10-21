@@ -81,6 +81,8 @@ export function comReserva(principal, reserva, { aoCair } = {}) {
     remover: chamar("remover"),
     limpar: chamar("limpar"),
     marcarLida: chamar("marcarLida"),
+    opcoesAtendimento: chamar("opcoesAtendimento"),
+    solicitarAtendimento: chamar("solicitarAtendimento"),
     get emReserva() {
       return usandoReserva;
     },
@@ -247,6 +249,16 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
         limpar: async () => aposUsarDados(await dados.limpar(nome, exigirConta())),
         marcarLida: async (id, quando = agora()) => aposUsarDados(await dados.marcarLida(id, paraData(quando), exigirConta())),
       };
+    },
+
+    async opcoesAtendimento() {
+      exigirConta();
+      return aposUsarDados(await dados.opcoesAtendimento());
+    },
+
+    async solicitarAtendimento(pedido) {
+      const usuarioId = exigirConta();
+      return aposUsarDados(await dados.solicitarAtendimento(pedido, usuarioId));
     },
 
     destroy() {

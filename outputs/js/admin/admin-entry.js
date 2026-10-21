@@ -8,6 +8,7 @@ import { createAdminShell } from "./admin-shell.js";
 import { createOperationsClient } from "./operations/client.js";
 import { createOperationsController } from "./operations/controller.js";
 import { carregarRecebidos } from "./recebidos.js";
+import { createAppointmentPanel } from "./appointment-panel.js";
 import { DEFAULT_HOME_BLOCKS } from "../home/journey-data.js";
 import { withRequiredDefaultSections } from "../home/default-section-bridge.js";
 import { createSupabaseContentRepository } from "../home/supabase-content-repository.js";
@@ -20,6 +21,7 @@ let controller = null;
 let operationsController = null;
 let passwordSetup = null;
 let operacaoAbrindo = null;
+let appointmentPanel = null;
 const firstAccess = isAdminFirstAccess(window.location);
 
 const shell = panel ? createAdminShell({ root: panel }) : null;
@@ -46,9 +48,11 @@ async function abrirOperacao(client, access) {
     if (operationsStatus) operationsStatus.textContent = error.message;
     return;
   }
+  appointmentPanel = createAppointmentPanel({ root: panel, client });
   operationsController = createOperationsController({
     root: panel,
     client: operations,
+    onRendered: () => appointmentPanel?.render(),
     onNavigate(section) {
       panel.querySelector(`[data-admin-nav] [data-section="${section}"]`)?.click();
     },
@@ -68,6 +72,10 @@ try {
   createAdminAuth({
     client,
     root,
+    onState(state) {
+      if (state !== "authorized") appointmentPanel?.clear();
+      else if (appointmentPanel) void appointmentPanel.reload();
+    },
     async onAuthorized(access) {
       shell?.setUser({
         name: access.user?.name || access.session?.user?.email || "Administração Potala",
@@ -83,6 +91,7 @@ try {
         await Promise.resolve(controller.pronto).catch((error) => console.error("Falha ao abrir o editor da Jornada.", error));
       }
       await operacaoAbrindo;
+      if (appointmentPanel) void appointmentPanel.reload();
       panel?.querySelector("h2")?.focus();
     },
   });

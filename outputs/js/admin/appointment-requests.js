@@ -1,0 +1,21 @@
+// Usar somente o cliente da sessão administrativa; autorização final é a RLS.
+const FIELDS = "id,service,modality,requester_name,contact_type,contact,preferred_date,preferred_period,status,created_at,updated_at";
+export const STATES = ["recebida", "em_contato", "encerrada", "cancelada"];
+
+export async function loadAppointmentRequests(client) {
+  const { data, error } = await client.from("appointment_requests").select(FIELDS)
+    .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(100);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function updateAppointmentRequestStatus(client, id, status, updatedAt) {
+  if (!STATES.includes(status)) throw new Error("Estado de solicitação inválido.");
+  if (!updatedAt || !Number.isFinite(Date.parse(updatedAt))) throw new Error("Recarregue a solicitação antes de atualizar.");
+  const { data, error } = await client.from("appointment_requests").update({ status })
+    .eq("id", id).eq("updated_at", updatedAt).select(FIELDS).maybeSingle();
+  if (error) throw error;
+  if (!data) throw Object.assign(new Error("Alteração não confirmada. A solicitação mudou ou não está acessível. Recarregue antes de tentar novamente."), { code: "APPOINTMENT_CONFLICT" });
+  if (data.id !== id || data.status !== status || !data.updated_at) throw new Error("Alteração não confirmada.");
+  return data;
+}

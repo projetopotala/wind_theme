@@ -1,3 +1,5 @@
+import { setupAppointmentForm } from "./appointments/form.js";
+
 function setupMural(documentRef = document) {
   const form = documentRef.querySelector("#muralForm");
   const feedback = documentRef.querySelector("#muralFeedback");
@@ -13,37 +15,6 @@ function setupMural(documentRef = document) {
     }
     feedback.textContent = "Sua intenção foi acolhida nesta experiência local.";
     form.reset();
-  });
-}
-
-function setupDemoSchedule(documentRef = document) {
-  const form = documentRef.querySelector("#bookForm");
-  const button = documentRef.querySelector("#bookContinue");
-  const summary = documentRef.querySelector("#bookSummary");
-  if (!form || !button || !summary) return;
-
-  button.addEventListener("click", () => {
-    const values = Object.fromEntries(new FormData(form));
-    const selection = [
-      values.atendimento,
-      values.profissional,
-      values.modalidade,
-      values.data,
-      values.horario,
-      values.investimento,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    summary.replaceChildren();
-    const title = documentRef.createElement("strong");
-    title.textContent = "Resumo demonstrativo";
-    const text = documentRef.createElement("span");
-    text.textContent = selection || "Escolha as opções acima para montar um resumo.";
-    const note = documentRef.createElement("p");
-    note.textContent = "Nenhum agendamento foi criado. A disponibilidade real deve ser confirmada com a Recepção.";
-    summary.append(title, text, note);
-    summary.hidden = false;
-    summary.focus();
   });
 }
 
@@ -615,7 +586,7 @@ function setupReflection(documentRef = document) {
 
 function mountConceptEnhancements(documentRef = document) {
   setupMural(documentRef);
-  setupDemoSchedule(documentRef);
+  setupAppointmentForm(documentRef);
   setupReadingLabels(documentRef);
   setupJourneyThread(documentRef);
   setupReflection(documentRef);
@@ -635,7 +606,7 @@ export {
   caminhoDaJornada,
   journeyProgress,
   mountConceptEnhancements,
-  setupDemoSchedule,
+  setupAppointmentForm,
   setupJourneyThread,
   setupMural,
   setupReadingLabels,

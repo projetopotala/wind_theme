@@ -164,14 +164,15 @@ linear-gradient(180deg,#f7f4eb 0%,#f2eee3 72%,#e8eee8 100%)}
 .picshi{background:var(--night);color:#f7f4ec;overflow:hidden}
 .picshi .section-head .lead{color:rgba(255,255,255,.68)}
 .picshi .section-num{color:rgba(255,255,255,.12)}
-.map-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center}
-.picshi-map{aspect-ratio:1;position:relative;max-width:560px;margin:auto;display:grid;place-items:center}
+.map-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:36px;align-items:center}
+.picshi-map{width:100%;aspect-ratio:1;position:relative;max-width:560px;margin:auto;display:grid;place-items:center}
 .picshi-core{width:170px;height:170px;border-radius:50%;background:#f4efe1;color:var(--ink);display:grid;place-items:center;text-align:center;z-index:3;padding:20px;font-family:var(--serif);font-size:1.6rem;line-height:1}
 .ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.16)}
 .r1{inset:12%}.r2{inset:2%}
 .map-node{position:absolute;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.07);color:#fff;border-radius:999px;padding:9px 13px;font-size:.76rem;cursor:pointer;transition:.2s ease}
 .map-node:hover,.map-node.active{background:#f4efe1;color:var(--ink);transform:scale(1.05)}
 .n1{top:4%;left:50%;transform:translateX(-50%)}.n2{right:1%;top:27%}.n3{right:7%;bottom:18%}.n4{left:10%;bottom:4%}.n5{left:-1%;top:33%}.n6{left:16%;top:15%}
+.map-node.n1:hover,.map-node.n1.active{transform:translateX(-50%) scale(1.05)}
 .map-caption{min-height:330px;border:1px solid rgba(255,255,255,.14);border-radius:28px;padding:30px;background:rgba(255,255,255,.05)}
 .map-caption h3{font-family:var(--serif);font-size:2.5rem;font-weight:500;line-height:1;margin:10px 0 16px}
 .map-caption p{color:rgba(255,255,255,.67)}
@@ -275,9 +276,10 @@ linear-gradient(180deg,#f7f4eb 0%,#f2eee3 72%,#e8eee8 100%)}
 .schedule .lead{color:rgba(255,255,255,.7)}
 .schedule-box{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-top:38px}
 .book-panel{border-radius:30px;padding:28px;background:#fff;color:var(--ink)}
-.book-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+.book-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:20px 0;border:0;padding:0;min-width:0}
 .book-grid label{font-size:.72rem;font-weight:700;color:var(--ink-soft)}
-.book-grid select{width:100%;margin-top:5px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;color:var(--ink)}
+.book-grid select,.book-grid input{width:100%;min-width:0;margin-top:5px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;color:var(--ink);font:inherit}
+.book-grid label{min-width:0}.book-panel{min-width:0}.book-panel button{max-width:100%;white-space:normal}
 .book-note{border-radius:30px;padding:28px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;justify-content:space-between}
 .book-note h3{font-family:var(--serif);font-size:2.4rem;line-height:1;font-weight:500;margin:10px 0}
 .book-note p{color:rgba(255,255,255,.68)}
@@ -294,7 +296,8 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
 .proto{position:fixed;right:18px;bottom:18px;z-index:1000;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:999px;padding:9px 12px;font-size:.7rem;color:var(--ink-soft)}
 
 @media(max-width:980px){
-  .hero-grid,.section-head,.health-grid,.inner-map,.investigate-wrap,.map-grid,.case,.discovery-hero,.bank,.virtual-wrap,.schedule-box,.footer-grid{grid-template-columns:1fr}
+  .hero-grid,.section-head,.health-grid,.inner-map,.investigate-wrap,.case,.discovery-hero,.bank,.virtual-wrap,.schedule-box,.footer-grid{grid-template-columns:1fr}
+  .map-grid{grid-template-columns:minmax(0,1fr)}
   .hero{padding-top:120px}.hero-card{max-width:650px}.section-head{gap:16px}.section-num{font-size:3.5rem}
   .cards{grid-template-columns:repeat(2,1fr)}.case-lenses{grid-template-columns:repeat(2,1fr)}.people-grid,.special-grid,.oracle-grid{grid-template-columns:1fr 1fr}.toolbar-row{grid-template-columns:1fr 1fr}.toolbar-row .btn{grid-column:1/-1}
   .signal-flow{grid-template-columns:repeat(5,minmax(120px,1fr));overflow:auto;padding-bottom:10px}
@@ -305,6 +308,14 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
   .section{padding:78px 0}.section-head{margin-bottom:34px}.phase-line{grid-template-columns:1fr 1fr}.orbit{max-width:360px}.orbit-tag{font-size:.64rem;padding:6px 8px}.center-self{width:112px;height:112px;font-size:1.1rem}.t2{right:-4%}.t5{left:-4%}
   .breathe{align-items:flex-start}.map-caption{min-height:auto}.case-lenses{grid-template-columns:1fr 1fr}.plaza-head{display:block}.plaza-toolbar{top:56px}.toolbar-row{grid-template-columns:1fr}.toolbar-row .btn{grid-column:auto}.cards{grid-template-columns:1fr}.feature h3{font-size:2.45rem}.feature,.side-feature{min-height:300px}.people-grid,.special-grid,.oracle-grid{grid-template-columns:1fr}.book-grid{grid-template-columns:1fr}.footer-links{grid-template-columns:1fr}.footer-bottom{display:block}.proto{display:none}
 }
+@media(max-width:480px){
+  .picshi-map{aspect-ratio:auto;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;place-items:stretch;padding-top:24px}
+  .picshi-core{grid-column:1/-1;justify-self:center;width:160px;height:160px;margin-bottom:24px;font-size:1.45rem}
+  .picshi-map .ring{inset:auto;left:50%;top:0;transform:translateX(-50%);pointer-events:none}
+  .picshi-map .r1{width:184px;height:184px}.picshi-map .r2{width:212px;height:212px;top:-14px}
+  .picshi-map .map-node{position:relative;inset:auto;min-width:0;min-height:44px;padding:9px 7px;font-size:.69rem;line-height:1.15;transform:none}
+  .picshi-map .map-node:hover,.picshi-map .map-node.active{transform:none}
+}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}
 }
@@ -312,7 +323,7 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
 <meta name="description" content="Instituto Potala: saúde, cuidado e autoconhecimento — matérias para ler com calma, caminhos de atendimento, profissionais e formas de acesso.">
 <link rel="stylesheet" href="css/atendimentos-conceito.css">
 </head>
-<body>
+<body data-page="transcendido">
 <a class="skip" href="#main">Pular para o conteúdo</a>
 <header class="topbar" id="topbar">
   <div class="shell topbar-row">
@@ -933,24 +944,26 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
   <div class="shell">
     <div class="section-head reveal">
       <div><div class="section-num" style="color:rgba(255,255,255,.12)">10</div><div class="eyebrow" style="color:#d8c49a">Agendamentos</div></div>
-      <div><h2 class="h2">Da descoberta para a ação.</h2><p class="lead">Este fluxo é demonstrativo. Nenhum horário, valor ou profissional apresentado aqui corresponde a disponibilidade real.</p></div>
+      <div><h2 class="h2">Da descoberta para a ação.</h2><p class="lead">Conte qual atendimento você procura. Suas preferências serão avaliadas pela equipe, sem garantia de disponibilidade ou reserva de horário.</p></div>
     </div>
     <div class="schedule-box reveal">
-      <form class="book-panel" id="bookForm">
-        <div class="eyebrow">Simulação de interface</div>
-        <h3 style="font-family:var(--serif);font-size:2.4rem;font-weight:500;margin:8px 0">Encontrar um horário</h3>
-        <div class="book-grid">
-          <label>Técnica<select name="atendimento"><option>Selecione uma técnica</option><option>Acupuntura</option><option>Reflexologia Palmar</option><option>Reiki</option></select></label>
-          <label>Profissional<select name="profissional"><option>Selecione um profissional</option><option>Marina Oliveira · demonstrativo</option><option>João Silva · demonstrativo</option><option>Ana Costa · demonstrativo</option></select></label>
-          <label>Modalidade<select name="modalidade"><option>Escolha uma modalidade</option><option>Presencial</option><option>Online</option></select></label>
-          <label>Data<select name="data"><option>Escolha uma data</option><option>Exemplo de agenda</option></select></label>
-          <label>Horário<select name="horario"><option>Escolha um horário</option><option>09:00 · demonstrativo</option><option>14:30 · demonstrativo</option><option>18:00 · demonstrativo</option></select></label>
-          <label>Investimento<select name="investimento"><option>Consultar valor na ficha</option></select></label>
-        </div>
-        <p class="small">Nesta versão, o objetivo é testar fluxo e hierarquia — não disponibilidade real.</p>
-        <button class="btn btn-primary" id="bookContinue" type="button">Continuar com esta escolha →</button><div class="book-summary" id="bookSummary" tabindex="-1" aria-live="polite" hidden></div>
+      <form class="book-panel" id="bookForm" aria-describedby="bookSummary bookPrivacy">
+        <div class="eyebrow">Solicitação de atendimento</div>
+        <h3 id="bookTitle" style="font-family:var(--serif);font-size:2.4rem;font-weight:500;margin:8px 0">Seu atendimento</h3>
+        <fieldset class="book-grid" aria-labelledby="bookTitle" disabled>
+          <label>Serviço desejado<select name="service" required><option value="">Selecione um serviço</option><option>Acupuntura</option><option>Reflexologia Palmar</option><option>Reiki</option></select></label>
+          <label>Modalidade<select name="modality" required><option value="">Escolha uma modalidade</option><option value="presencial">Presencial</option><option value="online">Online</option></select></label>
+          <label>Preferência de data<input name="preferred_date" type="date" required></label>
+          <label>Preferência de período<select name="preferred_period" required><option value="">Escolha um período</option><option value="manha">Manhã</option><option value="tarde">Tarde</option><option value="noite">Noite</option></select></label>
+          <label>Seu nome<input name="requester_name" autocomplete="name" minlength="2" maxlength="100" required></label>
+          <label>Tipo de contato<select name="contact_type" required><option value="">Selecione o tipo</option><option value="email">E-mail</option><option value="telefone">Telefone</option></select></label>
+          <label>Contato<input name="contact" type="text" minlength="8" maxlength="254" aria-describedby="bookContactHelp" required><span id="bookContactHelp">E-mail ou telefone com DDD, somente dígitos e + opcional.</span></label>
+        </fieldset>
+        <p class="small" id="bookPrivacy">Use o contato pelo qual a equipe poderá falar com você. Não informe dados de saúde neste formulário.</p>
+        <div id="appointmentTurnstile" aria-label="Verificação de segurança"></div>
+        <button class="btn btn-primary" id="bookContinue" type="submit" disabled>Envio indisponível</button><div class="book-summary" id="bookSummary" tabindex="-1" role="status" aria-live="polite" aria-atomic="true">O envio de solicitações pelo site ainda não está disponível. Nenhuma solicitação ou reserva será criada por este formulário.</div>
       </form>
-      <aside class="book-note"><div><div class="eyebrow" style="color:#d8c49a">Resumo</div><h3>Sua escolha</h3><p>Remarcação, cancelamento, pagamento e contato humano deverão aparecer no passo seguinte.</p></div><div class="small" style="color:rgba(255,255,255,.55)">Interface demonstrativa • sem integração com agenda real</div></aside>
+      <aside class="book-note"><div><div class="eyebrow" style="color:#d8c49a">Preferências</div><h3>Sua escolha</h3><p>A equipe verificará serviço, modalidade e período antes de combinar o atendimento com você.</p></div><div class="small" style="color:rgba(255,255,255,.55)">Solicitação não é reserva • sujeita à disponibilidade</div></aside>
     </div>
   </div>
 </section>

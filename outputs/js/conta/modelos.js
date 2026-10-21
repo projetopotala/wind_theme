@@ -55,6 +55,13 @@ export const TIPOS_DE_COMPROMISSO = Object.freeze({
   outro: "Compromisso",
 });
 
+export const STATUS_DE_ATENDIMENTO = Object.freeze({
+  recebida: "Recebida",
+  em_contato: "Em contato",
+  encerrada: "Encerrada",
+  cancelada: "Cancelada",
+});
+
 export const TIPOS_DE_ACOMPANHAMENTO = Object.freeze({
   tema: "Tema",
   profissional: "Profissional",
@@ -289,6 +296,26 @@ export function criarCompromisso(dados = {}) {
 }
 
 /* ------------------------------------------------------------------
+ * Solicitações de atendimento
+ * ------------------------------------------------------------------ */
+
+export function criarSolicitacaoAtendimento(dados = {}) {
+  const data = String(dados.dataPreferida ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) throw new TypeError("A data preferida é inválida.");
+  return Object.freeze({
+    id: obrigatorio(dados.id, "O id da solicitação"),
+    usuarioId: usuarioOpcional(dados.usuarioId),
+    servico: obrigatorio(dados.servico, "O serviço", 120),
+    modalidade: umDe(dados.modalidade, { presencial: true, online: true }, "A modalidade"),
+    dataPreferida: data,
+    periodoPreferido: umDe(dados.periodoPreferido, { manha: true, tarde: true, noite: true }, "O período"),
+    status: umDe(dados.status, STATUS_DE_ATENDIMENTO, "O status da solicitação"),
+    criadaEm: paraData(dados.criadaEm),
+    atualizadaEm: paraData(dados.atualizadaEm),
+  });
+}
+
+/* ------------------------------------------------------------------
  * Avisos
  * ------------------------------------------------------------------ */
 
@@ -328,6 +355,7 @@ export const FABRICAS = Object.freeze({
   inscricoes: criarInscricao,
   progressos: criarProgresso,
   agenda: criarCompromisso,
+  atendimentos: criarSolicitacaoAtendimento,
   notificacoes: criarNotificacao,
   preferencias: criarPreferencia,
 });

@@ -236,3 +236,8 @@ body[data-section="cursos"] .fio-da-jornada { left: clamp(6px, 1.4vw, 24px); }
   .learning-studio-step.is-ativa::before { transform: translate(-50%, -50%) scale(1.25); }
   .learning-studio-step:not(.is-ativa) .learning-studio-copy { opacity: 1; }
 }
+
+/* Uma barra vertical persistente reduz a largura útil de uma viewport de 320px. */
+@media (max-width: 335px) {
+  html, body[data-section="cursos"] { min-width: 0; }
+}

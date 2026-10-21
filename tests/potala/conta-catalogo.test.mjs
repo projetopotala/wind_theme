@@ -5,10 +5,15 @@ import test from "node:test";
 import { catalogoDoPortal } from "../../outputs/js/conta/catalogo.js";
 import { sementeDeDemonstracao } from "../../outputs/js/conta/dados-demonstracao.js";
 import { FABRICAS, criarSalvo, hrefSeguro } from "../../outputs/js/conta/modelos.js";
+import { resolverRota } from "../../outputs/js/conta/spa/roteador.js";
 
 const outputs = new URL("../../outputs/", import.meta.url);
 
 async function paginaExiste(href) {
+  if (resolverRota(href).encontrada) {
+    await access(new URL("meu-potala.html", outputs));
+    return;
+  }
   const caminho = href.split("?")[0].replace(/^\//, "");
   await access(new URL(caminho, outputs));
 }

@@ -61,10 +61,29 @@ test("a adaptação preserva acessibilidade e composições editoriais", () => {
   assert.match(css, /\.materia-abertura::first-letter/);
   assert.match(css, /\.source-reading__text\s*>\s*p:first-child::first-line/);
   assert.match(css, /\.journey-thread/);
+  assert.match(ler("transcendido.html"), /<body data-page="transcendido">/);
+  assert.match(css, /\.journey-thread\{z-index:2\}/, "o ensaio editorial preserva a camada original");
+  assert.match(css, /body\[data-page="transcendido"\] \.journey-thread\{z-index:1;opacity:\.16;clip-path:inset\(100vh 0 0\)\}/, "a Home mantém a linha discreta atrás da leitura");
+  assert.match(css, /@media\(max-width:980px\)\{body\[data-page="transcendido"\] \.journey-thread\{display:none\}\}/, "a linha não pode atravessar o texto em coluna única");
   assert.match(css, /\.reflection-choices/);
   assert.match(css, /@media \(max-width: 760px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.doesNotMatch(css, /backdrop-filter|filter:\s*blur/);
+});
+
+test("mapa conceitual reserva espaço para a órbita e mantém os nós legíveis no celular", () => {
+  const html = ler("transcendido.html");
+  const section = html.match(/<section class="section picshi"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(section, "seção do mapa conceitual ausente");
+  assert.equal((section.match(/class="map-node /g) ?? []).length, 6);
+  assert.match(html, /\.picshi-map\{[^}]*width:100%;[^}]*aspect-ratio:1/,
+    "a órbita precisa ocupar a coluna, não encolher até o tamanho da bolha central");
+  assert.match(html, /\.map-grid\{[^}]*grid-template-columns:minmax\(0,1\.05fr\) minmax\(0,\.95fr\)/,
+    "o cartão não pode impor largura mínima maior que a coluna disponível");
+  assert.match(html, /@media\(max-width:480px\)\{[\s\S]*?\.picshi-map \.map-node\{position:relative;inset:auto;/,
+    "no celular, os nós devem participar do fluxo em vez de cobrir a bolha");
+  assert.match(html, /\.map-node\.n1\.active\{transform:translateX\(-50%\) scale\(1\.05\)\}/,
+    "o estado ativo não pode retirar a âncora central do primeiro nó");
 });
 
 test("o módulo complementar mantém interações locais e não chama rede", () => {
@@ -72,7 +91,7 @@ test("o módulo complementar mantém interações locais e não chama rede", () 
   assert.doesNotMatch(materias, /fetch\(|XMLHttpRequest|supabase|localStorage|sessionStorage/);
   const js = ler("js/atendimentos-conceito.js");
   assert.match(js, /setupMural/);
-  assert.match(js, /setupDemoSchedule/);
+  assert.match(js, /setupAppointmentForm/);
   assert.match(js, /setupJourneyThread/);
   assert.match(js, /setupReflection/);
   assert.doesNotMatch(js, /fetch\(|XMLHttpRequest|supabase|localStorage|sessionStorage/);
@@ -84,6 +103,20 @@ test("o progresso da linha orgânica é limitado entre zero e um", async () => {
   assert.equal(journeyProgress(500, 1000), 0.5);
   assert.equal(journeyProgress(1200, 1000), 1);
   assert.equal(journeyProgress(100, 0), 0);
+});
+
+test("solicitação da Home nasce bloqueada e não oferece disponibilidade fictícia", () => {
+  const html = ler("transcendido.html");
+  const form = html.match(/<form[^>]*id="bookForm"[\s\S]*?<\/form>/)[0];
+  assert.match(form, /<fieldset[^>]*disabled/);
+  assert.match(form, /id="bookContinue"[^>]*disabled>Envio indisponível/);
+  assert.doesNotMatch(form, /demonstrativo|name="profissional"|name="horario"|Exemplo de agenda/);
+  for (const name of ["service", "modality", "preferred_period", "contact_type"]) {
+    assert.match(html, new RegExp(`<select name="${name}" required><option value="">`));
+  }
+  for (const name of ["preferred_date", "requester_name", "contact"]) {
+    assert.match(form, new RegExp(`<label>[^<]+<input name="${name}"[^>]*required>`));
+  }
 });
 
 test("as imagens reais são locais e apresentadas em molduras editoriais", () => {

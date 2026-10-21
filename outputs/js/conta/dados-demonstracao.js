@@ -24,6 +24,7 @@ import {
   criarNotificacao,
   criarProgresso,
   criarSalvo,
+  criarSolicitacaoAtendimento,
 } from "./modelos.js";
 
 export function sementeDeDemonstracao({ usuarioId, agora = new Date() } = {}) {
@@ -57,12 +58,26 @@ export function sementeDeDemonstracao({ usuarioId, agora = new Date() } = {}) {
   ];
 
   const agenda = [
-    criarCompromisso({ id: "demo-ag-meditacao", usuarioId, tipo: "aula", titulo: "Meditação para iniciantes — aula 8", inicio: em(1, 19), fim: em(1, 20), local: "Online", origem: "instituto", fonteRef: "demo-insc-meditacao", fonteHref: "/inspiracao.html" }),
-    criarCompromisso({ id: "demo-ag-taichi", usuarioId, tipo: "aula", titulo: "Tai chi chuan", inicio: em(2, 8), fim: em(2, 9, 15), local: "Sala do jardim", origem: "instituto", fonteRef: "demo-insc-taichi", fonteHref: "/atividades.html" }),
+    criarCompromisso({ id: "demo-ag-meditacao", usuarioId, tipo: "aula", titulo: "Meditação para iniciantes — aula 8", inicio: em(1, 19), fim: em(1, 20), local: "Online", origem: "instituto", fonteRef: "demo-insc-meditacao", fonteHref: "/meu-potala/cursos" }),
+    criarCompromisso({ id: "demo-ag-taichi", usuarioId, tipo: "aula", titulo: "Tai chi chuan", inicio: em(2, 8), fim: em(2, 9, 15), local: "Sala do jardim", origem: "instituto", fonteRef: "demo-insc-taichi", fonteHref: "/meu-potala/cursos" }),
     criarCompromisso({ id: "demo-ag-roda", usuarioId, tipo: "atividade", titulo: "Roda de conversa", inicio: em(4, 10), fim: em(4, 11, 30), local: "Biblioteca Potala", origem: "instituto", fonteHref: "/atividades.html" }),
     criarCompromisso({ id: "demo-ag-cinema", usuarioId, tipo: "palestra", titulo: "Cinema e escuta", inicio: em(6, 19), fim: em(6, 22), local: "Cine Potala", origem: "instituto", fonteHref: "/cultura.html" }),
     criarCompromisso({ id: "demo-ag-consulta", usuarioId, tipo: "consulta", titulo: "Atendimento de acolhimento", inicio: em(9, 15), fim: em(9, 16), local: "Sala 2", origem: "pessoal", fonteHref: "/atendimentos.html" }),
     criarCompromisso({ id: "demo-ag-workshop", usuarioId, tipo: "workshop", titulo: "Fotografar o cotidiano", inicio: em(12, 9), fim: em(12, 16), local: "Saída a campo", origem: "instituto", fonteHref: "/workshops.html" }),
+  ];
+
+  const atendimentos = [
+    criarSolicitacaoAtendimento({
+      id: "demo-atendimento-acupuntura",
+      usuarioId,
+      servico: "Acupuntura",
+      modalidade: "presencial",
+      dataPreferida: em(5, 12).slice(0, 10),
+      periodoPreferido: "tarde",
+      status: "recebida",
+      criadaEm: ha(4),
+      atualizadaEm: ha(4),
+    }),
   ];
 
   const salvos = [
@@ -94,5 +109,5 @@ export function sementeDeDemonstracao({ usuarioId, agora = new Date() } = {}) {
     criarNotificacao({ id: "demo-aviso-inscricao", usuarioId, tipo: "inscricao_confirmada", titulo: "Inscrição confirmada em Desenho de observação", corpo: "Avisaremos quando a turma estiver formada.", href: "/meu-potala/cursos", criadaEm: ha(72), lidaEm: ha(70) }),
   ];
 
-  return { inscricoes, progressos, agenda, salvos, historico, acompanhando, notificacoes, preferencias: [] };
+  return { inscricoes, progressos, agenda, atendimentos, salvos, historico, acompanhando, notificacoes, preferencias: [] };
 }
