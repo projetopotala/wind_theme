@@ -65,13 +65,13 @@ test("a recuperação de senha não revela se o e-mail tem conta", () => {
   assert.doesNotMatch(enviada, /não encontr|inexistente|não existe/i);
 });
 
-test("o menu de quem entrou tem os dez destinos, e o nome vem escapado", () => {
+test("o menu de quem entrou tem todos os destinos, e o nome vem escapado", () => {
   const usuario = criarUsuario({ id: "u1", email: "ana@exemplo.com" });
   const perfil = criarPerfil({ usuarioId: "u1", nome: MALICIOSO });
   const menu = renderizarPainel("menu", { usuario, perfil, naoLidas: 2 });
 
   assert.ok(!menu.includes("<img src=x"), "o nome entrou sem escapar");
-  for (const destino of ["Meu Potala", "Meu perfil", "Meus cursos", "Minha agenda", "Salvos", "Histórico", "Acompanhando", "Notificações", "Configurações", "Sair"]) {
+  for (const destino of ["Meu Potala", "Meu perfil", "Meus cursos", "Minha agenda", "Meus atendimentos", "Salvos", "Histórico", "Acompanhando", "Notificações", "Configurações", "Sair"]) {
     assert.ok(menu.includes(destino), `faltou ${destino} no menu`);
   }
   assert.match(menu, /href="\/meu-potala\/salvos"/);
@@ -357,7 +357,7 @@ function contexto(extra = {}) {
   return { ...sementeDeDemonstracao({ usuarioId: USUARIO.id, agora: AGORA }), estado: ESTADO, agora: AGORA, parametros: new URLSearchParams(), ...extra };
 }
 
-test("as nove telas desenham com os dados de demonstração, sem sobras de dado ausente", () => {
+test("todas as telas desenham com os dados de demonstração, sem sobras de dado ausente", () => {
   assert.deepEqual(Object.keys(VISTAS).sort(), ROTAS.map((rota) => rota.nome).sort(), "cada rota precisa de uma tela");
   for (const [nome, vista] of Object.entries(VISTAS)) {
     const html = vista.renderizar(contexto());

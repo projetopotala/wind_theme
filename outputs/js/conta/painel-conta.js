@@ -142,6 +142,7 @@ export function renderizarPainel(estadoDoPainel, {
             ${item("perfil", "Meu perfil")}
             ${item("cursos", "Meus cursos")}
             ${item("agenda", "Minha agenda")}
+            ${item("atendimentos", "Meus atendimentos")}
             ${item("salvos", "Salvos")}
             ${item("historico", "Histórico")}
             ${item("acompanhando", "Acompanhando")}

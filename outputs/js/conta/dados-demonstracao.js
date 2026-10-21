@@ -24,6 +24,7 @@ import {
   criarNotificacao,
   criarProgresso,
   criarSalvo,
+  criarSolicitacaoAtendimento,
 } from "./modelos.js";
 
 export function sementeDeDemonstracao({ usuarioId, agora = new Date() } = {}) {
@@ -65,6 +66,20 @@ export function sementeDeDemonstracao({ usuarioId, agora = new Date() } = {}) {
     criarCompromisso({ id: "demo-ag-workshop", usuarioId, tipo: "workshop", titulo: "Fotografar o cotidiano", inicio: em(12, 9), fim: em(12, 16), local: "Saída a campo", origem: "instituto", fonteHref: "/workshops.html" }),
   ];
 
+  const atendimentos = [
+    criarSolicitacaoAtendimento({
+      id: "demo-atendimento-acupuntura",
+      usuarioId,
+      servico: "Acupuntura",
+      modalidade: "presencial",
+      dataPreferida: em(5, 12).slice(0, 10),
+      periodoPreferido: "tarde",
+      status: "recebida",
+      criadaEm: ha(4),
+      atualizadaEm: ha(4),
+    }),
+  ];
+
   const salvos = [
     criarSalvo({ id: "demo-salvo-ansiedade", usuarioId, tipo: ansiedade.tipo, ref: ansiedade.ref, titulo: ansiedade.titulo, href: ansiedade.href, imagem: ansiedade.imagem, salvoEm: ha(2) }),
     criarSalvo({ id: "demo-salvo-marina", usuarioId, tipo: "profissional", ref: "marina-okabe", titulo: "Marina Sayuri Okabe", href: "/especialistas.html", salvoEm: ha(30) }),
@@ -94,5 +109,5 @@ export function sementeDeDemonstracao({ usuarioId, agora = new Date() } = {}) {
     criarNotificacao({ id: "demo-aviso-inscricao", usuarioId, tipo: "inscricao_confirmada", titulo: "Inscrição confirmada em Desenho de observação", corpo: "Avisaremos quando a turma estiver formada.", href: "/meu-potala/cursos", criadaEm: ha(72), lidaEm: ha(70) }),
   ];
 
-  return { inscricoes, progressos, agenda, salvos, historico, acompanhando, notificacoes, preferencias: [] };
+  return { inscricoes, progressos, agenda, atendimentos, salvos, historico, acompanhando, notificacoes, preferencias: [] };
 }

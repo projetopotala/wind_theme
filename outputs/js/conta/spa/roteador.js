@@ -18,6 +18,7 @@ export const ROTAS = Object.freeze([
   Object.freeze({ nome: "perfil", caminho: "perfil", titulo: "Meu perfil", rotulo: "Perfil" }),
   Object.freeze({ nome: "cursos", caminho: "cursos", titulo: "Meus cursos", rotulo: "Cursos" }),
   Object.freeze({ nome: "agenda", caminho: "agenda", titulo: "Minha agenda", rotulo: "Agenda" }),
+  Object.freeze({ nome: "atendimentos", caminho: "atendimentos", titulo: "Meus atendimentos", rotulo: "Atendimentos" }),
   Object.freeze({ nome: "salvos", caminho: "salvos", titulo: "Salvos", rotulo: "Salvos" }),
   Object.freeze({ nome: "historico", caminho: "historico", titulo: "Histórico", rotulo: "Histórico" }),
   Object.freeze({ nome: "acompanhando", caminho: "acompanhando", titulo: "Acompanhando", rotulo: "Acompanhando" }),
@@ -26,7 +27,7 @@ export const ROTAS = Object.freeze([
 ]);
 
 /* As abas do cabeçalho. Notificações e Configurações ficam fora: têm lugar próprio. */
-export const ROTAS_DA_NAVEGACAO = Object.freeze(["inicio", "perfil", "cursos", "agenda", "salvos", "historico", "acompanhando"]);
+export const ROTAS_DA_NAVEGACAO = Object.freeze(["inicio", "perfil", "cursos", "agenda", "atendimentos", "salvos", "historico", "acompanhando"]);
 
 export function caminhoDa(nome) {
   const rota = ROTAS.find((candidata) => candidata.nome === nome);
