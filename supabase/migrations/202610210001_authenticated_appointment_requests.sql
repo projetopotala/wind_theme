@@ -119,6 +119,7 @@ as $$
   join public.op_records as profissional
     on profissional.collection = 'profiles' and profissional.id = responsavel.id
   where oferta.collection = 'activity_offerings'
+    and definicao.document ->> 'kind' = 'appointment'
     and coalesce((oferta.document ->> 'active')::boolean, true)
     and coalesce(profissional.document -> 'roles', '[]'::jsonb) ? 'professional';
 $$;
@@ -164,10 +165,18 @@ begin
   if not found then
     raise exception 'Serviço indisponível.' using errcode = '22023';
   end if;
+  if p_modality is distinct from coalesce(offering.document ->> 'mode', 'presencial') then
+    raise exception 'Modalidade indisponivel para esta oferta.' using errcode = '22023';
+  end if;
+
   select * into definition from public.op_records
    where collection = 'activity_definitions' and id = offering.document ->> 'definition_id';
   if not found then
     raise exception 'Serviço indisponível.' using errcode = '22023';
+  end if;
+
+  if definition.document ->> 'kind' is distinct from 'appointment' then
+    raise exception 'Esta oferta nao e um atendimento.' using errcode = '22023';
   end if;
 
   professional_id := offering.document ->> 'professional_id';
@@ -193,6 +202,14 @@ begin
   from auth.users as usuario
   left join public.profiles as perfil on perfil.id = usuario.id
   where usuario.id = requester_id;
+  if not exists (
+    select 1 from auth.users as usuario
+    where usuario.id = requester_id
+      and usuario.email_confirmed_at is not null
+  ) then
+    raise exception 'Confirme seu e-mail antes de solicitar atendimento.' using errcode = '42501';
+  end if;
+
   if requester_email is null then
     raise exception 'Conta sem contato confirmado.' using errcode = '22023';
   end if;

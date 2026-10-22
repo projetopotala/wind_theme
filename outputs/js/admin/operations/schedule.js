@@ -179,7 +179,9 @@ export function applyScheduleCommand(state,command,ctx){
     case 'offering.save':return upsert(state.activity_offerings,p,ctx,row=>{
       ref(state.activity_definitions,row.definition_id,'Definição');if(row.professional_id){const professional=ref(state.profiles,row.professional_id,'Profissional');if(!professional.roles?.includes('professional'))fail('Pessoa não cadastrada como profissional.');}
       if(row.capacity!=null&&state.enrollments.filter(e=>e.offering_id===row.id&&e.status!=='cancelled').length>number(row.capacity,'Capacidade',1))fail('Capacidade inferior às inscrições existentes.');
-      return {...row,title:required(row.title,'Título'),capacity:row.capacity==null?null:number(row.capacity,'Capacidade',1)};
+      const mode = row.mode || 'presencial';
+      if (!['presencial','online'].includes(mode)) fail('Modalidade da oferta invalida.');
+      return {...row,title:required(row.title,'Título'),mode,capacity:row.capacity==null?null:number(row.capacity,'Capacidade',1)};
     });
     case 'enrollment.save':return upsert(state.enrollments,p,ctx,row=>{
       ref(state.profiles,row.profile_id,'Pessoa');const offering=ref(state.activity_offerings,row.offering_id,'Oferta');
