@@ -617,6 +617,16 @@ button {
 .op-columns { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(260px,.8fr); gap: 14px; }
 .op-card { margin-bottom: 14px; padding: 16px; overflow: hidden; }
 .op-card > h3 { margin: 0 0 13px; font-size: 1rem; }
+[data-appointment-reservation] { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 12px; margin-top: 16px; padding: 14px; border: 1px solid var(--admin-line); border-radius: 12px; }
+[data-appointment-reservation] legend { padding: 0 6px; color: var(--admin-gold); font-weight: 700; }
+[data-appointment-reservation] :is(input[type="datetime-local"],select,textarea) { width: 100%; color: var(--admin-ivory); background: var(--admin-ground); }
+[data-appointment-reservation] .appointment-reservation-wide { grid-column: 1 / -1; }
+[data-appointment-reservation] [type="checkbox"] { margin-right: 6px; }
+[data-appointment-reservation] button { justify-self: start; }
+@media (max-width: 720px) {
+  [data-appointment-reservation] { grid-template-columns: minmax(0,1fr); }
+  [data-appointment-reservation] .appointment-reservation-wide { grid-column: auto; }
+}
 .op-welcome { max-width: 920px; margin: 18px 0; padding: 28px; background: radial-gradient(circle at 90% 10%,rgba(216,178,106,.14),transparent 40%),var(--admin-panel-soft); }
 .op-welcome h3 { margin: 4px 0; font: 500 1.55rem Georgia,serif; }
 .op-welcome p { max-width: 680px; color: var(--admin-muted); }
