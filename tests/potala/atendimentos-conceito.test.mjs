@@ -64,6 +64,7 @@ test("a adaptação preserva acessibilidade e composições editoriais", () => {
   assert.match(ler("transcendido.html"), /<body data-page="transcendido">/);
   assert.match(css, /\.journey-thread\{z-index:2\}/, "o ensaio editorial preserva a camada original");
   assert.match(css, /body\[data-page="transcendido"\] \.journey-thread\{z-index:1;opacity:\.16;clip-path:inset\(100vh 0 0\)\}/, "a Home mantém a linha discreta atrás da leitura");
+  assert.match(css, /body\[data-page="transcendido"\] #papel\{z-index:2\}/, "o fundo do mapa deve mascarar a linha na seção editorial");
   assert.match(css, /@media\(max-width:980px\)\{body\[data-page="transcendido"\] \.journey-thread\{display:none\}\}/, "a linha não pode atravessar o texto em coluna única");
   assert.match(css, /\.reflection-choices/);
   assert.match(css, /@media \(max-width: 760px\)/);
