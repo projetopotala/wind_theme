@@ -3,5 +3,6 @@
 export const APPOINTMENT_REQUESTS_ENABLED = false;
 // Triagem administrativa independente do lançamento do formulário público.
 export const APPOINTMENT_ADMIN_ENABLED = false;
+export const APPOINTMENT_RESERVATIONS_ENABLED = false;
 // Sitekey pública específica da publicação; sem ela o envio falha fechado.
 export const APPOINTMENT_TURNSTILE_SITE_KEY = "";

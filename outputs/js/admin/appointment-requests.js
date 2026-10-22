@@ -1,5 +1,5 @@
 // Usar somente o cliente da sessão administrativa; autorização final é a RLS.
-const FIELDS = "id,service,modality,requester_name,contact_type,contact,preferred_date,preferred_period,status,created_at,updated_at";
+const FIELDS = "id,service,modality,requester_name,contact_type,contact,preferred_date,preferred_period,status,offering_id,professional_profile_id,reservation_schedule_id,reservation_confirmed_at,created_at,updated_at";
 export const STATES = ["recebida", "em_contato", "encerrada", "cancelada"];
 
 export async function loadAppointmentRequests(client) {

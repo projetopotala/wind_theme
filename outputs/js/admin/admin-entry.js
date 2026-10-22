@@ -48,7 +48,7 @@ async function abrirOperacao(client, access) {
     if (operationsStatus) operationsStatus.textContent = error.message;
     return;
   }
-  appointmentPanel = createAppointmentPanel({ root: panel, client });
+  appointmentPanel = createAppointmentPanel({ root: panel, client, getOperationalState: () => operations.snapshot });
   operationsController = createOperationsController({
     root: panel,
     client: operations,
