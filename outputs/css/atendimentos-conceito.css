@@ -1675,3 +1675,7 @@ html.entry-pending body::before{content:"";position:fixed;inset:0;z-index:2000;b
 /* O fio fica à frente dos fundos e véus do ensaio. O clipPath no SVG o oculta
    somente nas janelas fotográficas e nas imagens de detalhe. */
 .journey-thread{z-index:2}
+/* Na Home o fio fica sob a leitura; a página editorial conserva seu traço original. */
+body[data-page="transcendido"] .journey-thread{z-index:1;opacity:.16;clip-path:inset(100vh 0 0)}
+/* Em coluna única não há corredor lateral livre: o traço passa sobre a leitura. */
+@media(max-width:980px){body[data-page="transcendido"] .journey-thread{display:none}}
