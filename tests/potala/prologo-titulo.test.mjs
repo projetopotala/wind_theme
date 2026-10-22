@@ -116,26 +116,38 @@ function declaracao(corpo, propriedade) {
   return achado[1].trim();
 }
 
-/* O bloco do telefone, do "@media" até a chave que o fecha. */
-const inicioTelefone = css.indexOf("@media (max-width: 720px)");
-assert.notEqual(inicioTelefone, -1, "media query do telefone ausente");
-let profundidade = 0;
-let fimTelefone = css.length;
-for (let i = css.indexOf("{", inicioTelefone); i < css.length; i += 1) {
-  if (css[i] === "{") profundidade += 1;
-  if (css[i] === "}") {
-    profundidade -= 1;
-    if (profundidade === 0) {
-      fimTelefone = i + 1;
-      break;
+/* O arquivo possui mais de uma media query de 720px. Escolher a primeira fazia
+   a conta procurar o prólogo num bloco que trata apenas de outros elementos. */
+function blocosDaMedia(fonte, condicao) {
+  const blocos = [];
+  for (let proximo = 0; proximo < fonte.length;) {
+    const inicio = fonte.indexOf(condicao, proximo);
+    if (inicio < 0) break;
+    let profundidade = 0;
+    let fim = -1;
+    for (let i = fonte.indexOf("{", inicio); i < fonte.length; i += 1) {
+      if (fonte[i] === "{") profundidade += 1;
+      if (fonte[i] === "}" && --profundidade === 0) {
+        fim = i + 1;
+        break;
+      }
     }
+    assert.ok(fim > inicio, `media query sem fechamento: ${condicao}`);
+    blocos.push(fonte.slice(inicio, fim));
+    proximo = fim;
   }
+  return blocos;
 }
-const telefone = css.slice(inicioTelefone, fimTelefone);
 
 const PALCO = [".journey-prologue", ".journey-continuation"];
 const CAIXA = [".prologue-copy", ".journey-continuation > div"];
 const TITULO = [".prologue-copy h1"];
+const telefone = blocosDaMedia(css, "@media (max-width: 720px)").find((bloco) =>
+  bloco.includes(`${PALCO.join(", ")} {`) &&
+  bloco.includes(`${CAIXA.join(", ")} {`) &&
+  bloco.includes(`${TITULO.join(", ")} {`),
+);
+assert.ok(telefone, "media query do telefone não contém as regras do prólogo");
 
 function larguraDisponivel(vw) {
   const noTelefone = vw <= 720;
@@ -183,6 +195,7 @@ test("o título cabe numa linha só de 320px a 2560px", () => {
   for (const vw of [320, 360, 375, 414, 560, 719, 720, 721, 800, 900, 1024, 1280, 1440, 1826, 2560]) {
     const disponivel = larguraDisponivel(vw);
     const pedido = tamanhoDaFonte(vw) * RAZAO * MARGEM;
+    assert.ok(disponivel > 0 && pedido > 0, `a ${vw}px a medida do título precisa ser válida`);
     assert.ok(
       pedido <= disponivel,
       `a ${vw}px o título pede ${Math.round(pedido)}px numa caixa de ${Math.round(disponivel)}px`,

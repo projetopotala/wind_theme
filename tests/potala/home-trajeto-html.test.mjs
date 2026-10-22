@@ -6,7 +6,7 @@ import {
   mountHomeJourney,
   regionIndexWithinPair,
 } from "../../outputs/js/home/home-controller.js";
-import { mountJourney, renderJourneyMenu } from "../../outputs/js/home/home-scenes.js";
+import { mountJourney, renderJourneyMenu, renderPair } from "../../outputs/js/home/home-scenes.js";
 
 test("Home aponta o navegador para o módulo Three.js local", async () => {
   const html = await readFile(new URL("../../outputs/travessia.html", import.meta.url), "utf8");
@@ -158,29 +158,28 @@ test("o deslocamento é animado, e a linha segue a animação em vez de repeti-l
   assert.match(limpeza, /cancelAnimationFrame\(shiftFrame\)/);
 });
 
-test("as seções andam aos pares, e a irmã recua em vez de ser empurrada", async () => {
+test("as seções andam aos pares, e a irmã sai de cena somente durante a expansão", async () => {
   const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
   const cenas = await readFile(new URL("../../outputs/js/home/home-scenes.js", import.meta.url), "utf8");
+  const expansao = await readFile(new URL("../../outputs/js/home/block-expansion.js", import.meta.url), "utf8");
 
   // O par é a unidade de rolagem: é ele que tem altura e atravessa a tela.
   assert.match(css, /\.journey-pair \{[^}]*min-height: var\(--pair-height/);
   assert.match(cenas, /export function renderPair/);
   assert.match(cenas, /inicio \+= 2/, "os blocos são agrupados de dois em dois");
+  const par = renderPair(['<article id="esquerda"></article>', '<article id="direita"></article>'], 0, 160);
+  assert.match(par, /<section class="journey-pair"[^]*<div class="region-stage">[^]*id="esquerda"[^]*id="direita"[^]*<\/div>/);
 
-  /*
-   * A irmã encolhe junto com a coluna dela. Sem isso ela mantinha a largura de
-   * antes numa coluna estreitada e ia parar fora da tela: medido, 1370px numa
-   * janela de 1280. Encolher é o que transforma o empurrão em recuo.
-   */
-  const recuo = css.slice(
-    css.indexOf(".journey-region:not(.is-expanded) .region-content {"),
-    css.indexOf("}", css.indexOf(".journey-region:not(.is-expanded) .region-content {")),
-  );
-  assert.match(recuo, /width: 100%/);
-
-  // E o recuo MULTIPLICA a presença: fixo, a irmã acenderia com o par ainda
-  // fora da tela, enquanto a aberta continuaria invisível.
-  assert.match(recuo, /calc\(clamp\([^)]*var\(--region-presence/);
+  /* A irmã agora fica oculta somente enquanto o par contém um bloco aberto.
+     Fora desse estado, a regra base mantém os dois cards na interface. */
+  assert.match(css, /\.journey-pair:has\(\.journey-region\.is-expanded\)\s+\.journey-region:not\(\.is-expanded\)\s+\.region-content\s*\{\s*display:\s*none/);
+  const base = css.match(/\.journey-region:not\(\.is-expanded\)\s+\.region-content\s*\{([^}]*)\}/);
+  assert.ok(base, "falta o estado normal do card irmão");
+  assert.doesNotMatch(base[1], /display:\s*none/, "a irmã deve reaparecer ao fechar");
+  assert.match(expansao, /entry\.section\.classList\[expanded \? "add" : "remove"\]\("is-expanded"\)/,
+    "abrir e fechar devem controlar a classe que governa a visibilidade da irmã");
+  assert.match(expansao, /saindo\?\.section\.classList\.remove\("is-expanded"\)/,
+    "a animação de saída precisa devolver a irmã ao fim do fechamento");
 });
 
 test("a prévia compacta mantém os dois blocos em colunas separadas", async () => {

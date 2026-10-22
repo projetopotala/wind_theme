@@ -53,8 +53,8 @@ function blocoDeKeyframes(fonte, nome) {
 
 /* O bloco do telefone: a partir da abertura da media query até a chave que a
    fecha, contando as chaves internas para não parar na primeira regra. */
-function blocoDaMediaQuery(fonte, condicao) {
-  const inicio = fonte.indexOf(condicao);
+function blocoDaMediaQuery(fonte, condicao, aPartirDe = 0) {
+  const inicio = fonte.indexOf(condicao, aPartirDe);
   assert.notEqual(inicio, -1, `media query ausente: ${condicao}`);
   let profundidade = 0;
   for (let i = fonte.indexOf("{", inicio); i < fonte.length; i += 1) {
@@ -67,7 +67,17 @@ function blocoDaMediaQuery(fonte, condicao) {
   throw new Error(`media query sem fechamento: ${condicao}`);
 }
 
-const telefone = blocoDaMediaQuery(css, "@media (max-width: 720px)");
+const telefones = [];
+for (let proximo = 0; proximo < css.length;) {
+  const inicio = css.indexOf("@media (max-width: 720px)", proximo);
+  if (inicio < 0) break;
+  const bloco = blocoDaMediaQuery(css, "@media (max-width: 720px)", inicio);
+  telefones.push(bloco);
+  proximo = bloco.fim;
+}
+assert.ok(telefones.length > 0, "falta a media query do telefone");
+const telefone = telefones.find((bloco) => bloco.texto.includes(".journey-pair:has(.journey-region.is-expanded[data-side]) .region-stage"));
+assert.ok(telefone, "falta a regra de abertura na media query do telefone");
 
 const ABERTURA = /\.journey-pair:has\([^)]*is-expanded[^)]*\)\s+\.region-stage/g;
 
@@ -75,11 +85,8 @@ test("o telefone desfaz as três colunas da abertura lateral", () => {
   const todas = [...css.matchAll(ABERTURA)];
   assert.ok(todas.length >= 2, "faltam as regras de abertura do bloco");
 
-  /* Só o que está DENTRO do bloco do telefone: a prévia do painel tem uma
-     regra parecida, com `.is-admin-preview` na frente, e ela não responde por
-     este defeito. */
   const noTelefone = todas.filter((m) => m.index > telefone.inicio && m.index < telefone.fim);
-  assert.equal(noTelefone.length, 1, "o telefone precisa de uma — e só uma — regra que desfaça a abertura lateral");
+  assert.equal(noTelefone.length, 1, "falta a regra da Travessia que desfaça a abertura lateral no telefone");
 
   const doDesktop = todas.filter((m) => m.index < telefone.inicio);
   assert.ok(doDesktop.length >= 2, "as regras de abertura do desktop sumiram");
@@ -93,6 +100,8 @@ test("o telefone desfaz as três colunas da abertura lateral", () => {
     );
     assert.ok(noTelefone[0].index > regra.index, "a regra do telefone precisa vir depois da do desktop");
   }
+  const final = css.match(/\.journey-pair:has\(\.journey-region\.is-expanded\[data-side\]\)\s+\.region-stage\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)[^}]*\}/g) ?? [];
+  assert.ok(final.some((regra) => /padding:\s*0/.test(regra)), "o palco aberto precisa ocupar a página inteira");
 });
 
 test("no telefone o palco aberto continua com uma coluna de conteúdo", () => {
@@ -105,9 +114,12 @@ test("no telefone o palco aberto continua com uma coluna de conteúdo", () => {
     2,
     "abrir para o lado precisa de dois lados; no telefone há uma coluna de conteúdo só",
   );
+  const final = css.match(/\.journey-pair:has\(\.journey-region\.is-expanded\[data-side\]\)\s+\.region-stage\s*\{([^}]*)\}/g)?.at(-1);
+  assert.ok(final, "falta a regra final do palco aberto");
+  assert.match(final, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s*;/, "a cascata final não pode deixar três colunas");
 });
 
-test("no telefone o bloco aberto usa o palco inteiro sem rolagem interna", () => {
+test("no telefone o bloco aberto usa o palco inteiro com rolagem segura", () => {
   const palco = telefone.texto.match(/\.journey-pair:has\([^)]*is-expanded[^)]*\)\s+\.region-stage\s*\{([^}]*)\}/);
   assert.ok(palco, "falta a regra do palco aberto no telefone");
   assert.match(
@@ -127,10 +139,16 @@ test("no telefone o bloco aberto usa o palco inteiro sem rolagem interna", () =>
    * ajuste medido em block-expansion.js; o teto aqui é a rede.
    */
   assert.match(regra[1], /max-height:\s*100%/, "sem teto o painel invade a jornada");
+  assert.match(regra[1], /overflow-y:\s*auto/, "conteúdo maior que o palco precisa continuar acessível");
+
+  const pagina = css.match(/\.journey-pair:has\(\.journey-region\.is-expanded\[data-side\]\)\s+\.region-stage\s*\{([^}]*)\}/g)?.at(-1);
+  assert.ok(pagina, "falta a regra final da página aberta");
+  assert.match(pagina, /grid-template-rows:\s*minmax\(0,\s*1fr\)/, "a página aberta precisa receber toda a altura");
 
   const irma = telefone.texto.match(/\.journey-pair:has\([^)]*is-expanded[^)]*\)[^{]*\.journey-region:not\(\.is-expanded\)[^{]*\.region-content\s*\{([^}]*)\}/);
   assert.ok(irma, "falta liberar o palco ocupado pelo bloco irmão");
   assert.match(irma[1], /display:\s*none/, "o bloco irmão deve voltar quando o painel aberto fechar");
+  assert.match(css, /\.journey-pair:has\(\.journey-region\.is-expanded\)\s+\.journey-region:not\(\.is-expanded\)\s+\.region-content\s*\{\s*display:\s*none/, "a regra final também deve ocultar a irmã");
 });
 
 test("telas baixas compactam o painel sem esconder informação editorial", () => {
@@ -385,7 +403,7 @@ test("o veu e da pagina, mas a coluna de leitura nao", () => {
    * dois tercos de veu vazio embaixo.
    *
    * O veu continua indo de borda a borda. O que se prende a uma medida legivel
-   * e o texto dentro dele, centrado no quadro.
+   * e o texto dentro dele, centrado horizontalmente no quadro.
    */
   const medida = css.match(/\.journey-region\.is-expanded\s+\.region-summary,\s*\.journey-region\.is-expanded\s+\.region-details\s*\{([^}]*)\}/);
   assert.ok(medida, "falta prender o texto do painel a uma medida de leitura");
@@ -396,13 +414,11 @@ test("o veu e da pagina, mas a coluna de leitura nao", () => {
      regra — "height: 100%" e substring dele. */
   const painel = css.match(/\.journey-region\.is-expanded\s+\.region-content\s*\{[^}]*[;{]\s*height:\s*100%[^}]*\}/);
   assert.ok(painel, "falta a regra do painel que ocupa a pagina");
-  /*
-   * `safe` e obrigatorio, nao enfeite. Centrar conteudo MAIOR que a caixa joga
-   * metade do transbordo para cima da borda de cima, e aquilo nao se alcanca
-   * rolando: medido a 320x568 com um texto longo, as primeiras linhas ficavam
-   * em -63px, fora de alcance para sempre.
-   */
-  assert.match(painel[0], /align-content:\s*safe\s+center/, "centrar sem `safe` corta o topo do texto");
+  /* Começar no topo preserva a primeira linha mesmo quando o conteúdo exige
+     rolagem. Centrar verticalmente um painel maior que a tela pode torná-la
+     inalcançável; a largura limitada acima cuida da leitura horizontal. */
+  assert.match(painel[0], /align-content:\s*start\s*;/, "o início do texto precisa permanecer alcançável");
+  assert.match(painel[0], /height:\s*100%/, "o véu precisa cobrir a altura do palco");
 });
 
 /* ------------------------------------------------------------------

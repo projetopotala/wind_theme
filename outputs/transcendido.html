@@ -164,14 +164,15 @@ linear-gradient(180deg,#f7f4eb 0%,#f2eee3 72%,#e8eee8 100%)}
 .picshi{background:var(--night);color:#f7f4ec;overflow:hidden}
 .picshi .section-head .lead{color:rgba(255,255,255,.68)}
 .picshi .section-num{color:rgba(255,255,255,.12)}
-.map-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center}
-.picshi-map{aspect-ratio:1;position:relative;max-width:560px;margin:auto;display:grid;place-items:center}
+.map-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:36px;align-items:center}
+.picshi-map{width:100%;aspect-ratio:1;position:relative;max-width:560px;margin:auto;display:grid;place-items:center}
 .picshi-core{width:170px;height:170px;border-radius:50%;background:#f4efe1;color:var(--ink);display:grid;place-items:center;text-align:center;z-index:3;padding:20px;font-family:var(--serif);font-size:1.6rem;line-height:1}
 .ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.16)}
 .r1{inset:12%}.r2{inset:2%}
 .map-node{position:absolute;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.07);color:#fff;border-radius:999px;padding:9px 13px;font-size:.76rem;cursor:pointer;transition:.2s ease}
 .map-node:hover,.map-node.active{background:#f4efe1;color:var(--ink);transform:scale(1.05)}
 .n1{top:4%;left:50%;transform:translateX(-50%)}.n2{right:1%;top:27%}.n3{right:7%;bottom:18%}.n4{left:10%;bottom:4%}.n5{left:-1%;top:33%}.n6{left:16%;top:15%}
+.map-node.n1:hover,.map-node.n1.active{transform:translateX(-50%) scale(1.05)}
 .map-caption{min-height:330px;border:1px solid rgba(255,255,255,.14);border-radius:28px;padding:30px;background:rgba(255,255,255,.05)}
 .map-caption h3{font-family:var(--serif);font-size:2.5rem;font-weight:500;line-height:1;margin:10px 0 16px}
 .map-caption p{color:rgba(255,255,255,.67)}
@@ -294,7 +295,8 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
 .proto{position:fixed;right:18px;bottom:18px;z-index:1000;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:999px;padding:9px 12px;font-size:.7rem;color:var(--ink-soft)}
 
 @media(max-width:980px){
-  .hero-grid,.section-head,.health-grid,.inner-map,.investigate-wrap,.map-grid,.case,.discovery-hero,.bank,.virtual-wrap,.schedule-box,.footer-grid{grid-template-columns:1fr}
+  .hero-grid,.section-head,.health-grid,.inner-map,.investigate-wrap,.case,.discovery-hero,.bank,.virtual-wrap,.schedule-box,.footer-grid{grid-template-columns:1fr}
+  .map-grid{grid-template-columns:minmax(0,1fr)}
   .hero{padding-top:120px}.hero-card{max-width:650px}.section-head{gap:16px}.section-num{font-size:3.5rem}
   .cards{grid-template-columns:repeat(2,1fr)}.case-lenses{grid-template-columns:repeat(2,1fr)}.people-grid,.special-grid,.oracle-grid{grid-template-columns:1fr 1fr}.toolbar-row{grid-template-columns:1fr 1fr}.toolbar-row .btn{grid-column:1/-1}
   .signal-flow{grid-template-columns:repeat(5,minmax(120px,1fr));overflow:auto;padding-bottom:10px}
@@ -305,6 +307,14 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
   .section{padding:78px 0}.section-head{margin-bottom:34px}.phase-line{grid-template-columns:1fr 1fr}.orbit{max-width:360px}.orbit-tag{font-size:.64rem;padding:6px 8px}.center-self{width:112px;height:112px;font-size:1.1rem}.t2{right:-4%}.t5{left:-4%}
   .breathe{align-items:flex-start}.map-caption{min-height:auto}.case-lenses{grid-template-columns:1fr 1fr}.plaza-head{display:block}.plaza-toolbar{top:56px}.toolbar-row{grid-template-columns:1fr}.toolbar-row .btn{grid-column:auto}.cards{grid-template-columns:1fr}.feature h3{font-size:2.45rem}.feature,.side-feature{min-height:300px}.people-grid,.special-grid,.oracle-grid{grid-template-columns:1fr}.book-grid{grid-template-columns:1fr}.footer-links{grid-template-columns:1fr}.footer-bottom{display:block}.proto{display:none}
 }
+@media(max-width:480px){
+  .picshi-map{aspect-ratio:auto;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;place-items:stretch;padding-top:24px}
+  .picshi-core{grid-column:1/-1;justify-self:center;width:160px;height:160px;margin-bottom:24px;font-size:1.45rem}
+  .picshi-map .ring{inset:auto;left:50%;top:0;transform:translateX(-50%);pointer-events:none}
+  .picshi-map .r1{width:184px;height:184px}.picshi-map .r2{width:212px;height:212px;top:-14px}
+  .picshi-map .map-node{position:relative;inset:auto;min-width:0;min-height:44px;padding:9px 7px;font-size:.69rem;line-height:1.15;transform:none}
+  .picshi-map .map-node:hover,.picshi-map .map-node.active{transform:none}
+}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}
 }
@@ -312,7 +322,7 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
 <meta name="description" content="Instituto Potala: saúde, cuidado e autoconhecimento — matérias para ler com calma, caminhos de atendimento, profissionais e formas de acesso.">
 <link rel="stylesheet" href="css/atendimentos-conceito.css">
 </head>
-<body>
+<body data-page="transcendido">
 <a class="skip" href="#main">Pular para o conteúdo</a>
 <header class="topbar" id="topbar">
   <div class="shell topbar-row">

@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     // importam. O que precisa ser garantido aqui — que os pedaços do bundle
     // foram todos copiados — está em tests/potala/vendor-three.test.mjs.
     "outputs/vendor/**",
+    // Gerado por scripts/build-cenas-blocos.mjs a partir de ilhas/cenas-blocos.
+    "outputs/js/cenas-blocos/blocos.js",
   ]),
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
