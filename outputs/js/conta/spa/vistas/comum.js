@@ -70,9 +70,80 @@ function avisoDeDadosDeExemplo(estado) {
   return "";
 }
 
+/*
+ * A ABA DA TELA ABERTA FICA À VISTA NA FAIXA.
+ *
+ * No celular as abas não cabem e a faixa rola de lado. O cabeçalho nasce de novo
+ * a cada troca de tela, e a faixa nova começa no zero: quem tocava em Salvos via
+ * a faixa voltar ao começo, com Salvos fora dela (MP-02).
+ *
+ * A conta é feita em coordenadas da própria faixa — de 0 até `total` — e devolve
+ * a rolagem horizontal que deixa a aba inteira dentro da janela visível, com uma
+ * folga que mostra um pedaço da vizinha e avisa que há mais abas. Aba já visível
+ * não mexe em nada. Só a faixa rola: nunca a página.
+ */
+export const FOLGA_DA_ABA = 24;
+
+export function rolagemQueRevelaAba({ atual = 0, visivel = 0, total = 0, abaInicio = 0, abaFim = 0, folga = FOLGA_DA_ABA } = {}) {
+  const numero = (valor) => (Number.isFinite(valor) ? valor : 0);
+  const maximo = Math.max(0, numero(total) - numero(visivel));
+  let alvo = numero(atual);
+  if (numero(abaInicio) - folga < alvo) alvo = numero(abaInicio) - folga;
+  else if (numero(abaFim) + folga > alvo + numero(visivel)) alvo = numero(abaFim) + folga - numero(visivel);
+  return Math.round(Math.min(maximo, Math.max(0, alvo)));
+}
+
+/*
+ * Aplica a conta acima à faixa que acabou de ser desenhada.
+ *
+ * `rolagemAnterior` é onde a faixa velha estava: num redesenho da mesma tela
+ * (remover um salvo, ligar um aviso) a faixa fica onde a pessoa a deixou; numa
+ * troca, a aba recém-tocada já estava à vista e nada pula. Sem aba corrente na
+ * faixa — Notificações e Configurações vivem fora dela —, só a posição volta.
+ */
+export function manterAbaAtivaVisivel(faixa, rolagemAnterior = 0) {
+  if (!faixa) return;
+  const visivel = faixa.clientWidth;
+  const total = faixa.scrollWidth;
+  const atual = Math.min(Math.max(0, Number(rolagemAnterior) || 0), Math.max(0, total - visivel));
+  const aba = faixa.querySelector("[aria-current='page']");
+  let alvo = atual;
+  if (aba && total > visivel) {
+    const caixaDaFaixa = faixa.getBoundingClientRect();
+    const caixaDaAba = aba.getBoundingClientRect();
+    /* Posição da aba contada do começo da faixa, qualquer que seja a rolagem agora. */
+    const abaInicio = caixaDaAba.left - caixaDaFaixa.left + faixa.scrollLeft;
+    alvo = rolagemQueRevelaAba({ atual, visivel, total, abaInicio, abaFim: abaInicio + caixaDaAba.width });
+  }
+  if (Math.round(faixa.scrollLeft) !== alvo) faixa.scrollLeft = alvo;
+}
+
+/*
+ * O LINK "NOTIFICAÇÕES" DO CABEÇALHO, EM PEÇAS.
+ *
+ * A contagem e o miolo do link existem uma vez só, aqui. O cabeçalho usa as duas
+ * peças ao nascer; quando um aviso é confirmado como lido com a pessoa em outra
+ * tela, a SPA troca só o miolo deste link (ver avisos.js) — e não a tela inteira,
+ * que pode ter um formulário pela metade (D1).
+ */
+export function contarAvisosNovos(dados = {}) {
+  return naoLidas(notificacoesPermitidas(dados.notificacoes || [], dados.preferencias || []));
+}
+
+export function conteudoDoLinkDeAvisos(avisos = 0) {
+  const contador = avisos
+    ? ` <span class="mp-contador">${avisos}<span class="mp-sr"> ${avisos === 1 ? "novo" : "novos"}</span></span>`
+    : "";
+  return `Notificações${contador}`;
+}
+
+export function renderizarLinkDeAvisos({ rota, dados }) {
+  const corrente = rota?.nome === "notificacoes" ? " aria-current=\"page\"" : "";
+  return `<a class="mp-nav-avisos" href="${caminhoDa("notificacoes")}"${corrente}>${conteudoDoLinkDeAvisos(contarAvisosNovos(dados))}</a>`;
+}
+
 export function renderizarCabecalho({ estado, rota, dados }) {
   const nome = nomeDeExibicao(estado.usuario, estado.perfil);
-  const avisos = naoLidas(notificacoesPermitidas(dados.notificacoes || [], dados.preferencias || []));
   const noInicio = rota.nome === "inicio";
 
   const abas = ROTAS_DA_NAVEGACAO.map((nomeDaRota) => {
@@ -81,10 +152,6 @@ export function renderizarCabecalho({ estado, rota, dados }) {
     return `<li><a href="${caminhoDa(nomeDaRota)}"${corrente}>${e(definicao.rotulo)}</a></li>`;
   }).join("");
 
-  const contador = avisos
-    ? ` <span class="mp-contador">${avisos}<span class="mp-sr"> ${avisos === 1 ? "novo" : "novos"}</span></span>`
-    : "";
-
   return `<header class="mp-cabecalho">
     <p class="mp-kicker">Meu Potala</p>
     <h1 class="mp-titulo" id="mp-vista-titulo" data-vista-titulo tabindex="-1">${noInicio ? `Olá, ${e(primeiroNome(estado.usuario, estado.perfil))}.` : e(rota.titulo)}</h1>
@@ -92,7 +159,7 @@ export function renderizarCabecalho({ estado, rota, dados }) {
     ${avisoDeDadosDeExemplo(estado)}
     <nav class="mp-nav" aria-label="Seções do Meu Potala">
       <ul>${abas}</ul>
-      <a class="mp-nav-avisos" href="${caminhoDa("notificacoes")}"${rota.nome === "notificacoes" ? " aria-current=\"page\"" : ""}>Notificações${contador}</a>
+      ${renderizarLinkDeAvisos({ rota, dados })}
     </nav>
     <p class="mp-sr">Conta de ${e(nome)}</p>
   </header>`;

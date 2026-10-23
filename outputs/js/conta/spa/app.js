@@ -20,7 +20,8 @@ import { mensagemDoErro } from "../mensagens.js";
 import { notificacoesPermitidas } from "../leituras.js";
 import { TIPOS_DE_NOTIFICACAO, criarCompromisso, criarPreferencia } from "../modelos.js";
 import { criarRoteador } from "./roteador.js";
-import { renderizarCabecalho, renderizarCarregando, renderizarNaoEncontrada, renderizarVisitante } from "./vistas/comum.js";
+import { manterAbaAtivaVisivel, renderizarCabecalho, renderizarCarregando, renderizarNaoEncontrada, renderizarVisitante } from "./vistas/comum.js";
+import { criarAberturaDeAvisos, marcarAvisoNaLista, refletirAvisoLido } from "./avisos.js";
 import inicio from "./vistas/inicio.js";
 import perfil from "./vistas/perfil.js";
 import cursos from "./vistas/cursos.js";
@@ -51,6 +52,8 @@ export async function montarMeuPotala({ documento = document, janela = window } 
   let desligarVista = null;
   let geracao = 0;
   let esperaDaLimpeza = 0;
+  /* A troca de tela com transição ainda por aplicar, se houver (ver avisos.js). */
+  let trocaEmCurso = null;
 
   /* ------------------------------------------------------------------
    * Dados
@@ -123,7 +126,10 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     const mudaDeTela = origem === "navegacao" || origem === "historico";
 
     const aplicar = () => {
+      /* A faixa de abas nasce de novo com o cabeçalho; a posição dela vem junto (MP-02). */
+      const rolagemDaFaixa = palco.querySelector(".mp-nav ul")?.scrollLeft || 0;
       palco.innerHTML = html;
+      manterAbaAtivaVisivel(palco.querySelector(".mp-nav ul"), rolagemDaFaixa);
       ligarVista(nome);
     };
     const depois = () => {
@@ -151,7 +157,12 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     };
 
     if (mudaDeTela && typeof documento.startViewTransition === "function" && !reduzido()) {
-      documento.startViewTransition(aplicar).updateCallbackDone.then(depois, depois);
+      const aplicada = documento.startViewTransition(aplicar).updateCallbackDone.then(depois, depois);
+      trocaEmCurso = aplicada;
+      const soltar = () => {
+        if (trocaEmCurso === aplicada) trocaEmCurso = null;
+      };
+      aplicada.then(soltar, soltar);
     } else {
       aplicar();
       depois();
@@ -219,6 +230,26 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     trocarNaCopia(colecao, (lista) => lista.filter((item) => item.id !== id));
   };
 
+  /* Espera a troca de tela já começada aplicar o HTML dela, e a que vier depois, se vier. */
+  async function esperarTrocasEmCurso() {
+    while (trocaEmCurso) await trocaEmCurso.catch(() => null);
+  }
+
+  const aberturaDeAvisos = criarAberturaDeAvisos({
+    acharAviso: (id) => acharEm("notificacoes", id),
+    persistir: (id, quando) => sessao.colecao("notificacoes").marcarLida(id, quando),
+    esperarTroca: esperarTrocasEmCurso,
+    /*
+     * A cópia e o botão da conta mudam sempre; na tela, só o necessário. A
+     * pessoa pode já estar em outra tela, escrevendo (D1): ver refletirAvisoLido.
+     */
+    aoConfirmar: (id, quando) => {
+      trocarNaCopia("notificacoes", (lista) => marcarAvisoNaLista(lista, id, quando));
+      conta.recontarAvisos();
+      refletirAvisoLido({ palco, rota: roteador.atual().rota, dados, redesenhar: () => desenhar("atualizacao") });
+    },
+  });
+
   const ACOES = {
     "remover-salvo": (botao, id) => {
       const item = acharEm("salvos", id);
@@ -267,10 +298,13 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       conta.recontarAvisos();
     }, "Todos os avisos foram marcados como lidos."),
 
-    /* O link segue normalmente; marcar como lido vai junto, sem segurar a navegação. */
+    /*
+     * O link segue normalmente; marcar como lido vai junto, sem segurar a
+     * navegação. A cópia, o contador e o botão da conta só mudam quando a
+     * gravação confirma (MP-01). Uma falha deixa o aviso novo, como está no banco.
+     */
     "abrir-aviso": (_botao, id) => {
-      const item = acharEm("notificacoes", id);
-      if (item && !item.lidaEm) sessao.colecao("notificacoes").marcarLida(id).catch(() => null);
+      aberturaDeAvisos.abrir(id)?.catch((erro) => console.error("Meu Potala: o aviso lido não pôde ser redesenhado.", erro));
       return null;
     },
 
