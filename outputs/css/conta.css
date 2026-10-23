@@ -21,12 +21,13 @@
   --conta-marrom-fundo: #3f2a1e;
   --conta-ouro: #b88a4f;
   /*
-   * O ouro de LETRA (MP-03). O ouro velho acima fica nos fios, marcas e no anel
-   * de foco; em texto pequeno sobre papel ele dava 2,5:1. Este é o mesmo ouro —
+   * O ouro de LETRA (MP-03). O ouro velho acima fica nos fios e marcas; em texto
+   * pequeno sobre papel ele dava 2,5:1. Este é o mesmo ouro —
    * mesmo matiz e saturação, só mais escuro — e passa de 4,5:1 nos papéis da
    * área pessoal (#efe4d3, #f8f1e6, cartões e pastilhas) e sob o creme #f7edda.
    */
   --conta-ouro-texto: #815f34;
+  --conta-foco: #815f34;
   --conta-ouro-claro: #d7ba78;
   --conta-musgo: #637068;
   --conta-erro: #9a3b2a;
@@ -541,7 +542,7 @@
 
 .mp-pagina :is(a, button, input, textarea, [tabindex]):focus-visible,
 .mp-rodape a:focus-visible,
-.mp-marca:focus-visible { outline: 2px solid var(--conta-ouro); outline-offset: 3px; }
+.mp-marca:focus-visible { outline: 2px solid var(--conta-foco); outline-offset: 3px; }
 
 .mp-sr {
   position: absolute;
@@ -890,6 +891,7 @@
 }
 
 .mp-filtros a:hover { border-color: rgba(86, 59, 43, .4); color: var(--conta-tinta); }
+.mp-pagina .mp-filtros a:focus-visible { outline-offset: 0; }
 .mp-filtros a[aria-current="true"] { border-color: var(--conta-marrom); color: #f7edda; background: var(--conta-marrom); }
 /*
  * A contagem esmaecida só no filtro escolhido, onde o creme sobre o marrom tem
@@ -1006,6 +1008,7 @@
 
 .mp-campo textarea { resize: vertical; }
 .mp-campo :is(input, textarea):focus { outline: none; border-color: var(--conta-ouro); box-shadow: 0 0 0 3px rgba(184, 138, 79, .2); }
+.mp-campo :is(input, textarea):focus-visible { outline: 2px solid var(--conta-foco); outline-offset: 3px; }
 
 .mp-status-form { margin: 0; color: var(--conta-marrom); font: .86rem/1.4 var(--conta-sans); }
 .mp-status-form:empty { display: none; }
@@ -1158,7 +1161,7 @@
 
 .mp-interruptor input:checked { background: var(--conta-marrom); }
 .mp-interruptor input:checked::before { transform: translateX(20px); }
-.mp-interruptor input:focus-visible { outline: 2px solid var(--conta-ouro); outline-offset: 3px; }
+.mp-interruptor input:focus-visible { outline: 2px solid var(--conta-foco); outline-offset: 3px; }
 .mp-interruptor input:disabled { opacity: .6; cursor: progress; }
 
 /* Em alto contraste o desenho do interruptor some: volta a caixa do sistema. */

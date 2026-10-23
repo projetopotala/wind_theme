@@ -142,3 +142,27 @@ test("MP-03: o ouro de letra é o mesmo ouro da marca, só mais escuro", () => {
   assert.match(css, /\.mp-nav a\[aria-current="page"\] \{ border-bottom-color: var\(--conta-ouro\);/);
   assert.match(css, /\.mp-linha > li\[data-origem="instituto"\] \.mp-linha-marco \{ background: var\(--conta-ouro\); \}/);
 });
+
+test("MP-FIX-03: o indicador de foco passa de 3:1 nos fundos do Meu Potala", () => {
+  const foco = cor(TOKENS["--conta-foco"]);
+  for (const [nome, fundo] of [
+    ["papel da página", FUNDO_DA_PAGINA],
+    ["cartão", FUNDO_DO_CARTAO],
+    ["cartão realçado", FUNDO_DO_CARTAO_EM_FOCO],
+    ["pastilha", FUNDO_DA_PASTILHA],
+  ]) {
+    const razao = contraste(foco, fundo);
+    assert.ok(razao >= 3, `${nome}: ${razao.toFixed(2)}:1`);
+  }
+});
+
+test("MP-FIX-03: todos os anéis explícitos da SPA usam o token de foco", () => {
+  assert.match(regra('.mp-pagina :is(a, button, input, textarea, [tabindex]):focus-visible,\n.mp-rodape a:focus-visible,\n.mp-marca:focus-visible'), /outline:\s*2px solid var\(--conta-foco\)/);
+  assert.match(regra(".mp-campo :is(input, textarea):focus-visible"), /outline:\s*2px solid var\(--conta-foco\)/);
+  assert.match(regra(".mp-interruptor input:focus-visible"), /outline:\s*2px solid var\(--conta-foco\)/);
+});
+
+test("MP-FIX-03: o anel dos filtros cabe no contêiner com contain paint", () => {
+  assert.match(regra(".mp-filtros ul"), /contain:\s*paint/);
+  assert.equal(propriedade(".mp-pagina .mp-filtros a:focus-visible", "outline-offset"), "0");
+});
