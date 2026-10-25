@@ -33,6 +33,24 @@ import notificacoes from "./vistas/notificacoes.js";
 import configuracoes from "./vistas/configuracoes.js";
 import atendimentos from "./vistas/atendimentos.js";
 import { APPOINTMENT_REQUESTS_ENABLED } from "../../appointments/config.js";
+import { erroDaUrl } from "../confirmar-conta.js";
+
+/*
+ * LINK DE ACESSO QUE NÃO VALEU.
+ *
+ * O link de "Esqueci minha senha" volta para /meu-potala/configuracoes. Se ele
+ * expirou ou já foi usado, o Supabase devolve a pessoa com #error=... na URL e
+ * sem sessão, e a tela de visitante aparecia sem explicar nada. A falha é lida
+ * antes de o SDK abrir, a URL é limpa e a tela diz o que aconteceu.
+ */
+export function avisoDoLinkDeAcesso(href) {
+  const falha = erroDaUrl(href);
+  if (!falha) return "";
+  const texto = falha.status === "expirado"
+    ? "O link que você abriu expirou ou já foi usado. Para criar uma nova senha, toque em Entrar e depois em “Esqueci minha senha”."
+    : "Não foi possível validar o link que você abriu. Peça um novo em Entrar, depois em “Esqueci minha senha”.";
+  return `<p class="mp-aviso" role="alert" data-aviso-link>${texto}</p>`;
+}
 
 export const VISTAS = Object.freeze({ inicio, perfil, cursos, agenda, atendimentos, salvos, historico, acompanhando, notificacoes, configuracoes });
 const COLECOES_DA_AREA = Object.freeze(["salvos", "historico", "acompanhando", "inscricoes", "progressos", "agenda", "notificacoes", "preferencias",
@@ -41,6 +59,8 @@ const COLECOES_DA_AREA = Object.freeze(["salvos", "historico", "acompanhando", "
 export async function montarMeuPotala({ documento = document, janela = window } = {}) {
   const palco = documento.querySelector("[data-meu-potala]");
   if (!palco) return null;
+  const avisoDoLink = avisoDoLinkDeAcesso(janela.location.href);
+  if (avisoDoLink) janela.history?.replaceState?.(null, "", janela.location.pathname);
   const conta = await montarConta({ documento, janela });
   if (!conta) return null;
   const { sessao, painel, anunciar } = conta;
@@ -177,7 +197,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
 
     if (estado.status === "carregando") return trocar(renderizarCarregando(), { origem: "carregamento" });
     if (!encontrada) return trocar(renderizarNaoEncontrada(), { origem });
-    if (estado.status !== "autenticado") return trocar(renderizarVisitante(estado), { origem });
+    if (estado.status !== "autenticado") return trocar(`${avisoDoLink}${renderizarVisitante(estado)}`, { origem });
 
     if (!dados || dono !== estado.usuario.id) {
       if (origem !== "atualizacao") trocar(renderizarCarregando(), { origem: "carregamento" });
