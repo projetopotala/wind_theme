@@ -21,14 +21,16 @@ export class ErroDeConta extends Error {
  * O banco ainda não tem as tabelas pessoais.
  *
  * Não é uma falha da pessoa nem da rede: é um passo de implantação que não
- * aconteceu. Por isso tem classe própria — quem chama distingue este caso e cai
- * para os dados de demonstração, em vez de mostrar uma tela de erro a quem só
- * queria ver os próprios salvos.
+ * aconteceu. Tem classe própria para ser reconhecível nos registros, mas NÃO
+ * troca nada por dados de demonstração (MP-04): a tela diz que esta parte do
+ * espaço ainda não está disponível, e o que é da pessoa nunca se mistura com o
+ * que é fictício.
  */
 export class DadosIndisponiveis extends Error {
   constructor(causa = null) {
-    super("Os dados pessoais ainda não estão disponíveis neste banco.");
+    super(mensagemDoCodigo("DADOS_INDISPONIVEIS"));
     this.name = "DadosIndisponiveis";
+    this.codigo = "DADOS_INDISPONIVEIS";
     this.causa = causa;
   }
 }
@@ -43,6 +45,7 @@ const MENSAGENS = new Map([
   ["SENHAS_DIFERENTES", "As duas senhas não coincidem."],
   ["SEM_SESSAO", "Entre na sua conta para continuar."],
   ["SEM_CONEXAO", "Não conseguimos falar com o Potala agora. Confira sua conexão."],
+  ["DADOS_INDISPONIVEIS", "Esta parte do seu espaço ainda não está disponível. Tente de novo mais tarde."],
   ["invalid_credentials", "E-mail ou senha não conferem."],
   ["email_not_confirmed", "Seu e-mail ainda não foi confirmado. Procure a mensagem que enviamos."],
   ["user_already_exists", "Já existe uma conta com este e-mail. Tente entrar."],
