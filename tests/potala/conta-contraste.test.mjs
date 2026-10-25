@@ -166,3 +166,14 @@ test("MP-FIX-03: o anel dos filtros cabe no contêiner com contain paint", () =>
   assert.match(regra(".mp-filtros ul"), /contain:\s*paint/);
   assert.equal(propriedade(".mp-pagina .mp-filtros a:focus-visible", "outline-offset"), "0");
 });
+
+test("MP-FIX-03.7: a faixa rolável reserva espaço para o anel sem deslocar os links", () => {
+  const espaco = Number.parseFloat(propriedade(".mp-nav ul", "padding"));
+  const foco = regra('.mp-pagina :is(a, button, input, textarea, [tabindex]):focus-visible,\n.mp-rodape a:focus-visible,\n.mp-marca:focus-visible');
+  const espessura = Number(foco.match(/outline:\s*(\d+)px/)[1]);
+  const afastamento = Number(foco.match(/outline-offset:\s*(\d+)px/)[1]);
+  assert.ok(espaco >= espessura + afastamento);
+  assert.equal(Number.parseFloat(propriedade(".mp-nav ul", "margin")), -espaco);
+  assert.ok(Number.parseFloat(propriedade(".mp-nav ul", "scroll-padding-inline")) >= espaco);
+  assert.equal(propriedade(".mp-nav ul", "overflow-x"), "auto");
+});

@@ -602,8 +602,10 @@
   display: flex;
   flex: 1;
   gap: clamp(16px, 2.6vw, 30px);
-  margin: 0;
-  padding: 0;
+  /* 2px de anel + 3px de afastamento, sem deslocar os links da faixa. */
+  margin: -5px;
+  padding: 5px;
+  scroll-padding-inline: 5px;
   overflow-x: auto;
   list-style: none;
   scrollbar-width: none;
