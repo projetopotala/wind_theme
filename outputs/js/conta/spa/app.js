@@ -441,6 +441,36 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     else if (mudouPerfil && !palco.querySelector("[data-perfil-form][data-alterado]")) desenhar("atualizacao");
   });
 
+  /*
+   * O navegador pode focar uma aba parcialmente visível sem revelar seu anel.
+   *
+   * SÓ PARA O TECLADO (MP-FIX-03.9). Clique e toque também focam o link — no
+   * mousedown, ou no fim do toque —, antes de o clique terminar. Rolar a faixa
+   * nesse instante tirava o link de baixo do dedo, o clique acabava em outro
+   * lugar e a navegação não acontecia. Para ponteiro, a aba tocada já está à
+   * vista; o MP-02 cuida dela depois da troca de tela.
+   *
+   * A modalidade é a da última entrada: uma tecla devolve o "teclado" na hora,
+   * então quem usou o mouse e depois aperta Tab volta a ter a aba revelada.
+   */
+  let ultimaEntrada = "teclado";
+  const aoTeclar = () => {
+    ultimaEntrada = "teclado";
+  };
+  const aoApontar = () => {
+    ultimaEntrada = "ponteiro";
+  };
+  function aoFocarAba(evento) {
+    if (ultimaEntrada !== "teclado") return;
+    const aba = evento.target.closest?.(".mp-nav ul a");
+    if (!aba) return;
+    const faixa = aba.closest("ul");
+    manterAbaAtivaVisivel(faixa, faixa.scrollLeft, aba);
+  }
+
+  documento.addEventListener("keydown", aoTeclar, true);
+  documento.addEventListener("pointerdown", aoApontar, true);
+  palco.addEventListener("focusin", aoFocarAba);
   palco.addEventListener("click", aoClicar);
   palco.addEventListener("change", aoMudarPreferencia);
   palco.addEventListener("submit", aoEnviar);
@@ -453,6 +483,9 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       desligarVista?.();
       desligarSessao();
       roteador.destroy();
+      documento.removeEventListener("keydown", aoTeclar, true);
+      documento.removeEventListener("pointerdown", aoApontar, true);
+      palco.removeEventListener("focusin", aoFocarAba);
       palco.removeEventListener("click", aoClicar);
       palco.removeEventListener("change", aoMudarPreferencia);
       palco.removeEventListener("submit", aoEnviar);

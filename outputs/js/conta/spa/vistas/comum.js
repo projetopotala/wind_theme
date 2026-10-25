@@ -101,12 +101,11 @@ export function rolagemQueRevelaAba({ atual = 0, visivel = 0, total = 0, abaInic
  * troca, a aba recém-tocada já estava à vista e nada pula. Sem aba corrente na
  * faixa — Notificações e Configurações vivem fora dela —, só a posição volta.
  */
-export function manterAbaAtivaVisivel(faixa, rolagemAnterior = 0) {
+export function manterAbaAtivaVisivel(faixa, rolagemAnterior = 0, aba = faixa?.querySelector("[aria-current='page']")) {
   if (!faixa) return;
   const visivel = faixa.clientWidth;
   const total = faixa.scrollWidth;
   const atual = Math.min(Math.max(0, Number(rolagemAnterior) || 0), Math.max(0, total - visivel));
-  const aba = faixa.querySelector("[aria-current='page']");
   let alvo = atual;
   if (aba && total > visivel) {
     const caixaDaFaixa = faixa.getBoundingClientRect();
