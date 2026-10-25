@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { COLECOES, comReserva, criarSessao, validarCadastro, validarEntrada } from "../../outputs/js/conta/sessao.js";
-import { DadosIndisponiveis, ErroDeConta } from "../../outputs/js/conta/mensagens.js";
+import { COLECOES, criarSessao, validarCadastro, validarEntrada } from "../../outputs/js/conta/sessao.js";
+import { ErroDeConta } from "../../outputs/js/conta/mensagens.js";
 import { FABRICAS, criarPerfil, criarUsuario } from "../../outputs/js/conta/modelos.js";
 
 const pausa = () => new Promise((pronto) => setTimeout(pronto, 0));
@@ -178,42 +178,8 @@ test("falha ao recuperar a sessão inicial é observável", async () => {
 });
 
 /* ------------------------------------------------------------------
- * Reserva de dados
+ * Modo real sem reserva (MP-04): ver conta-dados-reais.test.mjs
  * ------------------------------------------------------------------ */
-
-test("a reserva so entra quando o banco nao tem as tabelas", async () => {
-  /*
-   * Cair para a demonstracao porque a rede piscou mostraria salvos que nao sao
-   * da pessoa, e ela acreditaria neles. So a tabela ausente autoriza a troca.
-   */
-  let caiu = 0;
-  const reserva = dadosFalsos({ async listar() { return ["da reserva"]; } });
-
-  const semTabela = comReserva(
-    dadosFalsos({ async listar() { throw new DadosIndisponiveis({ code: "PGRST205" }); } }),
-    reserva,
-    { aoCair: () => { caiu += 1; } },
-  );
-  assert.deepEqual(await semTabela.listar("salvos", "u1"), ["da reserva"]);
-  assert.equal(semTabela.emReserva, true);
-  await semTabela.listar("salvos", "u1");
-  assert.equal(caiu, 1, "a troca acontece uma vez, e fica");
-
-  const semRede = comReserva(dadosFalsos({ async listar() { throw new Error("rede caiu"); } }), reserva);
-  await assert.rejects(semRede.listar("salvos", "u1"), /rede caiu/);
-  assert.equal(semRede.emReserva, false);
-});
-
-test("o estado da sessao conta quando os dados sao de demonstracao", async () => {
-  const dados = comReserva(
-    dadosFalsos({ async perfil() { throw new DadosIndisponiveis(); } }),
-    dadosFalsos(),
-  );
-  const sessao = criarSessao({ autenticacao: autenticacaoFalsa(), dados });
-  await sessao.iniciar();
-  await sessao.entrar({ email: "gustavo@exemplo.com", senha: "segredo-longo" });
-  assert.equal(sessao.obter().dadosEmReserva, true);
-});
 
 test("toda colecao da sessao tem fabrica de modelo", () => {
   assert.deepEqual([...COLECOES].sort(), Object.keys(FABRICAS).sort());

@@ -13,7 +13,7 @@
  * criar conta. ?demo=sair desliga.
  */
 
-import { criarSessao, comReserva } from "./sessao.js";
+import { criarSessao } from "./sessao.js";
 import { criarAutenticacaoDemonstracao, criarDadosDemonstracao } from "./adaptadores/demonstracao.js";
 import { montarPainelConta } from "./painel-conta.js";
 import { criarAcoesComConta } from "./acoes-com-conta.js";
@@ -188,7 +188,6 @@ function tirarPedidoDoEndereco(janela) {
 
 export function obterSessaoGlobal({ documento = document, janela = window } = {}) {
   if (sessaoGlobal) return sessaoGlobal;
-  const reserva = criarDadosDemonstracao();
   const pedido = new URLSearchParams(janela.location.search).get("demo");
   const demonstracao = querDemonstracao(janela.location, janela.sessionStorage);
   if (pedido) tirarPedidoDoEndereco(janela);
@@ -201,7 +200,7 @@ export function obterSessaoGlobal({ documento = document, janela = window } = {}
      * isso aqui, e não depois de montar.
      */
     if (pedido === "visita") autenticacao.iniciarVisita();
-    sessaoGlobal = criarSessao({ autenticacao, dados: reserva, aoFalhar: relatarFalhaDePersistencia });
+    sessaoGlobal = criarSessao({ autenticacao, dados: criarDadosDemonstracao(), aoFalhar: relatarFalhaDePersistencia });
   } else {
     /* Sair da demonstração leva junto a pessoa fictícia, para ela não reaparecer numa próxima visita. */
     if (pedido === "sair") criarAutenticacaoDemonstracao().sair();
@@ -221,7 +220,8 @@ export function obterSessaoGlobal({ documento = document, janela = window } = {}
       const { criarDadosSupabase } = await import("./adaptadores/supabase.js");
       return criarDadosSupabase({ client: await cliente() });
     });
-    sessaoGlobal = criarSessao({ autenticacao, dados: comReserva(principal, reserva), aoFalhar: relatarFalhaDePersistencia });
+    /* Modo real: só o banco. Nada de dados de demonstração por baixo (MP-04). */
+    sessaoGlobal = criarSessao({ autenticacao, dados: principal, aoFalhar: relatarFalhaDePersistencia });
   }
 
   sessaoGlobal.iniciar();

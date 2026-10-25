@@ -12,7 +12,7 @@
  * rodar tudo em demonstração, sem mexer em uma linha daqui.
  */
 
-import { DadosIndisponiveis, ErroDeConta } from "./mensagens.js";
+import { ErroDeConta } from "./mensagens.js";
 import { FABRICAS, criarPerfil, paraData } from "./modelos.js";
 
 export const COLECOES = Object.freeze(Object.keys(FABRICAS));
@@ -47,47 +47,19 @@ export function validarCadastro({ nome, email, senha, confirmacao } = {}) {
 }
 
 /*
- * OS DADOS COM RESERVA.
+ * SEM RESERVA DE DEMONSTRAÇÃO NO MODO REAL (MP-04).
  *
- * O Supabase Auth já funciona, mas as tabelas pessoais dependem de uma migração
- * que ainda não foi aplicada. Sem esta costura, a pessoa conseguiria entrar e
- * encontraria o Meu Potala quebrado.
+ * Havia aqui uma costura que, quando o banco dizia que uma tabela pessoal não
+ * existia, passava a sessão inteira para os dados de demonstração. As coleções
+ * já carregadas continuavam reais e as outras viravam fictícias — e a pessoa
+ * via as duas coisas juntas, sem saber o que era dela. Gravações também iam
+ * para o navegador em vez do banco.
  *
- * A reserva só entra quando o banco diz que a TABELA NÃO EXISTE. Qualquer outro
- * erro — rede, permissão, dado inválido — sobe como está: cair para dados de
- * demonstração porque a rede piscou mostraria salvos que não são da pessoa, e
- * ela acreditaria neles.
+ * Agora o modo real fala só com o banco. Tabela ausente, rede fora ou
+ * permissão negada viram erro controlado: a tela avisa que a parte não carregou
+ * e oferece tentar de novo. A demonstração existe só quando pedida
+ * explicitamente (?demo=conta ou ?demo=visita), com adaptadores próprios.
  */
-export function comReserva(principal, reserva, { aoCair } = {}) {
-  let usandoReserva = false;
-  const chamar = (metodo) => async (...argumentos) => {
-    if (!usandoReserva) {
-      try {
-        return await principal[metodo](...argumentos);
-      } catch (erro) {
-        if (!(erro instanceof DadosIndisponiveis)) throw erro;
-        usandoReserva = true;
-        aoCair?.(erro);
-      }
-    }
-    return reserva[metodo](...argumentos);
-  };
-
-  return {
-    perfil: chamar("perfil"),
-    salvarPerfil: chamar("salvarPerfil"),
-    listar: chamar("listar"),
-    gravar: chamar("gravar"),
-    remover: chamar("remover"),
-    limpar: chamar("limpar"),
-    marcarLida: chamar("marcarLida"),
-    opcoesAtendimento: chamar("opcoesAtendimento"),
-    solicitarAtendimento: chamar("solicitarAtendimento"),
-    get emReserva() {
-      return usandoReserva;
-    },
-  };
-}
 
 export function criarSessao({ autenticacao, dados = null, agora = () => new Date(), aoFalhar = () => {} } = {}) {
   if (!autenticacao) throw new TypeError("A sessão precisa de um adaptador de autenticação.");
