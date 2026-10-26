@@ -11,7 +11,7 @@
  *   node scripts/gerar-semente-blog.mjs --leva 1 > supabase/migrations/202609170003_semente_do_blog.sql
  *   node scripts/gerar-semente-blog.mjs --leva 2 > supabase/migrations/202609180003_mais_textos_do_blog.sql
  */
-import { DEFAULT_BLOG_POSTS } from "../outputs/js/blog/blog-data.js";
+import { DEFAULT_BLOG_POSTS } from "./dados/blog-acervo-inicial.mjs";
 import { normalizePosts } from "../outputs/js/blog/blog-model.js";
 
 const literal = (valor) => `'${String(valor).replace(/'/g, "''")}'`;

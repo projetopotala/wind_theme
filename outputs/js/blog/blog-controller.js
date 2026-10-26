@@ -1,7 +1,7 @@
 import { arteDaCapa } from "./blog-arte.js";
-import { CATEGORIAS, DEFAULT_BLOG_POSTS, contarPorCategoria, dataLegivel } from "./blog-data.js";
+import { CATEGORIAS, contarPorCategoria, dataLegivel } from "./blog-data.js";
 import { normalizePost, normalizePosts, placeBlogPosts } from "./blog-model.js";
-import { criarBlogPublico, criarRestSemBanco, querAcervoLocal, quandoFoi, validarEnvioDeComentario } from "./blog-remoto.js";
+import { criarBlogPublico, quandoFoi, validarEnvioDeComentario } from "./blog-remoto.js";
 import { applyBlogSettings } from "./blog-settings.js";
 import { definirCategorias } from "./article-renderer.js";
 import { criarRestPublico } from "../supabase/rest.js";
@@ -198,16 +198,6 @@ function wireComments(root, blog) {
   });
 }
 
-/* Uma faixa no topo deixa claro que a página não está mostrando o banco. */
-export function avisarAcervoLocal(root = document) {
-  const faixa = root.createElement?.("p");
-  if (!faixa) return;
-  faixa.className = "blog-acervo-local";
-  faixa.setAttribute("role", "status");
-  faixa.innerHTML = 'Prévia com os textos do código, sem o banco. Comentários e inscrições estão desligados. <a href="?acervo=banco">Voltar ao banco</a>';
-  root.body?.prepend(faixa);
-}
-
 export const POR_PAGINA = 12;
 export const MAIS_POR_VEZ = 9;
 
@@ -220,11 +210,9 @@ export function montar(root = document) {
   const search = root.querySelector("[data-blog-search]");
   if (!gridTarget) return { destroy() {} };
 
-  const acervoLocal = querAcervoLocal();
   const blog = criarBlogPublico({
-    rest: acervoLocal ? criarRestSemBanco() : criarRestPublico(),
-    reserva: DEFAULT_BLOG_POSTS,
-    aoFalhar: (erro) => console.warn("Caderno: leitura do banco falhou; mostrando o acervo empacotado.", erro),
+    rest: criarRestPublico(),
+    aoFalhar: (erro, contexto = "blog") => console.warn(`Caderno: leitura do banco falhou (${contexto}).`, erro),
   });
   const params = new URLSearchParams(globalThis.location?.search || "");
   const preview = params.get("preview") === "1";
@@ -234,6 +222,8 @@ export function montar(root = document) {
   const buscaFaixa = root.querySelector("#blog-busca");
   let posts = [];
   let recebeuPrevia = false;
+  /* A última falha de leitura: enquanto existir, busca e filtros não desenham uma lista que o banco não confirmou. */
+  let falhaDaLeitura = null;
   /* O menu das outras páginas (o artigo) chega aqui por ?categoria=. */
   let activeCategory = params.get("categoria") || "todos";
   let term = "";
@@ -253,12 +243,16 @@ export function montar(root = document) {
    * responde à busca parece resultado dela.
    */
   function draw() {
+    if (falhaDaLeitura) { mostrarIndisponivel(falhaDaLeitura); return; }
     const filtrando = activeCategory !== "todos" || Boolean(term);
     const abertura = placeBlogPosts(posts);
     const encontrados = placeBlogPosts(visiblePosts());
     const naGrade = filtrando ? [encontrados.featured, ...encontrados.grid].filter(Boolean) : abertura.grid;
     if (featuredTarget) featuredTarget.innerHTML = destaqueEmMoldura(abertura.featured);
     gridTarget.innerHTML = gradeEditorial(naGrade.slice(0, limite));
+    /* Banco sem nenhum texto publicado não é o mesmo que busca sem resultado. */
+    empty.dataset.textoDoFiltro ||= empty.textContent;
+    empty.textContent = posts.length ? empty.dataset.textoDoFiltro : "Ainda não há textos publicados no Caderno.";
     empty.hidden = naGrade.length > 0;
     if (mais) {
       const faltam = naGrade.length - limite;
@@ -356,6 +350,7 @@ export function montar(root = document) {
   const onPreview = (evento) => {
     if (evento.origin !== window.location.origin || evento.data?.type !== "potala:blog-preview") return;
     recebeuPrevia = true;
+    falhaDaLeitura = null;
     posts = normalizePosts(evento.data.posts);
     draw();
   };
@@ -367,16 +362,45 @@ export function montar(root = document) {
     /* Sem os textos ainda, desenhar só mostraria "nenhum texto" por um instante. */
     if (posts.length) draw();
   });
-  const carregado = Promise.all([blog.listarPublicados(), blog.lerConfiguracao(), categoriasProntas]).then(([publicados, configuracao]) => {
-    applyBlogSettings(root, configuracao);
+  /*
+   * Sem confirmação do banco, nada é mostrado como publicado: a grade dá lugar
+   * a um aviso com "Tentar de novo", e o resto da página (menu, busca,
+   * comentários) continua como está.
+   */
+  function mostrarIndisponivel(erro) {
+    falhaDaLeitura = erro;
+    posts = [];
+    if (featuredTarget) featuredTarget.innerHTML = "";
+    if (recentTarget) recentTarget.innerHTML = "";
+    categoriesTarget.innerHTML = "";
+    if (mais) mais.hidden = true;
+    empty.hidden = true;
+    gridTarget.innerHTML = `<div class="blog-vazio blog-indisponivel" role="alert" data-blog-indisponivel>
+      <p>${escapar(erro?.message || "Não foi possível consultar os textos publicados agora.")}</p>
+      <button class="cad-botao-contorno" type="button" data-blog-tentar>Tentar de novo</button>
+    </div>`;
+  }
+  const carregarTextos = () => blog.listarPublicados().then((publicados) => {
     /* Na prévia do editor, o rascunho que chegou pela mensagem vale mais que o banco. */
     if (!recebeuPrevia) {
+      falhaDaLeitura = null;
       posts = publicados;
       draw();
     }
+  }, (erro) => {
+    if (!recebeuPrevia) mostrarIndisponivel(erro);
+  });
+  gridTarget.addEventListener("click", (event) => {
+    const botao = event.target.closest?.("[data-blog-tentar]");
+    if (!botao || botao.disabled) return;
+    botao.disabled = true;
+    botao.textContent = "Consultando…";
+    carregarTextos().then(() => gridTarget.querySelector("[data-blog-tentar]")?.focus());
+  });
+  const carregado = Promise.all([carregarTextos(), blog.lerConfiguracao(), categoriasProntas]).then(([, configuracao]) => {
+    applyBlogSettings(root, configuracao);
   });
   if (!preview) wireComments(root, blog);
-  if (acervoLocal) avisarAcervoLocal(root);
   return { draw, carregado, destroy() { window.removeEventListener("message", onPreview); } };
 }
 

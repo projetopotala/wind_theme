@@ -41,7 +41,8 @@ export function criarRestPublico({ config = SUPABASE_CONFIG, fetchImpl = globalT
 
   return {
     ler(tabela, parametros = {}) {
-      return pedir(`${tabela}?${new URLSearchParams(parametros)}`, { method: "GET" });
+      /* Sem cache do navegador: o que está publicado muda quando a equipe decide. */
+      return pedir(`${tabela}?${new URLSearchParams(parametros)}`, { method: "GET", cache: "no-store" });
     },
     inserir(tabela, linha) {
       return pedir(tabela, {

@@ -101,7 +101,9 @@ import { mountPortalHeader } from "./shared/portal-header.js";
         } catch (error) {
           console.warn("Supabase indisponível; usando snapshot empacotado.", error);
         }
-        return mountHomeJourney({ repository });
+        /* Cartão de artigo do Blog só com o texto confirmado no ar pelo banco. */
+        const { comArtigosConfirmados } = await import("./blog/artigos-publicados.js");
+        return mountHomeJourney({ repository: comArtigosConfirmados(repository) });
       })
       .catch((error) => {
         console.error("Não foi possível iniciar a Travessia.", error);

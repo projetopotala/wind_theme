@@ -15,7 +15,6 @@
  * mesmos, fictícios, que o Portal já apresenta em Especialistas.
  */
 
-import { catalogoDoPortal } from "./catalogo.js";
 import {
   criarAcompanhado,
   criarCompromisso,
@@ -37,12 +36,15 @@ export function sementeDeDemonstracao({ usuarioId, agora = new Date() } = {}) {
   };
   const ha = (horas) => new Date(base.getTime() - horas * 3_600_000).toISOString();
 
-  const catalogo = catalogoDoPortal();
-  const textos = catalogo.filter((item) => item.tipo === "blog");
-  const texto = (ref, reserva = 0) => catalogo.find((item) => item.ref === ref) || textos[reserva] || textos[0];
-  const ansiedade = texto("ansiedade-corpo", 0);
-  const oraculo = texto("oraculo-de-hoje", 1);
-  const cinema = texto("cinema-quinta", 2);
+  /*
+   * Textos de exemplo, e não textos do Blog real: a demonstração não pode
+   * mostrar como salvo ou lido um texto que a equipe tirou do ar. Levam ao
+   * Caderno, que mostra o que está publicado de verdade.
+   */
+  const exemplo = (ref, titulo) => ({ tipo: "blog", ref, titulo, href: "/blog.html", imagem: "/media/blog-hero-caminhante.webp" });
+  const ansiedade = exemplo("demonstracao-texto-1", "Texto de exemplo: o corpo e a pausa");
+  const oraculo = exemplo("demonstracao-texto-2", "Texto de exemplo: a carta do dia");
+  const cinema = exemplo("demonstracao-texto-3", "Texto de exemplo: cinema e escuta");
 
   const inscricoes = [
     criarInscricao({ id: "demo-insc-meditacao", usuarioId, cursoRef: "meditacao-iniciantes", curso: "Meditação para iniciantes", professor: "Paulo Renato Miquelin", modalidade: "Online", status: "em_andamento", proximaAula: em(1, 19), conteudoHref: "/inspiracao.html", inscritoEm: ha(24 * 26) }),

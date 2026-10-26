@@ -177,8 +177,6 @@ html:has(> body.cad-body) { background: var(--cad-chao); }
 .cad-botao:hover { filter: brightness(1.08); }
 .cad-botao:disabled { opacity: .55; cursor: progress; }
 
-.blog-acervo-local { position: sticky; top: 0; z-index: 50; margin: 0; padding: 10px 16px; color: var(--cad-chao); background: var(--cad-ouro); text-align: center; font: 600 .78rem/1.4 var(--cad-sans); }
-.blog-acervo-local a { color: inherit; font-weight: 700; }
 
 /* ------------------------------------------------------------------
  * Rodapé

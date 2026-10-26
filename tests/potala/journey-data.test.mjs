@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { DEFAULT_BLOG_POSTS } from "../../outputs/js/blog/blog-data.js";
+import { DEFAULT_BLOG_POSTS } from "../../scripts/dados/blog-acervo-inicial.mjs";
 import { ehNovidade } from "../../outputs/js/home/home-novidades.js";
 import {
   JOURNEY_DISCOVERIES,

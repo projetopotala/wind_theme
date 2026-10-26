@@ -981,6 +981,11 @@ body {
 
 .conexao__artigo:hover { color: var(--moss); }
 
+/* Indicação de texto do Blog só aparece confirmada pelo banco (js/blog/indicacoes-do-blog.js). */
+.conexao__artigo:not([data-artigo-confirmado]),
+.conexao__blog:not([data-blog-confirmado]),
+.conexao__rotulo:has(+ .conexao__blog:not([data-blog-confirmado])) { display: none; }
+
 /* A reflexão do capítulo 04 é a mesma conexão, no território escuro. */
 .reflection {
   display: grid;

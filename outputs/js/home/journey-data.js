@@ -1,8 +1,40 @@
 import { normalizeHomeBlocks } from "./content-model.js";
-import { DEFAULT_BLOG_POSTS, POSTS } from "../blog/blog-data.js";
+/*
+ * AS NOVIDADES DO BLOG NA HOME.
+ *
+ * São cartões que representam textos do Blog. Aqui fica só o que o cartão
+ * desenha (título, resumo, capa, motivo); o texto em si é do banco. A Home só
+ * mostra um destes cartões depois de o banco confirmar que o texto está
+ * publicado (ver blog/artigos-publicados.js): retirado do ar, arquivado ou
+ * sem confirmação, o cartão some.
+ */
+const NOVIDADES_DO_BLOG = [
+  {
+    slug: "oraculo-de-hoje", categoria: "oraculos", motivo: "oraculo", capa: "media/journey-inspiracao.webp",
+    titulo: "Oráculo de hoje: a carta da Ponte",
+    resumo: "A Ponte não fala de chegada, e sim da travessia. Ela aparece quando as duas margens já são conhecidas e o que falta é atravessar.",
+    tags: ["oráculo", "tarô", "cafeomancia"],
+  },
+  {
+    slug: "novos-profissionais", categoria: "artigos", motivo: "lotus", capa: "media/home-travessia.webp",
+    titulo: "Novos profissionais chegaram ao Instituto",
+    resumo: "Sete terapeutas passam a atender no Potala neste mês, trazendo constelação familiar, osteopatia, terapia floral e três abordagens que ainda não existiam na casa.",
+    tags: ["profissionais", "atendimentos"],
+  },
+  {
+    slug: "borra-de-cafe", categoria: "oraculos", motivo: "circulo", capa: "media/chegada-landscape.webp",
+    titulo: "O que a borra de café ainda tem a dizer",
+    resumo: "A cafeomancia não adivinha o futuro: ela organiza a pergunta. Um panorama de uma prática antiga que segue lotando as rodas de quarta-feira.",
+    tags: ["cafeomancia", "oráculo"],
+  },
+  {
+    slug: "ansiedade-corpo", categoria: "terapias", motivo: "fumaca", capa: "media/saude-integrativa-escuta.webp",
+    titulo: "Onde a ansiedade se instala no corpo",
+    resumo: "Antes de virar pensamento, ela é mandíbula travada, respiração curta e ombro erguido. Três terapeutas da casa descrevem o que veem chegar no consultório.",
+    tags: ["ansiedade", "corpo", "respiração"],
+  },
+];
 
-// Conteúdo inicial do Blog para a composição de demonstração e recuperação.
-// Uma leitura remota bem-sucedida nunca recebe blocos extras do código.
 const CATEGORIAS_DO_BLOG = {
   artigos: "Artigo",
   oraculos: "Oráculo",
@@ -12,33 +44,20 @@ const CATEGORIAS_DO_BLOG = {
   praticas: "Prática",
 };
 
-const NOVIDADES_DO_BLOG = [
-  "oraculo-de-hoje",
-  "novos-profissionais",
-  "borra-de-cafe",
-  "ansiedade-corpo",
-];
-
-const NOVIDADES = NOVIDADES_DO_BLOG.map((slug, index) => {
-  const post = DEFAULT_BLOG_POSTS.find((candidate) => candidate.slug === slug);
-  const legado = POSTS.find((candidate) => candidate.id === slug);
-  if (!post) return null;
-
-  return {
-    id: `novidade-${post.slug}`,
-    type: "region",
-    category: CATEGORIAS_DO_BLOG[post.category] || "Caderno",
-    title: post.title,
-    description: post.excerpt,
-    image: post.cover,
-    href: `artigo.html?post=${encodeURIComponent(post.slug)}`,
-    priority: 95 - index,
-    tags: [...(legado?.tags || []), "recente"],
-    motivo: legado?.motivo || "",
-    layoutVariant: "paper",
-    roadPlacement: index % 2 === 0 ? "right" : "left",
-  };
-}).filter(Boolean);
+const NOVIDADES = NOVIDADES_DO_BLOG.map((post, index) => ({
+  id: `novidade-${post.slug}`,
+  type: "region",
+  category: CATEGORIAS_DO_BLOG[post.categoria] || "Caderno",
+  title: post.titulo,
+  description: post.resumo,
+  image: post.capa,
+  href: `artigo.html?post=${encodeURIComponent(post.slug)}`,
+  priority: 95 - index,
+  tags: [...post.tags, "recente"],
+  motivo: post.motivo,
+  layoutVariant: "paper",
+  roadPlacement: index % 2 === 0 ? "right" : "left",
+}));
 
 export const JOURNEY_REGIONS = [
   ...NOVIDADES,

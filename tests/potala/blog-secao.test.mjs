@@ -6,12 +6,12 @@ import { MOTIVOS_DISPONIVEIS, arteDaCapa } from "../../outputs/js/blog/blog-arte
 import {
   CARTAS,
   CATEGORIAS,
-  POSTS,
   cartaDoDia,
   contarPorCategoria,
   dataLegivel,
   filtrarPorCategoria,
 } from "../../outputs/js/blog/blog-data.js";
+import { POSTS } from "../../scripts/dados/blog-acervo-inicial.mjs";
 import {
   cartaoDoPost,
   marcacaoDasCategorias,

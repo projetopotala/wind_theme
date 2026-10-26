@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 
-import { DEFAULT_BLOG_POSTS } from "../../outputs/js/blog/blog-data.js";
-import { criarBlogAdministrativo, criarBlogDeDemonstracao, criarBlogPublico, criarRestSemBanco, quandoFoi, querAcervoLocal } from "../../outputs/js/blog/blog-remoto.js";
+import { DEFAULT_BLOG_POSTS } from "../../scripts/dados/blog-acervo-inicial.mjs";
+import { BlogIndisponivelError, criarBlogAdministrativo, criarBlogDeDemonstracao, criarBlogPublico, quandoFoi } from "../../outputs/js/blog/blog-remoto.js";
 import { createBlogRepository } from "../../outputs/js/blog/blog-repository.js";
-import { criarRestPublico } from "../../outputs/js/supabase/rest.js";
+import { RestError, criarRestPublico } from "../../outputs/js/supabase/rest.js";
 import { enviarInteresse, montarInteresse } from "../../outputs/js/shared/participacao.js";
 import { carregarDadosDaMesa } from "../../outputs/js/blog-admin/blog-desk.js";
 
@@ -35,7 +35,7 @@ test("a página pública mostra o que o banco libera, inclusive o agendado que c
     { document: { id: "a", title: "Do banco", status: "published" }, status: "published" },
     { document: { id: "b", title: "Agendado que chegou", status: "scheduled" }, status: "scheduled", publish_at: "2026-09-01T13:00:00Z" },
   ] });
-  const blog = criarBlogPublico({ rest, reserva: DEFAULT_BLOG_POSTS });
+  const blog = criarBlogPublico({ rest });
   const posts = await blog.listarPublicados();
   assert.deepEqual(posts.map((post) => post.title), ["Do banco", "Agendado que chegou"]);
   assert.ok(posts.every((post) => post.status === "published"));
@@ -54,13 +54,38 @@ test("as categorias vêm do banco, na ordem da mesa, e caem na lista empacotada 
   assert.equal(falhas.length, 1);
 });
 
-test("se a leitura falhar, a página mostra o acervo empacotado e avisa quem depura", async () => {
+/*
+ * A fonte editorial é o banco. Se a leitura falhar, a página NÃO volta ao
+ * acervo empacotado: um texto que a equipe tirou do ar, arquivou ou agendou
+ * reapareceria como publicado. A falha vira um estado de indisponibilidade.
+ */
+test("texto retirado do ar não reaparece quando a leitura do banco falha", async () => {
+  const retirado = DEFAULT_BLOG_POSTS.find((post) => post.status === "published");
+  assert.ok(retirado, "o acervo empacotado tem textos marcados como publicados");
   const falhas = [];
-  const rest = restFalso({ "ler:blog_posts": new Error("offline"), "ler:blog_settings": new Error("offline") });
-  const blog = criarBlogPublico({ rest, reserva: DEFAULT_BLOG_POSTS, aoFalhar: (erro) => falhas.push(erro) });
-  assert.equal((await blog.listarPublicados()).length, DEFAULT_BLOG_POSTS.length);
-  assert.equal((await blog.lerConfiguracao()).name, "Caderno de Travessia");
+  const rest = restFalso({ "ler:blog_posts": new RestError("Sem conexão com o Portal.", { code: "TypeError" }), "ler:blog_settings": new Error("offline") });
+  const blog = criarBlogPublico({ rest, aoFalhar: (erro) => falhas.push(erro) });
+  await assert.rejects(blog.listarPublicados(), (erro) => erro instanceof BlogIndisponivelError && erro.code === "blog-indisponivel" && erro.rede === true && /Sem conexão/.test(erro.message));
+  assert.equal((await blog.lerConfiguracao()).name, "Caderno de Travessia", "nome e capa não são decisão editorial: podem usar o padrão");
   assert.equal(falhas.length, 2);
+});
+
+test("erro do servidor também é indisponibilidade, com mensagem própria", async () => {
+  const rest = restFalso({ "ler:blog_posts": new RestError("O Portal respondeu 503.", { status: 503 }) });
+  const blog = criarBlogPublico({ rest });
+  await assert.rejects(blog.listarPublicados(), (erro) => erro instanceof BlogIndisponivelError && erro.rede === false && /não conseguiu consultar/.test(erro.message));
+});
+
+test("banco sem textos publicados é lista vazia, não acervo empacotado", async () => {
+  const blog = criarBlogPublico({ rest: restFalso({ "ler:blog_posts": [] }) });
+  assert.deepEqual(await blog.listarPublicados(), []);
+});
+
+test("a leitura pública pede ao navegador para não reaproveitar resposta guardada", async () => {
+  const pedidos = [];
+  const rest = criarRestPublico({ config: { url: "https://x.supabase.co", publishableKey: "k" }, fetchImpl: async (url, opcoes) => { pedidos.push(opcoes); return { ok: true, status: 200, text: async () => "[]" }; } });
+  await rest.ler("blog_posts", { select: "document" });
+  assert.equal(pedidos[0].cache, "no-store");
 });
 
 test("comentário é validado antes de sair e vai sem status: quem aprova é a equipe", async () => {
@@ -238,15 +263,54 @@ test("as páginas não prometem mais que o envio é local", async () => {
   assert.match(cursos, /name="contact"/);
 });
 
-test("o acervo local liga pela URL, vale na aba e nunca toca o banco", async () => {
-  const guardado = new Map();
-  const sessao = { getItem: (k) => guardado.get(k) ?? null, setItem: (k, v) => guardado.set(k, v), removeItem: (k) => guardado.delete(k) };
-  assert.equal(querAcervoLocal({ search: "" }, sessao), false);
-  assert.equal(querAcervoLocal({ search: "?acervo=local" }, sessao), true);
-  assert.equal(querAcervoLocal({ search: "?post=x" }, sessao), true, "o artigo herda o modo da aba");
-  assert.equal(querAcervoLocal({ search: "?acervo=banco" }, sessao), false);
+/*
+ * Gravação direta filtrada pela política do banco não dá erro no PostgREST:
+ * responde sucesso e não muda nada. A mesa pede a linha de volta e trata
+ * "nenhuma linha" como falha, para não mostrar sucesso falso.
+ */
+function clienteDeTabela(linhasDevolvidas) {
+  const pedidos = [];
+  const construtor = (tabela) => {
+    const pedido = { tabela, passos: [] };
+    pedidos.push(pedido);
+    const api = {};
+    for (const passo of ["update", "delete", "eq", "select"]) {
+      api[passo] = (...args) => { pedido.passos.push([passo, ...args]); return api; };
+    }
+    api.then = (ok, falha) => Promise.resolve({ data: linhasDevolvidas, error: null }).then(ok, falha);
+    return api;
+  };
+  return { pedidos, client: { rpc: async () => ({ data: null, error: null }), from: construtor } };
+}
 
-  const blog = criarBlogPublico({ rest: criarRestSemBanco(), reserva: DEFAULT_BLOG_POSTS });
-  assert.equal((await blog.listarPublicados()).length, DEFAULT_BLOG_POSTS.length);
-  await assert.rejects(blog.enviarComentario({ nome: "Ana", texto: "gostei muito" }), /acervo local/);
+test("gravação que o banco filtra sem erro não vira sucesso falso na mesa", async () => {
+  const { client, pedidos } = clienteDeTabela([]);
+  const blog = criarBlogAdministrativo({ client });
+  const operacoes = [
+    () => blog.moderar("c1", "approved"),
+    () => blog.remover("p1"),
+    () => blog.atualizarCategoria("praticas", { ordem: 2 }),
+    () => blog.removerCategoria("praticas"),
+    () => blog.salvarConfiguracao({ name: "Caderno", cover: "capa.webp" }),
+  ];
+  for (const operacao of operacoes) await assert.rejects(operacao(), (erro) => erro.name === "BlogRemotoError" && /Nada foi alterado/.test(erro.message) && erro.code === "sem-efeito");
+  assert.equal(pedidos.length, operacoes.length);
+  for (const pedido of pedidos) assert.deepEqual(pedido.passos.at(-1), ["select", "id"], `${pedido.tabela} pede a linha alterada de volta`);
+});
+
+test("quando o banco devolve a linha alterada, a mesa confirma", async () => {
+  const { client } = clienteDeTabela([{ id: "x" }]);
+  const blog = criarBlogAdministrativo({ client });
+  await blog.moderar("c1", "rejected");
+  await blog.remover("p1");
+  await blog.atualizarCategoria("praticas", { rotulo: "práticas" });
+  await blog.removerCategoria("vazia");
+  assert.deepEqual(await blog.salvarConfiguracao({ name: "Caderno", cover: "capa.webp" }), { name: "Caderno", cover: "capa.webp" });
+});
+
+test("comentário recusado pela regra do banco ganha mensagem clara; outros erros passam como vieram", async () => {
+  const recusado = criarBlogPublico({ rest: restFalso({ "inserir:blog_comments": new RestError("new row violates row-level security policy", { status: 403, code: "42501" }) }) });
+  await assert.rejects(recusado.enviarComentario({ slug: "rascunho", nome: "Ana", texto: "gostei muito" }), (erro) => erro.message === "Este texto não está aberto a comentários agora." && erro.code === "42501");
+  const outro = criarBlogPublico({ rest: restFalso({ "inserir:blog_comments": new RestError("violates check constraint", { status: 400, code: "23514" }) }) });
+  await assert.rejects(outro.enviarComentario({ slug: "x", nome: "Ana", texto: "gostei muito" }), (erro) => erro.code === "23514");
 });
