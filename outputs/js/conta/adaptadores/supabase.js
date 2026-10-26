@@ -67,6 +67,8 @@ const CONFLITO = Object.freeze({
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TABELA_AUSENTE = new Set(["PGRST205", "42P01"]);
+/* O mesmo formato que o envio público aceita como recibo (shared/appointment-requests.js). */
+const UUID_DO_RECIBO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function tabelaDe(colecao) {
   const tabela = TABELAS[colecao];
@@ -319,8 +321,21 @@ export function criarDadosSupabase({ client } = {}) {
         p_preferred_date: dataPreferida,
         p_preferred_period: periodoPreferido,
       });
-      if (error) throw falhouDados(error);
-      return data;
+      /*
+       * Só há "Solicitação recebida" com recibo: um id e o estado "recebida".
+       * Resposta vazia ou inesperada é falha — a tela não pode anunciar um
+       * pedido que o banco não confirmou. As recusas conhecidas da RPC têm
+       * frase própria, em vez do genérico "algo não saiu como esperado".
+       */
+      if (error) {
+        if (error.code === "PT409") throw new ErroDeConta("ATENDIMENTO_ALTERADO", error);
+        if (error.code === "22023") throw new ErroDeConta("ATENDIMENTO_RECUSADO", error);
+        throw falhouDados(error);
+      }
+      if (!data || typeof data.id !== "string" || !UUID_DO_RECIBO.test(data.id) || data.status !== "recebida") {
+        throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");
+      }
+      return { id: data.id, status: "recebida" };
     },
   };
 }

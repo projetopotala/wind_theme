@@ -1,4 +1,4 @@
-import { buildAppointmentRequest, createAppointmentRequestSender } from "../shared/appointment-requests.js";
+import { appointmentFailureMessage, buildAppointmentRequest, createAppointmentRequestSender } from "../shared/appointment-requests.js";
 import { APPOINTMENT_REQUESTS_ENABLED, APPOINTMENT_TURNSTILE_SITE_KEY } from "./config.js";
 import { createTurnstileTokenProvider } from "./turnstile.js";
 
@@ -96,9 +96,7 @@ export function setupAppointmentForm(documentRef = document, {
       show(RECEIVED_MESSAGE, "received", true);
     } catch (error) {
       // Falha de rede pode ocorrer depois da gravação: não afirmar que nada foi enviado.
-      show(error?.message?.startsWith("Verificação")
-        ? "Não foi possível concluir a verificação de segurança. Tente novamente com os mesmos dados. Nenhum horário está confirmado."
-        : "Não foi possível confirmar o recebimento. Confira sua conexão e tente novamente com os mesmos dados. Nenhum horário está confirmado.", "error", true);
+      show(appointmentFailureMessage(error), "error", true);
     } finally {
       submitting = false;
       setBusy(false);
