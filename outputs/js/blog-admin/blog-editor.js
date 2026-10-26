@@ -28,6 +28,18 @@ const clone = (value) => JSON.parse(JSON.stringify(value));
  * Operações puras sobre o texto (usadas também pelos testes)
  * ------------------------------------------------------------------ */
 
+/* Autor sugerido para texto novo: o nome real de quem escreve, nunca o e-mail de login. */
+export function autorPadrao(usuario) {
+  const nome = String(usuario?.autor || "").trim();
+  return nome && !nome.includes("@") ? nome : "Instituto Potala";
+}
+
+/* Data exibida no Blog ao publicar: quem já está no ar (inclusive agendado cuja hora chegou)
+   mantém a data que o leitor já viu; só a primeira publicação recebe a data de hoje. */
+export function dataAoPublicar(registro, dataAtual, hoje) {
+  return registro?.status === "published" && dataAtual ? dataAtual : hoje;
+}
+
 export function createBlankPost(now = new Date().toISOString()) {
   const stamp = String(now || new Date().toISOString());
   const id = `post-${stamp.replace(/\D/g, "").slice(0, 14) || Date.now()}`;
@@ -328,7 +340,7 @@ export function createBlogEditor({ root, ctx } = {}) {
       }
       documento = { ...documento, publishedAt: agenda.dia };
     }
-    if (acao === "publicar" && registro?.status !== "published") documento = { ...documento, publishedAt: hojeNoInstituto() };
+    if (acao === "publicar") documento = { ...documento, publishedAt: dataAoPublicar(registro, documento.publishedAt, hojeNoInstituto()) };
     if (acao === "despublicar" && registro?.status === "published") {
       const ok = await ctx.confirmar({ titulo: "Tirar este texto do ar?", texto: "Ele sai do Blog agora e volta a ser rascunho. Os links para ele deixam de funcionar até você publicar de novo.", confirmar: "Tirar do ar", perigo: true });
       if (!ok) return;
@@ -1266,7 +1278,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     if (registro) post = clone(textoAtual(registro));
     else {
       const novo = createBlankPost();
-      post = { ...novo, id: `${novo.id}-${Math.random().toString(36).slice(2, 6)}`, title: "", author: ctx.usuario?.nome || "Instituto Potala", category: ctx.loja.categorias[0]?.id || "reflexao" };
+      post = { ...novo, id: `${novo.id}-${Math.random().toString(36).slice(2, 6)}`, title: "", author: autorPadrao(ctx.usuario), category: ctx.loja.categorias[0]?.id || "reflexao" };
     }
     post.content = post.content || [];
     slugAutomatico = nuncaPublicado() && (!registro || post.slug === enderecoLivre(post.title, ctx.loja.registros, post.id));

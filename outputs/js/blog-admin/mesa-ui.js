@@ -11,14 +11,20 @@ export const esc = (valor) => String(valor ?? "")
  * Avisos
  * ------------------------------------------------------------------ */
 
+export const MAXIMO_DE_AVISOS = 3;
+
 export function criarAvisos(raiz) {
   return {
-    /* tipo: "ok" | "erro" | "info". Erro fica até ser fechado ou até a ação ser refeita. */
-    mostrar(texto, { tipo = "ok", acao = null, duracao = tipo === "erro" ? 0 : 3600 } = {}) {
+    /* tipo: "ok" | "erro" | "info". Erro com ação ("Tentar de novo") fica até ser fechado;
+       erro sem ação fecha sozinho depois de 12 s. Aviso igual não se repete; no máximo 3 na tela. */
+    mostrar(texto, { tipo = "ok", acao = null, duracao = tipo === "erro" ? (acao ? 0 : 12000) : 3600 } = {}) {
       if (!raiz) return () => {};
+      const chave = `${tipo}|${texto}`;
+      for (const antigo of [...raiz.children]) if (antigo.dataset?.chave === chave) antigo.remove();
       const aviso = raiz.ownerDocument.createElement("div");
       aviso.className = `mesa-aviso mesa-aviso--${tipo}`;
       aviso.setAttribute("role", tipo === "erro" ? "alert" : "status");
+      aviso.dataset.chave = chave;
       aviso.innerHTML = `${icone(tipo === "erro" ? "circle-alert" : tipo === "info" ? "clock" : "check", { classe: "mesa-icone" })}<span>${esc(texto)}</span>`
         + (acao ? `<button type="button" class="mesa-aviso__acao">${esc(acao.rotulo)}</button>` : "")
         + `<button type="button" class="mesa-aviso__fechar" aria-label="Fechar aviso">${icone("x", { classe: "mesa-icone" })}</button>`;
@@ -26,6 +32,7 @@ export function criarAvisos(raiz) {
       aviso.querySelector(".mesa-aviso__fechar").addEventListener("click", fechar);
       aviso.querySelector(".mesa-aviso__acao")?.addEventListener("click", () => { fechar(); acao.executar(); });
       raiz.append(aviso);
+      while (raiz.children.length > MAXIMO_DE_AVISOS) raiz.children[0].remove();
       if (duracao) setTimeout(fechar, duracao);
       return fechar;
     },

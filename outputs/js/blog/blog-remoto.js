@@ -200,13 +200,21 @@ function exigirLinha(operacao, { data, error }) {
  * Um texto como a mesa o enxerga: o que está no ar (ou gravado), as
  * alterações ainda não publicadas e os dados de publicação que só o banco tem.
  */
+/* Agendado com a hora já passada está no ar (regra pública do banco): a Mesa mostra "published". */
+export function statusEfetivo(status, publicarEm, agora = Date.now()) {
+  if (status !== "scheduled" || !publicarEm) return status;
+  const quando = Date.parse(publicarEm);
+  return Number.isFinite(quando) && quando <= agora ? "published" : status;
+}
+
 export function comoRegistro(linha = {}) {
   const post = normalizePost(linha.document || {});
   return {
     id: post.id,
     post,
     pendente: linha.pending_document ? normalizePost(linha.pending_document) : null,
-    status: linha.status || post.status,
+    statusGravado: linha.status || post.status,
+    get status() { return statusEfetivo(this.statusGravado, this.publicarEm); },
     publicarEm: linha.publish_at || null,
     pendenteEm: linha.pending_updated_at || null,
     criadoEm: linha.created_at || null,
@@ -398,7 +406,8 @@ export function criarBlogDeDemonstracao({ local, lerConfiguracao, salvarConfigur
       id: post.id,
       post,
       pendente: extra.pendente || null,
-      status,
+      statusGravado: status,
+      get status() { return statusEfetivo(this.statusGravado, this.publicarEm); },
       publicarEm: extra.publicarEm || (status === "published" && post.publishedAt ? `${post.publishedAt}T12:00:00-03:00` : null),
       pendenteEm: extra.pendenteEm || null,
       criadoEm: post.updatedAt,

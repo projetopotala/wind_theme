@@ -44,6 +44,7 @@ function comoUsuario(user) {
   const partes = (nome || email.split("@")[0]).split(/[\s._-]+/).filter(Boolean);
   return {
     nome: nome || email,
+    autor: nome,
     primeiroNome: nome ? partes[0] : "",
     iniciais: partes.slice(0, 2).map((parte) => parte[0]?.toUpperCase()).join("") || "P",
   };
