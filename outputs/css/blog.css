@@ -173,6 +173,8 @@
 .blog-mais [hidden] { display: none; }
 .blog-vazio { min-height: 220px; place-items: center; color: var(--cad-suave); font: italic 1.1rem var(--cad-serifa); }
 .blog-vazio:not([hidden]) { display: grid; }
+.blog-indisponivel { grid-column: 1 / -1; gap: 20px; text-align: center; font-style: normal; }
+.blog-indisponivel p { max-width: 46ch; margin: 0; font-style: italic; }
 
 .post { display: flex; flex-direction: column; min-width: 0; color: var(--cad-texto); }
 .post-capa { display: block; position: relative; overflow: hidden; aspect-ratio: 16 / 9; margin-bottom: 18px; border: 1px solid var(--cad-ouro-linha); background: var(--cad-painel-2); }

@@ -5,11 +5,11 @@
  * Portal JÁ publica: os textos do Caderno de Travessia e as páginas de seção. Não
  * é catálogo de mentira — cada item existe e cada link abre.
  *
- * Quando houver uma tabela de conteúdos no banco, é esta função que passa a
- * lê-la. A regra de recomendação, em `leituras.js`, não muda.
+ * Os textos do Blog vêm do banco, já confirmados como publicados (quem chama
+ * passa a lista). Sem a lista — banco fora do ar —, só as páginas de seção
+ * entram: um texto retirado do ar nunca é recomendado como ativo.
  */
 
-import { DEFAULT_BLOG_POSTS } from "../blog/blog-data.js";
 import { normalizePosts } from "../blog/blog-model.js";
 import { hrefSeguro } from "./modelos.js";
 
@@ -24,8 +24,8 @@ const PAGINAS_DO_PORTAL = Object.freeze([
   { tipo: "revista", ref: "revista", titulo: "Revista Potala", href: "/revista.html", temas: ["saúde", "cultura", "sociedade"] },
 ]);
 
-export function catalogoDoPortal() {
-  const textos = normalizePosts(DEFAULT_BLOG_POSTS)
+export function catalogoDoPortal({ textos: publicados = [] } = {}) {
+  const textos = normalizePosts(Array.isArray(publicados) ? publicados : [])
     .filter((post) => post.status === "published")
     .map((post) => ({
       tipo: "blog",

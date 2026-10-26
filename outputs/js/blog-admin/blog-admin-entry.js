@@ -1,10 +1,10 @@
 import { createAdminAuth } from "../admin/admin-auth.js";
 import { getSupabaseClient } from "../supabase/client.js";
-import { DEFAULT_BLOG_POSTS } from "../blog/blog-data.js";
 import { criarBlogAdministrativo, criarBlogDeDemonstracao } from "../blog/blog-remoto.js";
 import { createBlogRepository } from "../blog/blog-repository.js";
 import { readBlogSettings, saveBlogSettings } from "../blog/blog-settings.js";
 import { criarMesa } from "./mesa-app.js";
+import { CHAVE_ANTIGA, CHAVE_DA_DEMONSTRACAO, TEXTOS_DE_DEMONSTRACAO } from "./demonstracao.js";
 
 const root = document.getElementById("blog-admin-app");
 const loginView = root?.querySelector("[data-admin-auth-view]");
@@ -19,8 +19,9 @@ const continueButton = root?.querySelector("[data-blog-continue]");
  * demonstração não pode mexer no Blog que os visitantes leem. A mesa é criada
  * uma vez; o que troca é para onde este objeto aponta.
  */
+try { globalThis.localStorage?.removeItem(CHAVE_ANTIGA); } catch { /* sem armazenamento, nada a limpar */ }
 const demonstracao = criarBlogDeDemonstracao({
-  local: createBlogRepository({ defaults: DEFAULT_BLOG_POSTS }),
+  local: createBlogRepository({ defaults: TEXTOS_DE_DEMONSTRACAO, key: CHAVE_DA_DEMONSTRACAO }),
   lerConfiguracao: () => readBlogSettings(),
   salvarConfiguracao: (configuracao) => saveBlogSettings(configuracao),
 });

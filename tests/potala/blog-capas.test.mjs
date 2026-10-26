@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { access } from "node:fs/promises";
 
-import { DEFAULT_BLOG_POSTS } from "../../outputs/js/blog/blog-data.js";
+import { DEFAULT_BLOG_POSTS } from "../../scripts/dados/blog-acervo-inicial.mjs";
 
 /*
  * A capa de um texto é uma fotografia que existe.

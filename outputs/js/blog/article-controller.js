@@ -1,7 +1,6 @@
-import { DEFAULT_BLOG_POSTS } from "./blog-data.js";
 import { normalizePosts } from "./blog-model.js";
-import { criarBlogPublico, criarRestSemBanco, querAcervoLocal, quandoFoi } from "./blog-remoto.js";
-import { avisarAcervoLocal, definirCatalogo, menuDasCategorias } from "./blog-controller.js";
+import { criarBlogPublico, quandoFoi } from "./blog-remoto.js";
+import { definirCatalogo, menuDasCategorias } from "./blog-controller.js";
 import { findPostBySlug, renderArticle, rotuloDaCategoria } from "./article-renderer.js";
 import { criarRestPublico } from "../supabase/rest.js";
 
@@ -51,17 +50,18 @@ function mount(root = document) {
   if (!target) return;
   const params = new URLSearchParams(window.location.search);
   const preview = params.get("preview") === "1";
-  const acervoLocal = querAcervoLocal();
-  if (acervoLocal) avisarAcervoLocal(document);
   const blog = criarBlogPublico({
-    rest: acervoLocal ? criarRestSemBanco() : criarRestPublico(),
-    reserva: DEFAULT_BLOG_POSTS,
-    aoFalhar: (erro) => console.warn("Artigo: leitura do banco falhou; mostrando o acervo empacotado.", erro),
+    rest: criarRestPublico(),
+    aoFalhar: (erro, contexto = "blog") => console.warn(`Artigo: leitura do banco falhou (${contexto}).`, erro),
   });
   let posts = [];
   let slug = params.get("post") || "";
   let recebeuPrevia = false;
   let leituraContada = false;
+  /* Só um texto confirmado como publicado recebe conversa: sem ele, a seção some. */
+  const secaoDeComentarios = root.querySelector("[data-article-comments]");
+  const abrirComentarios = (aberta) => { if (secaoDeComentarios) secaoDeComentarios.hidden = !aberta; };
+  abrirComentarios(false);
 
   function draw() {
     const post = findPostBySlug(posts, slug, { preview });
@@ -72,8 +72,10 @@ function mount(root = document) {
     if (!post) {
       target.innerHTML = '<div class="article-content"><h1>Este texto não está disponível.</h1><p>Ele pode ter sido ocultado ou o endereço mudou.</p></div>';
       root.querySelector("[data-article-related]").innerHTML = "";
+      abrirComentarios(false);
       return null;
     }
+    abrirComentarios(!preview);
     document.title = `${post.seo?.title || post.title} — Caderno de Travessia`;
     document.querySelector('meta[name="description"]')?.setAttribute("content", post.seo?.description || post.excerpt || post.subtitle || "");
     target.innerHTML = renderArticle(post);
@@ -141,7 +143,25 @@ function mount(root = document) {
     }
   });
 
-  blog.listarPublicados().then((publicados) => {
+  /*
+   * Sem confirmação do banco o artigo não é mostrado: poderia ter sido tirado
+   * do ar. "Não foi possível verificar" (falha) é diferente de "não está
+   * disponível" (o banco respondeu e o texto não está publicado).
+   */
+  function mostrarIndisponivel(erro) {
+    abrirComentarios(false);
+    target.innerHTML = `<div class="article-content" role="alert"><h1>Não foi possível verificar este texto agora.</h1><p>${escapeHtml(erro?.message || "Tente de novo em instantes.")}</p><p><button type="button" class="cad-botao-contorno" data-artigo-tentar>Tentar de novo</button></p></div>`;
+    root.querySelector("[data-article-related]").innerHTML = "";
+  }
+  target.addEventListener("click", (event) => {
+    const botao = event.target.closest("[data-artigo-tentar]");
+    if (!botao || botao.disabled) return;
+    botao.disabled = true;
+    botao.textContent = "Consultando…";
+    carregarArtigo().then(() => target.querySelector("[data-artigo-tentar]")?.focus());
+  });
+
+  const carregarArtigo = () => blog.listarPublicados().then((publicados) => {
     if (recebeuPrevia) return;
     posts = publicados;
     slug ||= posts[0]?.slug || "";
@@ -154,7 +174,11 @@ function mount(root = document) {
     blog.listarComentarios(post.slug)
       .then((comentarios) => { if (list) list.innerHTML = comentarios.map(comentario).join(""); })
       .catch(() => {});
+  }, (erro) => {
+    /* Na prévia a mesa manda o texto por mensagem; a falha do banco não importa ali. */
+    if (!recebeuPrevia && !preview) mostrarIndisponivel(erro);
   });
+  carregarArtigo();
 }
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => mount(document), { once:true });

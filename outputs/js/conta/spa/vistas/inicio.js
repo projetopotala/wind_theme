@@ -21,13 +21,13 @@ import { STATUS_DE_INSCRICAO, TIPOS_DE_ACOMPANHAMENTO, TIPOS_DE_COMPROMISSO, TIP
 import { barraDeProgresso, capa, e, secao, vazio, verTudo } from "./comum.js";
 
 export default {
-  renderizar({ historico, inscricoes, progressos, agenda, salvos, acompanhando, agora }) {
+  renderizar({ historico, inscricoes, progressos, agenda, salvos, acompanhando, agora, textosDoBlog = [] }) {
     const continuar = continuarDeOndeParou({ historico, inscricoes, progressos }, 3);
     const porInscricao = new Map(progressos.map((progresso) => [progresso.inscricaoId, progresso]));
     const cursosAtivos = inscricoes.filter((inscricao) => inscricao.status !== "concluido").slice(0, 3);
     const proximos = proximosCompromissos(agenda, agora, 4);
     const ultimosSalvos = filtrarSalvos(salvos).slice(0, 3);
-    const sugestao = recomendar({ catalogo: catalogoDoPortal(), salvos, historico, acompanhados: acompanhando });
+    const sugestao = recomendar({ catalogo: catalogoDoPortal({ textos: textosDoBlog }), salvos, historico, acompanhados: acompanhando });
 
     const blocoContinuar = continuar.length
       ? secao({

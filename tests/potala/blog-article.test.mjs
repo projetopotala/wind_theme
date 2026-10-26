@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 
 import { findPostBySlug, renderArticle, renderArticleBlock } from "../../outputs/js/blog/article-renderer.js";
-import { DEFAULT_BLOG_POSTS } from "../../outputs/js/blog/blog-data.js";
+import { DEFAULT_BLOG_POSTS } from "../../scripts/dados/blog-acervo-inicial.mjs";
 
 const html = readFileSync(new URL("../../outputs/artigo.html", import.meta.url), "utf8");
 const css = readFileSync(new URL("../../outputs/css/artigo.css", import.meta.url), "utf8");

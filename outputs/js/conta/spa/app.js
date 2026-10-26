@@ -34,6 +34,7 @@ import configuracoes from "./vistas/configuracoes.js";
 import atendimentos from "./vistas/atendimentos.js";
 import { APPOINTMENT_REQUESTS_ENABLED } from "../../appointments/config.js";
 import { erroDaUrl } from "../confirmar-conta.js";
+import { lerArtigosPublicados } from "../../blog/artigos-publicados.js";
 
 /*
  * LINK DE ACESSO QUE NÃO VALEU.
@@ -96,6 +97,8 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.opcoesAtendimento()
       .then((lista) => ({ nome: "opcoesAtendimento", lista }))
       .catch((erro) => ({ nome: "opcoesAtendimento", lista: [], erro })));
+    /* "Para você" só recomenda texto do Blog confirmado no ar; sem confirmação, nenhum. */
+    leituras.push(lerArtigosPublicados().then((lista) => ({ nome: "textosDoBlog", lista: lista || [] })));
     const promessa = Promise.all(leituras)
       .then((respostas) => {
         if (sessao.obter().usuario?.id !== usuarioId) return null;

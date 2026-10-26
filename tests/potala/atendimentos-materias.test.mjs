@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { caminhoDaJornada } from "../../outputs/js/atendimentos-conceito.js";
 import { mensagemDaSaude, proximoIndice } from "../../outputs/js/atendimentos-materia.js";
-import { DEFAULT_BLOG_POSTS } from "../../outputs/js/blog/blog-data.js";
+import { DEFAULT_BLOG_POSTS } from "../../scripts/dados/blog-acervo-inicial.mjs";
 
 const html = readFileSync(new URL("../../outputs/transcendido.html", import.meta.url), "utf8");
 const MATERIAS = ["saude", "vivemos", "investigar", "caminhos-do-cuidado"];

@@ -5,9 +5,11 @@
  *
  * - criarBlogPublico: as páginas do Caderno e do artigo, pelo PostgREST sem
  *   sessão. Lê só o publicado e os comentários aprovados; envia comentário,
- *   inscrição e leitura. Se a leitura dos textos falhar, a página mostra o
- *   acervo empacotado — uma página em branco não ajuda ninguém. Envio que
- *   falha diz que falhou: nunca finge que foi.
+ *   inscrição e leitura. A fonte editorial é o banco: se a leitura dos textos
+ *   falhar, a página diz que não conseguiu verificar e oferece tentar de novo
+ *   — nunca troca pelo acervo empacotado, que mostraria como publicado um
+ *   texto que a equipe tirou do ar, arquivou ou agendou. Envio que falha diz
+ *   que falhou: nunca finge que foi.
  *
  * - criarBlogAdministrativo: a mesa do blogueiro, pelo SDK com a sessão de
  *   quem entrou. O banco só aceita a escrita de owner/admin.
@@ -54,35 +56,6 @@ export function validarEnvioDeComentario({ nome = "", texto = "" } = {}) {
   return erros;
 }
 
-/*
- * O ACERVO LOCAL — ver textos do código antes de levá-los ao banco.
- *
- * `?acervo=local` liga o modo nesta aba (fica guardado na sessão, para valer
- * também no artigo); `?acervo=banco` desliga. Nele o Caderno não lê nem grava
- * no banco: mostra os textos empacotados em blog-data.js, e comentário e
- * inscrição avisam que estão desligados. Serve para revisar uma leva nova sem
- * publicá-la no site de todos.
- */
-const CHAVE_ACERVO = "potala.blog.acervo";
-
-export function querAcervoLocal(local = globalThis.location, sessao = globalThis.sessionStorage) {
-  const pedido = new URLSearchParams(local?.search || "").get("acervo");
-  try {
-    if (pedido === "local") sessao?.setItem(CHAVE_ACERVO, "local");
-    if (pedido === "banco") sessao?.removeItem(CHAVE_ACERVO);
-    return sessao?.getItem(CHAVE_ACERVO) === "local";
-  } catch {
-    return pedido === "local";
-  }
-}
-
-export function criarRestSemBanco() {
-  const recusar = async () => {
-    throw Object.assign(new Error("Modo de acervo local: nada é lido nem gravado no banco."), { code: "acervo-local" });
-  };
-  return { ler: recusar, inserir: recusar, rpc: recusar };
-}
-
 /* A lista de categorias sem o "tudo", que é filtro e não categoria. */
 export const CATEGORIAS_PADRAO = Object.freeze(
   CATEGORIAS.filter(({ id }) => id !== "todos").map(({ id, rotulo }, indice) => ({ id, rotulo, ordem: indice + 1, imagem: "" })),
@@ -95,9 +68,30 @@ const comoCategoria = (linha) => ({
   imagem: String(linha.imagem || ""),
 });
 
-export function criarBlogPublico({ rest, reserva = [], aoFalhar = () => {} } = {}) {
+/*
+ * Não foi possível confirmar no banco o que está publicado. `rede` separa
+ * "sem conexão" de "o Portal respondeu com erro", para a mensagem certa.
+ */
+export class BlogIndisponivelError extends Error {
+  constructor(causa = {}) {
+    const rede = !causa.status;
+    super(rede
+      ? "Sem conexão com o Portal agora, e não dá para confirmar quais textos estão publicados. Verifique a internet e tente de novo."
+      : "O Caderno não conseguiu consultar os textos publicados agora. Tente de novo em instantes.");
+    this.name = "BlogIndisponivelError";
+    this.code = "blog-indisponivel";
+    this.rede = rede;
+    this.cause = causa;
+  }
+}
+
+/*
+ * Não há reserva de textos: o site não carrega acervo próprio (ver
+ * blog-data.js), e o antigo modo ?acervo=local deixou de existir — um
+ * parâmetro público não pode mostrar como publicado o que o banco não confirma.
+ */
+export function criarBlogPublico({ rest, aoFalhar = () => {} } = {}) {
   if (!rest?.ler) throw new TypeError("O acesso ao banco é obrigatório.");
-  const acervo = normalizePosts(reserva);
 
   return {
     /*
@@ -110,8 +104,8 @@ export function criarBlogPublico({ rest, reserva = [], aoFalhar = () => {} } = {
         const linhas = await rest.ler("blog_posts", { select: "document,status,publish_at" });
         return normalizePosts((linhas || []).map((linha) => ({ ...linha.document, status: "published" })));
       } catch (erro) {
-        aoFalhar(erro);
-        return acervo.filter((post) => post.status === "published");
+        aoFalhar(erro, "blog.posts");
+        throw new BlogIndisponivelError(erro);
       }
     },
     async listarCategorias() {
@@ -145,7 +139,13 @@ export function criarBlogPublico({ rest, reserva = [], aoFalhar = () => {} } = {
     async enviarComentario({ slug = null, nome, texto }) {
       const erros = validarEnvioDeComentario({ nome, texto });
       if (Object.keys(erros).length) throw Object.assign(new Error(Object.values(erros)[0]), { erros });
-      await rest.inserir("blog_comments", { post_slug: slug || null, author_name: String(nome).trim(), body: String(texto).trim() });
+      try {
+        await rest.inserir("blog_comments", { post_slug: slug || null, author_name: String(nome).trim(), body: String(texto).trim() });
+      } catch (erro) {
+        /* A regra do banco recusa comentário em texto que não está no ar. */
+        if (erro?.code === "42501") throw Object.assign(new Error("Este texto não está aberto a comentários agora."), { code: "42501", cause: erro });
+        throw erro;
+      }
     },
     async inscrever(email, origem = "blog") {
       await rest.rpc("subscribe_newsletter", { p_email: String(email || "").trim(), p_source: origem });
@@ -183,6 +183,18 @@ export class BlogRemotoError extends Error {
 }
 
 const exigir = (operacao, error) => { if (error) throw new BlogRemotoError(operacao, error); };
+
+/*
+ * Uma alteração direta na tabela que a política do banco filtra não dá erro:
+ * o PostgREST responde que deu certo e nenhuma linha muda (conta sem acesso,
+ * acesso retirado com a sessão aberta, item já apagado em outra aba). Por isso
+ * essas gravações pedem de volta a linha alterada, e nenhuma linha é falha.
+ */
+const SEM_EFEITO = "Nada foi alterado: o item não existe mais ou seu acesso não permite esta alteração. Recarregue a mesa e confira.";
+function exigirLinha(operacao, { data, error }) {
+  exigir(operacao, error);
+  if (!Array.isArray(data) || !data.length) throw new BlogRemotoError(operacao, { code: "sem-efeito", message: SEM_EFEITO });
+}
 
 /*
  * Um texto como a mesa o enxerga: o que está no ar (ou gravado), as
@@ -248,8 +260,7 @@ export function criarBlogAdministrativo({ client, config = SUPABASE_CONFIG, xhr 
     },
 
     async remover(id) {
-      const { error } = await client.from("blog_posts").delete().eq("id", id);
-      exigir("excluir o texto", error);
+      exigirLinha("excluir o texto", await client.from("blog_posts").delete().eq("id", id).select("id"));
     },
 
     async versoes(id) {
@@ -282,12 +293,10 @@ export function criarBlogAdministrativo({ client, config = SUPABASE_CONFIG, xhr 
     },
     async atualizarCategoria(id, campos) {
       const permitido = Object.fromEntries(Object.entries(campos).filter(([chave]) => ["rotulo", "ordem", "imagem"].includes(chave)));
-      const { error } = await client.from("blog_categories").update({ ...permitido, updated_at: new Date().toISOString() }).eq("id", id);
-      exigir("alterar a categoria", error);
+      exigirLinha("alterar a categoria", await client.from("blog_categories").update({ ...permitido, updated_at: new Date().toISOString() }).eq("id", id).select("id"));
     },
     async removerCategoria(id) {
-      const { error } = await client.from("blog_categories").delete().eq("id", id);
-      exigir("apagar a categoria", error);
+      exigirLinha("apagar a categoria", await client.from("blog_categories").delete().eq("id", id).select("id"));
     },
 
     async listarMidia() {
@@ -343,8 +352,7 @@ export function criarBlogAdministrativo({ client, config = SUPABASE_CONFIG, xhr 
     },
     async salvarConfiguracao(configuracao) {
       const proxima = comoConfiguracao(configuracao);
-      const { error } = await client.from("blog_settings").update({ ...proxima, updated_at: new Date().toISOString() }).eq("id", 1);
-      exigir("salvar a configuração", error);
+      exigirLinha("salvar a configuração", await client.from("blog_settings").update({ ...proxima, updated_at: new Date().toISOString() }).eq("id", 1).select("id"));
       return proxima;
     },
     async leituras() {
@@ -363,8 +371,7 @@ export function criarBlogAdministrativo({ client, config = SUPABASE_CONFIG, xhr 
     },
     async moderar(id, status) {
       if (!["approved", "rejected"].includes(status)) throw new TypeError("Situação de comentário inválida.");
-      const { error } = await client.from("blog_comments").update({ status, reviewed_at: new Date().toISOString() }).eq("id", id);
-      exigir("moderar o comentário", error);
+      exigirLinha("moderar o comentário", await client.from("blog_comments").update({ status, reviewed_at: new Date().toISOString() }).eq("id", id).select("id"));
     },
     async inscritos() {
       const { count, error } = await client.from("newsletter_subscriptions").select("id", { count: "exact", head: true });

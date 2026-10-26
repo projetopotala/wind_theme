@@ -5,6 +5,10 @@ import test from "node:test";
 import { catalogoDoPortal } from "../../outputs/js/conta/catalogo.js";
 import { sementeDeDemonstracao } from "../../outputs/js/conta/dados-demonstracao.js";
 import { FABRICAS, criarSalvo, hrefSeguro } from "../../outputs/js/conta/modelos.js";
+import { DEFAULT_BLOG_POSTS } from "../../scripts/dados/blog-acervo-inicial.mjs";
+
+/* Textos como o banco os devolveria, confirmados no ar. */
+const CONFIRMADOS = DEFAULT_BLOG_POSTS.slice(0, 3);
 
 const outputs = new URL("../../outputs/", import.meta.url);
 
@@ -15,7 +19,7 @@ async function paginaExiste(href) {
 
 test("todo item do catalogo abre uma pagina que existe", async () => {
   /* Recomendar um link quebrado e pior do que nao recomendar. */
-  const catalogo = catalogoDoPortal();
+  const catalogo = catalogoDoPortal({ textos: CONFIRMADOS });
   assert.ok(catalogo.filter((item) => item.tipo === "blog").length >= 1, "o Caderno de Travessia sumiu do catalogo");
   for (const item of catalogo) {
     await assert.doesNotReject(paginaExiste(item.href), item.href);
@@ -23,7 +27,7 @@ test("todo item do catalogo abre uma pagina que existe", async () => {
 });
 
 test("todo item do catalogo pode ser salvo", () => {
-  for (const item of catalogoDoPortal()) {
+  for (const item of catalogoDoPortal({ textos: CONFIRMADOS })) {
     assert.doesNotThrow(() => criarSalvo(item), item.titulo);
     assert.ok(Array.isArray(item.temas), `${item.titulo} sem temas`);
   }
