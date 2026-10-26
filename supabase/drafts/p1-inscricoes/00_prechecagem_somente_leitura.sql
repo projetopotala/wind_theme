@@ -69,5 +69,30 @@ select * from (
          )::text,
          null,
          'Esperado 0 antes da PARTE 1.'
+  union all
+  -- I. Turmas acima da capacidade (impede a proteção de capacidade)
+  select 'I. turma acima da capacidade', count(*)::text,
+         string_agg(t.id || ' (' || o.ocupadas || '/' || (t.document ->> 'capacity') || ')', ', '),
+         'Esperado 0. Se >0: a proteção de capacidade para sozinha. A secretaria decide quem fica.'
+  from public.op_records t
+  join lateral (
+    select count(*) as ocupadas from insc e
+    where e.document ->> 'offering_id' = t.id and e.document ->> 'status' in ('active', 'completed')
+  ) o on true
+  where t.collection = 'activity_offerings'
+    and jsonb_typeof(t.document -> 'capacity') = 'number'
+    and o.ocupadas > case when (t.document ->> 'capacity') ~ '^[0-9]{1,9}$'
+                          then (t.document ->> 'capacity')::integer end
+  union all
+  -- J. Capacidade em formato que o painel não produz
+  select 'J. capacidade inválida', count(*)::text, string_agg(t.id, ', '),
+         'Esperado 0. O painel grava inteiro >= 1 ou nulo. Se >0: corrigir antes da proteção de capacidade.'
+  from public.op_records t
+  where t.collection = 'activity_offerings'
+    and jsonb_typeof(t.document -> 'capacity') is not null
+    and jsonb_typeof(t.document -> 'capacity') <> 'null'
+    and not (jsonb_typeof(t.document -> 'capacity') = 'number'
+             and case when (t.document ->> 'capacity') ~ '^[0-9]{1,9}$'
+                      then (t.document ->> 'capacity')::integer >= 1 else false end)
 ) resultado
 order by verificacao;

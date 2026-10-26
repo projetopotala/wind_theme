@@ -143,6 +143,30 @@ test("reconciliação e ocultação (P1.2)", () => {
   assert.doesNotMatch(projetar, /on conflict/i, "sem upsert genérico que poderia reaproveitar linha alheia");
 });
 
+test("capacidade das turmas (P1.3): proposta separada, adiada e sem exposição", async () => {
+  const capacidade = await ler("05_capacidade_turmas.RASCUNHO.sql");
+  const reversao = await ler("92_reversao_capacidade.RASCUNHO.sql");
+  const c = semComentarios(capacidade);
+  for (const [nome, sql, chave] of [["capacidade", capacidade, "capacidade"], ["reversão da capacidade", reversao, "reverter-capacidade"]]) {
+    const corpo = semComentarios(sql).trim();
+    assert.ok(corpo.startsWith("do $trava$") && corpo.includes(`<> '${chave}'`), `${nome}: trava`);
+  }
+  assert.match(c, /create constraint trigger op_records_capacidade\s+after insert or update on public\.op_records\s+deferrable initially deferred/,
+    "verificação no fim da transação, para o resultado final do comando");
+  assert.match(c, /when \(new\.collection in \('enrollments', 'activity_offerings'\)\)/);
+  assert.match(c, /e\.document ->> 'status' in \('active', 'completed'\)/, "só active e completed ocupam vaga (contrato do painel)");
+  assert.match(c, /from public\.op_meta as meta where meta\.id = 1 for update/, "entra na fila do op_apply");
+  assert.doesNotMatch(c, /validate_op_record|op_records_validate_before_write|create or replace function public\.op_apply/, "não mexe na guarda nem no op_apply");
+  assert.doesNotMatch(c, /grant /i, "nada é concedido");
+  for (const f of funcoes(capacidade)) {
+    assert.match(f.corpo, /set search_path = ''/, `${f.nome}: search_path`);
+    const assinatura = f.args.split(",").map((a) => a.trim().split(/\s+/).pop()).filter(Boolean).join(", ");
+    assert.ok(c.includes(`revoke all on function ${f.nome}(${assinatura}) from public, anon, authenticated;`), `${f.nome}: EXECUTE revogado`);
+  }
+  assert.doesNotMatch(semComentarios(reversao), /\b(update|delete|insert)\b/i, "a reversão não mexe em dados");
+  assert.doesNotMatch(c, /'\^\[0-9\]\{1,9\}\$'\s+and\s+\(/, "o texto da capacidade só é convertido depois de validado (sem cast fora de case)");
+});
+
 test("nada novo é concedido a anon e nenhuma política é aberta", () => {
   const grants = [...semComentarios(estrutura + projecao).matchAll(/grant [^;]*;/gi)].map((m) => m[0]);
   assert.ok(grants.every((g) => !/\banon\b/.test(g)), grants.join(" | "));

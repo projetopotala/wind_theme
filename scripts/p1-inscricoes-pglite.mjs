@@ -140,7 +140,7 @@ await opApply([
 {
   const { rows } = await db.query(readFileSync(join(RASCUNHOS, "00_prechecagem_somente_leitura.sql"), "utf8"));
   const problema = rows.filter((r) => /^[A-D]\./.test(r.verificacao) && r.quantidade !== "0");
-  registrar("pré-checagem roda e não acusa problemas no cenário de teste", rows.length === 8 && problema.length === 0, JSON.stringify(problema));
+  registrar("pré-checagem roda e não acusa problemas no cenário de teste", rows.length === 10 && problema.length === 0, JSON.stringify(problema));
   await db.exec("begin");
   await db.query(`insert into public.op_records (collection, id, document) values
     ('enrollments', 'dup-1', '{"id":"dup-1","profile_id":"p-a","offering_id":"t-1","status":"active"}'),
@@ -426,7 +426,90 @@ const reconciliar = () => como("authenticated", ADMIN, async () => (await db.que
   registrar("CONSTATAÇÃO: duas gravações sobre a mesma revisão — a segunda é recusada (PT409)", Boolean(e && /atualizados em outra janela/.test(e.message)));
   const e2 = await falha(() => opApply([inscricao("i-cap-2", "p-x", "t-cap", "active")]));
   const ocupadas = (await db.query("select count(*)::int n from public.op_records where collection = 'enrollments' and document ->> 'offering_id' = 't-cap' and document ->> 'status' = 'active'")).rows[0].n;
-  registrar("CONSTATAÇÃO (BLOQUEIO): o banco ACEITA exceder a capacidade quando o cliente não valida", e2 === null && ocupadas === 2, `ativas=${ocupadas} capacidade=1`);
+  registrar("ANTES da proteção: o banco aceita exceder a capacidade quando o cliente não valida", e2 === null && ocupadas === 2, `ativas=${ocupadas} capacidade=1`);
+}
+
+// Proteção de capacidade (P1.3) — 05_capacidade_turmas.RASCUNHO.sql
+{
+  const pre = async () => Object.fromEntries((await db.query(readFileSync(join(RASCUNHOS, "00_prechecagem_somente_leitura.sql"), "utf8"))).rows.map((r) => [r.verificacao[0], r.quantidade]));
+  registrar("pré-checagem acusa a turma acima da capacidade (I)", (await pre()).I === "1");
+  const e0 = await falha(() => aplicarRascunho("05_capacidade_turmas.RASCUNHO.sql", "capacidade"));
+  registrar("proteção se recusa a instalar sobre turma já acima da capacidade", Boolean(e0 && /acima da capacidade/.test(e0.message)), e0?.message);
+  registrar("a recusa não deixou nada instalado",
+    (await db.query("select count(*)::int n from pg_trigger where tgname = 'op_records_capacidade'")).rows[0].n === 0);
+  await opApply([inscricao("i-cap-2", "p-x", "t-cap", "cancelled")]);
+  registrar("depois de a secretaria resolver, a pré-checagem fica limpa (I e J)", (await pre()).I === "0" && (await pre()).J === "0");
+  await aplicarRascunho("05_capacidade_turmas.RASCUNHO.sql", "capacidade");
+
+  await opApply([
+    { table: "profiles", id: "q-1", after: { id: "q-1", display_name: "Q1", roles: ["student"] } },
+    { table: "profiles", id: "q-2", after: { id: "q-2", display_name: "Q2", roles: ["student"] } },
+    { table: "profiles", id: "q-3", after: { id: "q-3", display_name: "Q3", roles: ["student"] } },
+    { table: "profiles", id: "q-4", after: { id: "q-4", display_name: "Q4", roles: ["student"] } },
+    { table: "activity_offerings", id: "c-2", after: { id: "c-2", title: "Turma de 2 vagas", mode: "presencial", capacity: 2 } },
+    { table: "activity_offerings", id: "c-1", after: { id: "c-1", title: "Turma de 1 vaga", mode: "presencial", capacity: 1 } },
+    { table: "activity_offerings", id: "c-livre", after: { id: "c-livre", title: "Turma sem limite", mode: "online", capacity: null } },
+  ]);
+  const estado = async () => JSON.stringify({
+    revisao: await revisaoAtual(),
+    registros: (await db.query("select count(*)::int n from public.op_records")).rows[0].n,
+  });
+  const recusada = async (rotulo, changes, padrao = /Capacidade da oferta esgotada/) => {
+    const antes = await estado();
+    const e = await falha(() => opApply(changes));
+    registrar(rotulo, Boolean(e && padrao.test(e.message)) && (await estado()) === antes, e?.message ?? "aceita");
+  };
+  const aceita = async (rotulo, changes) => {
+    const e = await falha(() => opApply(changes));
+    registrar(rotulo, e === null, e?.message);
+  };
+
+  await aceita("dentro da capacidade: aceita", [inscricao("c2-a", "q-1", "c-2", "active")]);
+  await aceita("segunda vaga: aceita", [inscricao("c2-b", "q-2", "c-2", "active")]);
+  await recusada("acima da capacidade: recusada, sem gravação parcial (revisão e registros iguais)", [inscricao("c2-c", "q-3", "c-2", "active")]);
+  await aceita("lista de espera não ocupa vaga", [inscricao("c2-c", "q-3", "c-2", "waitlist")]);
+  await recusada("promoção da espera para ativa com turma cheia: recusada", [inscricao("c2-c", "q-3", "c-2", "active")]);
+  await aceita("cancelamento libera a vaga", [inscricao("c2-b", "q-2", "c-2", "cancelled")]);
+  await aceita("promoção da espera depois da vaga liberada: aceita", [inscricao("c2-c", "q-3", "c-2", "active")]);
+  await recusada("reativar a cancelada com a turma cheia: recusada", [inscricao("c2-b", "q-2", "c-2", "active")]);
+  await recusada("concluída também ocupa vaga", [inscricao("c2-b", "q-2", "c-2", "completed")]);
+
+  await recusada("reduzir a capacidade abaixo das ativas: recusada",
+    [{ table: "activity_offerings", id: "c-2", after: { id: "c-2", title: "Turma de 2 vagas", mode: "presencial", capacity: 1 } }]);
+  await aceita("reduzir a capacidade e cancelar no MESMO comando: aceita (verificação no fim da transação)", [
+    { table: "activity_offerings", id: "c-2", after: { id: "c-2", title: "Turma de 2 vagas", mode: "presencial", capacity: 1 } },
+    inscricao("c2-c", "q-3", "c-2", "cancelled"),
+  ]);
+
+  await aceita("turma de 1 vaga recebe uma inscrição", [inscricao("c1-a", "q-2", "c-1", "active")]);
+  await recusada("troca de turma para uma turma cheia: recusada", [inscricao("c2-a", "q-1", "c-1", "active")]);
+  await aceita("troca de turma para turma sem limite: aceita e libera a vaga de origem", [inscricao("c2-a", "q-1", "c-livre", "active")]);
+  await aceita("a vaga liberada pela troca pode ser usada", [inscricao("c2-c", "q-3", "c-2", "active")]);
+
+  await recusada("comando com duas inscrições, a segunda excedendo: nada é gravado",
+    [inscricao("c1-x", "q-4", "c-1", "waitlist"), inscricao("c2-x", "q-4", "c-2", "active")]);
+  registrar("…inclusive a primeira inscrição do comando",
+    (await db.query("select count(*)::int n from public.op_records where collection = 'enrollments' and id = 'c1-x'")).rows[0].n === 0);
+
+  await recusada("mesma pessoa duas vezes na mesma turma: recusada", [inscricao("c2-dup", "q-3", "c-2", "waitlist")], /duplicate key|unique/i);
+  await recusada("capacidade em formato inválido: recusada",
+    [{ table: "activity_offerings", id: "c-livre", after: { id: "c-livre", title: "Turma sem limite", mode: "online", capacity: "muitas" } }], /Capacidade inválida/);
+  await recusada("capacidade zero: recusada",
+    [{ table: "activity_offerings", id: "c-livre", after: { id: "c-livre", title: "Turma sem limite", mode: "online", capacity: 0 } }], /Capacidade inválida/);
+  await aceita("capacidade nula continua sem limite", [inscricao("cl-2", "q-2", "c-livre", "active"), inscricao("cl-3", "q-3", "c-livre", "active")]);
+
+  const antesDireto = await estado();
+  const eDireta = await falha(async () => {
+    await db.exec("begin");
+    try {
+      await db.query(`insert into public.op_records (collection, id, document) values ('enrollments', 'direto', '{"id":"direto","profile_id":"q-4","offering_id":"c-1","status":"active"}')`);
+      await db.exec("commit");
+    } catch (erro) { await db.exec("rollback"); throw erro; }
+  });
+  registrar("gravação direta em op_records, sem op_apply, também é recusada no fim da transação",
+    Boolean(eDireta && /esgotada/.test(eDireta.message)) && (await estado()) === antesDireto, eDireta?.message);
+  registrar("nenhuma falha de cópia registrada para as inscrições do teste de capacidade",
+    (await db.query("select count(*)::int n from public.enrollment_projection_issues where resolved_at is null and op_enrollment_id like 'c%'")).rows[0].n === 0);
 }
 
 // Linha de outra origem nunca é sobrescrita
@@ -474,6 +557,7 @@ registrar("pessoa excluída no painel: vínculo some e cópias ficam ocultas",
            (select array_agg(tgname::text order by tgname) from pg_trigger where not tgisinternal) as gatilhos`)).rows[0]);
   const antes = await assinatura();
   for (const [arquivo, chave] of [["01_estrutura.RASCUNHO.sql", "estrutura"], ["02_projecao.RASCUNHO.sql", "projecao"],
+    ["05_capacidade_turmas.RASCUNHO.sql", "capacidade"], ["92_reversao_capacidade.RASCUNHO.sql", "reverter-capacidade"],
     ["90_reversao_projecao.RASCUNHO.sql", "reverter-projecao"], ["91_reversao_estrutura.RASCUNHO.sql", "reverter-estrutura"]]) {
     await limpo.exec(`select set_config('potala.p1_aprovado', '${chave}', false);`);
     await limpo.exec(readFileSync(join(RASCUNHOS, arquivo), "utf8"));
