@@ -107,10 +107,24 @@ test("Meu Potala: recusas conhecidas da RPC têm frase própria; o resto segue o
   await assert.rejects(comErro("PT409").solicitarAtendimento(PEDIDO), (e) => e.codigo === "ATENDIMENTO_ALTERADO");
   await assert.rejects(comErro("22023").solicitarAtendimento(PEDIDO), (e) => e.codigo === "ATENDIMENTO_RECUSADO");
   await assert.rejects(comErro("PGRST205").solicitarAtendimento(PEDIDO), (e) => e.codigo === "DADOS_INDISPONIVEIS");
-  await assert.rejects(comErro("42501").solicitarAtendimento(PEDIDO), (e) => e instanceof ErroDeConta);
-  for (const codigo of ["ATENDIMENTO_ALTERADO", "ATENDIMENTO_RECUSADO"]) {
+  /* P2.2: códigos que o contrato SQL realmente emite (202610160001 e 202610210001). */
+  await assert.rejects(comErro("PT429").solicitarAtendimento(PEDIDO), (e) => e.codigo === "ATENDIMENTO_LIMITE");
+  await assert.rejects(comErro("42501").solicitarAtendimento(PEDIDO), (e) => e.codigo === "ATENDIMENTO_SEM_PERMISSAO");
+  assert.match(mensagemDoErro(new ErroDeConta("ATENDIMENTO_LIMITE")), /não é duplicado/);
+  for (const codigo of ["ATENDIMENTO_ALTERADO", "ATENDIMENTO_RECUSADO", "ATENDIMENTO_LIMITE", "ATENDIMENTO_SEM_PERMISSAO"]) {
     assert.notEqual(mensagemDoErro(new ErroDeConta(codigo)), mensagemDoErro(new ErroDeConta("QUALQUER")), `${codigo} tem frase própria`);
   }
+});
+
+test("contrato SQL: os códigos tratados são os que as RPCs de atendimento emitem, e o recibo tem id e 'recebida'", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const sql = (nome) => readFile(new URL(`../../supabase/migrations/${nome}`, import.meta.url), "utf8");
+  const base = await sql("202610160001_appointment_requests.sql");
+  const autenticada = await sql("202610210001_authenticated_appointment_requests.sql");
+  for (const codigo of ["PT429", "PT409", "22023"]) assert.match(base, new RegExp(`errcode = '${codigo}'`));
+  for (const codigo of ["42501", "PT409", "22023"]) assert.match(autenticada, new RegExp(`errcode = '${codigo}'`));
+  assert.match(base, /return jsonb_build_object\('id', (previous\.id|request_id), 'status', 'recebida'\);/);
+  assert.match(autenticada, /receipt := public\.submit_appointment_request\(/, "a RPC autenticada devolve o recibo da RPC base");
 });
 
 test("Meu Potala: a chamada continua sendo a RPC autenticada, com os mesmos argumentos", async () => {

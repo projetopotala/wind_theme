@@ -330,6 +330,10 @@ export function criarDadosSupabase({ client } = {}) {
       if (error) {
         if (error.code === "PT409") throw new ErroDeConta("ATENDIMENTO_ALTERADO", error);
         if (error.code === "22023") throw new ErroDeConta("ATENDIMENTO_RECUSADO", error);
+        /* A RPC chama submit_appointment_request, que limita e serializa (PT429), e
+         * exige sessão com e-mail confirmado (42501). */
+        if (error.code === "PT429") throw new ErroDeConta("ATENDIMENTO_LIMITE", error);
+        if (error.code === "42501") throw new ErroDeConta("ATENDIMENTO_SEM_PERMISSAO", error);
         throw falhouDados(error);
       }
       if (!data || typeof data.id !== "string" || !UUID_DO_RECIBO.test(data.id) || data.status !== "recebida") {
