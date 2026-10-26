@@ -48,6 +48,39 @@ export async function submitAppointmentRequest(args, token, {
   return data;
 }
 
+/*
+ * A frase de cada falha do envio público.
+ *
+ * O servidor (submit-appointment-request) responde com status diferentes, e cada
+ * um pede uma saída diferente: dado inválido pede revisão, 429 pede espera, 503
+ * diz que o recebimento está fechado. Antes, toda falha virava "confira sua
+ * conexão" — e a pessoa repetia o gesto que não ia funcionar. Nenhuma frase diz
+ * que nada foi gravado (uma falha pode chegar depois da gravação) nem confirma
+ * horário.
+ */
+export function appointmentFailureMessage(error) {
+  const nada = " Nenhum horário está confirmado.";
+  switch (error?.status) {
+    case 400:
+    case 413:
+      return `Revise o serviço, o nome, o contato e as preferências e envie de novo.${nada}`;
+    case 403:
+      return `Não foi possível concluir a verificação de segurança. Tente novamente com os mesmos dados.${nada}`;
+    case 409:
+      return `Os dados mudaram desde a tentativa anterior. Revise a solicitação e envie de novo.${nada}`;
+    case 429:
+      return `Recebemos muitas solicitações em pouco tempo. Tente novamente mais tarde.${nada}`;
+    case 503:
+      return `O recebimento de solicitações está temporariamente indisponível. Tente mais tarde com os mesmos dados.${nada}`;
+    default:
+      break;
+  }
+  if (typeof error?.message === "string" && error.message.startsWith("Verificação")) {
+    return `Não foi possível concluir a verificação de segurança. Tente novamente com os mesmos dados.${nada}`;
+  }
+  return `Não foi possível confirmar o recebimento. Confira sua conexão e tente novamente com os mesmos dados.${nada}`;
+}
+
 export function createAppointmentRequestSender({ submit = submitAppointmentRequest, challenge,
   storage, crypto = globalThis.crypto } = {}) {
   let pending = false;
