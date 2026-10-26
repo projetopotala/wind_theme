@@ -18,12 +18,18 @@ $trava$;
 
 begin;
 
+drop function if exists public.op_reconciliar_inscricoes();
+drop function if exists public.op_inscricoes_divergentes();
 drop trigger if exists op_profile_accounts_projetar on public.op_profile_accounts;
 drop trigger if exists op_records_projetar on public.op_records;
 drop function if exists public.op_profile_accounts_projetar();
 drop function if exists public.op_records_projetar();
 drop function if exists public.op_projetar_inscricao(text, boolean);
-drop function if exists public.op_ocultar_copias(text, text, uuid);
+drop function if exists public.op_ocultar_copias(text, text);
+-- O gatilho que tira a cópia oculta da chave do curso também sai. As cópias
+-- já ocultas continuam com course_ref 'oculta:<id>' e ocultas: nada reaparece.
+drop trigger if exists enrollments_chave_da_ocultacao on public.enrollments;
+drop function if exists public.enrollments_chave_da_ocultacao();
 -- O registro de falhas fica (é histórico). Para removê-lo depois de lido:
 -- drop table if exists public.enrollment_projection_issues;
 

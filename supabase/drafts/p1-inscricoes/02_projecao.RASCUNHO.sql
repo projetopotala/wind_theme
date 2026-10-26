@@ -9,10 +9,13 @@
 --
 -- Regras:
 --   * nunca apaga linhas de public.enrollments (nem progresso): oculta;
---   * cancelada / removida / trocada / reatribuída / desvinculada → oculta;
---   * reinscrição ou nova ligação → reexibe a MESMA linha (progresso volta);
+--   * a cópia oculta sai da chave do curso (course_ref = 'oculta:<id>'), para
+--     que NENHUMA inscrição nova a reaproveite — só a mesma inscrição do
+--     painel, para a mesma conta e a mesma turma, a reexibe;
 --   * falha inesperada na cópia NÃO desfaz a operação do painel: fica
---     registrada em public.enrollment_projection_issues para a administração.
+--     registrada em public.enrollment_projection_issues;
+--   * a administração lista divergências e reconcilia sob demanda
+--     (op_inscricoes_divergentes / op_reconciliar_inscricoes).
 -- =====================================================================
 
 do $trava$
@@ -30,7 +33,7 @@ begin
   if to_regclass('public.op_profile_accounts') is null
     or not exists (
       select 1 from information_schema.columns
-      where table_schema = 'public' and table_name = 'enrollments' and column_name = 'hidden_at'
+      where table_schema = 'public' and table_name = 'enrollments' and column_name = 'op_course_ref'
     ) then
     raise exception 'A PARTE 1 (estrutura) não está aplicada.';
   end if;
@@ -45,8 +48,11 @@ create table if not exists public.enrollment_projection_issues (
   op_enrollment_id text,
   sqlstate text not null,
   message text not null,
-  occurred_at timestamptz not null default now()
+  occurred_at timestamptz not null default now(),
+  resolved_at timestamptz
 );
+create index if not exists enrollment_projection_issues_abertas_idx
+  on public.enrollment_projection_issues (occurred_at) where resolved_at is null;
 alter table public.enrollment_projection_issues enable row level security;
 revoke all on table public.enrollment_projection_issues from public, anon, authenticated;
 grant select on table public.enrollment_projection_issues to authenticated;
@@ -55,9 +61,37 @@ create policy "administracao le falhas de projecao" on public.enrollment_project
   for select to authenticated using ((select public.is_portal_admin()));
 
 -- ---------------------------------------------------------------------
+-- Ocultar = sair da chave do curso; reexibir = voltar a ela.
+-- Um único ponto garante isso para qualquer UPDATE que oculte ou reexiba.
+-- ---------------------------------------------------------------------
+create or replace function public.enrollments_chave_da_ocultacao()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if new.op_enrollment_id is not null then
+    if new.hidden_at is not null and old.hidden_at is null then
+      new.course_ref := 'oculta:' || new.id::text;
+    elsif new.hidden_at is null and old.hidden_at is not null then
+      new.course_ref := new.op_course_ref;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.enrollments_chave_da_ocultacao() from public, anon, authenticated;
+
+drop trigger if exists enrollments_chave_da_ocultacao on public.enrollments;
+create trigger enrollments_chave_da_ocultacao
+  before update of hidden_at on public.enrollments
+  for each row execute function public.enrollments_chave_da_ocultacao();
+
+-- ---------------------------------------------------------------------
 -- Oculta as cópias visíveis de uma inscrição (sem apagar)
 -- ---------------------------------------------------------------------
-create or replace function public.op_ocultar_copias(p_op_enrollment_id text, p_motivo text, p_exceto uuid default null)
+create or replace function public.op_ocultar_copias(p_op_enrollment_id text, p_motivo text)
 returns void
 language sql
 security definer
@@ -66,10 +100,9 @@ as $$
   update public.enrollments as e
      set hidden_at = now(), hidden_reason = p_motivo
    where e.op_enrollment_id = p_op_enrollment_id
-     and e.hidden_at is null
-     and (p_exceto is null or e.id <> p_exceto);
+     and e.hidden_at is null;
 $$;
-revoke all on function public.op_ocultar_copias(text, text, uuid) from public, anon, authenticated;
+revoke all on function public.op_ocultar_copias(text, text) from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------
 -- Projeta UMA inscrição do painel
@@ -147,39 +180,51 @@ begin
     titulo := left(coalesce(nullif(btrim(turma ->> 'title'), ''), 'Curso do Instituto'), 160);
     chave_curso := 'op:' || (inscricao ->> 'offering_id');
 
-    -- Cópias visíveis desta inscrição em OUTRA conta ou OUTRA turma ficam
-    -- ocultas (com o progresso preservado) antes de exibir a nova.
+    -- 1. Cópias visíveis desta inscrição em OUTRA conta ou OUTRA turma: ocultas.
     update public.enrollments as e
        set hidden_at = now(),
            hidden_reason = case when e.user_id <> conta then 'reatribuida' else 'trocada' end
      where e.op_enrollment_id = p_op_enrollment_id
        and e.hidden_at is null
-       and (e.user_id <> conta or e.course_ref <> chave_curso);
+       and (e.user_id <> conta or e.op_course_ref <> chave_curso);
 
-    insert into public.enrollments as e (
-      user_id, course_ref, course_title, teacher_name, modality, status,
-      op_enrollment_id, hidden_at, hidden_reason
+    -- 2. Só se reaproveita a linha DESTA inscrição, DESTA conta, DESTA turma.
+    select e.id into copia
+    from public.enrollments as e
+    where e.op_enrollment_id = p_op_enrollment_id
+      and e.user_id = conta
+      and e.op_course_ref = chave_curso
+    order by (e.hidden_at is null) desc, e.hidden_at desc
+    limit 1;
+
+    if copia is not null then
+      update public.enrollments as e
+         set course_title = titulo,
+             teacher_name = left(coalesce(professor ->> 'display_name', ''), 160),
+             modality = coalesce(turma ->> 'mode', ''),
+             status = situacao,
+             hidden_at = null,
+             hidden_reason = null
+       where e.id = copia;
+      return;
+    end if;
+
+    -- 3. Nunca ocupa a chave de uma inscrição de outra origem.
+    if exists (
+      select 1 from public.enrollments as e
+      where e.user_id = conta and e.course_ref = chave_curso
+    ) then
+      raise exception 'Já existe inscrição de outra origem para esta conta e curso.' using errcode = '23505';
+    end if;
+
+    insert into public.enrollments (
+      user_id, course_ref, course_title, teacher_name, modality, status, op_enrollment_id, op_course_ref
     ) values (
       conta, chave_curso, titulo,
       left(coalesce(professor ->> 'display_name', ''), 160),
       coalesce(turma ->> 'mode', ''),
-      situacao, p_op_enrollment_id, null, null
-    )
-    on conflict (user_id, course_ref) do update set
-      course_title = excluded.course_title,
-      teacher_name = excluded.teacher_name,
-      modality = excluded.modality,
-      status = excluded.status,
-      op_enrollment_id = excluded.op_enrollment_id,
-      hidden_at = null,
-      hidden_reason = null
-    -- Nunca sobrescreve uma inscrição que não veio do painel.
-    where e.op_enrollment_id is not null
-    returning e.id into copia;
-
-    if copia is null then
-      raise exception 'Já existe inscrição de outra origem para esta conta e curso.' using errcode = '23505';
-    end if;
+      situacao, p_op_enrollment_id, chave_curso
+    );
   exception when others then
     insert into public.enrollment_projection_issues (op_enrollment_id, sqlstate, message)
     values (p_op_enrollment_id, sqlstate, left(sqlerrm, 500));
@@ -277,5 +322,132 @@ drop trigger if exists op_profile_accounts_projetar on public.op_profile_account
 create trigger op_profile_accounts_projetar
   after insert or delete on public.op_profile_accounts
   for each row execute function public.op_profile_accounts_projetar();
+
+-- ---------------------------------------------------------------------
+-- Divergências (somente leitura, só administração)
+--
+-- Compara o que o painel diz com o que o aluno vê. Uma linha por problema:
+--   sem_copia        inscrição com vínculo, mas sem cópia visível
+--   situacao         cópia visível com situação diferente da esperada
+--   copia_indevida   cópia visível que deveria estar oculta
+--   copia_orfa       cópia visível de inscrição que não existe mais no painel
+--   falha_aberta     falha de projeção ainda não resolvida
+-- Não devolve nome, e-mail nem dado de pedido.
+-- ---------------------------------------------------------------------
+create or replace function public.op_inscricoes_divergentes()
+returns table (op_enrollment_id text, motivo text, detalhe text)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_portal_admin() then
+    raise exception 'Somente a administração do Instituto consulta divergências.' using errcode = '42501';
+  end if;
+
+  return query
+  with painel as (
+    select r.id,
+           r.document ->> 'status' as status,
+           'op:' || (r.document ->> 'offering_id') as chave,
+           a.user_id as conta,
+           case r.document ->> 'status'
+             when 'waitlist' then 'aguardando_turma'
+             when 'active' then 'inscrito'
+             when 'completed' then 'concluido'
+           end as esperado
+    from public.op_records as r
+    left join public.op_profile_accounts as a on a.op_profile_id = r.document ->> 'profile_id'
+    where r.collection = 'enrollments'
+  ),
+  visiveis as (
+    select e.op_enrollment_id, e.user_id, e.op_course_ref, e.status
+    from public.enrollments as e
+    where e.op_enrollment_id is not null and e.hidden_at is null
+  )
+  select p.id, 'sem_copia'::text, p.esperado
+  from painel p
+  where p.conta is not null and p.esperado is not null
+    and not exists (select 1 from visiveis v where v.op_enrollment_id = p.id and v.user_id = p.conta and v.op_course_ref = p.chave)
+  union all
+  select p.id, 'situacao', v.status || ' → ' || p.esperado
+  from painel p join visiveis v on v.op_enrollment_id = p.id and v.user_id = p.conta and v.op_course_ref = p.chave
+  where v.status is distinct from p.esperado
+  union all
+  select v.op_enrollment_id, 'copia_indevida', null
+  from visiveis v join painel p on p.id = v.op_enrollment_id
+  where p.conta is distinct from v.user_id or p.esperado is null or p.chave <> v.op_course_ref
+  union all
+  select v.op_enrollment_id, 'copia_orfa', null
+  from visiveis v
+  where not exists (select 1 from painel p where p.id = v.op_enrollment_id)
+  union all
+  select i.op_enrollment_id, 'falha_aberta', i.sqlstate || ': ' || i.message
+  from public.enrollment_projection_issues as i
+  where i.resolved_at is null;
+end;
+$$;
+revoke all on function public.op_inscricoes_divergentes() from public, anon, authenticated;
+grant execute on function public.op_inscricoes_divergentes() to authenticated;
+
+-- ---------------------------------------------------------------------
+-- Reconciliação (só administração; idempotente)
+--
+-- Reprojeta TODAS as inscrições do painel e oculta cópias órfãs. Entra na
+-- mesma fila do op_apply (trava de op_meta), então não corre em paralelo com
+-- uma gravação do painel. Falhas antigas são marcadas como resolvidas antes;
+-- o que voltar a falhar gera um registro novo. Rodar duas vezes seguidas não
+-- muda nada na segunda.
+-- ---------------------------------------------------------------------
+create or replace function public.op_reconciliar_inscricoes()
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  alvo record;
+  reprojetadas integer := 0;
+  orfas integer := 0;
+  ultima_falha bigint;
+  falhas_novas integer;
+begin
+  if not public.is_portal_admin() then
+    raise exception 'Somente a administração do Instituto reconcilia inscrições.' using errcode = '42501';
+  end if;
+
+  perform 1 from public.op_meta as meta where meta.id = 1 for update;
+
+  select coalesce(max(i.id), 0) into ultima_falha from public.enrollment_projection_issues as i;
+  update public.enrollment_projection_issues as i
+     set resolved_at = now()
+   where i.resolved_at is null;
+
+  for alvo in select r.id from public.op_records r where r.collection = 'enrollments' order by r.ordem loop
+    perform public.op_projetar_inscricao(alvo.id);
+    reprojetadas := reprojetadas + 1;
+  end loop;
+
+  for alvo in
+    select distinct e.op_enrollment_id as id
+    from public.enrollments as e
+    where e.op_enrollment_id is not null and e.hidden_at is null
+      and not exists (select 1 from public.op_records r where r.collection = 'enrollments' and r.id = e.op_enrollment_id)
+  loop
+    perform public.op_ocultar_copias(alvo.id, 'removida');
+    orfas := orfas + 1;
+  end loop;
+
+  select count(*) into falhas_novas
+  from public.enrollment_projection_issues as i
+  where i.id > ultima_falha;
+
+  return jsonb_build_object('reprojetadas', reprojetadas, 'orfas_ocultadas', orfas, 'falhas', falhas_novas);
+end;
+$$;
+revoke all on function public.op_reconciliar_inscricoes() from public, anon, authenticated;
+grant execute on function public.op_reconciliar_inscricoes() to authenticated;
 
 commit;

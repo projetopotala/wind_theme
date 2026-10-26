@@ -112,6 +112,11 @@ create policy "visitante envia interesse" on public.site_interests
 alter table public.enrollments
   add column if not exists op_enrollment_id text
     check (op_enrollment_id is null or char_length(op_enrollment_id) between 1 and 160),
+  -- A chave do curso como o painel a define ('op:<turma>'). Fica guardada
+  -- à parte porque a cópia oculta troca de course_ref (ver PARTE 2) para
+  -- nunca colidir com — nem ser reaproveitada por — uma inscrição nova.
+  add column if not exists op_course_ref text
+    check (op_course_ref is null or char_length(op_course_ref) between 1 and 200),
   add column if not exists hidden_at timestamptz,
   add column if not exists hidden_reason text
     check (hidden_reason is null or hidden_reason in ('cancelada', 'removida', 'trocada', 'reatribuida', 'desvinculada'));
@@ -126,6 +131,15 @@ begin
     alter table public.enrollments
       add constraint enrollments_ocultacao_consistente
       check ((hidden_at is null) = (hidden_reason is null));
+  end if;
+  if not exists (
+    select 1 from pg_catalog.pg_constraint
+    where conname = 'enrollments_origem_do_painel_consistente'
+      and conrelid = 'public.enrollments'::regclass
+  ) then
+    alter table public.enrollments
+      add constraint enrollments_origem_do_painel_consistente
+      check ((op_enrollment_id is null) = (op_course_ref is null));
   end if;
 end;
 $consistencia$;

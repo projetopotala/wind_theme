@@ -25,8 +25,9 @@ const revProjecao = await ler("90_reversao_projecao.RASCUNHO.sql");
 const revEstrutura = await ler("91_reversao_estrutura.RASCUNHO.sql");
 const prechecagem = await ler("00_prechecagem_somente_leitura.sql");
 
-/* Variáveis locais das funções que não são tabelas (para a checagem de esquema). */
-const NAO_TABELAS = new Set(["new", "old", "set", "pedido", "inscricao", "turma", "professor", "conta", "copia", "situacao", "titulo", "chave_curso", "alvo"]);
+/* Variáveis locais e CTEs das funções, que não são tabelas (para a checagem de esquema). */
+const NAO_TABELAS = new Set(["new", "old", "set", "pedido", "inscricao", "turma", "professor", "conta", "copia", "situacao", "titulo",
+  "chave_curso", "alvo", "ultima_falha", "falhas_novas", "painel", "visiveis"]);
 
 function funcoes(sql) {
   return [...semComentarios(sql).matchAll(/create or replace function (public\.[a-z_]+)\(([^)]*)\)([\s\S]*?)\$\$;/g)]
@@ -117,8 +118,29 @@ test("SECURITY DEFINER: search_path vazio, nomes qualificados e EXECUTE revogado
       const tabelas = [...f.corpo.matchAll(/\b(?:from|join|update|into)\s+([a-z_]+)(?:\s|$)/g)].map((m) => m[1]).filter((nome) => !NAO_TABELAS.has(nome));
       assert.deepEqual(tabelas, [], `${f.nome}: tabela sem esquema: ${tabelas.join(", ")}`);
     }
-    assert.doesNotMatch(texto, /grant execute/i, "nenhuma função da P1 é exposta");
+    /* Só as duas funções de administração são executáveis, e ambas checam a administração por dentro. */
+    const expostas = [...texto.matchAll(/grant execute on function (public\.[a-z_]+)\(\) to ([a-z, ]+);/g)];
+    for (const [, nome, papeis] of expostas) {
+      assert.ok(["public.op_inscricoes_divergentes", "public.op_reconciliar_inscricoes"].includes(nome), `${nome} não deveria ser executável`);
+      assert.equal(papeis.trim(), "authenticated", `${nome}: só authenticated`);
+      const corpo = funcoes(sql).find((f) => f.nome === nome).corpo;
+      assert.match(corpo, /if not public\.is_portal_admin\(\) then\s+raise exception[^;]+errcode = '42501'/, `${nome}: precisa recusar quem não é administração`);
+    }
+    assert.equal((texto.match(/grant execute/gi) || []).length, expostas.length, "grant execute fora do padrão");
   }
+});
+
+test("reconciliação e ocultação (P1.2)", () => {
+  const p = semComentarios(projecao);
+  const reconciliar = funcoes(projecao).find((f) => f.nome === "public.op_reconciliar_inscricoes").corpo;
+  assert.match(reconciliar, /from public\.op_meta as meta where meta\.id = 1 for update/, "reconciliação entra na fila do op_apply");
+  assert.doesNotMatch(reconciliar, /delete\s+from/i, "reconciliação não apaga nada");
+  assert.match(p, /before update of hidden_at on public\.enrollments/, "ocultar tira a cópia da chave do curso");
+  assert.match(p, /new\.course_ref := 'oculta:' \|\| new\.id::text;/);
+  const projetar = funcoes(projecao).find((f) => f.nome === "public.op_projetar_inscricao").corpo;
+  assert.match(projetar, /e\.op_enrollment_id = p_op_enrollment_id\s+and e\.user_id = conta\s+and e\.op_course_ref = chave_curso/,
+    "só reaproveita a linha da MESMA inscrição, conta e turma");
+  assert.doesNotMatch(projetar, /on conflict/i, "sem upsert genérico que poderia reaproveitar linha alheia");
 });
 
 test("nada novo é concedido a anon e nenhuma política é aberta", () => {

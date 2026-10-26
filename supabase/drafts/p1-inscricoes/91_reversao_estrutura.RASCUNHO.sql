@@ -62,9 +62,11 @@ create policy "visitante le as proprias inscricoes" on public.enrollments
 
 drop index if exists public.enrollments_op_visivel_unica;
 alter table public.enrollments drop constraint if exists enrollments_ocultacao_consistente;
+alter table public.enrollments drop constraint if exists enrollments_origem_do_painel_consistente;
 alter table public.enrollments
   drop column if exists hidden_reason,
   drop column if exists hidden_at,
+  drop column if exists op_course_ref,
   drop column if exists op_enrollment_id;
 
 drop policy if exists "visitante envia interesse" on public.site_interests;

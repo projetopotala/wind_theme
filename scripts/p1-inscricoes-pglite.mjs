@@ -37,11 +37,24 @@ const MIGRATIONS = [
 ];
 const RASCUNHOS = join(RAIZ, "supabase", "drafts", "p1-inscricoes");
 
+/*
+ * O PGlite vem de uma instalação TEMPORÁRIA (P1_PGLITE_DIR), nunca das
+ * dependências do projeto. scripts/p1-inscricoes-pglite-executar.mjs cria essa
+ * instalação com a versão fixa e chama este arquivo.
+ */
+const VERSAO_PGLITE = "0.2.17";
 let PGlite;
 try {
-  ({ PGlite } = await import("@electric-sql/pglite"));
-} catch {
-  console.log("PENDENTE: @electric-sql/pglite não instalado. Rode: npm install --no-save @electric-sql/pglite@0.2.17");
+  const pasta = process.env.P1_PGLITE_DIR;
+  if (!pasta) throw new Error("P1_PGLITE_DIR não definido");
+  const { createRequire } = await import("node:module");
+  const { pathToFileURL } = await import("node:url");
+  const exigir = createRequire(join(pasta, "package.json"));
+  const versao = JSON.parse(readFileSync(join(pasta, "node_modules", "@electric-sql", "pglite", "package.json"), "utf8")).version;
+  if (versao !== VERSAO_PGLITE) throw new Error(`versão ${versao} instalada; esperada ${VERSAO_PGLITE}`);
+  ({ PGlite } = await import(pathToFileURL(exigir.resolve("@electric-sql/pglite")).href));
+} catch (erro) {
+  console.log(`PENDENTE: PGlite ${VERSAO_PGLITE} indisponível (${erro.message}). Use: node scripts/p1-inscricoes-pglite-executar.mjs`);
   process.exit(2);
 }
 
@@ -91,7 +104,7 @@ async function opApply(changes) {
 const revisaoAtual = async () => Number((await db.query("select revision from public.op_meta where id = 1")).rows[0].revision);
 const inscricao = (id, profile, offering, status) => ({ table: "enrollments", id, after: { id, profile_id: profile, offering_id: offering, status } });
 async function copiasDe(user) {
-  return (await db.query("select course_ref, status, op_enrollment_id, hidden_reason from public.enrollments where user_id = $1 order by course_ref, op_enrollment_id", [user])).rows;
+  return (await db.query("select coalesce(op_course_ref, course_ref) as course_ref, course_ref as chave, status, op_enrollment_id, hidden_reason from public.enrollments where user_id = $1 order by 1, op_enrollment_id", [user])).rows;
 }
 async function oQueOAlunoVe(user) {
   return como("authenticated", user, async () => (await db.query("select course_ref, status, course_title from public.enrollments order by course_ref")).rows);
@@ -322,6 +335,100 @@ await db.exec("alter table public.enrollments add constraint teste_falha check (
 }
 await db.exec("alter table public.enrollments drop constraint teste_falha");
 
+// Falha registrada → divergência visível → reconciliação recupera (P1.2)
+const divergencias = () => como("authenticated", ADMIN, async () => (await db.query("select op_enrollment_id, motivo from public.op_inscricoes_divergentes() order by 1, 2")).rows);
+const reconciliar = () => como("authenticated", ADMIN, async () => (await db.query("select public.op_reconciliar_inscricoes() as r")).rows[0].r);
+{
+  const antes = await divergencias();
+  registrar("divergências mostram a falha aberta e a inscrição sem cópia",
+    antes.some((d) => d.op_enrollment_id === "i-3" && d.motivo === "falha_aberta") && antes.some((d) => d.op_enrollment_id === "i-3" && d.motivo === "sem_copia"), JSON.stringify(antes));
+  for (const [papel, sub] of [["anon", ""], ["authenticated", ALUNO_A]]) {
+    const e1 = await falha(() => como(papel, sub, () => db.query("select public.op_reconciliar_inscricoes()")));
+    const e2 = await falha(() => como(papel, sub, () => db.query("select * from public.op_inscricoes_divergentes()")));
+    registrar(`${papel === "anon" ? "anônimo" : "aluno"} não reconcilia nem consulta divergências`, Boolean(e1 && e2), `${e1?.message?.slice(0, 50)} | ${e2?.message?.slice(0, 50)}`);
+  }
+  const r1 = await reconciliar();
+  registrar("reconciliação recupera a inscrição que falhou", r1.falhas === 0 && (await oQueOAlunoVe(ALUNO_A)).some((c) => c.course_ref === "op:t-3"), JSON.stringify(r1));
+  registrar("depois da reconciliação não há divergências", (await divergencias()).length === 0, JSON.stringify(await divergencias()));
+  const fotografia = JSON.stringify((await db.query("select id, user_id, course_ref, status, hidden_at, hidden_reason from public.enrollments order by id")).rows);
+  const r2 = await reconciliar();
+  registrar("reconciliação é idempotente (segunda execução não muda nada)",
+    JSON.stringify((await db.query("select id, user_id, course_ref, status, hidden_at, hidden_reason from public.enrollments order by id")).rows) === fotografia && r2.falhas === 0);
+  // Cópia órfã: a inscrição some do painel sem o gatilho (ex.: gatilho desligado numa manutenção)
+  await db.exec("alter table public.op_records disable trigger op_records_projetar");
+  await db.exec("delete from public.op_records where collection = 'enrollments' and id = 'i-3'");
+  await db.exec("alter table public.op_records enable trigger op_records_projetar");
+  registrar("divergências acusam cópia órfã", (await divergencias()).some((d) => d.op_enrollment_id === "i-3" && d.motivo === "copia_orfa"));
+  const r3 = await reconciliar();
+  registrar("reconciliação oculta a cópia órfã sem apagar", r3.orfas_ocultadas === 1 && !(await oQueOAlunoVe(ALUNO_A)).some((c) => c.course_ref === "op:t-3")
+    && (await db.query("select count(*)::int n from public.enrollments where op_enrollment_id = 'i-3'")).rows[0].n === 1);
+}
+
+// Troca da conta vinculada: a conta anterior não vê nada, nem depois (P1.2)
+{
+  const X1 = "00000000-0000-4000-8000-0000000000c1";
+  const X2 = "00000000-0000-4000-8000-0000000000c2";
+  await db.query("insert into auth.users (id, email) values ($1, 'x1@teste.invalid'), ($2, 'x2@teste.invalid')", [X1, X2]);
+  for (const [conta, assunto] of [[X1, "Pedido X1"], [X2, "Pedido X2"]]) {
+    await como("authenticated", conta, () => db.query("insert into public.site_interests (kind, subject, details, page) values ('curso', $1, '{}', '/cursos.html')", [assunto]));
+  }
+  const [pedX1, pedX2] = [await pedido("Pedido X1"), await pedido("Pedido X2")];
+  await opApply([
+    { table: "profiles", id: "p-x", after: { id: "p-x", display_name: "Pessoa X", roles: ["student"] } },
+    { table: "profiles", id: "p-y", after: { id: "p-y", display_name: "Pessoa Y", roles: ["student"] } },
+    { table: "activity_offerings", id: "t-x", after: { id: "t-x", title: "Turma X", mode: "online" } },
+  ]);
+  await vincular("authenticated", ADMIN, "p-x", pedX1);
+  await opApply([inscricao("i-x", "p-x", "t-x", "active")]);
+  const linhaX1 = (await db.query("select id from public.enrollments where user_id = $1 and op_enrollment_id = 'i-x'", [X1])).rows[0].id;
+  await db.query("insert into public.course_progress (enrollment_id, lessons_total, lessons_done) values ($1, 8, 5)", [linhaX1]);
+
+  // A secretaria percebe que ligou a pessoa X à conta errada e corrige.
+  await como("authenticated", ADMIN, () => db.query("delete from public.op_profile_accounts where op_profile_id = 'p-x'"));
+  await vincular("authenticated", ADMIN, "p-x", pedX2);
+  const veX1 = async () => ({
+    inscricoes: (await oQueOAlunoVe(X1)).length,
+    progresso: (await como("authenticated", X1, () => db.query("select * from public.course_progress"))).rows.length,
+    vinculos: (await como("authenticated", X1, () => db.query("select * from public.op_profile_accounts"))).rows.length,
+  });
+  registrar("conta anterior não vê inscrição, progresso nem vínculo", JSON.stringify(await veX1()) === JSON.stringify({ inscricoes: 0, progresso: 0, vinculos: 0 }), JSON.stringify(await veX1()));
+  const veX2 = await oQueOAlunoVe(X2);
+  const progX2 = (await como("authenticated", X2, () => db.query("select * from public.course_progress"))).rows.length;
+  registrar("conta nova vê a inscrição, mas não o progresso da conta anterior", veX2.length === 1 && progX2 === 0, JSON.stringify(veX2));
+
+  // Alterações posteriores não reexpõem nada à conta anterior.
+  await opApply([{ table: "activity_offerings", id: "t-x", after: { id: "t-x", title: "Turma X (nova sala)", mode: "presencial" } }]);
+  await opApply([inscricao("i-x", "p-x", "t-x", "waitlist")]);
+  await opApply([inscricao("i-x", "p-x", "t-x", "active")]);
+  await reconciliar();
+  registrar("mudanças de turma, situação e reconciliação não reexpõem à conta anterior", JSON.stringify(await veX1()) === JSON.stringify({ inscricoes: 0, progresso: 0, vinculos: 0 }));
+
+  // A conta anterior é ligada a OUTRA pessoa, inscrita na MESMA turma.
+  await vincular("authenticated", ADMIN, "p-y", pedX1);
+  await opApply([inscricao("i-y", "p-y", "t-x", "active")]);
+  const depois = await veX1();
+  const linhaNova = (await db.query("select id from public.enrollments where user_id = $1 and op_enrollment_id = 'i-y' and hidden_at is null", [X1])).rows[0]?.id;
+  registrar("nova inscrição da conta anterior ganha linha própria, sem o progresso antigo",
+    depois.inscricoes === 1 && depois.progresso === 0 && linhaNova && linhaNova !== linhaX1, JSON.stringify(depois));
+  registrar("a linha antiga (com progresso) continua oculta e intacta",
+    (await db.query("select hidden_reason from public.enrollments where id = $1", [linhaX1])).rows[0].hidden_reason === "desvinculada"
+    && (await db.query("select lessons_done from public.course_progress where enrollment_id = $1", [linhaX1])).rows[0].lessons_done === 5);
+}
+
+// Capacidade das turmas (P1.2): o que o banco garante e o que não garante
+{
+  await opApply([{ table: "activity_offerings", id: "t-cap", after: { id: "t-cap", title: "Turma de 1 vaga", mode: "presencial", capacity: 1 } }]);
+  const revisao = await revisaoAtual();
+  const pedidoOp = (chave, id, pessoa) => como("authenticated", ADMIN, () =>
+    db.query("select public.op_apply($1, $2, 'teste', '{}'::jsonb, '{}'::jsonb, $3::jsonb)", [revisao, chave, JSON.stringify([inscricao(id, pessoa, "t-cap", "active")])]));
+  await pedidoOp("cap-1", "i-cap-1", "p-a");
+  const e = await falha(() => pedidoOp("cap-2", "i-cap-2", "p-x"));
+  registrar("CONSTATAÇÃO: duas gravações sobre a mesma revisão — a segunda é recusada (PT409)", Boolean(e && /atualizados em outra janela/.test(e.message)));
+  const e2 = await falha(() => opApply([inscricao("i-cap-2", "p-x", "t-cap", "active")]));
+  const ocupadas = (await db.query("select count(*)::int n from public.op_records where collection = 'enrollments' and document ->> 'offering_id' = 't-cap' and document ->> 'status' = 'active'")).rows[0].n;
+  registrar("CONSTATAÇÃO (BLOQUEIO): o banco ACEITA exceder a capacidade quando o cliente não valida", e2 === null && ocupadas === 2, `ativas=${ocupadas} capacidade=1`);
+}
+
 // Linha de outra origem nunca é sobrescrita
 await db.query("insert into public.enrollments (user_id, course_ref, course_title, status) values ($1, 'op:t-9', 'Manual', 'inscrito')", [ALUNO_A]);
 await opApply([
@@ -345,10 +452,11 @@ registrar("pessoa excluída no painel: vínculo some e cópias ficam ocultas",
 {
   const e = await falha(() => aplicarRascunho("91_reversao_estrutura.RASCUNHO.sql", "reverter-estrutura"));
   registrar("reversão da estrutura recusa rodar com a projeção instalada", Boolean(e && /PARTE 2/.test(e.message)), e?.message);
+  const contar = async () => JSON.stringify((await db.query(
+    "select (select count(*) from public.enrollments)::int n, (select count(*) from public.course_progress)::int p, (select count(*) from public.enrollments where hidden_at is null)::int visiveis")).rows[0]);
+  const antesDaReversao = await contar();
   await aplicarRascunho("90_reversao_projecao.RASCUNHO.sql", "reverter-projecao");
-  const n = (await db.query("select count(*)::int n from public.enrollments")).rows[0].n;
-  const p = (await db.query("select count(*)::int n from public.course_progress")).rows[0].n;
-  registrar("reversão da projeção não apaga inscrições nem progresso", n > 0 && p === 1);
+  registrar("reversão da projeção não apaga nem reexibe inscrições, nem apaga progresso", (await contar()) === antesDaReversao, antesDaReversao);
   const e2 = await falha(() => aplicarRascunho("91_reversao_estrutura.RASCUNHO.sql", "reverter-estrutura"));
   registrar("reversão da estrutura recusa rodar com dados que seriam perdidos", Boolean(e2 && /decidir o destino|identificação/.test(e2.message)));
 }
