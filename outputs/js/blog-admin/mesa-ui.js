@@ -11,6 +11,15 @@ export const esc = (valor) => String(valor ?? "")
  * Avisos
  * ------------------------------------------------------------------ */
 
+/* A Mesa também é servida em /blog/, onde um caminho relativo guardado no texto
+   ("media/capa.webp") viraria /blog/media/capa.webp. O endereço guardado não muda:
+   só a leitura é ancorada na raiz do site. */
+export const enderecoDoSite = (caminho) => {
+  const valor = String(caminho ?? "").trim();
+  if (!valor || /^(?:[a-z]+:|\/\/|\/|#|data:)/i.test(valor)) return valor;
+  return `/${valor}`;
+};
+
 export const MAXIMO_DE_AVISOS = 3;
 
 export function criarAvisos(raiz) {

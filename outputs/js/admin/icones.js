@@ -11,7 +11,7 @@
  * tempo de execução. Ícone novo = nome aqui + rodar o script.
  */
 
-export const SPRITE = "media/icones-admin.svg";
+export const SPRITE = "/media/icones-admin.svg";
 
 export const ICONES = Object.freeze([
   // navegação

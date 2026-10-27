@@ -6,15 +6,15 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#12100e">
   <title>Potala — Mesa do Caderno</title>
-  <link rel="icon" href="media/potala-mark-transparent.png">
-  <link rel="stylesheet" href="css/blog-admin.css">
-  <script src="vendor/supabase.js"></script>
-  <script type="module" src="js/blog-admin/blog-admin-entry.js"></script>
+  <link rel="icon" href="/media/potala-mark-transparent.png">
+  <link rel="stylesheet" href="/css/blog-admin.css">
+  <script src="/vendor/supabase.js"></script>
+  <script type="module" src="/js/blog-admin/blog-admin-entry.js"></script>
 </head>
 <body>
   <main class="mesa" id="blog-admin-app" data-auth-state="checking">
     <section class="mesa-entrada" data-admin-auth-view aria-labelledby="login-title">
-      <img class="mesa-entrada__marca" src="media/potala-mark-transparent.png" alt="Instituto Potala" width="96" height="78">
+      <img class="mesa-entrada__marca" src="/media/potala-mark-transparent.png" alt="Instituto Potala" width="96" height="78">
       <p class="mesa-entrada__sobre">Caderno de Travessia</p>
       <h1 id="login-title">Mesa do Caderno</h1>
       <p class="mesa-entrada__texto">Escreva, publique e acompanhe quem leu e comentou.</p>
@@ -29,35 +29,35 @@
       <p class="mesa-entrada__status" data-admin-auth-status role="status" aria-live="polite">Verificando acesso…</p>
       <div class="mesa-entrada__rodape">
         <button type="button" class="mesa-link" data-blog-teste>Ver o acesso de teste</button>
-        <a class="mesa-link" href="blog.html">Ver o Blog público</a>
+        <a class="mesa-link" href="/blog.html">Ver o Blog público</a>
       </div>
     </section>
 
     <section id="admin-panel" class="mesa-app" hidden>
       <header class="mesa-barra-movel">
         <button type="button" class="mesa-botao-icone" data-mesa-gaveta aria-expanded="false" aria-controls="mesa-trilho">
-          <svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#menu"></use></svg><span class="sr-only">Abrir o menu</span>
+          <svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#menu"></use></svg><span class="sr-only">Abrir o menu</span>
         </button>
-        <a class="mesa-barra-movel__marca" href="#/visao"><img src="media/potala-mark-transparent.png" alt="" width="30" height="24"><span>Mesa do Caderno</span></a>
+        <a class="mesa-barra-movel__marca" href="#/visao"><img src="/media/potala-mark-transparent.png" alt="" width="30" height="24"><span>Mesa do Caderno</span></a>
         <a class="mesa-botao mesa-botao--principal mesa-botao--pequeno" href="#/novo">
-          <svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#plus"></use></svg>Novo
+          <svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#plus"></use></svg>Novo
         </a>
       </header>
 
       <nav class="mesa-trilho" id="mesa-trilho" data-mesa-trilho aria-label="Mesa do Caderno">
-        <a class="mesa-trilho__marca" href="#/visao"><img src="media/potala-mark-transparent.png" alt="Mesa do Caderno — início" width="44" height="36"></a>
+        <a class="mesa-trilho__marca" href="#/visao"><img src="/media/potala-mark-transparent.png" alt="Mesa do Caderno — início" width="44" height="36"></a>
         <div class="mesa-trilho__links">
-          <a href="#/visao" data-mesa-nav="visao"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#layout-dashboard"></use></svg><span>Visão geral</span></a>
-          <a href="#/posts" data-mesa-nav="posts"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#file-text"></use></svg><span>Posts</span></a>
-          <a href="#/comentarios" data-mesa-nav="comentarios"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#message-circle"></use></svg><span>Comentários</span><span class="mesa-trilho__selo" data-mesa-selo-comentarios hidden></span></a>
-          <a href="#/configuracoes" data-mesa-nav="configuracoes"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#settings"></use></svg><span>Configurações</span></a>
+          <a href="#/visao" data-mesa-nav="visao"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#layout-dashboard"></use></svg><span>Visão geral</span></a>
+          <a href="#/posts" data-mesa-nav="posts"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#file-text"></use></svg><span>Posts</span></a>
+          <a href="#/comentarios" data-mesa-nav="comentarios"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#message-circle"></use></svg><span>Comentários</span><span class="mesa-trilho__selo" data-mesa-selo-comentarios hidden></span></a>
+          <a href="#/configuracoes" data-mesa-nav="configuracoes"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#settings"></use></svg><span>Configurações</span></a>
         </div>
         <div class="mesa-trilho__pe">
-          <a class="mesa-trilho__novo" href="#/novo" data-mesa-novo title="Novo post"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#plus"></use></svg><span>Novo post</span></a>
-          <button type="button" data-mesa-paleta-abrir title="Comandos (Ctrl+K)"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#command"></use></svg><span>Comandos</span></button>
-          <a href="blog.html" target="_blank" rel="noopener" title="Ver o Blog"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#external-link"></use></svg><span>Ver o Blog</span></a>
+          <a class="mesa-trilho__novo" href="#/novo" data-mesa-novo title="Novo post"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#plus"></use></svg><span>Novo post</span></a>
+          <button type="button" data-mesa-paleta-abrir title="Comandos (Ctrl+K)"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#command"></use></svg><span>Comandos</span></button>
+          <a href="/blog.html" target="_blank" rel="noopener" title="Ver o Blog"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#external-link"></use></svg><span>Ver o Blog</span></a>
           <span class="mesa-perfil" data-mesa-perfil aria-hidden="true"></span>
-          <button type="button" data-admin-sign-out title="Sair"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#log-out"></use></svg><span>Sair</span></button>
+          <button type="button" data-admin-sign-out title="Sair"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#log-out"></use></svg><span>Sair</span></button>
         </div>
       </nav>
       <div class="mesa-veu" data-mesa-veu aria-hidden="true"></div>

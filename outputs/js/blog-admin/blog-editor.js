@@ -19,7 +19,7 @@ import {
   SECOES_DO_PORTAL, autoresDe, enderecoLivre, fraseDoAgendamento, fraseDoStatus, hojeNoInstituto, horaDe, instanteDe,
   partesDoInstante, pendenciasParaPublicar, resumoDasMudancas, tagsDe, tempoRelativo, textoAtual,
 } from "./mesa-modelo.js";
-import { esc } from "./mesa-ui.js";
+import { esc, enderecoDoSite } from "./mesa-ui.js";
 import { chipDeStatus } from "./mesa-visoes.js";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -364,7 +364,7 @@ export function createBlogEditor({ root, ctx } = {}) {
       if (ctx.loja.demonstracao && (acao === "publicar" || acao === "agendar")) {
         ctx.avisos.mostrar(acao === "publicar" ? "Publicado no acesso de teste: o Blog real não muda." : `${fraseDoAgendamento(quando)} (no acesso de teste)`);
       } else if (acao === "publicar") {
-        ctx.avisos.mostrar(eraPublicado ? "Atualizado: o Blog já mostra a versão nova." : "Publicado! O texto já está no Blog.", { acao: { rotulo: "Ver no Blog", executar: () => globalThis.open(`artigo.html?post=${encodeURIComponent(post.slug)}`, "_blank", "noopener") } });
+        ctx.avisos.mostrar(eraPublicado ? "Atualizado: o Blog já mostra a versão nova." : "Publicado! O texto já está no Blog.", { acao: { rotulo: "Ver no Blog", executar: () => globalThis.open(`/artigo.html?post=${encodeURIComponent(post.slug)}`, "_blank", "noopener") } });
       } else if (acao === "agendar") {
         ctx.avisos.mostrar(fraseDoAgendamento(quando));
       } else {
@@ -460,7 +460,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     const alvo = $("[data-editor-capa]");
     alvo.innerHTML = post.cover
       ? `<figure class="mesa-capa">
-          <img src="${esc(post.cover)}" alt="">
+          <img src="${esc(enderecoDoSite(post.cover))}" alt="">
           <div class="mesa-capa__acoes">
             <button type="button" class="mesa-botao mesa-botao--vidro mesa-botao--pequeno" data-capa-acao="trocar">${i("image")}Trocar capa</button>
             <button type="button" class="mesa-botao mesa-botao--vidro mesa-botao--pequeno" data-capa-acao="remover">${i("trash-2")}Remover</button>
@@ -759,7 +759,7 @@ export function createBlogEditor({ root, ctx } = {}) {
         ${status === "draft" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="revisao">${i("eye")}Enviar para revisão</button>` : ""}
         ${status === "review" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="despublicar">${i("undo-2")}Voltar a rascunho</button>` : ""}
         ${status === "scheduled" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="publicar">${i("send")}Publicar agora</button><button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Cancelar agendamento</button>` : ""}
-        ${status === "published" ? `<a class="mesa-botao mesa-botao--contorno" href="artigo.html?post=${encodeURIComponent(registro.post.slug)}" target="_blank" rel="noopener">${i("external-link")}Ver no Blog</a><button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Despublicar</button>` : ""}
+        ${status === "published" ? `<a class="mesa-botao mesa-botao--contorno" href="/artigo.html?post=${encodeURIComponent(registro.post.slug)}" target="_blank" rel="noopener">${i("external-link")}Ver no Blog</a><button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Despublicar</button>` : ""}
       </section>
       <section class="mesa-painel__secao">
         ${campoDoPainel("Endereço do texto", `<div class="mesa-endereco"><span>artigo.html?post=</span><input data-editor-campo="slug" value="${esc(post.slug)}" spellcheck="false" aria-label="Endereço do texto"></div>`,
@@ -945,7 +945,7 @@ export function createBlogEditor({ root, ctx } = {}) {
   function abrirPrevia() {
     previa.hidden = false;
     casca.classList.add("tem-previa");
-    quadro.src = `artigo.html?preview=1&post=${encodeURIComponent(post.slug)}`;
+    quadro.src = `/artigo.html?preview=1&post=${encodeURIComponent(post.slug)}`;
     previa.querySelector("[data-previa-fechar]").focus();
   }
 
@@ -958,7 +958,7 @@ export function createBlogEditor({ root, ctx } = {}) {
 
   function previaEmNovaAba() {
     ctx.definirPrevia(dadosDaPrevia);
-    globalThis.open(`artigo.html?preview=1&post=${encodeURIComponent(post.slug)}`, "_blank");
+    globalThis.open(`/artigo.html?preview=1&post=${encodeURIComponent(post.slug)}`, "_blank");
   }
 
   quadro.addEventListener("load", () => { if (!previa.hidden) enviarPrevia(quadro.contentWindow); });

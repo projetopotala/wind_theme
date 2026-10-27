@@ -7,7 +7,7 @@
  */
 import { icone } from "../admin/icones.js";
 import { CAPA_PADRAO, capaDoCaderno } from "../blog/blog-settings.js";
-import { esc } from "./mesa-ui.js";
+import { esc, enderecoDoSite } from "./mesa-ui.js";
 import {
   ORDEM_DOS_STATUS, ORDENACOES, PERIODOS, STATUS, autoresDe, contarPorStatus, dataDePublicacao,
   filtrarPosts, horaDe, linhaDoTempo, resumoDaMesa, tempoRelativo, textoAtual,
@@ -22,7 +22,7 @@ const plural = (quantos, um, varios) => `${numero.format(quantos)} ${quantos ===
 export const chipDeStatus = (status) => `<span class="mesa-status mesa-status--${esc(status)}">${i(STATUS[status]?.icone || "pencil")}${esc(STATUS[status]?.rotulo || status)}</span>`;
 
 const capinha = (post) => (post.cover
-  ? `<img src="${esc(post.cover)}" alt="" loading="lazy" decoding="async">`
+  ? `<img src="${esc(enderecoDoSite(post.cover))}" alt="" loading="lazy" decoding="async">`
   : `<span class="mesa-sem-capa">${i("image")}<small>Sem capa</small></span>`);
 
 const vazio = (icone_, texto, acao = "") => `<div class="mesa-vazio">${i(icone_)}<p>${texto}</p>${acao}</div>`;
@@ -407,7 +407,7 @@ export function criarConfiguracoes(el, ctx) {
         <form class="mesa-config" data-config-form>
           <label class="mesa-campo"><span>Nome do blog</span><input name="name" required maxlength="80" value="${esc(configuracao.name)}"></label>
           <div class="mesa-campo"><span>Imagem do topo</span>
-            <figure class="mesa-config__capa"><img src="${esc(capa)}" alt="Imagem do topo do blog" data-config-capa></figure>
+            <figure class="mesa-config__capa"><img src="${esc(enderecoDoSite(capa))}" alt="Imagem do topo do blog" data-config-capa></figure>
             <div class="mesa-linha">
               <button type="button" class="mesa-botao mesa-botao--contorno" data-config-trocar>${i("image")}Trocar imagem</button>
               <button type="button" class="mesa-botao mesa-botao--fantasma" data-config-padrao>Usar a imagem padrão</button>
@@ -475,10 +475,10 @@ export function criarConfiguracoes(el, ctx) {
   el.addEventListener("click", async (evento) => {
     if (evento.target.closest("[data-config-trocar]")) {
       const escolha = await ctx.biblioteca.escolher({ titulo: "Imagem do topo do blog", atual: capa });
-      if (escolha?.[0]) { capa = escolha[0]; el.querySelector("[data-config-capa]").src = capa; }
+      if (escolha?.[0]) { capa = escolha[0]; el.querySelector("[data-config-capa]").src = enderecoDoSite(capa); }
       return;
     }
-    if (evento.target.closest("[data-config-padrao]")) { capa = CAPA_PADRAO; el.querySelector("[data-config-capa]").src = capa; return; }
+    if (evento.target.closest("[data-config-padrao]")) { capa = CAPA_PADRAO; el.querySelector("[data-config-capa]").src = enderecoDoSite(capa); return; }
     if (evento.target.closest("[data-config-restaurar]")) {
       const ok = await ctx.confirmar({ titulo: "Restaurar a demonstração?", texto: "Os textos de exemplo voltam ao estado inicial. Isso só afeta o acesso de teste.", confirmar: "Restaurar" });
       if (ok) { await ctx.repositorio.reset?.(); await ctx.recarregar(); ctx.avisos.mostrar("Demonstração restaurada."); }

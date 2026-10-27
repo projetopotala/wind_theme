@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { comoRegistro, criarBlogDeDemonstracao, statusEfetivo } from "../../outputs/js/blog/blog-remoto.js";
 import { createBlogRepository } from "../../outputs/js/blog/blog-repository.js";
 import { autorPadrao, dataAoPublicar } from "../../outputs/js/blog-admin/blog-editor.js";
 import { contarPorStatus, dataDePublicacao, filtrarPosts, horaDe, instanteDe, partesDoInstante, resumoDaMesa } from "../../outputs/js/blog-admin/mesa-modelo.js";
-import { criarAvisos, MAXIMO_DE_AVISOS } from "../../outputs/js/blog-admin/mesa-ui.js";
+import { criarAvisos, enderecoDoSite, MAXIMO_DE_AVISOS } from "../../outputs/js/blog-admin/mesa-ui.js";
 
 test("D-1: autor padrão nunca é o e-mail de login", () => {
   assert.equal(autorPadrao({ nome: "admin@potala.org", autor: "" }), "Instituto Potala");
@@ -239,4 +240,47 @@ test("Risco publish_at: atualizar agendado já no ar mantém a data exibida no B
   const futuro = comoRegistro({ status: "scheduled", publish_at: "2999-01-01T13:00:00Z", document: { id: "d", title: "D", publishedAt: "2999-01-01" } });
   assert.equal(dataAoPublicar(futuro, "2999-01-01", "2026-10-26"), "2026-10-26");
   assert.equal(dataAoPublicar(null, "", "2026-10-26"), "2026-10-26");
+});
+
+/* A Mesa é servida tanto em /blog quanto em /blog/. Com a barra final o documento
+   base passa a ser /blog/, e qualquer caminho relativo vira /blog/... e dá 404:
+   foi assim que a folha de estilo e o próprio script da Mesa sumiram. */
+test("rotas da Mesa continuam válidas quando o acesso termina com barra", async () => {
+  const ler = (caminho) => readFile(new URL(`../../outputs/${caminho}`, import.meta.url), "utf8");
+  const [html, editor, app, midia, icones] = await Promise.all([
+    ler("blog-admin.html"), ler("js/blog-admin/blog-editor.js"), ler("js/blog-admin/mesa-app.js"),
+    ler("js/blog-admin/mesa-midia.js"), ler("js/admin/icones.js"),
+  ]);
+
+  /* O documento não pode trazer nenhum recurso preso ao diretório atual. */
+  for (const atributo of [/href="(?!\/|https?:|#|mailto:)[^"]+"/g, /src="(?!\/|https?:|data:)[^"]+"/g]) {
+    assert.deepEqual(html.match(atributo) || [], [], `recurso relativo em blog-admin.html: ${atributo}`);
+  }
+  assert.match(html, /href="\/css\/blog-admin\.css"/);
+  assert.match(html, /src="\/js\/blog-admin\/blog-admin-entry\.js"/);
+  assert.match(html, /src="\/vendor\/supabase\.js"/);
+  assert.match(html, /href="\/blog\.html"/);
+  assert.doesNotMatch(html, /use href="media\//);
+
+  /* E o que a Mesa monta em tempo de execução também não. */
+  for (const [nome, fonte] of [["blog-editor", editor], ["mesa-app", app], ["mesa-midia", midia]]) {
+    assert.doesNotMatch(fonte, /globalThis\.open\(`artigo\.html/, `${nome} abre caminho relativo`);
+    assert.doesNotMatch(fonte, /(?:src|href)=["`]artigo\.html/, `${nome} aponta artigo.html relativo`);
+    /* mesa-midia guarda o endereço relativo de propósito: é o valor que vai para o texto
+       e para o banco. O que não pode é exibir sem ancorar. */
+    if (nome !== "mesa-midia") assert.doesNotMatch(fonte, /["`]media\//, `${nome} busca mídia relativa`);
+    assert.doesNotMatch(fonte, /["`]blog\.html["`]/, `${nome} aponta blog.html relativo`);
+  }
+  assert.match(editor, /\/artigo\.html\?preview=1/);
+  assert.match(icones, /SPRITE = "\/media\/icones-admin\.svg"/);
+});
+
+test("capas guardadas em caminho relativo são lidas a partir da raiz do site", () => {
+  assert.equal(enderecoDoSite("media/capa.webp"), "/media/capa.webp");
+  assert.equal(enderecoDoSite("/media/capa.webp"), "/media/capa.webp");
+  assert.equal(enderecoDoSite("https://cdn.exemplo/c.webp"), "https://cdn.exemplo/c.webp");
+  assert.equal(enderecoDoSite("//cdn.exemplo/c.webp"), "//cdn.exemplo/c.webp");
+  assert.equal(enderecoDoSite("data:image/png;base64,AA"), "data:image/png;base64,AA");
+  assert.equal(enderecoDoSite(""), "");
+  assert.equal(enderecoDoSite(null), "");
 });

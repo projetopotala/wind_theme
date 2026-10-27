@@ -130,7 +130,7 @@ export function criarMesa({ raiz, repositorio }) {
 
   function abrirPrevia(dados) {
     previaPendente = () => dados;
-    globalThis.open(`artigo.html?preview=1&post=${encodeURIComponent(dados.slug)}`, "_blank");
+    globalThis.open(`/artigo.html?preview=1&post=${encodeURIComponent(dados.slug)}`, "_blank");
   }
 
   async function executarAcao(acao, registro) {
@@ -140,7 +140,7 @@ export function criarMesa({ raiz, repositorio }) {
       if (acao === "editar") { ctx.navegar(`#/editar/${encodeURIComponent(registro.id)}`); return; }
       if (acao === "agendar") { ctx.navegar(`#/editar/${encodeURIComponent(registro.id)}?agendar=1`); return; }
       if (acao === "visualizar") {
-        if (registro.status === "published") globalThis.open(`artigo.html?post=${encodeURIComponent(registro.post.slug)}`, "_blank", "noopener");
+        if (registro.status === "published") globalThis.open(`/artigo.html?post=${encodeURIComponent(registro.post.slug)}`, "_blank", "noopener");
         else abrirPrevia({ posts: mergeDraftPosts(loja.registros.map(textoAtual), { ...post, status: "published" }), slug: post.slug });
         return;
       }
@@ -289,7 +289,7 @@ export function criarMesa({ raiz, repositorio }) {
       { grupo: "Ir para", rotulo: "Buscar no blog", icone: "search", executar: async () => { ctx.navegar("#/posts"); await roteando; tela("posts").querySelector("[data-posts-busca]")?.focus(); } },
       { grupo: "Ir para", rotulo: "Comentários", icone: "message-circle", executar: () => ctx.navegar("#/comentarios") },
       { grupo: "Ir para", rotulo: "Configurações", icone: "settings", executar: () => ctx.navegar("#/configuracoes") },
-      { grupo: "Ir para", rotulo: "Abrir o Blog público", icone: "external-link", executar: () => globalThis.open("blog.html", "_blank", "noopener") },
+      { grupo: "Ir para", rotulo: "Abrir o Blog público", icone: "external-link", executar: () => globalThis.open("/blog.html", "_blank", "noopener") },
       ...recentes.map((registro) => ({ grupo: "Textos", rotulo: textoAtual(registro).title, icone: "pencil", executar: () => ctx.navegar(`#/editar/${encodeURIComponent(registro.id)}`) })),
     ];
   }
