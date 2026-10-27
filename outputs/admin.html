@@ -7,15 +7,15 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="description" content="Central operacional protegida do Instituto Potala.">
   <title>Potala — Central operacional</title>
-  <link rel="stylesheet" href="css/admin.css">
-  <link rel="stylesheet" href="css/admin-agenda.css">
-  <script src="vendor/supabase.js"></script>
-  <script type="module" src="js/admin/admin-entry.js"></script>
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/admin-agenda.css">
+  <script src="/vendor/supabase.js"></script>
+  <script type="module" src="/js/admin/admin-entry.js"></script>
 </head>
 <body>
   <main class="admin" id="admin-app" data-auth-state="checking">
     <section class="admin-entry" data-admin-auth-view aria-labelledby="admin-entry-title">
-      <img class="admin-entry-logo" src="media/potala-mark-transparent.png" alt="Instituto Potala">
+      <img class="admin-entry-logo" src="/media/potala-mark-transparent.png" alt="Instituto Potala">
       <p class="admin-kicker">Instituto Potala</p>
       <h1 id="admin-entry-title">Central operacional</h1>
       <p class="admin-intro">Entre com a conta autorizada para administrar a operação e o conteúdo do Portal Potala.</p>
@@ -36,7 +36,7 @@
       <p class="admin-auth-status" data-admin-auth-status role="status" aria-live="polite">
         Verificando acesso…
       </p>
-      <p class="admin-entry-links"><a href="transcendido.html">Ver a Home</a></p>
+      <p class="admin-entry-links"><a href="/transcendido.html">Ver a Home</a></p>
     </section>
 
     <section class="admin-panel" id="admin-panel" data-admin-section="inicio" aria-label="Central operacional do Instituto Potala" hidden>
@@ -45,7 +45,7 @@
         botão é a porta dela; o nome da seção diz onde a pessoa está.
       -->
       <header class="admin-topo">
-        <button type="button" class="admin-icone-botao" data-admin-nav-toggle aria-controls="admin-nav" aria-expanded="false" aria-label="Abrir menu"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#menu"></use></svg></button>
+        <button type="button" class="admin-icone-botao" data-admin-nav-toggle aria-controls="admin-nav" aria-expanded="false" aria-label="Abrir menu"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#menu"></use></svg></button>
         <strong data-admin-secao-atual>Visão geral</strong>
       </header>
 
@@ -63,38 +63,38 @@
       <nav class="admin-nav" id="admin-nav" data-admin-nav aria-label="Seções do painel">
         <div class="admin-nav-topo">
           <p class="admin-brand">
-            <img class="admin-brand-logo" src="media/potala-mark-transparent.png" alt="">
+            <img class="admin-brand-logo" src="/media/potala-mark-transparent.png" alt="">
             <span>Potala <small>Instituto</small></span>
           </p>
-          <button type="button" class="admin-icone-botao admin-nav-recolher" data-admin-nav-toggle aria-controls="admin-nav" aria-expanded="false" aria-label="Expandir menu" data-dica="Expandir menu"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#panel-left-open"></use></svg></button>
+          <button type="button" class="admin-icone-botao admin-nav-recolher" data-admin-nav-toggle aria-controls="admin-nav" aria-expanded="false" aria-label="Expandir menu" data-dica="Expandir menu"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#panel-left-open"></use></svg></button>
         </div>
         <div class="admin-nav-lista">
         <p class="admin-nav-group">Visão geral</p>
         <ul>
-          <li><button type="button" data-section="inicio" aria-current="page" data-dica="Visão geral"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#layout-dashboard"></use></svg><span>Visão geral</span></button></li>
+          <li><button type="button" data-section="inicio" aria-current="page" data-dica="Visão geral"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#layout-dashboard"></use></svg><span>Visão geral</span></button></li>
         </ul>
         <p class="admin-nav-group">Operação</p>
         <ul>
-          <li><button type="button" data-section="agenda" data-dica="Agenda"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#calendar-days"></use></svg><span>Agenda</span></button></li>
-          <li><button type="button" data-section="salas" data-dica="Salas"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#door-open"></use></svg><span>Salas</span></button></li>
-          <li><button type="button" data-section="ofertas" data-dica="Cursos e atividades"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#book-open"></use></svg><span>Cursos e atividades</span></button></li>
+          <li><button type="button" data-section="agenda" data-dica="Agenda"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#calendar-days"></use></svg><span>Agenda</span></button></li>
+          <li><button type="button" data-section="salas" data-dica="Salas"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#door-open"></use></svg><span>Salas</span></button></li>
+          <li><button type="button" data-section="ofertas" data-dica="Cursos e atividades"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#book-open"></use></svg><span>Cursos e atividades</span></button></li>
         </ul>
         <p class="admin-nav-group">Pessoas e patrimônio</p>
         <ul>
-          <li><button type="button" data-section="pessoas" data-dica="Pessoas"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#users"></use></svg><span>Pessoas</span></button></li>
-          <li><button type="button" data-section="inventario" data-dica="Inventário"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#package"></use></svg><span>Inventário</span></button></li>
-          <li><button type="button" data-section="movimentacoes" data-dica="Movimentações"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#arrow-left-right"></use></svg><span>Movimentações</span></button></li>
-          <li><button type="button" data-section="manutencao" data-dica="Manutenção"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#wrench"></use></svg><span>Manutenção</span></button></li>
+          <li><button type="button" data-section="pessoas" data-dica="Pessoas"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#users"></use></svg><span>Pessoas</span></button></li>
+          <li><button type="button" data-section="inventario" data-dica="Inventário"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#package"></use></svg><span>Inventário</span></button></li>
+          <li><button type="button" data-section="movimentacoes" data-dica="Movimentações"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#arrow-left-right"></use></svg><span>Movimentações</span></button></li>
+          <li><button type="button" data-section="manutencao" data-dica="Manutenção"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#wrench"></use></svg><span>Manutenção</span></button></li>
         </ul>
         <p class="admin-nav-group">Gestão</p>
         <ul>
-          <li><button type="button" data-section="financeiro" data-dica="Financeiro"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#wallet"></use></svg><span>Financeiro</span></button></li>
-          <li><button type="button" data-section="relatorios" data-dica="Relatórios"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#chart-no-axes-combined"></use></svg><span>Relatórios</span></button></li>
+          <li><button type="button" data-section="financeiro" data-dica="Financeiro"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#wallet"></use></svg><span>Financeiro</span></button></li>
+          <li><button type="button" data-section="relatorios" data-dica="Relatórios"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#chart-no-axes-combined"></use></svg><span>Relatórios</span></button></li>
         </ul>
         <p class="admin-nav-group">Conteúdo do portal</p>
         <ul>
-          <li><button type="button" data-section="jornada" data-dica="Jornada"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#route"></use></svg><span>Jornada</span></button></li>
-          <li><button type="button" data-section="blog" data-dica="Blog"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#pen-line"></use></svg><span>Blog</span></button></li>
+          <li><button type="button" data-section="jornada" data-dica="Jornada"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#route"></use></svg><span>Jornada</span></button></li>
+          <li><button type="button" data-section="blog" data-dica="Blog"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#pen-line"></use></svg><span>Blog</span></button></li>
         </ul>
         </div>
 
@@ -124,8 +124,8 @@
               <button type="button" data-admin-reset>Restaurar conteúdo original</button>
             </div>
           </div>
-          <button type="button" class="admin-icone-botao" data-section="configuracoes" aria-label="Configurações" data-dica="Configurações"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#settings"></use></svg></button>
-          <button class="admin-sair" type="button" data-admin-sign-out data-dica="Sair">Sair<svg class="admin-icone" aria-hidden="true" focusable="false"><use href="media/icones-admin.svg#log-out"></use></svg></button>
+          <button type="button" class="admin-icone-botao" data-section="configuracoes" aria-label="Configurações" data-dica="Configurações"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#settings"></use></svg></button>
+          <button class="admin-sair" type="button" data-admin-sign-out data-dica="Sair">Sair<svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#log-out"></use></svg></button>
         </div>
       </nav>
       <button type="button" class="admin-nav-veu" data-admin-nav-fechar aria-label="Fechar menu" tabindex="-1" hidden></button>
@@ -141,7 +141,7 @@
         </div>
         <input class="admin-search" type="search" data-admin-search
           placeholder="Buscar bloco" aria-label="Buscar bloco">
-        <a class="admin-link" href="transcendido.html" target="_blank" rel="noopener">Visualizar site</a>
+        <a class="admin-link" href="/transcendido.html" target="_blank" rel="noopener">Visualizar site</a>
         <!--
           As TRÊS saídas ficam juntas, e é o contraste entre elas que explica
           cada uma.
@@ -160,7 +160,7 @@
           rolar a navegação inteira e passar por uma ação destrutiva que não tem
           nada a ver com sair.
         -->
-        <a class="admin-link admin-leave" data-admin-leave href="transcendido.html">Voltar ao site</a>
+        <a class="admin-link admin-leave" data-admin-leave href="/transcendido.html">Voltar ao site</a>
         <button class="admin-publish" type="button" data-admin-publish disabled>Publicar alterações</button>
         <p class="admin-saved-at" data-admin-saved-at role="status" aria-live="polite"></p>
       </header>
@@ -376,7 +376,7 @@
           <p class="admin-stage-hint">Clique no cartão para abrir como na página. Arraste para mudar o lado. Com o bloco aberto, o título, o resumo e o texto podem ser editados.</p>
 
           <div class="admin-preview-frame" data-admin-preview-frame>
-            <iframe data-admin-preview src="transcendido.html?admin-preview=1"
+            <iframe data-admin-preview src="/transcendido.html?admin-preview=1"
               title="Prévia ao vivo da Home do Portal Potala"></iframe>
             <p class="admin-preview-error" data-admin-preview-error hidden>
               A prévia não carregou.

@@ -72,7 +72,7 @@ test("da para voltar ao site sem abrir outra aba", () => {
    */
   const sair = /<a[^>]*data-admin-leave[^>]*>/.exec(html);
   assert.ok(sair, "falta o botao de voltar ao site");
-  assert.match(sair[0], /href="transcendido\.html"/);
+  assert.match(sair[0], /href="\/transcendido\.html"/);
   assert.ok(!/target="_blank"/.test(sair[0]), "sair na mesma aba e o ponto");
 
   /* E continua existindo o caminho que NAO fecha o painel. */

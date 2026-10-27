@@ -71,7 +71,7 @@ test("sem imagem, a linha usa um espaço reservado", () => {
     0,
     1,
   );
-  assert.match(comImagem, /<img src="media\/a\.webp" alt="" loading="lazy">/);
+  assert.match(comImagem, /<img src="\/media\/a\.webp" alt="" loading="lazy">/);
 });
 
 function montarRaiz() {
