@@ -193,7 +193,9 @@ export function linhaDoTempo(registro, agora = Date.now()) {
 export function instanteDe(dia, hora) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dia || "") || !/^\d{2}:\d{2}$/.test(hora || "")) return null;
   const instante = new Date(`${dia}T${hora}:00-03:00`);
-  return Number.isNaN(instante.getTime()) ? null : instante;
+  if (Number.isNaN(instante.getTime())) return null;
+  const local = new Date(instante.getTime() - 3 * 3600000).toISOString();
+  return local.slice(0, 10) === dia && local.slice(11, 16) === hora ? instante : null;
 }
 
 export function partesDoInstante(data) {
