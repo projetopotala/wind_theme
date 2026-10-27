@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#171310">
   <meta name="description" content="O interior do Palácio Potala, ao fim da travessia.">
   <title>Potala — O Palácio</title>
-  <link rel="preload" href="media/palacio-master.webp" as="image" type="image/webp" fetchpriority="high">
-  <link rel="stylesheet" href="css/palacio.css">
+  <link rel="preload" href="/media/palacio-master.webp" as="image" type="image/webp" fetchpriority="high">
+  <link rel="stylesheet" href="/css/palacio.css">
   <script>
     // A Home fecha o véu antes de sair, mas esta página abria em brilho cheio:
     // a saída era suave e a chegada era um corte. Marcado antes de qualquer
@@ -28,7 +28,7 @@
       }
     } catch {}
   </script>
-  <script type="module" src="js/palacio/palace-controller.js"></script>
+  <script type="module" src="/js/palacio/palace-controller.js"></script>
 </head>
 <body>
   <main class="palace" id="palace">
@@ -37,7 +37,7 @@
          fallback. Sem ela o motor da Chegada nunca revela o canvas nesta página. -->
     <div class="palace-visual arrival-visual" id="palace-visual">
       <picture class="palace-fallback">
-        <img src="media/palacio-master.webp"
+        <img src="/media/palacio-master.webp"
           alt="Corredor de colunas do Palácio Potala, com três pessoas caminhando em direção à luz de um vão de porta"
           width="2048" height="1152" fetchpriority="high" decoding="async">
       </picture>
@@ -61,7 +61,7 @@
   </main>
 
   <noscript>
-    <p class="palace-noscript"><a href="transcender.html">Voltar à Chegada</a></p>
+    <p class="palace-noscript"><a href="/transcender.html">Voltar à Chegada</a></p>
   </noscript>
 </body>
 </html>

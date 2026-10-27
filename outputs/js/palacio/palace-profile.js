@@ -17,9 +17,9 @@ export const PALACE_PROFILE = {
   id: "palacio-interior",
   plate: { width: 2048, height: 1152 },
   assets: {
-    imageUrl: "media/palacio-master.webp",
-    depthUrl: "media/palacio-depth.webp",
-    mistMaskUrl: "media/palacio-light-mask.webp",
+    imageUrl: "/media/palacio-master.webp",
+    depthUrl: "/media/palacio-depth.webp",
+    mistMaskUrl: "/media/palacio-light-mask.webp",
     skyMaskUrl: "",
     waterMaskUrl: "",
     waterfallMaskUrl: "",
