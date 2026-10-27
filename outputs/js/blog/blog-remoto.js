@@ -200,13 +200,21 @@ function exigirLinha(operacao, { data, error }) {
  * Um texto como a mesa o enxerga: o que está no ar (ou gravado), as
  * alterações ainda não publicadas e os dados de publicação que só o banco tem.
  */
+/* Agendado com a hora já passada está no ar (regra pública do banco): a Mesa mostra "published". */
+export function statusEfetivo(status, publicarEm, agora = Date.now()) {
+  if (status !== "scheduled" || !publicarEm) return status;
+  const quando = Date.parse(publicarEm);
+  return Number.isFinite(quando) && quando <= agora ? "published" : status;
+}
+
 export function comoRegistro(linha = {}) {
   const post = normalizePost(linha.document || {});
   return {
     id: post.id,
     post,
     pendente: linha.pending_document ? normalizePost(linha.pending_document) : null,
-    status: linha.status || post.status,
+    statusGravado: linha.status || post.status,
+    get status() { return statusEfetivo(this.statusGravado, this.publicarEm); },
     publicarEm: linha.publish_at || null,
     pendenteEm: linha.pending_updated_at || null,
     criadoEm: linha.created_at || null,
@@ -386,8 +394,20 @@ export function criarBlogAdministrativo({ client, config = SUPABASE_CONFIG, xhr 
  * o banco não deixaria gravar, e a demonstração não deve sujar o Blog real.
  * Tem a mesma forma da mesa real, com as regras de status reproduzidas aqui.
  */
-export function criarBlogDeDemonstracao({ local, lerConfiguracao, salvarConfiguracao } = {}) {
-  const meta = new Map();
+export function criarBlogDeDemonstracao({
+  local, lerConfiguracao, salvarConfiguracao,
+  storage = globalThis.localStorage,
+  metadataKey = "potala.blog.demonstracao.v2.meta",
+  relogio = () => new Date(),
+} = {}) {
+  let meta;
+  try {
+    const guardado = JSON.parse(storage?.getItem?.(metadataKey) || "{}");
+    meta = new Map(Object.entries(guardado && typeof guardado === "object" && !Array.isArray(guardado) ? guardado : {}));
+  } catch {
+    meta = new Map();
+  }
+  const persistirMeta = () => storage?.setItem?.(metadataKey, JSON.stringify(Object.fromEntries(meta)));
   const versoes = new Map();
   let categorias = [...CATEGORIAS_PADRAO];
 
@@ -398,7 +418,8 @@ export function criarBlogDeDemonstracao({ local, lerConfiguracao, salvarConfigur
       id: post.id,
       post,
       pendente: extra.pendente || null,
-      status,
+      statusGravado: status,
+      get status() { return statusEfetivo(this.statusGravado, this.publicarEm, relogio().getTime()); },
       publicarEm: extra.publicarEm || (status === "published" && post.publishedAt ? `${post.publishedAt}T12:00:00-03:00` : null),
       pendenteEm: extra.pendenteEm || null,
       criadoEm: post.updatedAt,
@@ -415,7 +436,8 @@ export function criarBlogDeDemonstracao({ local, lerConfiguracao, salvarConfigur
     async salvar(post, acao, { quando = null, registrar = true, resumo = "" } = {}) {
       const atual = local.list().find((item) => item.id === post.id);
       const statusAtual = atual ? (meta.get(post.id)?.status || atual.status) : "draft";
-      const agora = new Date().toISOString();
+      const momento = relogio();
+      const agora = momento.toISOString();
       const extra = { ...(meta.get(post.id) || {}), atualizadoEm: agora, atualizadoPor: "Demonstração" };
       let salvo;
       if (acao === "pendente" && ["published", "scheduled"].includes(statusAtual)) {
@@ -423,7 +445,7 @@ export function criarBlogDeDemonstracao({ local, lerConfiguracao, salvarConfigur
         extra.pendenteEm = agora;
         salvo = atual;
       } else {
-        if (acao === "agendar" && !(quando && new Date(quando) > new Date())) {
+        if (acao === "agendar" && !(quando && new Date(quando) > momento)) {
           throw new BlogRemotoError("agendar", { message: "Escolha uma data e um horário no futuro para agendar." });
         }
         const status = STATUS_DA_ACAO[acao] || (statusAtual === "review" ? "review" : "draft");
@@ -434,12 +456,13 @@ export function criarBlogDeDemonstracao({ local, lerConfiguracao, salvarConfigur
         extra.publicarEm = status === "scheduled" ? new Date(quando).toISOString() : status === "published" ? (extra.publicarEm || agora) : null;
       }
       meta.set(post.id, extra);
+      persistirMeta();
       if (registrar) {
         versoes.set(post.id, [{ id: Date.now(), em: agora, acao, status: extra.status || statusAtual, titulo: post.title, autor: "Demonstração", resumo, documento: normalizePost(post) }, ...(versoes.get(post.id) || [])]);
       }
       return registroDe(salvo);
     },
-    async remover(id) { local.remove(id); meta.delete(id); },
+    async remover(id) { local.remove(id); meta.delete(id); persistirMeta(); },
     async versoes(id) { return versoes.get(id) || []; },
     async listarCategorias() { return [...categorias].sort((a, b) => a.ordem - b.ordem); },
     async criarCategoria({ rotulo }) {
@@ -463,6 +486,6 @@ export function criarBlogDeDemonstracao({ local, lerConfiguracao, salvarConfigur
     comentarios: async () => [],
     moderar: async () => {},
     inscritos: async () => 0,
-    reset: async () => { meta.clear(); versoes.clear(); return local.reset(); },
+    reset: async () => { meta.clear(); versoes.clear(); storage?.removeItem?.(metadataKey); return local.reset(); },
   };
 }

@@ -8,9 +8,9 @@
  */
 import { icone } from "../admin/icones.js";
 import { validarImagem } from "../blog/blog-remoto.js";
-import { esc } from "./mesa-ui.js";
+import { esc, enderecoDoSite } from "./mesa-ui.js";
 
-export const CAMINHO_MANIFESTO = "media/manifest.json";
+export const CAMINHO_MANIFESTO = "/media/manifest.json";
 
 /* Máscaras e camadas de efeito da Home não são fotos: ficam fora da escolha. */
 const NAO_E_FOTO = /(mask|overlay|depth|canopy|chegada-water|-copia|copia\.|potala-mark|grama-borda|medieval-road)/i;
@@ -98,7 +98,7 @@ export function criarBiblioteca({ dialogo, repositorio, avisos, carregarManifest
       const escolhida = selecionados.includes(item.url);
       const medida = item.largura ? `${item.largura}×${item.altura}` : item.bytes ? tamanho(item.bytes) : "";
       return `<li><button type="button" role="option" aria-selected="${escolhida}" data-midia-url="${esc(item.url)}" class="${escolhida ? "is-escolhida" : ""}">
-        <img src="${esc(item.url)}" alt="" loading="lazy" decoding="async">
+        <img src="${esc(enderecoDoSite(item.url))}" alt="" loading="lazy" decoding="async">
         <span class="mesa-midia__nome">${esc(item.nome.replace(/^[0-9a-f]{16}-/, ""))}</span>
         ${medida ? `<small>${esc(medida)}</small>` : ""}
         <span class="mesa-midia__marca" aria-hidden="true">${icone("check", { classe: "mesa-icone" })}</span>

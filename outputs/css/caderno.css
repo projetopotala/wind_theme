@@ -202,6 +202,8 @@ html:has(> body.cad-body) { background: var(--cad-chao); }
   /* Sem min-width: 0 a lista não encolhe dentro do menu: os últimos itens ficariam cortados em vez de rolar. */
   .cad-menu ul { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; padding: 0 8px; }
   .cad-menu ul::-webkit-scrollbar { display: none; }
+  /* Esmaecer a borda direita avisa que há mais categorias ao rolar; o respiro final deixa o último item inteiro visível. */
+  .cad-menu ul { padding-inline-end: 32px; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
   .cad-menu li + li::before { margin: 0 10px; }
   .cad-menu a { white-space: nowrap; }
 }

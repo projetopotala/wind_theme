@@ -19,7 +19,7 @@ import {
   SECOES_DO_PORTAL, autoresDe, enderecoLivre, fraseDoAgendamento, fraseDoStatus, hojeNoInstituto, horaDe, instanteDe,
   partesDoInstante, pendenciasParaPublicar, resumoDasMudancas, tagsDe, tempoRelativo, textoAtual,
 } from "./mesa-modelo.js";
-import { esc } from "./mesa-ui.js";
+import { esc, enderecoDoSite } from "./mesa-ui.js";
 import { chipDeStatus } from "./mesa-visoes.js";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -27,6 +27,18 @@ const clone = (value) => JSON.parse(JSON.stringify(value));
 /* ------------------------------------------------------------------
  * Operações puras sobre o texto (usadas também pelos testes)
  * ------------------------------------------------------------------ */
+
+/* Autor sugerido para texto novo: o nome real de quem escreve, nunca o e-mail de login. */
+export function autorPadrao(usuario) {
+  const nome = String(usuario?.autor || "").trim();
+  return nome && !nome.includes("@") ? nome : "Instituto Potala";
+}
+
+/* Data exibida no Blog ao publicar: quem já está no ar (inclusive agendado cuja hora chegou)
+   mantém a data que o leitor já viu; só a primeira publicação recebe a data de hoje. */
+export function dataAoPublicar(registro, dataAtual, hoje) {
+  return registro?.status === "published" && dataAtual ? dataAtual : hoje;
+}
 
 export function createBlankPost(now = new Date().toISOString()) {
   const stamp = String(now || new Date().toISOString());
@@ -328,7 +340,7 @@ export function createBlogEditor({ root, ctx } = {}) {
       }
       documento = { ...documento, publishedAt: agenda.dia };
     }
-    if (acao === "publicar" && registro?.status !== "published") documento = { ...documento, publishedAt: hojeNoInstituto() };
+    if (acao === "publicar") documento = { ...documento, publishedAt: dataAoPublicar(registro, documento.publishedAt, hojeNoInstituto()) };
     if (acao === "despublicar" && registro?.status === "published") {
       const ok = await ctx.confirmar({ titulo: "Tirar este texto do ar?", texto: "Ele sai do Blog agora e volta a ser rascunho. Os links para ele deixam de funcionar até você publicar de novo.", confirmar: "Tirar do ar", perigo: true });
       if (!ok) return;
@@ -352,7 +364,7 @@ export function createBlogEditor({ root, ctx } = {}) {
       if (ctx.loja.demonstracao && (acao === "publicar" || acao === "agendar")) {
         ctx.avisos.mostrar(acao === "publicar" ? "Publicado no acesso de teste: o Blog real não muda." : `${fraseDoAgendamento(quando)} (no acesso de teste)`);
       } else if (acao === "publicar") {
-        ctx.avisos.mostrar(eraPublicado ? "Atualizado: o Blog já mostra a versão nova." : "Publicado! O texto já está no Blog.", { acao: { rotulo: "Ver no Blog", executar: () => globalThis.open(`artigo.html?post=${encodeURIComponent(post.slug)}`, "_blank", "noopener") } });
+        ctx.avisos.mostrar(eraPublicado ? "Atualizado: o Blog já mostra a versão nova." : "Publicado! O texto já está no Blog.", { acao: { rotulo: "Ver no Blog", executar: () => globalThis.open(`/artigo.html?post=${encodeURIComponent(post.slug)}`, "_blank", "noopener") } });
       } else if (acao === "agendar") {
         ctx.avisos.mostrar(fraseDoAgendamento(quando));
       } else {
@@ -448,7 +460,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     const alvo = $("[data-editor-capa]");
     alvo.innerHTML = post.cover
       ? `<figure class="mesa-capa">
-          <img src="${esc(post.cover)}" alt="">
+          <img src="${esc(enderecoDoSite(post.cover))}" alt="">
           <div class="mesa-capa__acoes">
             <button type="button" class="mesa-botao mesa-botao--vidro mesa-botao--pequeno" data-capa-acao="trocar">${i("image")}Trocar capa</button>
             <button type="button" class="mesa-botao mesa-botao--vidro mesa-botao--pequeno" data-capa-acao="remover">${i("trash-2")}Remover</button>
@@ -747,7 +759,7 @@ export function createBlogEditor({ root, ctx } = {}) {
         ${status === "draft" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="revisao">${i("eye")}Enviar para revisão</button>` : ""}
         ${status === "review" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="despublicar">${i("undo-2")}Voltar a rascunho</button>` : ""}
         ${status === "scheduled" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="publicar">${i("send")}Publicar agora</button><button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Cancelar agendamento</button>` : ""}
-        ${status === "published" ? `<a class="mesa-botao mesa-botao--contorno" href="artigo.html?post=${encodeURIComponent(registro.post.slug)}" target="_blank" rel="noopener">${i("external-link")}Ver no Blog</a><button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Despublicar</button>` : ""}
+        ${status === "published" ? `<a class="mesa-botao mesa-botao--contorno" href="/artigo.html?post=${encodeURIComponent(registro.post.slug)}" target="_blank" rel="noopener">${i("external-link")}Ver no Blog</a><button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Despublicar</button>` : ""}
       </section>
       <section class="mesa-painel__secao">
         ${campoDoPainel("Endereço do texto", `<div class="mesa-endereco"><span>artigo.html?post=</span><input data-editor-campo="slug" value="${esc(post.slug)}" spellcheck="false" aria-label="Endereço do texto"></div>`,
@@ -933,7 +945,7 @@ export function createBlogEditor({ root, ctx } = {}) {
   function abrirPrevia() {
     previa.hidden = false;
     casca.classList.add("tem-previa");
-    quadro.src = `artigo.html?preview=1&post=${encodeURIComponent(post.slug)}`;
+    quadro.src = `/artigo.html?preview=1&post=${encodeURIComponent(post.slug)}`;
     previa.querySelector("[data-previa-fechar]").focus();
   }
 
@@ -946,7 +958,7 @@ export function createBlogEditor({ root, ctx } = {}) {
 
   function previaEmNovaAba() {
     ctx.definirPrevia(dadosDaPrevia);
-    globalThis.open(`artigo.html?preview=1&post=${encodeURIComponent(post.slug)}`, "_blank");
+    globalThis.open(`/artigo.html?preview=1&post=${encodeURIComponent(post.slug)}`, "_blank");
   }
 
   quadro.addEventListener("load", () => { if (!previa.hidden) enviarPrevia(quadro.contentWindow); });
@@ -1266,7 +1278,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     if (registro) post = clone(textoAtual(registro));
     else {
       const novo = createBlankPost();
-      post = { ...novo, id: `${novo.id}-${Math.random().toString(36).slice(2, 6)}`, title: "", author: ctx.usuario?.nome || "Instituto Potala", category: ctx.loja.categorias[0]?.id || "reflexao" };
+      post = { ...novo, id: `${novo.id}-${Math.random().toString(36).slice(2, 6)}`, title: "", author: autorPadrao(ctx.usuario), category: ctx.loja.categorias[0]?.id || "reflexao" };
     }
     post.content = post.content || [];
     slugAutomatico = nuncaPublicado() && (!registro || post.slug === enderecoLivre(post.title, ctx.loja.registros, post.id));
