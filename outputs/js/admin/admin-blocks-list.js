@@ -1,3 +1,5 @@
+import { enderecoDoSite } from "../shared/endereco-do-site.js";
+
 /*
  * A lista de blocos do mockup: miniatura, número, título, categoria e o badge
  * de estado, com o menu de ações ao lado.
@@ -37,7 +39,7 @@ export function renderEntryRow(entry, index, total) {
       <button type="button" class="admin-drag" data-action="grip" data-id="${id}"
         aria-label="Arrastar ${escapar(bloco.title)}">⠿</button>
       ${imagem
-        ? `<img src="${imagem}" alt="" loading="lazy">`
+        ? `<img src="${enderecoDoSite(imagem)}" alt="" loading="lazy">`
         : '<span class="admin-row-thumb" aria-hidden="true"></span>'}
       <span class="admin-row-main">
         <span class="admin-row-index">${String(index + 1).padStart(2, "0")}</span>

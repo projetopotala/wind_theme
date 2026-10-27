@@ -29,7 +29,7 @@ test("Home oferece acesso discreto ao painel e o painel contém a prévia real",
    */
   assert.match(homeScenes, /journey-lapis[\s\S]*?href="(?:\/admin|admin\.html)"/);
   assert.match(admin, /<iframe[^>]+data-admin-preview/);
-  assert.match(admin, /src="transcendido\.html\?admin-preview=1"/);
+  assert.match(admin, /src="\/transcendido\.html\?admin-preview=1"/);
 });
 
 test("rascunho altera somente a cópia enviada à prévia", () => {

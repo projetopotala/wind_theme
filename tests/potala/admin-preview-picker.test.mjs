@@ -60,7 +60,7 @@ test("a grade lista o que o manifesto traz", async () => {
   await seletor.open();
 
   assert.match(grade.innerHTML, /data-arquivo="a\.webp"/);
-  assert.match(grade.innerHTML, /src="media\/b\.png"/);
+  assert.match(grade.innerHTML, /src="\/media\/b\.png"/);
   assert.equal(grade.hidden, false);
 });
 

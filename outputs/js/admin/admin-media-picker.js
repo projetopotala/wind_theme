@@ -5,7 +5,9 @@
  * página estática e não consegue listar um diretório sozinho.
  */
 
-export const CAMINHO_MANIFESTO = "media/manifest.json";
+import { enderecoDoSite } from "../shared/endereco-do-site.js";
+
+export const CAMINHO_MANIFESTO = "/media/manifest.json";
 
 function escapar(valor) {
   return String(valor ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
@@ -50,7 +52,7 @@ export function createMediaPicker({ root, fetchManifest, onPick } = {}) {
       .map((imagem) => {
         const arquivo = escapar(imagem.arquivo);
         return `<button type="button" data-arquivo="${arquivo}" aria-label="Usar ${arquivo}">
-          <img src="media/${arquivo}" alt="" loading="lazy">
+          <img src="${enderecoDoSite(`media/${arquivo}`)}" alt="" loading="lazy">
         </button>`;
       })
       .join("");

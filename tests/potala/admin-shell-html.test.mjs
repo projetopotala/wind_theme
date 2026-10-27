@@ -44,7 +44,7 @@ test("a barra lateral tem grupos claros e uma biblioteca só de ícones", async 
   const botoes = [...nav.matchAll(/<button type="button"[^>]*data-section="([a-z]+)"[\s\S]*?<\/button>/g)];
   assert.equal(botoes.length, 13);
   for (const [botao, secao] of botoes) {
-    assert.match(botao, /<use href="media\/icones-admin\.svg#[a-z-]+"><\/use>/, `sem ícone: ${secao}`);
+    assert.match(botao, /<use href="\/media\/icones-admin\.svg#[a-z-]+"><\/use>/, `sem ícone: ${secao}`);
   }
 
   const sprite = await readFile(new URL("../../outputs/media/icones-admin.svg", import.meta.url), "utf8");
@@ -57,7 +57,7 @@ test("sair, configurações e a gaveta do telefone continuam alcançáveis", () 
   assert.match(html, /class="admin-nav-rodape"[\s\S]*data-section="configuracoes"[\s\S]*data-admin-sign-out[^>]*>Sair</);
   assert.match(html, /class="admin-topo"[\s\S]*data-admin-nav-toggle[^>]*aria-controls="admin-nav"/);
   assert.match(html, /data-admin-nav-fechar/);
-  assert.match(html, /<link rel="stylesheet" href="css\/admin-agenda\.css">/);
+  assert.match(html, /<link rel="stylesheet" href="\/css\/admin-agenda\.css">/);
   assert.match(html, /<aside class="op-drawer" data-op-drawer aria-labelledby="op-drawer-titulo" hidden>/);
   assert.match(html, /data-op-menu-painel role="menu"/);
 });

@@ -662,7 +662,7 @@ export function createAdminController({
   });
   const seletorImagem = createMediaPicker({
     root,
-    fetchManifest: () => fetch("media/manifest.json").then((resposta) => resposta.json()),
+    fetchManifest: () => fetch("/media/manifest.json").then((resposta) => resposta.json()),
     onPick: (caminho) => {
       const campo = form?.elements?.image;
       if (campo) campo.value = caminho;
