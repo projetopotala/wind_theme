@@ -44,7 +44,7 @@ begin
   if papel in ('owner', 'admin') then
     return true;
   end if;
-  if papel <> 'blog_editor' or p_module <> 'blog' then return false;
+  if papel is distinct from 'blog_editor' or p_module <> 'blog' then return false;
   end if;
   select case p_action when 'read' then can_read when 'edit' then can_edit when 'publish' then can_publish end
     into permitido
