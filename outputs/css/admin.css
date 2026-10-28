@@ -968,6 +968,13 @@ button {
 
 .admin-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 
+.admin-list .admin-list-empty {
+  display: block;
+  padding: 20px;
+  color: var(--admin-muted);
+  text-align: center;
+}
+
 .admin-list li {
   position: relative;
   display: grid;

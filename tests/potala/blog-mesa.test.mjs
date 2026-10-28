@@ -4,7 +4,7 @@ import test from "node:test";
 import { normalizePost } from "../../outputs/js/blog/blog-model.js";
 import { enderecoDoVideo, renderArticle, renderArticleBlock } from "../../outputs/js/blog/article-renderer.js";
 import { aplicarCampo, blocoNovo, formatarSelecao } from "../../outputs/js/blog-admin/mesa-blocos.js";
-import { lerRota } from "../../outputs/js/blog-admin/mesa-app.js";
+import { atalhoDaMesa, lerRota } from "../../outputs/js/blog-admin/mesa-app.js";
 import { fotosDoSite } from "../../outputs/js/blog-admin/mesa-midia.js";
 import {
   contarPorStatus, enderecoLivre, filtrarPosts, fraseDoAgendamento, fraseDoStatus, instanteDe, linhaDoTempo, partesDoInstante,
@@ -23,6 +23,24 @@ const registro = (id, campos = {}, extra = {}) => ({
 });
 
 const AGORA = Date.parse("2026-09-18T15:00:00Z");
+
+test("atalhos da Mesa ignoram eventos sem tecla válida", () => {
+  for (const evento of [{}, { key: undefined }, { key: null }, { key: 42 }, { key: {} }]) {
+    assert.equal(atalhoDaMesa(evento), "");
+  }
+});
+
+test("atalhos da Mesa respeitam estado, tecla e modificador", () => {
+  assert.equal(atalhoDaMesa({ key: "k", ctrlKey: true }), "paleta");
+  assert.equal(atalhoDaMesa({ key: "K", metaKey: true }), "paleta");
+  assert.equal(atalhoDaMesa({ key: "s", ctrlKey: true }), "salvar");
+  assert.equal(atalhoDaMesa({ key: "S", metaKey: true }), "salvar");
+  assert.equal(atalhoDaMesa({ key: "Escape" }), "escape");
+  assert.equal(atalhoDaMesa({ key: "k" }), "");
+  assert.equal(atalhoDaMesa({ key: "s" }), "");
+  assert.equal(atalhoDaMesa({ key: "k", ctrlKey: true }, false), "");
+  assert.equal(atalhoDaMesa({ key: "Escape" }, false), "");
+});
 
 test("a busca procura no título, no texto, na categoria, no autor e nas etiquetas, sem acento", () => {
   const registros = [

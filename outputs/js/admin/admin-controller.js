@@ -302,6 +302,7 @@ export function createAdminController({
     listaUI?.render(filterEntries(todas, { query: busca, tab: aba }), {
       activeId: ativoId,
       counts: countEntries(todas),
+      emptyMessage: busca ? `Nenhum bloco encontrado para “${busca}”.` : "",
     });
     atualizarPublicar(todas);
   }
