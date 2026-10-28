@@ -28,6 +28,16 @@ export function lerRota(hash) {
 
 export const novoIdDePost = (agora = new Date()) => `post-${agora.toISOString().replace(/\D/g, "").slice(0, 14)}-${Math.random().toString(36).slice(2, 6)}`;
 
+export function atalhoDaMesa(evento, ativa = true) {
+  if (!ativa || typeof evento?.key !== "string") return "";
+  const tecla = evento.key.toLowerCase();
+  const modificador = Boolean(evento.ctrlKey || evento.metaKey);
+  if (modificador && tecla === "k") return "paleta";
+  if (modificador && tecla === "s") return "salvar";
+  if (tecla === "escape") return "escape";
+  return "";
+}
+
 export function criarMesa({ raiz, repositorio }) {
   const $ = (seletor) => raiz.querySelector(seletor);
   const tela = (nome) => raiz.querySelector(`[data-mesa-view="${nome}"]`);
@@ -295,22 +305,20 @@ export function criarMesa({ raiz, repositorio }) {
   }
 
   document.addEventListener("keydown", (evento) => {
-    if (!ativa) return;
-    const modificador = evento.ctrlKey || evento.metaKey;
-    const tecla = evento.key.toLowerCase();
-    if (modificador && tecla === "k") {
+    const atalho = atalhoDaMesa(evento, ativa);
+    if (atalho === "paleta") {
       evento.preventDefault();
       if ($("[data-mesa-paleta]").open) return;
       paleta.abrir([...(rotaAtual?.tela === "editor" ? editor.comandos() : []), ...comandosGerais()]);
       return;
     }
-    if (modificador && tecla === "s") {
+    if (atalho === "salvar") {
       evento.preventDefault();
       if (rotaAtual?.tela === "editor") editor.salvarAgora();
       else avisos.mostrar("Aqui não há nada a salvar: o editor salva sozinho.", { tipo: "info" });
       return;
     }
-    if (evento.key === "Escape" && raiz.dataset.gaveta === "aberta") fecharGaveta({ devolverFoco: true });
+    if (atalho === "escape" && raiz.dataset.gaveta === "aberta") fecharGaveta({ devolverFoco: true });
   });
 
   raiz.addEventListener("click", (evento) => {

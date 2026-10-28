@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { createBlocksList, renderEntryRow } from "../../outputs/js/admin/admin-blocks-list.js";
@@ -100,6 +101,27 @@ test("os contadores leem o que a lista recebeu", () => {
     counts: { total: 12, publicados: 10, rascunhos: 2 },
   });
   assert.equal(contadores.textContent, "12 blocos · 10 publicados · 2 rascunhos");
+});
+
+test("a busca vazia explica que nenhum bloco foi encontrado", () => {
+  const { root, lista } = montarRaiz();
+  createBlocksList({ root }).render([], {
+    emptyMessage: 'Nenhum bloco encontrado para “<sem resultado>”.',
+  });
+  assert.match(lista.innerHTML, /class="admin-list-empty"/);
+  assert.match(lista.innerHTML, /role="status"/);
+  assert.match(lista.innerHTML, /Nenhum bloco encontrado/);
+  assert.doesNotMatch(lista.innerHTML, /<sem resultado>/);
+  assert.match(lista.innerHTML, /&lt;sem resultado&gt;/);
+
+  createBlocksList({ root }).render([entrada()]);
+  assert.doesNotMatch(lista.innerHTML, /admin-list-empty/);
+  assert.match(lista.innerHTML, /Atendimentos/);
+});
+
+test("o estado vazio permanece legível dentro da grade da lista", async () => {
+  const css = await readFile(new URL("../../outputs/css/admin.css", import.meta.url), "utf8");
+  assert.match(css, /\.admin-list \.admin-list-empty\s*\{[^}]*display:\s*block;[^}]*text-align:\s*center;/s);
 });
 
 test("clique numa ação avisa quem pediu, com a ação e o bloco", () => {

@@ -82,12 +82,16 @@ export function createBlocksList({ root, onAction } = {}) {
   lista?.addEventListener?.("click", onClick);
 
   return {
-    render(entries = [], { activeId = "", counts = null } = {}) {
+    render(entries = [], { activeId = "", counts = null, emptyMessage = "" } = {}) {
       if (lista) {
-        lista.innerHTML = entries
-          .map((entry, index) =>
-            renderEntryRow({ ...entry, active: entry.id === activeId }, index, entries.length))
-          .join("");
+        lista.innerHTML = entries.length
+          ? entries
+            .map((entry, index) =>
+              renderEntryRow({ ...entry, active: entry.id === activeId }, index, entries.length))
+            .join("")
+          : emptyMessage
+            ? `<li class="admin-list-empty" role="status">${escapar(emptyMessage)}</li>`
+            : "";
       }
       if (contadores && counts) {
         contadores.textContent =

@@ -39,7 +39,7 @@ if (visual && canvas && button) {
       // `entry` é o que faz a Chegada nascer coberta e abrir o véu. Sem ele
       // `sanitize` descarta o campo e a Chegada aparece inteira de uma vez,
       // desfazendo a metade da passagem que acontece do outro lado.
-      crossTo({ destination: "transcender.html", entry: "keyboard", soundEnabled });
+      crossTo({ destination: "/transcender.html", entry: "keyboard", soundEnabled });
     }
   };
 
