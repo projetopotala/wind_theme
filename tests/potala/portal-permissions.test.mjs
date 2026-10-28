@@ -21,6 +21,7 @@ test("migration cria papel blog_editor e tabela de permissões sem autoelevaçã
     /papel is distinct from 'blog_editor' or p_module <> 'blog'/,
     "papel ausente, inclusive de conta inativa, nunca pode alcançar o grant",
   );
+  assert.match(migration, /p_action is null or p_action not in \('read', 'edit', 'publish'\)/);
 });
 
 test("RPC do Blog separa leitura, edição e publicação", () => {

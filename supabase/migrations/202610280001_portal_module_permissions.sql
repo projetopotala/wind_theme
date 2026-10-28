@@ -38,7 +38,7 @@ declare
   papel text;
   permitido boolean;
 begin
-  if p_module is null or p_action not in ('read', 'edit', 'publish') then return false; end if;
+  if p_module is null or p_action is null or p_action not in ('read', 'edit', 'publish') then return false; end if;
   select u.role into papel from public.users u
     where u.id = (select auth.uid()) and u.active = true;
   if papel in ('owner', 'admin') then
