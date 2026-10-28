@@ -28,10 +28,11 @@ begin;
 -- Textos
 -- ------------------------------------------------------------------
 
+alter table public.blog_posts drop constraint if exists blog_posts_status_check;
+
 update public.blog_posts set status = 'archived', document = document || '{"status":"archived"}'::jsonb
 where status = 'hidden';
 
-alter table public.blog_posts drop constraint if exists blog_posts_status_check;
 alter table public.blog_posts
   add constraint blog_posts_status_check check (status in ('draft', 'review', 'scheduled', 'published', 'archived'));
 
