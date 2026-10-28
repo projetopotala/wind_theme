@@ -27,6 +27,7 @@ const demonstracao = criarBlogDeDemonstracao({
 });
 let remoto = null;
 let usuario = null;
+let permissoes = { ler: true, editar: true, publicar: true };
 const atual = () => (root.dataset.blogDemo === "true" || !remoto ? demonstracao : remoto);
 const METODOS = [
   "listar", "salvar", "remover", "versoes", "listarCategorias", "criarCategoria", "atualizarCategoria", "removerCategoria",
@@ -65,7 +66,7 @@ function abrirMesa({ demo = false } = {}) {
   else delete root.dataset.blogDemo;
   if (loginView) loginView.hidden = true;
   if (panel) panel.hidden = false;
-  mesa ||= criarMesa({ raiz: panel, repositorio });
+  mesa ||= criarMesa({ raiz: panel, repositorio, permissoes });
   mesa.entrar({ usuario: demo ? null : usuario });
 }
 
@@ -88,6 +89,9 @@ try {
     managePanel: false,
     onAuthorized(access) {
       usuario = comoUsuario(access?.user);
+      permissoes = access?.role === "blog_editor"
+        ? { ler: access.permissions?.read === true, editar: access.permissions?.edit === true, publicar: access.permissions?.publish === true }
+        : { ler: true, editar: true, publicar: true };
       /* Quem volta com a sessão aberta e um endereço da mesa (#/editar/…) entra direto. */
       if (root.dataset.blogGate === "entrar" || /^#\/./.test(window.location.hash)) abrirMesa();
       else if (continueButton) continueButton.hidden = false;

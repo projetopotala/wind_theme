@@ -79,18 +79,21 @@ try {
     async onAuthorized(access) {
       shell?.setUser({
         name: access.user?.name || access.session?.user?.email || "Administração Potala",
-        role: access.role === "owner" ? "Administração" : "Equipe administrativa",
+        role: access.role === "owner" ? "Administração" : access.role === "blog_editor" ? "Editor do Blog" : "Equipe administrativa",
+        accessRole: access.role,
       });
       if (!passwordSetup) {
         passwordSetup = createAdminPasswordSetup({ client, root: panel, firstAccess });
       }
       /* Operação e editor da Jornada são independentes: um falhar não segura o outro. */
-      operacaoAbrindo ||= abrirOperacao(client, access).catch((error) => console.error("Falha ao abrir a operação.", error));
+      if (access.role !== "blog_editor") {
+        operacaoAbrindo ||= abrirOperacao(client, access).catch((error) => console.error("Falha ao abrir a operação.", error));
+      }
       if (!controller) {
         controller = createAdminController({ root: panel, repository: remoteRepository });
         await Promise.resolve(controller.pronto).catch((error) => console.error("Falha ao abrir o editor da Jornada.", error));
       }
-      await operacaoAbrindo;
+      if (operacaoAbrindo) await operacaoAbrindo;
       if (appointmentPanel) void appointmentPanel.reload();
       panel?.querySelector("h2")?.focus();
     },

@@ -188,7 +188,7 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
 
   return {
     /** Preenche o rodapé com quem está usando o painel. */
-    setUser({ name = "Editor", role = "Administradora" } = {}) {
+    setUser({ name = "Editor", role = "Administradora", accessRole = "admin" } = {}) {
       const nome = root.querySelector("[data-admin-user-name]");
       const papel = root.querySelector("[data-admin-user-role]");
       const avatar = root.querySelector("[data-admin-avatar]");
@@ -203,6 +203,14 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
           .join("") || "··";
       }
       menuBotao?.setAttribute?.("data-dica", name);
+      if (root.dataset) root.dataset.adminRole = accessRole;
+      const somenteBlog = accessRole === "blog_editor";
+      for (const item of nav?.querySelectorAll?.("[data-section]") || []) {
+        const permitido = !somenteBlog || item.getAttribute("data-section") === "blog";
+        item.hidden = !permitido;
+        item.setAttribute("aria-hidden", permitido ? "false" : "true");
+      }
+      if (somenteBlog) mostrar("blog");
     },
 
     abrirNav,

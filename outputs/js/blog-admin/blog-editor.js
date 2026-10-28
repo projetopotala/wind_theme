@@ -322,6 +322,10 @@ export function createBlogEditor({ root, ctx } = {}) {
 
   async function mudarStatus(acao) {
     if (ocupado) return;
+    if ((acao === "publicar" || acao === "agendar") && ctx.permissoes?.publicar === false) {
+      ctx.avisos.mostrar("Sua conta pode editar o Blog, mas não publicar ou agendar textos.", { tipo: "erro", duracao: 6000 });
+      return;
+    }
     clearTimeout(espera);
     if (emVoo) await emVoo;
     let documento = paraGravar();
