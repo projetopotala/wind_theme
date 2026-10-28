@@ -41,7 +41,9 @@ begin
   if p_module is null or p_action not in ('read', 'edit', 'publish') then return false; end if;
   select u.role into papel from public.users u
     where u.id = (select auth.uid()) and u.active = true;
-  if papel in ('owner', 'admin') then return true;
+  if papel in ('owner', 'admin') then
+    return true;
+  end if;
   if papel <> 'blog_editor' or p_module <> 'blog' then return false;
   end if;
   select case p_action when 'read' then can_read when 'edit' then can_edit when 'publish' then can_publish end
@@ -82,7 +84,7 @@ begin
   if not public.has_portal_permission('blog', 'edit') then
     raise exception 'Seu acesso não permite alterar o Blog.' using errcode = '42501';
   end if;
-  if p_acao in ('publicar', 'agendar') and not public.has_portal_permission('blog', 'publish') then
+  if p_acao in ('publicar', 'agendar', 'despublicar', 'arquivar') and not public.has_portal_permission('blog', 'publish') then
     raise exception 'Sua conta não possui permissão de publicação.' using errcode = '42501';
   end if;
   if jsonb_typeof(p_post) is distinct from 'object' or coalesce(btrim(p_post ->> 'id'), '') = '' then
@@ -92,6 +94,10 @@ begin
     raise exception 'Ação desconhecida.' using errcode = '22023';
   end if;
   select * into atual from public.blog_posts where id = p_post ->> 'id' for update; existe := found;
+  if p_acao = 'revisao' and existe and atual.status in ('published','scheduled')
+     and not public.has_portal_permission('blog', 'publish') then
+    raise exception 'Sua conta não possui permissão para alterar o estado público.' using errcode = '42501';
+  end if;
   select coalesce(nullif(btrim(u.name), ''), u.email) into autor from public.users u where u.id = (select auth.uid());
   autor := coalesce(autor, 'Administração Potala');
   if p_acao = 'pendente' then
@@ -113,6 +119,9 @@ begin
   documento := p_post || jsonb_build_object('status',novo_status);
   destaque := coalesce((documento->>'featured')::boolean,false) and novo_status <> 'archived';
   documento := documento || jsonb_build_object('featured',destaque);
+  if destaque and not public.has_portal_permission('blog', 'publish') then
+    raise exception 'Sua conta não possui permissão para destacar textos publicados.' using errcode = '42501';
+  end if;
   if destaque then update public.blog_posts set featured=false,document=document||'{"featured":false}'::jsonb where featured and id<>documento->>'id'; end if;
   insert into public.blog_posts(id,slug,status,featured,published_at,publish_at,document,pending_document,pending_updated_at,updated_at,updated_by_name)
     values(documento->>'id',documento->>'slug',novo_status,destaque,coalesce(documento->>'publishedAt',''),nova_data,documento,null,null,now(),autor)
