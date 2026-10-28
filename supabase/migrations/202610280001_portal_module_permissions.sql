@@ -38,13 +38,13 @@ declare
   papel text;
   permitido boolean;
 begin
-  if p_module is null or p_action not in ('read', 'edit', 'publish') then return false; end if;
+  if p_module is null or p_action is null or p_action not in ('read', 'edit', 'publish') then return false; end if;
   select u.role into papel from public.users u
     where u.id = (select auth.uid()) and u.active = true;
   if papel in ('owner', 'admin') then
     return true;
   end if;
-  if papel <> 'blog_editor' or p_module <> 'blog' then return false;
+  if papel is distinct from 'blog_editor' or p_module <> 'blog' then return false;
   end if;
   select case p_action when 'read' then can_read when 'edit' then can_edit when 'publish' then can_publish end
     into permitido

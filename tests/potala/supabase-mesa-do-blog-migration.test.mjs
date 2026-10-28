@@ -13,6 +13,18 @@ test("a migração da mesa roda numa transação só e não apaga tabela", () =>
   assert.doesNotMatch(semComentarios, /\bdrop\s+table\b|^\s*truncate\b/im);
 });
 
+test("a conversão de oculto para arquivado acontece sem violar a constraint anterior", () => {
+  const removeConstraint = sql.indexOf("alter table public.blog_posts drop constraint if exists blog_posts_status_check;");
+  const archiveHidden = sql.indexOf("update public.blog_posts set status = 'archived'");
+  const addExpandedConstraint = sql.indexOf("add constraint blog_posts_status_check check (status in ('draft', 'review', 'scheduled', 'published', 'archived'))");
+
+  assert.ok(removeConstraint >= 0, "remove a constraint de status anterior");
+  assert.ok(archiveHidden >= 0, "converte posts hidden para archived");
+  assert.ok(addExpandedConstraint >= 0, "restaura a constraint com archived permitido");
+  assert.ok(removeConstraint < archiveHidden, "remove a constraint anterior antes da conversão");
+  assert.ok(archiveHidden < addExpandedConstraint, "restaura a constraint após a conversão");
+});
+
 test("o visitante nunca lê as alterações pendentes", () => {
   assert.match(sql, /revoke select on table public\.blog_posts from anon, authenticated;/);
   const [, colunas] = /grant select \(([^)]*)\)\s*on table public\.blog_posts to anon, authenticated;/.exec(sql) || [];
