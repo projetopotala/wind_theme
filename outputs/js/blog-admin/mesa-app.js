@@ -38,7 +38,7 @@ export function atalhoDaMesa(evento, ativa = true) {
   return "";
 }
 
-export function criarMesa({ raiz, repositorio }) {
+export function criarMesa({ raiz, repositorio, permissoes = {} }) {
   const $ = (seletor) => raiz.querySelector(seletor);
   const tela = (nome) => raiz.querySelector(`[data-mesa-view="${nome}"]`);
   const conteudo = $("[data-mesa-conteudo]");
@@ -59,6 +59,7 @@ export function criarMesa({ raiz, repositorio }) {
     loja,
     repositorio,
     usuario: null,
+    permissoes: { ler: true, editar: true, publicar: true, ...permissoes },
     avisos,
     confirmar,
     menu,

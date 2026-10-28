@@ -31,13 +31,25 @@ export async function getAdminAccess(client) {
     .maybeSingle();
   if (membershipError) throw new AdminAuthError("getRole", membershipError);
 
-  const role = user?.active === true && ["owner", "admin"].includes(user.role)
+  const role = user?.active === true && ["owner", "admin", "blog_editor"].includes(user.role)
     ? user.role
     : null;
+  let permissions = role === "blog_editor" ? { read: false, edit: false, publish: false } : { read: true, edit: true, publish: true };
+  if (role === "blog_editor") {
+    const { data: grant, error: grantError } = await client
+      .from("portal_module_permissions")
+      .select("can_read, can_edit, can_publish, active")
+      .eq("user_id", session.user.id)
+      .eq("module", "blog")
+      .maybeSingle();
+    if (grantError) throw new AdminAuthError("getPermissions", grantError);
+    if (grant?.active === true) permissions = { read: grant.can_read === true, edit: grant.can_edit === true, publish: grant.can_publish === true };
+  }
   return {
     state: role ? "authorized" : "forbidden",
     session,
     role,
+    permissions,
     user: role ? user : null,
   };
 }
