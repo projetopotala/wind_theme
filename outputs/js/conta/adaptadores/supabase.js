@@ -30,6 +30,9 @@ export const TABELAS = Object.freeze({
   atendimentos: "appointment_requests",
   notificacoes: "notifications",
   preferencias: "notification_preferences",
+  enderecos: "user_addresses",
+  privacidade: "privacy_preferences",
+  atividadesDaConta: "account_activity",
 });
 
 const CAMPOS = Object.freeze({
@@ -42,6 +45,9 @@ const CAMPOS = Object.freeze({
   atendimentos: { id: "id", servico: "service", modalidade: "modality", dataPreferida: "preferred_date", periodoPreferido: "preferred_period", status: "status", criadaEm: "created_at", atualizadaEm: "updated_at" },
   notificacoes: { id: "id", tipo: "kind", titulo: "title", corpo: "body", href: "href", criadaEm: "created_at", lidaEm: "read_at" },
   preferencias: { tipo: "kind", ativa: "enabled" },
+  enderecos: { id: "id", rotulo: "label", destinatario: "recipient_name", cep: "postal_code", logradouro: "street", numero: "number", complemento: "complement", bairro: "district", cidade: "city", uf: "state", principal: "is_primary", atualizadoEm: "updated_at" },
+  privacidade: { historicoAtivo: "history_enabled", personalizacaoAtiva: "personalization_enabled", analytics: "analytics_consent", comunicacoesComerciais: "commercial_communications", atualizadoEm: "updated_at" },
+  atividadesDaConta: { id: "id", acao: "action", ocorridaEm: "occurred_at" },
 });
 
 const ORDEM = Object.freeze({
@@ -54,15 +60,19 @@ const ORDEM = Object.freeze({
   atendimentos: ["created_at", false],
   notificacoes: ["created_at", false],
   preferencias: ["kind", true],
+  enderecos: ["created_at", true],
+  privacidade: ["updated_at", false],
+  atividadesDaConta: ["occurred_at", false],
 });
 
-const COLUNA_ID = Object.freeze({ progressos: "enrollment_id", preferencias: "kind" });
+const COLUNA_ID = Object.freeze({ progressos: "enrollment_id", preferencias: "kind", privacidade: "user_id" });
 
 /* Coleções gravadas por upsert: salvar duas vezes o mesmo item não duplica. */
 const CONFLITO = Object.freeze({
   salvos: "user_id,item_type,item_ref",
   acompanhando: "user_id,subject_type,subject_ref",
   preferencias: "user_id,kind",
+  privacidade: "user_id",
 });
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -276,6 +286,7 @@ export function criarDadosSupabase({ client } = {}) {
 
     async gravar(colecao, registro, usuarioId) {
       if (colecao === "atendimentos") throw new TypeError("Solicitações são criadas somente pela RPC autenticada.");
+      if (colecao === "atividadesDaConta") throw new TypeError("A trilha da conta é registrada somente pelo servidor.");
       const tabela = tabelaDe(colecao);
       const linha = paraLinha(colecao, registro);
       const conflito = CONFLITO[colecao];
@@ -290,6 +301,7 @@ export function criarDadosSupabase({ client } = {}) {
 
     async remover(colecao, id) {
       if (colecao === "atendimentos") throw new TypeError("Solicitações de atendimento não podem ser removidas pelo navegador.");
+      if (["privacidade", "atividadesDaConta"].includes(colecao)) throw new TypeError("Esta coleção não pode ser removida pelo navegador.");
       const { error } = await client.from(tabelaDe(colecao)).delete().eq(COLUNA_ID[colecao] || "id", id);
       if (error) throw falhouDados(error);
     },
@@ -297,6 +309,7 @@ export function criarDadosSupabase({ client } = {}) {
     /* O PostgREST exige um filtro para apagar; a RLS garante que só sai o que é da pessoa. */
     async limpar(colecao) {
       if (colecao === "atendimentos") throw new TypeError("Solicitações de atendimento não podem ser apagadas pelo navegador.");
+      if (["privacidade", "atividadesDaConta"].includes(colecao)) throw new TypeError("Esta coleção não pode ser apagada pelo navegador.");
       const { error } = await client.from(tabelaDe(colecao)).delete().not(COLUNA_ID[colecao] || "id", "is", null);
       if (error) throw falhouDados(error);
     },

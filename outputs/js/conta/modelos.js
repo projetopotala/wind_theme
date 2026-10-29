@@ -340,6 +340,40 @@ export function criarPreferencia(dados = {}) {
   });
 }
 
+export function criarEndereco(dados = {}) {
+  const cep = texto(dados.cep, 9);
+  const uf = texto(dados.uf, 2).toUpperCase();
+  if (!/^\d{5}-?\d{3}$/.test(cep)) throw new TypeError("O CEP é inválido.");
+  if (!/^[A-Z]{2}$/.test(uf)) throw new TypeError("A UF é inválida.");
+  return Object.freeze({
+    id: texto(dados.id) || novoId(), usuarioId: usuarioOpcional(dados.usuarioId),
+    rotulo: obrigatorio(dados.rotulo || "Principal", "O nome do endereço", 40),
+    destinatario: obrigatorio(dados.destinatario, "O destinatário", 120), cep,
+    logradouro: obrigatorio(dados.logradouro, "O logradouro", 160),
+    numero: obrigatorio(dados.numero, "O número", 20), complemento: texto(dados.complemento, 80),
+    bairro: obrigatorio(dados.bairro, "O bairro", 80), cidade: obrigatorio(dados.cidade, "A cidade", 80),
+    uf, principal: dados.principal === true, atualizadoEm: paraData(dados.atualizadoEm),
+  });
+}
+
+export function criarPrivacidade(dados = {}) {
+  return Object.freeze({
+    usuarioId: usuarioOpcional(dados.usuarioId),
+    historicoAtivo: dados.historicoAtivo !== false,
+    personalizacaoAtiva: dados.personalizacaoAtiva !== false,
+    analytics: dados.analytics === true,
+    comunicacoesComerciais: dados.comunicacoesComerciais === true,
+    atualizadoEm: paraData(dados.atualizadoEm),
+  });
+}
+
+export function criarAtividadeDaConta(dados = {}) {
+  return Object.freeze({
+    id: texto(dados.id) || novoId(), usuarioId: usuarioOpcional(dados.usuarioId),
+    acao: obrigatorio(dados.acao, "A ação", 40), ocorridaEm: paraData(dados.ocorridaEm),
+  });
+}
+
 /*
  * Uma fábrica por coleção.
  *
@@ -358,6 +392,9 @@ export const FABRICAS = Object.freeze({
   atendimentos: criarSolicitacaoAtendimento,
   notificacoes: criarNotificacao,
   preferencias: criarPreferencia,
+  enderecos: criarEndereco,
+  privacidade: criarPrivacidade,
+  atividadesDaConta: criarAtividadeDaConta,
 });
 
 /* ------------------------------------------------------------------

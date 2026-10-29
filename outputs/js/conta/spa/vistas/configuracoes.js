@@ -11,7 +11,7 @@ import { caminhoDa } from "../roteador.js";
 import { e, secao } from "./comum.js";
 
 export default {
-  renderizar({ estado }) {
+  renderizar({ estado, enderecos = [], privacidade = [], atividadesDaConta = [] }) {
     const sobreSenha = estado.demonstracao
       ? "No modo de demonstração nenhuma senha é conferida nem guardada."
       : "A senha não fica guardada no Portal: quem a confere é o serviço de autenticação, que guarda apenas uma versão embaralhada e irreversível dela.";
@@ -37,16 +37,50 @@ export default {
           <button type="button" class="mp-botao mp-botao-secundario" data-acao="sair">Sair</button>`,
       })}
       ${secao({
+        id: "mp-enderecos",
+        kicker: "Dados pessoais",
+        titulo: "Endereço",
+        corpo: `${enderecos.length ? `<ul class="mp-lista">${enderecos.map((item) => `<li><strong>${e(item.rotulo)}</strong><span>${e(item.logradouro)}, ${e(item.numero)} — ${e(item.cidade)}/${e(item.uf)}</span><button type="button" class="mp-link-botao" data-remover-endereco="${e(item.id)}">Remover</button></li>`).join("")}</ul>` : `<p class="mp-texto">Nenhum endereço cadastrado.</p>`}
+          <form class="mp-form" data-form="endereco" novalidate>
+            <div class="mp-campo"><label>Identificação<input name="rotulo" maxlength="40" value="Principal" required></label></div>
+            <div class="mp-campo"><label>Nome do destinatário<input name="destinatario" maxlength="120" autocomplete="name" required></label></div>
+            <div class="mp-campo"><label>CEP<input name="cep" inputmode="numeric" autocomplete="postal-code" pattern="\\d{5}-?\\d{3}" required></label></div>
+            <div class="mp-campo"><label>Logradouro<input name="logradouro" maxlength="160" autocomplete="address-line1" required></label></div>
+            <div class="mp-campo"><label>Número<input name="numero" maxlength="20" required></label></div>
+            <div class="mp-campo"><label>Complemento<input name="complemento" maxlength="80" autocomplete="address-line2"></label></div>
+            <div class="mp-campo"><label>Bairro<input name="bairro" maxlength="80" required></label></div>
+            <div class="mp-campo"><label>Cidade<input name="cidade" maxlength="80" autocomplete="address-level2" required></label></div>
+            <div class="mp-campo"><label>UF<input name="uf" maxlength="2" minlength="2" autocomplete="address-level1" required></label></div>
+            <label class="mp-escolha"><input type="checkbox" name="principal" ${enderecos.length ? "" : "checked"}> Endereço principal</label>
+            <p class="mp-status-form" data-endereco-status role="status" aria-live="polite"></p>
+            <button type="submit" class="mp-botao">Salvar endereço</button>
+          </form>`,
+      })}
+      ${secao({
         id: "mp-privacidade",
         classe: "mp-secao-discreta",
         kicker: "Privacidade",
-        titulo: "O que é só seu",
-        corpo: `<p class="mp-texto">Salvos, histórico, agenda e o que você acompanha não aparecem para outras pessoas no Portal. O histórico registra só o que você visita com a conta aberta, e pode ser apagado a qualquer momento em <a href="${caminhoDa("historico")}">Histórico</a>.</p>
-          <p class="mp-texto">Os avisos seguem as suas escolhas em <a href="${caminhoDa("notificacoes")}">Notificações</a>.</p>`,
+        titulo: "Suas escolhas",
+        corpo: `<p class="mp-texto">Salvos, histórico, agenda e o que você acompanha não aparecem para outras pessoas.</p>
+          <form class="mp-form" data-form="privacidade">
+            <label class="mp-escolha"><input type="checkbox" name="historicoAtivo" ${privacidade[0]?.historicoAtivo !== false ? "checked" : ""}> Registrar histórico para continuar de onde parei</label>
+            <label class="mp-escolha"><input type="checkbox" name="personalizacaoAtiva" ${privacidade[0]?.personalizacaoAtiva !== false ? "checked" : ""}> Personalizar recomendações</label>
+            <label class="mp-escolha"><input type="checkbox" name="analytics" ${privacidade[0]?.analytics ? "checked" : ""}> Permitir métricas opcionais de uso</label>
+            <label class="mp-escolha"><input type="checkbox" name="comunicacoesComerciais" ${privacidade[0]?.comunicacoesComerciais ? "checked" : ""}> Receber comunicações comerciais</label>
+            <p class="mp-status-form" data-privacidade-status role="status" aria-live="polite"></p>
+            <button type="submit" class="mp-botao">Salvar escolhas</button>
+          </form>
+          <p class="mp-texto">O histórico pode ser apagado em <a href="${caminhoDa("historico")}">Histórico</a>.</p>`,
+      })}
+      ${secao({
+        id: "mp-atividade-conta", kicker: "Segurança", titulo: "Atividade recente",
+        corpo: atividadesDaConta.length
+          ? `<ul class="mp-lista">${atividadesDaConta.slice(0, 10).map((item) => `<li><span>${e(item.acao.replaceAll("_", " "))}</span><time>${e(item.ocorridaEm ? new Date(item.ocorridaEm).toLocaleString("pt-BR") : "")}</time></li>`).join("")}</ul>`
+          : `<p class="mp-texto">Nenhuma alteração recente registrada.</p>`,
       })}`;
   },
 
-  ligar(raiz, { sessao, anunciar }) {
+  ligar(raiz, { sessao, anunciar, atualizar }) {
     const form = raiz.querySelector("[data-form='nova-senha']");
     if (!form) return null;
     const aviso = form.querySelector("[data-form-status]");
@@ -70,6 +104,46 @@ export default {
     };
 
     form.addEventListener("submit", aoEnviar);
-    return () => form.removeEventListener("submit", aoEnviar);
+
+    const formEndereco = raiz.querySelector("[data-form='endereco']");
+    const formPrivacidade = raiz.querySelector("[data-form='privacidade']");
+    const aoSalvarEndereco = async (evento) => {
+      evento.preventDefault();
+      const campos = Object.fromEntries(new FormData(formEndereco));
+      const avisoEndereco = formEndereco.querySelector("[data-endereco-status]");
+      try {
+        await sessao.colecao("enderecos").gravar({ ...campos, principal: campos.principal === "on" });
+        anunciar("Endereço salvo."); await atualizar();
+      } catch (erro) { avisoEndereco.textContent = mensagemDoErro(erro); }
+    };
+    const aoSalvarPrivacidade = async (evento) => {
+      evento.preventDefault();
+      const campos = Object.fromEntries(new FormData(formPrivacidade));
+      const avisoPrivacidade = formPrivacidade.querySelector("[data-privacidade-status]");
+      try {
+        await sessao.colecao("privacidade").gravar({
+          historicoAtivo: campos.historicoAtivo === "on", personalizacaoAtiva: campos.personalizacaoAtiva === "on",
+          analytics: campos.analytics === "on", comunicacoesComerciais: campos.comunicacoesComerciais === "on",
+          atualizadoEm: new Date(),
+        });
+        anunciar("Escolhas de privacidade salvas."); await atualizar();
+      } catch (erro) { avisoPrivacidade.textContent = mensagemDoErro(erro); }
+    };
+    const aoRemoverEndereco = async (evento) => {
+      const botao = evento.target.closest?.("[data-remover-endereco]");
+      if (!botao) return;
+      botao.disabled = true;
+      try { await sessao.colecao("enderecos").remover(botao.dataset.removerEndereco); anunciar("Endereço removido."); await atualizar(); }
+      catch (erro) { anunciar(mensagemDoErro(erro)); botao.disabled = false; }
+    };
+    formEndereco?.addEventListener("submit", aoSalvarEndereco);
+    formPrivacidade?.addEventListener("submit", aoSalvarPrivacidade);
+    raiz.addEventListener("click", aoRemoverEndereco);
+    return () => {
+      form.removeEventListener("submit", aoEnviar);
+      formEndereco?.removeEventListener("submit", aoSalvarEndereco);
+      formPrivacidade?.removeEventListener("submit", aoSalvarPrivacidade);
+      raiz.removeEventListener("click", aoRemoverEndereco);
+    };
   },
 };

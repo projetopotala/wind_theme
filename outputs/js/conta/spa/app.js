@@ -55,6 +55,7 @@ export function avisoDoLinkDeAcesso(href) {
 
 export const VISTAS = Object.freeze({ inicio, perfil, cursos, agenda, atendimentos, salvos, historico, acompanhando, notificacoes, configuracoes });
 const COLECOES_DA_AREA = Object.freeze(["salvos", "historico", "acompanhando", "inscricoes", "progressos", "agenda", "notificacoes", "preferencias",
+  "enderecos", "privacidade", "atividadesDaConta",
   ...(APPOINTMENT_REQUESTS_ENABLED ? ["atendimentos"] : [])]);
 
 export async function montarMeuPotala({ documento = document, janela = window } = {}) {
