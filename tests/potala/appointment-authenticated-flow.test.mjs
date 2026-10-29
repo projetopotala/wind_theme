@@ -32,6 +32,11 @@ function clientFake() {
     async rpc(name, args) {
       calls.push(["rpc", name, args]);
       if (name === "list_appointment_offerings") return { data: [{ id: "oferta-1", service: "Reiki" }], error: null };
+      if (name === "list_my_appointment_requests") return { data: [{
+        id: "3f2b8a6e-1c4d-4e5f-9a7b-2c8d1e0f3a4b", service: "Reiki", modality: "online",
+        preferred_date: "2026-11-03", preferred_period: "noite", status: "recebida",
+        created_at: "2026-10-21T12:00:00Z", updated_at: "2026-10-21T12:00:00Z",
+      }], error: null };
       return { data: { id: "3f2b8a6e-1c4d-4e5f-9a7b-2c8d1e0f3a4b", status: "recebida" }, error: null };
     },
   };
@@ -72,6 +77,7 @@ test("o modelo e a tela mostram somente o contrato seguro de acompanhamento", ()
   const aberto = atendimentos.renderizar({
     atendimentos: [pedido], atendimentoDisponivel: true,
     opcoesAtendimento: [{ id: "oferta-1", service: "<b>Reiki</b>", professional: "Profissional", modality: "online" }],
+    horariosAtendimento: [{ id: "horario-1", offering_id: "oferta-1", starts_at: "2026-11-03T21:00:00Z" }],
   });
   assert.match(aberto, /data-form="atendimento"/);
   assert.match(aberto, /&lt;b&gt;Reiki&lt;\/b&gt;/);
@@ -83,8 +89,7 @@ test("o adaptador lê só campos do cliente e usa a RPC autenticada para escreve
   const data = criarDadosSupabase({ client });
   const [request] = await data.listar("atendimentos", "cliente-1");
   assert.equal(request.servico, "Reiki");
-  const selected = client.calls.find(([kind]) => kind === "select")[1];
-  assert.doesNotMatch(selected, /contact|requester_name|professional_profile_id/);
+  assert.deepEqual(client.calls[0], ["rpc", "list_my_appointment_requests", undefined]);
 
   const args = {
     idempotencia: "3f2b8a6e-1c4d-4e5f-9a7b-2c8d1e0f3a4b",
@@ -105,6 +110,6 @@ test("o adaptador lê só campos do cliente e usa a RPC autenticada para escreve
 test("a implementação preserva a chave idempotente enquanto uma tentativa falha", async () => {
   const app = await readFile(new URL("../../outputs/js/conta/spa/app.js", import.meta.url), "utf8");
   assert.match(app, /pedido\.dataset\.idempotencia \|\|= globalThis\.crypto\.randomUUID\(\)/);
-  assert.match(app, /await sessao\.solicitarAtendimento[\s\S]*delete pedido\.dataset\.idempotencia/);
-  assert.doesNotMatch(app, /delete pedido\.dataset\.idempotencia[\s\S]*await sessao\.solicitarAtendimento/);
+  assert.match(app, /await sessao\.solicitarHorarioAtendimento[\s\S]*delete pedido\.dataset\.idempotencia/);
+  assert.doesNotMatch(app, /delete pedido\.dataset\.idempotencia[\s\S]*await sessao\.solicitarHorarioAtendimento/);
 });

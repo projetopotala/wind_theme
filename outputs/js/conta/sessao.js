@@ -228,9 +228,24 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
       return aposUsarDados(await dados.opcoesAtendimento());
     },
 
+    async horariosAtendimento() {
+      exigirConta();
+      return aposUsarDados(await dados.horariosAtendimento());
+    },
+
     async solicitarAtendimento(pedido) {
       const usuarioId = exigirConta();
       return aposUsarDados(await dados.solicitarAtendimento(pedido, usuarioId));
+    },
+
+    async solicitarHorarioAtendimento(pedido) {
+      exigirConta();
+      return aposUsarDados(await dados.solicitarHorarioAtendimento(pedido));
+    },
+
+    async cancelarAtendimento(id) {
+      exigirConta();
+      return aposUsarDados(await dados.cancelarAtendimento(id));
     },
 
     destroy() {
