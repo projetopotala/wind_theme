@@ -13,6 +13,7 @@
   <script type="module" src="js/secoes.js"></script>
   <script type="module" src="js/sections/front-demo.js"></script>
   <script type="module" src="js/comunidade/especialistas-filter.js"></script>
+  <script type="module" src="js/comunidade/profissionais-remotos.js"></script>
 </head>
 <body data-section="especialistas">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
@@ -33,6 +34,9 @@
     </header>
     <div class="specialists-filter" data-specialists-filter>
       <p>Filtrar por área</p>
+      <label class="specialists-search">Buscar profissional
+        <input type="search" data-professional-search autocomplete="off" placeholder="Nome, especialidade ou modalidade">
+      </label>
       <div role="group" aria-label="Filtrar especialistas por área">
         <button type="button" data-specialist-area="todos" aria-pressed="true">Todos</button>
         <button type="button" data-specialist-area="corpo" aria-pressed="false">Corpo e movimento</button>
@@ -42,6 +46,8 @@
       </div>
       <span data-specialist-status role="status" aria-live="polite">16 especialistas · 22 aulas</span>
     </div>
+    <section class="com-lista" data-professionals-live aria-label="Profissionais publicados" hidden></section>
+    <p class="com-aviso" data-professionals-status role="status" aria-live="polite">Carregando perfis publicados…</p>
     <section class="com-lista" aria-label="Especialistas do Instituto">
       <article class="com-ficha" data-reveal>
         <div class="com-selo"><svg class="selo" viewBox="0 0 160 160" role="img" aria-hidden="true" focusable="false"><rect fill="currentColor" opacity=".05" width="160" height="160" rx="10"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.1999999999999997" opacity="0.45999999999999996"

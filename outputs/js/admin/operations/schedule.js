@@ -173,6 +173,14 @@ export function applyScheduleCommand(state,command,ctx){
       if(row.roles.some(role=>!['client','student','participant','professional'].includes(role)))fail('Papel da pessoa inválido.');
       if(row.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email))fail('E-mail inválido.');
       if(row.email&&state.profiles.some(r=>r.id!==row.id&&r.email?.toLowerCase()===row.email))fail('E-mail já cadastrado para outra pessoa.');
+      row.specialties=[...new Set((row.specialties||[]).map(value=>String(value).trim()).filter(Boolean))];
+      row.practice_areas=[...new Set((row.practice_areas||[]).map(value=>String(value).trim()).filter(Boolean))];
+      row.modalities=[...new Set(row.modalities||[])];
+      if(row.modalities.some(mode=>!['presencial','online'].includes(mode)))fail('Modalidade profissional inválida.');
+      if(row.price_cents!=null)row.price_cents=number(row.price_cents,'Valor',0);
+      row.published=row.published===true;row.active=row.active!==false;
+      if(row.published&&!row.roles.includes('professional'))fail('Somente pessoas cadastradas como profissional podem ter perfil público.');
+      if(row.published&&!String(row.presentation||'').trim())fail('Informe a apresentação antes de publicar o perfil.');
       return row;
     });
     case 'definition.save':return upsert(state.activity_definitions,p,ctx,row=>({...row,title:required(row.title,'Título'),kind:required(row.kind,'Tipo')}));
@@ -181,7 +189,7 @@ export function applyScheduleCommand(state,command,ctx){
       if(row.capacity!=null&&state.enrollments.filter(e=>e.offering_id===row.id&&e.status!=='cancelled').length>number(row.capacity,'Capacidade',1))fail('Capacidade inferior às inscrições existentes.');
       const mode = row.mode || 'presencial';
       if (!['presencial','online'].includes(mode)) fail('Modalidade da oferta invalida.');
-      return {...row,title:required(row.title,'Título'),mode,capacity:row.capacity==null?null:number(row.capacity,'Capacidade',1)};
+      return {...row,title:required(row.title,'Título'),mode,capacity:row.capacity==null?null:number(row.capacity,'Capacidade',1),price_cents:row.price_cents==null?null:number(row.price_cents,'Valor',0),description:String(row.description||'').trim(),active:row.active!==false};
     });
     case 'enrollment.save':return upsert(state.enrollments,p,ctx,row=>{
       ref(state.profiles,row.profile_id,'Pessoa');const offering=ref(state.activity_offerings,row.offering_id,'Oferta');
