@@ -42,7 +42,7 @@ const CAMPOS = Object.freeze({
   inscricoes: { id: "id", cursoRef: "course_ref", curso: "course_title", professor: "teacher_name", modalidade: "modality", status: "status", proximaAula: "next_session_at", conteudoHref: "content_href", imagem: "image_url", inscritoEm: "enrolled_at" },
   progressos: { inscricaoId: "enrollment_id", total: "lessons_total", concluidas: "lessons_done", ultimaAulaRef: "last_lesson_ref", ultimoAcesso: "last_access_at" },
   agenda: { id: "id", tipo: "kind", titulo: "title", inicio: "starts_at", fim: "ends_at", local: "location", origem: "origin", fonteRef: "source_ref", fonteHref: "source_href" },
-  atendimentos: { id: "id", servico: "service", modalidade: "modality", dataPreferida: "preferred_date", periodoPreferido: "preferred_period", status: "status", criadaEm: "created_at", atualizadaEm: "updated_at" },
+  atendimentos: { id: "id", servico: "service", modalidade: "modality", dataPreferida: "preferred_date", periodoPreferido: "preferred_period", status: "status", horarioId: "appointment_slot_id", reservaId: "reservation_schedule_id", criadaEm: "created_at", atualizadaEm: "updated_at" },
   notificacoes: { id: "id", tipo: "kind", titulo: "title", corpo: "body", href: "href", criadaEm: "created_at", lidaEm: "read_at" },
   preferencias: { tipo: "kind", ativa: "enabled" },
   enderecos: { id: "id", rotulo: "label", destinatario: "recipient_name", cep: "postal_code", logradouro: "street", numero: "number", complemento: "complement", bairro: "district", cidade: "city", uf: "state", principal: "is_primary", atualizadoEm: "updated_at" },
@@ -275,11 +275,13 @@ export function criarDadosSupabase({ client } = {}) {
     },
 
     async listar(colecao, usuarioId) {
+      if (colecao === "atendimentos") {
+        const { data, error } = await client.rpc("list_my_appointment_requests");
+        if (error) throw falhouDados(error);
+        return (Array.isArray(data) ? data : []).map((linha) => paraModelo(colecao, linha, usuarioId));
+      }
       const [coluna, ascendente] = ORDEM[colecao] || ["id", true];
-      const campos = colecao === "atendimentos"
-        ? "id,service,modality,preferred_date,preferred_period,status,created_at,updated_at"
-        : "*";
-      const { data, error } = await client.from(tabelaDe(colecao)).select(campos).order(coluna, { ascending: ascendente });
+      const { data, error } = await client.from(tabelaDe(colecao)).select("*").order(coluna, { ascending: ascendente });
       if (error) throw falhouDados(error);
       return (data || []).map((linha) => paraModelo(colecao, linha, usuarioId));
     },
@@ -326,6 +328,12 @@ export function criarDadosSupabase({ client } = {}) {
       return Array.isArray(data) ? data : [];
     },
 
+    async horariosAtendimento() {
+      const { data, error } = await client.rpc("list_available_appointment_slots", { p_offering_id: null });
+      if (error) throw falhouDados(error);
+      return Array.isArray(data) ? data : [];
+    },
+
     async solicitarAtendimento({ idempotencia, ofertaId, modalidade, dataPreferida, periodoPreferido }) {
       const { data, error } = await client.rpc("submit_authenticated_appointment_request", {
         p_idempotency_key: idempotencia,
@@ -353,6 +361,28 @@ export function criarDadosSupabase({ client } = {}) {
         throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");
       }
       return { id: data.id, status: "recebida" };
+    },
+
+    async solicitarHorarioAtendimento({ idempotencia, horarioId }) {
+      const { data, error } = await client.rpc("submit_appointment_slot_request", {
+        p_idempotency_key: idempotencia, p_slot_id: horarioId,
+      });
+      if (error) {
+        if (error.code === "PT409") throw new ErroDeConta("ATENDIMENTO_ALTERADO", error);
+        if (error.code === "42501") throw new ErroDeConta("ATENDIMENTO_SEM_PERMISSAO", error);
+        throw falhouDados(error);
+      }
+      if (!data || !UUID_DO_RECIBO.test(String(data.id || "")) || data.status !== "recebida") {
+        throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");
+      }
+      return { id: data.id, status: data.status };
+    },
+
+    async cancelarAtendimento(id) {
+      const { data, error } = await client.rpc("cancel_my_appointment_request", { p_request_id: id });
+      if (error) throw falhouDados(error);
+      if (data?.id !== id || data?.status !== "cancelada") throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");
+      return data;
     },
   };
 }

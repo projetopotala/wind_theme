@@ -2,6 +2,7 @@ import { APPOINTMENT_ADMIN_ENABLED, APPOINTMENT_RESERVATIONS_ENABLED } from "../
 import { getAdminAccess } from "./admin-auth.js";
 import { loadAppointmentRequests, updateAppointmentRequestStatus, STATES } from "./appointment-requests.js";
 import { confirmAppointmentReservation } from "./appointment-reservations.js";
+import { createAppointmentSlot } from "./appointment-slots.js";
 import { esc } from "./operations/comum.js";
 
 const LABELS = { recebida: "Recebida", em_contato: "Em contato", encerrada: "Encerrada", cancelada: "Cancelada" };
@@ -43,10 +44,19 @@ function reservationForm(row, operational = {}) {
 
 export function renderAppointmentPanel({ rows, phase, message, busy, drafts, operationalState = {}, reservationsEnabled = false }) {
   const controls = !["disabled", "forbidden"].includes(phase);
+  const offerings = (operationalState.activity_offerings || []).filter(item => item.active !== false);
+  const professionals = (operationalState.profiles || []).filter(item => item.active !== false && item.published === true && item.roles?.includes("professional"));
+  const rooms = (operationalState.rooms || []).filter(item => item.status === "available" && item.capacity);
+  const slotForm = controls && reservationsEnabled ? `<fieldset data-appointment-slot><legend>Novo horário público</legend>
+    <label>Oferta<select data-slot-offering required><option value="">Escolha</option>${offerings.map(item => option(item,"title")).join("")}</select></label>
+    <label>Profissional<select data-slot-professional required><option value="">Escolha</option>${professionals.map(item => option(item,"display_name")).join("")}</select></label>
+    <label>Sala presencial<select data-slot-room><option value="">Sem sala (online)</option>${rooms.map(item => option(item,"name")).join("")}</select></label>
+    <label>Início<input data-slot-start type="datetime-local" required></label><label>Fim<input data-slot-end type="datetime-local" required></label>
+    <button type="button" data-appointment-slot-create ${busy ? "disabled" : ""}>Disponibilizar horário</button></fieldset>` : "";
   return `<section class="op-card" style="min-width:0;overflow-wrap:anywhere" aria-label="Solicitações de atendimento" aria-busy="${busy}"><h3>Recebido pelo site — Atendimentos</h3>
     <p class="op-muted">Solicitações não são reservas. Nenhum horário é confirmado por esta triagem.</p>
     <p role="status" aria-live="polite" tabindex="-1" data-appointment-feedback>${esc(message)}</p>
-    ${controls ? `<button type="button" data-appointment-reload ${busy ? "disabled" : ""}>Recarregar solicitações</button>` : ""}
+    ${controls ? `<button type="button" data-appointment-reload ${busy ? "disabled" : ""}>Recarregar solicitações</button>${slotForm}` : ""}
     ${rows.map(row => `<article class="op-card" data-appointment-row="${esc(row.id)}"><h4>${esc(row.service)}</h4>
       <dl><dt>Solicitante</dt><dd>${esc(row.requester_name)}</dd><dt>Modalidade</dt><dd>${esc(row.modality === "online" ? "Online" : row.modality === "presencial" ? "Presencial" : row.modality)}</dd>
       <dt>Preferências (sem reserva)</dt><dd>${esc(String(row.preferred_date).split("-").reverse().join("/"))} · ${esc(PERIODS[row.preferred_period] || row.preferred_period)}</dd>
@@ -60,7 +70,7 @@ export function renderAppointmentPanel({ rows, phase, message, busy, drafts, ope
 // Defesa de interface e sessão; a autorização efetiva continua nas políticas RLS.
 export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADMIN_ENABLED, access = getAdminAccess,
   reservationsEnabled = APPOINTMENT_RESERVATIONS_ENABLED, getOperationalState = () => null,
-  confirmReservation = confirmAppointmentReservation, id = () => globalThis.crypto.randomUUID() } = {}) {
+  confirmReservation = confirmAppointmentReservation, createSlot = createAppointmentSlot, id = () => globalThis.crypto.randomUUID() } = {}) {
   let epoch = 0;
   const state = { rows: [], drafts: {}, phase: enabled === true ? "idle" : "disabled", busy: false,
     message: enabled === true ? "Carregue as solicitações de atendimento." : "Acompanhamento de atendimentos temporariamente indisponível. Aguardando homologação." };
@@ -148,7 +158,18 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     const reloadButton = event.target.closest?.("[data-appointment-reload]");
     const saveButton = event.target.closest?.("[data-appointment-save]");
     const confirmButton = event.target.closest?.("[data-appointment-confirm]");
+    const slotButton = event.target.closest?.("[data-appointment-slot-create]");
     if (reloadButton && root.contains(reloadButton)) return reload();
+    if (slotButton && root.contains(slotButton)) {
+      const form = slotButton.closest("[data-appointment-slot]");
+      return execute(async () => {
+        await createSlot(client, { offeringId: form.querySelector("[data-slot-offering]")?.value,
+          professionalProfileId: form.querySelector("[data-slot-professional]")?.value,
+          startsAt: form.querySelector("[data-slot-start]")?.value, endsAt: form.querySelector("[data-slot-end]")?.value,
+          roomId: form.querySelector("[data-slot-room]")?.value || "" });
+        state.message = "Horário disponibilizado para solicitação no Meu Potala.";
+      }, "Disponibilizando horário…");
+    }
     if (saveButton && root.contains(saveButton)) {
       const id = saveButton.dataset.appointmentSave;
       return save(id, state.drafts[id] || state.rows.find(row => row.id === id)?.status);

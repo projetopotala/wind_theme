@@ -98,6 +98,9 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.opcoesAtendimento()
       .then((lista) => ({ nome: "opcoesAtendimento", lista }))
       .catch((erro) => ({ nome: "opcoesAtendimento", lista: [], erro })));
+    if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.horariosAtendimento()
+      .then((lista) => ({ nome: "horariosAtendimento", lista }))
+      .catch((erro) => ({ nome: "horariosAtendimento", lista: [], erro })));
     /* "Para você" só recomenda texto do Blog confirmado no ar; sem confirmação, nenhum. */
     leituras.push(lerArtigosPublicados().then((lista) => ({ nome: "textosDoBlog", lista: lista || [] })));
     const promessa = Promise.all(leituras)
@@ -106,6 +109,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         dados = Object.fromEntries(respostas.map(({ nome, lista }) => [nome, lista]));
         dados.atendimentos ||= [];
         dados.opcoesAtendimento ||= [];
+        dados.horariosAtendimento ||= [];
         dados.falhas = respostas.filter((resposta) => resposta.erro).map((resposta) => resposta.nome);
         dono = usuarioId;
         return dados;
@@ -385,16 +389,8 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       evento.preventDefault();
       const campos = Object.fromEntries(new FormData(pedido));
       const aviso = pedido.querySelector("[data-form-status]");
-      if (!campos.ofertaId || !["presencial", "online"].includes(campos.modalidade)
-        || !/^\d{4}-\d{2}-\d{2}$/.test(campos.dataPreferida || "")
-        || !["manha", "tarde", "noite"].includes(campos.periodoPreferido)) {
-        aviso.textContent = "Escolha o serviço, a modalidade, a data e o período.";
-        return;
-      }
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-      if (new Date(`${campos.dataPreferida}T12:00:00`) < hoje) {
-        aviso.textContent = "Escolha uma data de hoje em diante.";
+      if (!campos.horarioId) {
+        aviso.textContent = "Escolha um horário disponível.";
         return;
       }
       if (!globalThis.crypto?.randomUUID) {
@@ -403,13 +399,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       }
       pedido.dataset.idempotencia ||= globalThis.crypto.randomUUID();
       agir(pedido.querySelector("[type='submit']"), async () => {
-        await sessao.solicitarAtendimento({
-          idempotencia: pedido.dataset.idempotencia,
-          ofertaId: campos.ofertaId,
-          modalidade: campos.modalidade,
-          dataPreferida: campos.dataPreferida,
-          periodoPreferido: campos.periodoPreferido,
-        });
+        await sessao.solicitarHorarioAtendimento({ idempotencia: pedido.dataset.idempotencia, horarioId: campos.horarioId });
         delete pedido.dataset.idempotencia;
         dados = null;
         dono = null;
