@@ -10,6 +10,7 @@ const blog = await ler("202609170002_blog_e_participacao.sql");
 const semente = await ler("202609170003_semente_do_blog.sql");
 const segundaLeva = await ler("202609180003_mais_textos_do_blog.sql");
 const senha = await ler("202609170004_senha_do_painel_fora_do_alcance_anonimo.sql");
+const participacaoIdempotente = await ler("202610290001_site_interest_idempotency.sql");
 const semComentarios = (sql) => sql.replace(/--.*$/gm, "");
 
 test("toda migração nova roda numa transação só", () => {
@@ -73,6 +74,21 @@ test("inscrição e interesses: o visitante envia e não lê o que outros enviar
   assert.match(sql, /grant insert \(kind, subject, details, page\) on table public\.site_interests to anon, authenticated;/);
   assert.match(sql, /on conflict \(\(lower\(email\)\)\) do nothing/, "repetir o e-mail não revela quem já está inscrito");
   assert.match(sql, /pg_column_size\(details\) <= 4000/);
+});
+
+test("a P4.1 torna os interesses idempotentes por RPC", () => {
+  const sql = semComentarios(participacaoIdempotente);
+  assert.match(sql, /^begin;$/m);
+  assert.match(sql, /^commit;\s*$/m);
+  assert.doesNotMatch(sql, /\bdrop\s+table\b|^\s*truncate\b/im);
+  assert.match(sql, /add column if not exists submission_key text/i);
+  assert.match(sql, /create unique index if not exists site_interests_submission_key_idx/i);
+  assert.match(sql, /create or replace function public\.submit_site_interest/i);
+  assert.match(sql, /on conflict \(submission_key\)[\s\S]*do nothing/i);
+  assert.match(sql, /existente\.details is distinct from p_details/i, "a mesma chave não pode confirmar um payload diferente");
+  assert.match(sql, /revoke insert on table public\.site_interests from anon, authenticated/i);
+  assert.match(sql, /revoke insert \(kind, subject, details, page\)[\s\S]*from anon, authenticated/i);
+  assert.match(sql, /grant execute on function public\.submit_site_interest[\s\S]*to anon, authenticated/i);
 });
 
 test("as sementes do Blog são o acervo empacotado e nunca sobrescrevem edição", () => {

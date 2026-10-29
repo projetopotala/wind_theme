@@ -31,11 +31,13 @@ if (feedback) {
   const status = feedback.querySelector("[data-feedback-status]");
   const buttons = [...feedback.querySelectorAll("[data-feedback]")];
   let sent = false;
+  let sending = false;
   const labels = { yes: "Sim, encontrei", partial: "Em parte", no: "Ainda não" };
 
   buttons.forEach((button) => {
     button.addEventListener("click", async () => {
-      if (sent) return;
+      if (sent || sending) return;
+      sending = true;
       buttons.forEach((item) => item.classList.toggle("is-selected", item === button));
       buttons.forEach((item) => { item.disabled = true; });
       status.textContent = "Enviando…";
@@ -50,6 +52,8 @@ if (feedback) {
       } catch (error) {
         buttons.forEach((item) => { item.disabled = false; item.classList.remove("is-selected"); });
         status.textContent = `Não foi possível enviar agora: ${error.message}`;
+      } finally {
+        sending = false;
       }
     });
   });
