@@ -111,5 +111,10 @@ export function sementeDeDemonstracao({ usuarioId, agora = new Date() } = {}) {
     criarNotificacao({ id: "demo-aviso-inscricao", usuarioId, tipo: "inscricao_confirmada", titulo: "Inscrição confirmada em Desenho de observação", corpo: "Avisaremos quando a turma estiver formada.", href: "/meu-potala/cursos", criadaEm: ha(72), lidaEm: ha(70) }),
   ];
 
-  return { inscricoes, progressos, agenda, atendimentos, salvos, historico, acompanhando, notificacoes, preferencias: [] };
+  return {
+    inscricoes, progressos, agenda, atendimentos, salvos, historico, acompanhando, notificacoes, preferencias: [],
+    enderecos: [],
+    privacidade: [{ usuarioId, historicoAtivo: true, personalizacaoAtiva: true, analytics: false, comunicacoesComerciais: false, atualizadoEm: agora }],
+    atividadesDaConta: [],
+  };
 }

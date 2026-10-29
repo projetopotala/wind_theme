@@ -1,11 +1,24 @@
-# Marco 2 — rastreabilidade do Portal
+# Marco 2 — matriz de rastreabilidade do Portal
 
-| ID | Item contratual | Módulo | Implementação | Evidência prevista | Estado |
-|---|---|---|---|---|---|
-| T-01 | Autenticação real e Meu Potala | Conta | Branch `feat/m2-t01-auth-meu-potala`, commit `94ef2918` | 19 cenários integrados; e-mail pendente por 429 | BLOCKED parcial |
-| M2-B-01 | Cadastro e publicação de profissionais | Central Operacional | `op_records.profiles`, `op_apply`, formulário administrativo ampliado | JWT administrativo real; cadastro, edição, publicação e desativação no laboratório | PASS API/banco |
-| M2-B-02 | Serviços, valores e modalidades | Ofertas operacionais | `activity_offerings` ligado por `professional_id`; projeção pública mínima | Serviço e valor persistidos e consultados sem contato privado | PASS API/banco |
-| M2-B-03 | Disponibilidade e agenda | Agenda operacional | `schedule_items` e `professional_id`; disponibilidade pública no perfil | Disponibilidade persistida e vínculo preservado; conflitos cobertos por regressão | PASS API/banco |
-| M2-B-04 | Busca pública de profissionais | Especialistas | RPC pública segura, busca e filtros | Projeção pública e filtros automatizados PASS; Preview exclusiva do laboratório indisponível | BLOCKED visual |
+| ID | Item | Módulo | Implementação | Evidência integrada | Cenário E2E | Estado | Dependência / próxima ação |
+|---|---|---|---|---|---|---|---|
+| T-01.1 | Cadastro e confirmação | Auth | Supabase Auth; perfil criado por trigger | Laboratório `hmspabllgxqfzzricijv` | Cadastro público atingiu limite de e-mail; duas identidades foram confirmadas pela API oficial | BLOCKED | Repetir cadastro e entrega do link após a janela de rate limit ou configurar SMTP de testes |
+| T-01.2 | Login, sessão e logout | Auth | JWT, renovação e `onAuthStateChange` | Login e refresh token reais | Dois usuários sintéticos autenticados separadamente | PASS | Homologar logout visual na futura Preview isolada |
+| T-01.3 | Recuperação e nova senha | Auth | `resetPasswordForEmail` e `updateUser` | Endpoint real retornou limite de e-mail | Fluxo externo de entrega não concluído | BLOCKED | SMTP/endereço de teste autorizado |
+| T-01.4 | Perfil pessoal | Meu Potala | Perfil editável, interesses e cidade | PATCH PostgREST com JWT | Usuário A alterou e releu o próprio perfil | PASS | — |
+| T-01.5 | Endereços | Meu Potala | `user_addresses`, formulário e RLS por usuário | INSERT real com JWT | Endereço sintético persistido; escrita cruzada recusada | PASS | Preview isolada para validação visual |
+| T-01.6 | Favoritos e histórico | Meu Potala | `saved_items`/`history_items` com RLS | Favorito sintético persistido | Usuário B não leu favorito de A | PASS | — |
+| T-01.7 | Privacidade | Meu Potala | `privacy_preferences` e formulário | UPSERT real com JWT | Escolhas persistidas e isoladas | PASS | Conectar consentimento aos scripts opcionais na Frente F/G |
+| T-01.8 | Histórico de ações | Meu Potala | `account_activity` somente leitura; triggers `SECURITY DEFINER` | Ações de perfil/endereço/privacidade registradas | INSERT forjado pelo usuário recusado | PASS | Ampliar eventos quando inscrições/agendamentos forem implementados |
+| T-01.9 | Isolamento entre usuários | Segurança | RLS baseada em `auth.uid()` | Consultas e escrita cruzadas reais | A não leu perfil de B; B não leu salvo de A; A não gravou endereço de B | PASS | — |
+| T-01.10 | Permissões administrativas | Segurança | `public.users` e P3.18 preservados | Usuário comum obteve zero linhas administrativas | Conta pessoal não ganhou papel administrativo | PASS | — |
+| M2-B-01 | Cadastro e publicação de profissionais | Central Operacional | `op_records.profiles`, `op_apply`, formulário administrativo ampliado | JWT administrativo real; cadastro, edição, publicação e desativação no laboratório | Ciclo API/banco completo | PASS | Preview isolada para validação visual |
+| M2-B-02 | Serviços, valores e modalidades | Ofertas operacionais | `activity_offerings` ligado por `professional_id`; projeção pública mínima | Serviço e valor persistidos e consultados sem contato privado | Ciclo API/banco completo | PASS | — |
+| M2-B-03 | Disponibilidade e agenda | Agenda operacional | `schedule_items` e `professional_id`; disponibilidade pública no perfil | Disponibilidade persistida e vínculo preservado; conflitos cobertos por regressão | Ciclo API/banco completo | PASS | — |
+| M2-B-04 | Busca pública de profissionais | Especialistas | RPC pública segura, busca e filtros | Projeção pública e filtros automatizados PASS | Preview exclusiva do laboratório indisponível | BLOCKED | Configuração pública de Preview/local exclusivamente para o laboratório |
+| M2-C-01 | Solicitação autenticada de atendimento | Agendamentos | Em implementação sobre `appointment_requests` e ofertas da Frente B | Testes locais e integrados pendentes | Cliente → serviço → horário → solicitação | NOT TESTED | Migration e homologação da Frente C |
+| M2-C-02 | Reserva, decisão administrativa e histórico | Agendamentos | Em implementação sobre `schedule_items`, RPCs e auditoria existentes | Testes locais e integrados pendentes | Administração confirma/rejeita; cliente acompanha | NOT TESTED | Migration e homologação da Frente C |
+| M2-C-03 | Concorrência e idempotência | Segurança de agenda | Em implementação no banco, não apenas no frontend | Teste concorrente real pendente | Duas solicitações para o mesmo horário | NOT TESTED | Migration e runner de laboratório |
+| T-09–T-14 | Demais requisitos do Marco 2 | Frentes D–H | Em execução nas branches isoladas | — | — | NOT TESTED | Integrar localmente e revalidar por frente |
 
-As frentes P4.1 e T-01 permanecem em branches independentes. Esta matriz não presume integração entre branches antes de revalidação conjunta.
+Os testes comerciais T-02 a T-08 pertencem ao Marketplace e não são declarados por este repositório.
