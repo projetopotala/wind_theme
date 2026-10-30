@@ -180,7 +180,7 @@ test("guarda transacional exige que schedule_items corresponda ao slot vinculado
 });
 
 test("migration vincula somente identidade autenticada confirmada e preserva o núcleo transacional", () => {
-  const sql = readFileSync(new URL("../../supabase/migrations/20261030072001_appointment_authenticated_client_link.sql", import.meta.url), "utf8");
+  const sql = readFileSync(new URL("../../supabase/migrations/20261030082641_appointment_authenticated_client_link.sql", import.meta.url), "utf8");
   assert.match(sql, /rename to confirm_appointment_request_reservation_core/i);
   assert.match(sql, /if actor_id is null or not public\.is_portal_admin\(\)/i);
   assert.match(sql, /usuario\.email_confirmed_at/i);
