@@ -9,7 +9,7 @@ function isoLocal(value) {
 
 export async function confirmAppointmentReservation(client, {
   requestId, expectedUpdatedAt, idempotencyKey, startsAt, endsAt, roomId = "", notes = "",
-  offeringId = "", professionalProfileId = "", clientProfileId = "",
+  offeringId = "", professionalProfileId = "", clientProfileId = "", slotStartsAt = "", slotEndsAt = "",
 } = {}) {
   if (!UUID.test(requestId || "") || !expectedUpdatedAt || !UUID.test(idempotencyKey || "")) {
     throw new Error("Recarregue a solicitação antes de confirmar.");
@@ -17,6 +17,9 @@ export async function confirmAppointmentReservation(client, {
   const start = isoLocal(startsAt);
   const end = isoLocal(endsAt);
   if (Date.parse(end) <= Date.parse(start)) throw new Error("O término deve ser posterior ao início.");
+  if ((slotStartsAt || slotEndsAt) && (startsAt !== slotStartsAt || endsAt !== slotEndsAt)) {
+    throw new Error("O horário deve corresponder exatamente ao slot solicitado.");
+  }
   const { data, error } = await client.rpc("confirm_appointment_request_reservation", {
     p_request_id: requestId,
     p_expected_updated_at: expectedUpdatedAt,
