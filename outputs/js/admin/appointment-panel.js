@@ -102,6 +102,28 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     Object.assign(state, { rows: [], drafts: {}, reservationKeys: {}, busy: false, phase: enabled === true ? "forbidden" : "disabled", message: enabled === true ? "Acesso administrativo necessário." : "Acompanhamento de atendimentos temporariamente indisponível. Aguardando homologação." });
     render();
   }
+  /*
+   * Cada falha pede uma acao diferente de quem opera: recarregar, revisar o
+   * cadastro, entrar de novo ou escolher outro horario. Mandar "recarregue"
+   * para tudo faz o administrador repetir uma tentativa que vai falhar igual.
+   * Nada vindo do banco e repassado: so estas frases aparecem na tela.
+   */
+  const MENSAGENS_DE_FALHA = Object.freeze({
+    APPOINTMENT_CONFLICT: "A solicitação mudou ou não está acessível. Recarregue e revise antes de salvar novamente.",
+    APPOINTMENT_CLIENT_LINK: "O solicitante ainda não possui um vínculo operacional válido. Revise o cadastro da pessoa antes de confirmar.",
+    APPOINTMENT_FORBIDDEN: "Seu acesso não permite confirmar reservas.",
+    APPOINTMENT_SESSION: "Sua sessão expirou. Entre novamente para continuar.",
+    APPOINTMENT_MISSING: "Esta solicitação não está mais acessível. Recarregue a lista.",
+    APPOINTMENT_UNAVAILABLE: "A sala escolhida não está disponível neste horário. Escolha outra sala ou horário.",
+    APPOINTMENT_LINK_LOCKED: "O vínculo desta reserva não pode ser alterado.",
+    APPOINTMENT_NOT_READY: "A operação do Instituto ainda não está inicializada.",
+    APPOINTMENT_INVALID: "Revise os dados da reserva: algum campo não confere com a solicitação.",
+  });
+  /* Qualquer falha descarta as linhas em memoria, entao o fallback precisa
+     mandar recarregar: sem isso o painel fica vazio sem dizer o que fazer. */
+  const mensagemDaFalha = (error) => MENSAGENS_DE_FALHA[error?.code]
+    || "Não foi possível concluir a operação. Recarregue as solicitações antes de tentar novamente.";
+
   async function execute(work, pending) {
     if (enabled !== true || state.busy) return;
     const ticket = ++epoch;
@@ -117,9 +139,7 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
       if (accessDenied(error)) { clear(); return; }
       // Não expor corpos HTTP/SQL nem conservar dados possivelmente obsoletos.
       state.rows = []; state.drafts = {}; state.phase = "error";
-      state.message = error.code === "APPOINTMENT_CONFLICT"
-        ? "A solicitação mudou ou não está acessível. Recarregue e revise antes de salvar novamente."
-        : "Não foi possível confirmar a operação. Recarregue as solicitações antes de tentar novamente.";
+      state.message = mensagemDaFalha(error);
     } finally {
       if (ticket === epoch) { state.busy = false; render(true); }
     }

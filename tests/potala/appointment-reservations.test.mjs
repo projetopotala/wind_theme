@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { confirmAppointmentReservation } from "../../outputs/js/admin/appointment-reservations.js";
+import { confirmAppointmentReservation, traduzirErroDaConfirmacao } from "../../outputs/js/admin/appointment-reservations.js";
 import { createAppointmentPanel, renderAppointmentPanel, suggestedTime } from "../../outputs/js/admin/appointment-panel.js";
 
 const requestId = "10000000-0000-4000-8000-000000000001";
@@ -63,6 +63,18 @@ test("conflito mantém semântica de recarga e resposta inconsistente não confi
   }), /não foi confirmada/);
 });
 
+test("erro de vínculo do cliente é distinguido sem expor detalhes do banco", async () => {
+  const client = { rpc: async () => ({ data: null, error: {
+    code: "PT422", message: "e-mail privado e detalhes internos",
+  } }) };
+  await assert.rejects(confirmAppointmentReservation(client, {
+    requestId, expectedUpdatedAt: updatedAt, idempotencyKey: key,
+    startsAt: "2026-11-10T14:00", endsAt: "2026-11-10T15:00",
+  }), error => error.code === "APPOINTMENT_CLIENT_LINK"
+    && /cadastro operacional/.test(error.message)
+    && !/e-mail privado|detalhes internos/.test(error.message));
+});
+
 test("painel exige seleção explícita para pedido público e confirmação explícita", () => {
   const operationalState = { rooms: [{ id: "r1", name: "Sala 1", status: "available", capacity: 2 }], activity_offerings: [{ id: "o1", title: "Reiki", active: true }], profiles: [{ id: "p1", display_name: "Profissional", roles: ["professional"], active: true }, { id: "c1", display_name: "Cliente", roles: ["client"], active: true }] };
   const base = { phase: "ready", message: "", busy: false, drafts: {}, operationalState, reservationsEnabled: true };
@@ -105,6 +117,16 @@ test("painel autoriza antes da RPC e preserva a chave numa tentativa repetida", 
   await forbidden.reload();
   await forbidden.confirm(requestId, { start: "2026-11-10T14:00", end: "2026-11-10T15:00" });
   assert.equal(unauthorizedCalls, 0);
+
+  const linkFailure = createAppointmentPanel({
+    root, client, enabled: true, reservationsEnabled: true,
+    access: async () => ({ state: "authorized" }),
+    confirmReservation: async () => { throw Object.assign(new Error("detalhe privado"), { code: "APPOINTMENT_CLIENT_LINK" }); },
+  });
+  await linkFailure.reload();
+  await linkFailure.confirm(requestId, { start: "2026-11-10T14:00", end: "2026-11-10T15:00" });
+  assert.match(target.innerHTML, /vínculo operacional válido/);
+  assert.doesNotMatch(target.innerHTML, /detalhe privado|agenda mudou/);
 });
 
 test("flag de reservas permanece fechada mesmo com a triagem administrativa disponível", async () => {
@@ -157,10 +179,88 @@ test("guarda transacional exige que schedule_items corresponda ao slot vinculado
   assert.doesNotMatch(sql, /service_role|disable row level security|grant execute/i);
 });
 
+test("migration vincula somente identidade autenticada confirmada e preserva o núcleo transacional", () => {
+  const sql = readFileSync(new URL("../../supabase/migrations/20261030072001_appointment_authenticated_client_link.sql", import.meta.url), "utf8");
+  assert.match(sql, /rename to confirm_appointment_request_reservation_core/i);
+  assert.match(sql, /if actor_id is null or not public\.is_portal_admin\(\)/i);
+  assert.match(sql, /usuario\.email_confirmed_at/i);
+  assert.match(sql, /request\.contact_type is distinct from 'email'[\s\S]*request\.contact[\s\S]*auth_email/i);
+  assert.match(sql, /pg_advisory_xact_lock[\s\S]*appointment-client-email:/i);
+  assert.match(sql, /from public\.appointment_profile_accounts[\s\S]*user_id = request\.requester_user_id/i);
+  assert.match(sql, /profile_matches > 1[\s\S]*cadastros operacionais duplicados/i);
+  assert.match(sql, /profile_matches = 1[\s\S]*roles'[\s\S]*client/i);
+  assert.match(sql, /profile_id := request\.requester_user_id::text[\s\S]*insert into public\.op_records[\s\S]*'profiles'/i);
+  assert.match(sql, /insert into public\.appointment_profile_accounts \(user_id, profile_id, active\)/i);
+  assert.match(sql, /unique_violation[\s\S]*vinculado a outra conta/i);
+  assert.match(sql, /request\.requester_user_id is null[\s\S]*confirm_appointment_request_reservation_core/i);
+  assert.match(sql, /jsonb_set\(p_schedule, '\{client_profile_id\}', to_jsonb\(profile_id\), true\)/i);
+  assert.match(sql, /revoke all on function public\.confirm_appointment_request_reservation_core[\s\S]*public, anon, authenticated/i);
+  assert.match(sql, /grant execute on function public\.confirm_appointment_request_reservation[\s\S]*to authenticated/i);
+  assert.doesNotMatch(sql, /disable row level security|service_role|raw_user_meta_data/i);
+});
+
 test("projeção administrativa vincula o slot protegido pela RLS sem depender da coluna não concedida", () => {
   const source = readFileSync(new URL("../../outputs/js/admin/appointment-requests.js", import.meta.url), "utf8");
   assert.doesNotMatch(source, /const FIELDS = [^\n]*appointment_slot_id/);
   assert.match(source, /from\("appointment_slots"\)\.select\(SLOT_FIELDS\)/);
   assert.match(source, /slotByRequest\.get\(row\.id\)/);
   assert.match(source, /appointment_slot_id: appointment_slot\?\.id \|\| null/);
+});
+
+/* ETAPA D: cada SQLSTATE pede uma acao diferente de quem opera. Um 22023 e
+   validacao de dados, nao concorrencia: traduzi-lo como "recarregue" faria o
+   administrador repetir uma tentativa que falharia pelo mesmo motivo. */
+test("cada SQLSTATE vira uma orientacao propria, sem vazar a mensagem do banco", () => {
+  const sigiloso = "coluna op_records.document detalhe interno do servidor";
+  const esperado = [
+    ["PT409", "APPOINTMENT_CONFLICT", /Recarregue antes de confirmar/],
+    ["PT422", "APPOINTMENT_CLIENT_LINK", /cadastro operacional/],
+    ["42501", "APPOINTMENT_FORBIDDEN", /não permite confirmar/],
+    ["P0002", "APPOINTMENT_MISSING", /não está mais acessível/],
+    ["23514", "APPOINTMENT_UNAVAILABLE", /não está disponível/],
+    ["23503", "APPOINTMENT_LINK_LOCKED", /não pode ser alterado/],
+    ["55000", "APPOINTMENT_NOT_READY", /não está inicializada/],
+    ["22023", "APPOINTMENT_INVALID", /Revise os dados/],
+    ["PGRST301", "APPOINTMENT_SESSION", /sessão expirou/],
+    ["XX000", "APPOINTMENT_FAILED", /Tente novamente/],
+  ];
+  for (const [sqlstate, codigo, frase] of esperado) {
+    const erro = traduzirErroDaConfirmacao({ code: sqlstate, message: sigiloso });
+    assert.equal(erro.code, codigo, `SQLSTATE ${sqlstate}`);
+    assert.match(erro.message, frase);
+    assert.doesNotMatch(erro.message, /op_records|interno do servidor|SQLSTATE/i);
+  }
+});
+
+test("22023 nao e tratado como concorrencia e 401 vira sessao expirada", () => {
+  const validacao = traduzirErroDaConfirmacao({ code: "22023", message: "x" });
+  assert.equal(validacao.code, "APPOINTMENT_INVALID");
+  assert.doesNotMatch(validacao.message, /Recarregue|mudou/i);
+  assert.equal(traduzirErroDaConfirmacao({ status: 401 }).code, "APPOINTMENT_SESSION");
+  assert.equal(traduzirErroDaConfirmacao({}).code, "APPOINTMENT_FAILED");
+  assert.equal(traduzirErroDaConfirmacao(null).code, "APPOINTMENT_FAILED");
+});
+
+test("o painel mostra uma orientacao distinta por tipo de falha", async () => {
+  const casos = [
+    ["APPOINTMENT_FORBIDDEN", /não permite confirmar/],
+    ["APPOINTMENT_SESSION", /sessão expirou/],
+    ["APPOINTMENT_UNAVAILABLE", /não está disponível/],
+    ["APPOINTMENT_INVALID", /Revise os dados/],
+  ];
+  const row = { id: requestId, service: "Reiki", modality: "online", requester_name: "Pessoa", contact_type: "email", contact: "x@example.invalid", preferred_date: "2026-11-10", preferred_period: "tarde", status: "recebida", offering_id: "o1", professional_profile_id: "p1", created_at: updatedAt, updated_at: updatedAt };
+  for (const [codigo, frase] of casos) {
+    const target = { innerHTML: "", querySelector: () => ({ focus() {} }) };
+    const root = { querySelector: () => target, addEventListener() {}, removeEventListener() {} };
+    const client = { from() { const query = { select() { return query; }, order() { return query; }, limit: async () => ({ data: [row], error: null }) }; return query; } };
+    const painel = createAppointmentPanel({
+      root, client, enabled: true, reservationsEnabled: true,
+      access: async () => ({ state: "authorized" }),
+      confirmReservation: async () => { throw Object.assign(new Error("detalhe privado do banco"), { code: codigo }); },
+    });
+    await painel.reload();
+    await painel.confirm(requestId, { start: "2026-11-10T14:00", end: "2026-11-10T15:00" });
+    assert.match(target.innerHTML, frase, codigo);
+    assert.doesNotMatch(target.innerHTML, /detalhe privado do banco/);
+  }
 });
