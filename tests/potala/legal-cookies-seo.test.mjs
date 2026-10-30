@@ -72,3 +72,8 @@ test("CSS preserva 320px sem esconder overflow global", async () => {
   assert.doesNotMatch(css, /html\s*,\s*body[^}]*overflow-x\s*:\s*hidden/s);
   assert.match(css, /prefers-reduced-motion/);
 });
+
+test("diálogo devolve foco para um controle que permanece visível", async () => {
+  const source = await read("js/shared/privacy-consent.js");
+  assert.match(source, /saved && banner\.hidden \? manageButton : dialogOpener/);
+});

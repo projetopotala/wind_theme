@@ -61,6 +61,7 @@ export function mountConsent(documentRef = document) {
   const banner = documentRef.querySelector("[data-potala-consent]");
   const dialog = documentRef.querySelector("[data-consent-settings]");
   const analytics = dialog.querySelector("[name=analytics]");
+  const manageButton = documentRef.querySelector("[data-consent-manage]");
   let dialogOpener = null;
   const current = readConsent();
   banner.hidden = current !== null;
@@ -79,8 +80,9 @@ export function mountConsent(documentRef = document) {
     openSettings(button);
   }));
   dialog.addEventListener("close", () => {
-    if (dialog.returnValue === "save") decide(analytics.checked);
-    dialogOpener?.focus?.();
+    const saved = dialog.returnValue === "save";
+    if (saved) decide(analytics.checked);
+    (saved && banner.hidden ? manageButton : dialogOpener)?.focus?.();
     dialogOpener = null;
   });
 }
