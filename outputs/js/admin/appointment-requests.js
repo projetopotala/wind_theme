@@ -1,12 +1,22 @@
 // Usar somente o cliente da sessão administrativa; autorização final é a RLS.
-const FIELDS = "id,service,modality,requester_name,contact_type,contact,preferred_date,preferred_period,status,offering_id,professional_profile_id,appointment_slot_id,reservation_schedule_id,reservation_confirmed_at,created_at,updated_at,appointment_slot:appointment_slots!appointment_requests_appointment_slot_id_fkey(id,starts_at,ends_at,status,held_by_request_id)";
+const FIELDS = "id,service,modality,requester_name,contact_type,contact,preferred_date,preferred_period,status,offering_id,professional_profile_id,reservation_schedule_id,reservation_confirmed_at,created_at,updated_at";
+const SLOT_FIELDS = "id,starts_at,ends_at,status,held_by_request_id";
 export const STATES = ["recebida", "em_contato", "encerrada", "cancelada"];
 
 export async function loadAppointmentRequests(client) {
   const { data, error } = await client.from("appointment_requests").select(FIELDS)
     .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(100);
   if (error) throw error;
-  return data || [];
+  const rows = data || [];
+  if (!rows.length) return rows;
+  const { data: slots, error: slotsError } = await client.from("appointment_slots").select(SLOT_FIELDS).limit(500);
+  if (slotsError) throw slotsError;
+  const slotByRequest = new Map((slots || []).filter(slot => slot.held_by_request_id)
+    .map(slot => [slot.held_by_request_id, slot]));
+  return rows.map(row => {
+    const appointment_slot = slotByRequest.get(row.id) || null;
+    return { ...row, appointment_slot_id: appointment_slot?.id || null, appointment_slot };
+  });
 }
 
 export async function updateAppointmentRequestStatus(client, id, status, updatedAt) {
