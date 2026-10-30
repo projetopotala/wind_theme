@@ -163,3 +163,10 @@ test("migration prepara RLS administrativa e revisão updated_at (inspeção est
   assert.match(sql, /create trigger appointment_requests_touch before update on public\.appointment_requests/);
   assert.doesNotMatch(sql, /grant (select|update|delete) [^;]+ to anon/i);
 });
+
+test("migration completa somente a leitura da coluna de slot sem alterar RLS", () => {
+  const sql = readFileSync(new URL("../../supabase/migrations/202610300001_appointment_admin_slot_column_access.sql", import.meta.url), "utf8");
+  assert.match(sql, /grant select \(appointment_slot_id\)[\s\S]*on public\.appointment_requests to authenticated/i);
+  assert.match(sql, /has_column_privilege\([\s\S]*'authenticated'[\s\S]*'public\.appointment_requests'[\s\S]*'appointment_slot_id'[\s\S]*'SELECT'/i);
+  assert.doesNotMatch(sql, /disable row level security|grant all|to anon|service_role|insert into|update public|delete from/i);
+});
