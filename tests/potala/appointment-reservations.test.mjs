@@ -157,8 +157,10 @@ test("guarda transacional exige que schedule_items corresponda ao slot vinculado
   assert.doesNotMatch(sql, /service_role|disable row level security|grant execute/i);
 });
 
-test("projeção administrativa inclui o slot protegido pela RLS", () => {
+test("projeção administrativa vincula o slot protegido pela RLS sem depender da coluna não concedida", () => {
   const source = readFileSync(new URL("../../outputs/js/admin/appointment-requests.js", import.meta.url), "utf8");
-  assert.match(source, /appointment_slot_id/);
-  assert.match(source, /appointment_slot:appointment_slots!appointment_requests_appointment_slot_id_fkey\(id,starts_at,ends_at,status,held_by_request_id\)/);
+  assert.doesNotMatch(source, /const FIELDS = [^\n]*appointment_slot_id/);
+  assert.match(source, /from\("appointment_slots"\)\.select\(SLOT_FIELDS\)/);
+  assert.match(source, /slotByRequest\.get\(row\.id\)/);
+  assert.match(source, /appointment_slot_id: appointment_slot\?\.id \|\| null/);
 });
