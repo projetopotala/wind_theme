@@ -26,6 +26,13 @@ test("consentimento começa ausente, persiste recusa e permite revisão", () => 
   assert.equal(analyticsAllowed(storage), true);
 });
 
+test("consentimento permanece seguro quando localStorage não está disponível", () => {
+  const unavailable = { getItem:() => { throw new Error("storage blocked"); }, setItem:() => { throw new Error("storage blocked"); } };
+  const denied = saveConsent({ analytics:false }, unavailable, () => "2026-10-30T12:02:00.000Z");
+  assert.equal(denied.analytics, false);
+  assert.equal(analyticsAllowed(unavailable), false);
+});
+
 test("analytics não carrega sem consentimento ou configuração aprovada", () => {
   const appended = [];
   const documentRef = { createElement: () => ({ dataset:{} }), head:{ append: node => appended.push(node) } };

@@ -1,16 +1,18 @@
 const STORAGE_KEY = "potala:privacy-consent:v1";
 const VERSION = 1;
+let volatileConsent = null;
 
 export function readConsent(storage = globalThis.localStorage) {
   try {
     const value = JSON.parse(storage?.getItem(STORAGE_KEY) || "null");
-    return value?.version === VERSION && typeof value.analytics === "boolean" ? value : null;
-  } catch { return null; }
+    return value?.version === VERSION && typeof value.analytics === "boolean" ? value : volatileConsent;
+  } catch { return volatileConsent; }
 }
 
 export function saveConsent({ analytics }, storage = globalThis.localStorage, now = () => new Date().toISOString()) {
   const value = { version: VERSION, essential: true, analytics: analytics === true, decidedAt: now() };
-  storage?.setItem(STORAGE_KEY, JSON.stringify(value));
+  try { storage?.setItem(STORAGE_KEY, JSON.stringify(value)); }
+  catch { volatileConsent = value; }
   globalThis.dispatchEvent?.(new CustomEvent("potala:consentchange", { detail: value }));
   return value;
 }
@@ -59,6 +61,7 @@ export function mountConsent(documentRef = document) {
   const banner = documentRef.querySelector("[data-potala-consent]");
   const dialog = documentRef.querySelector("[data-consent-settings]");
   const analytics = dialog.querySelector("[name=analytics]");
+  let dialogOpener = null;
   const current = readConsent();
   banner.hidden = current !== null;
   analytics.checked = current?.analytics === true;
@@ -66,12 +69,20 @@ export function mountConsent(documentRef = document) {
   const decide = allowed => { saveConsent({ analytics: allowed }); banner.hidden = true; };
   banner.querySelector("[data-consent-reject]").addEventListener("click", () => decide(false));
   banner.querySelector("[data-consent-accept]").addEventListener("click", () => decide(true));
-  banner.querySelector("[data-consent-customize]").addEventListener("click", () => dialog.showModal());
-  documentRef.querySelectorAll("[data-consent-manage],[data-consent-manage-inline]").forEach(button => button.addEventListener("click", () => {
+  const openSettings = opener => {
+    dialogOpener = opener;
     analytics.checked = readConsent()?.analytics === true;
     dialog.showModal();
+  };
+  banner.querySelector("[data-consent-customize]").addEventListener("click", event => openSettings(event.currentTarget));
+  documentRef.querySelectorAll("[data-consent-manage],[data-consent-manage-inline]").forEach(button => button.addEventListener("click", () => {
+    openSettings(button);
   }));
-  dialog.addEventListener("close", () => { if (dialog.returnValue === "save") decide(analytics.checked); });
+  dialog.addEventListener("close", () => {
+    if (dialog.returnValue === "save") decide(analytics.checked);
+    dialogOpener?.focus?.();
+    dialogOpener = null;
+  });
 }
 
 if (typeof document !== "undefined") mountConsent(document);
