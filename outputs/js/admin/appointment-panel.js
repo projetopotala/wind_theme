@@ -10,13 +10,30 @@ const LABELS = { recebida: "Recebida", em_contato: "Em contato", encerrada: "Enc
 const PERIODS = { manha: "Manhã", tarde: "Tarde", noite: "Noite" };
 const accessDenied = error => [error?.code, error?.status].some(value => ["401", "403", "42501", "PGRST301"].includes(String(value)));
 
-function suggestedTime(row) {
+const SAO_PAULO = new Intl.DateTimeFormat("sv-SE", {
+  timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+});
+
+function localDateTime(value) {
+  const instant = new Date(value);
+  if (!Number.isFinite(instant.valueOf())) return "";
+  const parts = Object.fromEntries(SAO_PAULO.formatToParts(instant).map(part => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+export function suggestedTime(row) {
+  const slot = row.appointment_slot;
+  if (row.appointment_slot_id && slot?.id === row.appointment_slot_id && slot.held_by_request_id === row.id) {
+    const start = localDateTime(slot.starts_at);
+    const end = localDateTime(slot.ends_at);
+    if (start && end) return { start, end, fromSlot: true };
+  }
   const hour = { manha: "09:00", tarde: "14:00", noite: "18:00" }[row.preferred_period] || "09:00";
   const start = `${row.preferred_date}T${hour}`;
   const end = new Date(`${start}:00-03:00`);
   end.setHours(end.getHours() + 1);
   const localEnd = new Date(end.valueOf() - 3 * 3600000).toISOString().slice(0, 16);
-  return { start, end: localEnd };
+  return { start, end: localEnd, fromSlot: false };
 }
 
 const option = (item, label, selected = false) => `<option value="${esc(item.id)}" ${selected ? "selected" : ""}>${esc(item[label] || item.title || item.display_name || item.name || item.id)}</option>`;
@@ -35,8 +52,8 @@ function reservationForm(row, operational = {}) {
     <label>Oferta<select data-reservation-offering required><option value="">Escolha a oferta</option>${offerings.map(item => option(item, "title", item.id === row.offering_id)).join("")}</select></label>
     <label>Profissional<select data-reservation-professional required><option value="">Escolha o profissional</option>${professionals.map(item => option(item, "display_name", item.id === row.professional_profile_id)).join("")}</select></label>
     <label>Cliente operacional<select data-reservation-client required><option value="">Escolha o cliente</option>${clients.map(item => option(item, "display_name")).join("")}</select></label>` : ""}
-    <label>Início<input data-reservation-start type="datetime-local" value="${esc(time.start)}" required></label>
-    <label>Fim<input data-reservation-end type="datetime-local" value="${esc(time.end)}" required></label>${room}
+    <label>Início<input data-reservation-start type="datetime-local" value="${esc(time.start)}" ${time.fromSlot ? "readonly" : ""} required></label>
+    <label>Fim<input data-reservation-end type="datetime-local" value="${esc(time.end)}" ${time.fromSlot ? "readonly" : ""} required></label>${room}
     <label class="appointment-reservation-wide">Observações<textarea data-reservation-notes maxlength="1000"></textarea></label>
     <label class="appointment-reservation-wide"><input data-reservation-confirm type="checkbox" required> Revisei horário, profissional, modalidade${row.modality === "presencial" ? " e sala" : ""} e confirmo esta reserva.</label>
     <button type="button" data-appointment-confirm="${esc(row.id)}">Confirmar reserva</button>
@@ -132,6 +149,12 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     if (!reservationsEnabled) return;
     const row = state.rows.find(item => item.id === id);
     if (!row || row.reservation_schedule_id) return;
+    const expectedTime = suggestedTime(row);
+    if (row.appointment_slot_id && (!expectedTime.fromSlot || fields.start !== expectedTime.start || fields.end !== expectedTime.end)) {
+      state.message = "O horário deve corresponder exatamente ao slot solicitado. Recarregue antes de confirmar.";
+      render(true);
+      return;
+    }
     state.reservationKeys ||= {};
     state.reservationKeys[id] ||= idFactory();
     return execute(async ticket => {
@@ -146,6 +169,8 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
         offeringId: fields.offering,
         professionalProfileId: fields.professional,
         clientProfileId: fields.client,
+        slotStartsAt: expectedTime.fromSlot ? expectedTime.start : "",
+        slotEndsAt: expectedTime.fromSlot ? expectedTime.end : "",
       });
       if (ticket !== epoch) return;
       delete state.reservationKeys[id];

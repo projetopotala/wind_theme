@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { confirmAppointmentReservation } from "../../outputs/js/admin/appointment-reservations.js";
-import { createAppointmentPanel, renderAppointmentPanel } from "../../outputs/js/admin/appointment-panel.js";
+import { createAppointmentPanel, renderAppointmentPanel, suggestedTime } from "../../outputs/js/admin/appointment-panel.js";
 
 const requestId = "10000000-0000-4000-8000-000000000001";
 const key = "20000000-0000-4000-8000-000000000002";
@@ -34,7 +34,22 @@ test("adaptador bloqueia identificadores e horários inválidos antes da rede", 
   const client = { rpc: async () => { calls++; return {}; } };
   await assert.rejects(confirmAppointmentReservation(client, { requestId: "x", expectedUpdatedAt: updatedAt, idempotencyKey: key }), /Recarregue/);
   await assert.rejects(confirmAppointmentReservation(client, { requestId, expectedUpdatedAt: updatedAt, idempotencyKey: key, startsAt: "2026-11-10T15:00", endsAt: "2026-11-10T14:00" }), /posterior/);
+  await assert.rejects(confirmAppointmentReservation(client, { requestId, expectedUpdatedAt: updatedAt, idempotencyKey: key,
+    startsAt: "2026-11-12T18:00", endsAt: "2026-11-12T19:00", slotStartsAt: "2026-11-12T19:00", slotEndsAt: "2026-11-12T20:00" }), /slot solicitado/);
   assert.equal(calls, 0);
+});
+
+test("triagem usa o horário real do slot em São Paulo e preserva o legado sem slot", () => {
+  const slot = (starts_at, ends_at) => ({ id: "30000000-0000-4000-8000-000000000003", starts_at, ends_at, status: "held", held_by_request_id: requestId });
+  const row = { id: requestId, appointment_slot_id: "30000000-0000-4000-8000-000000000003" };
+  assert.deepEqual(suggestedTime({ ...row, appointment_slot: slot("2026-11-12T22:00:00Z", "2026-11-12T23:00:00Z") }),
+    { start: "2026-11-12T19:00", end: "2026-11-12T20:00", fromSlot: true });
+  assert.deepEqual(suggestedTime({ ...row, appointment_slot: slot("2026-11-12T12:00:00Z", "2026-11-12T13:00:00Z") }),
+    { start: "2026-11-12T09:00", end: "2026-11-12T10:00", fromSlot: true });
+  assert.deepEqual(suggestedTime({ ...row, appointment_slot: slot("2026-11-12T17:00:00Z", "2026-11-12T18:00:00Z") }),
+    { start: "2026-11-12T14:00", end: "2026-11-12T15:00", fromSlot: true });
+  assert.deepEqual(suggestedTime({ preferred_date: "2026-11-12", preferred_period: "noite" }),
+    { start: "2026-11-12T18:00", end: "2026-11-12T19:00", fromSlot: false });
 });
 
 test("conflito mantém semântica de recarga e resposta inconsistente não confirma", async () => {
@@ -128,4 +143,22 @@ test("migration liga solicitação e agenda na mesma transação com autorizaç�
   assert.doesNotMatch(sql, /grant execute on function public\.confirm_appointment_request_reservation/i);
   assert.doesNotMatch(sql, /insert into public\.op_records[\s\S]*'financial_entries'/i);
   assert.doesNotMatch(sql, /service_role/i);
+});
+
+test("guarda transacional exige que schedule_items corresponda ao slot vinculado", () => {
+  const sql = readFileSync(new URL("../../supabase/migrations/202610290006_appointment_slot_confirmation_guard.sql", import.meta.url), "utf8");
+  assert.match(sql, /request\.appointment_slot_id is null[\s\S]*return new/i);
+  assert.match(sql, /slot\.held_by_request_id is distinct from request\.id/i);
+  assert.match(sql, /slot\.status not in \('held', 'booked'\)/i);
+  assert.match(sql, /document_start is distinct from slot\.starts_at/i);
+  assert.match(sql, /document_end is distinct from slot\.ends_at/i);
+  assert.match(sql, /before insert or update of document on public\.op_records/i);
+  assert.match(sql, /revoke all on function public\.validate_appointment_schedule_slot_match\(\) from public, anon, authenticated/i);
+  assert.doesNotMatch(sql, /service_role|disable row level security|grant execute/i);
+});
+
+test("projeção administrativa inclui o slot protegido pela RLS", () => {
+  const source = readFileSync(new URL("../../outputs/js/admin/appointment-requests.js", import.meta.url), "utf8");
+  assert.match(source, /appointment_slot_id/);
+  assert.match(source, /appointment_slot:appointment_slots!appointment_requests_appointment_slot_id_fkey\(id,starts_at,ends_at,status,held_by_request_id\)/);
 });
