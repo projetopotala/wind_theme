@@ -1,3 +1,8 @@
+/* Esta folha só é carregada em Especialistas. Remova o piso de 320px herdado
+   de `secoes.css`, que excede a área útil quando há scrollbar vertical. */
+html,
+body[data-section="especialistas"] { min-width: 0; }
+
 body[data-section="especialistas"] .site-nav {
   min-height: 78px;
   padding: 0 clamp(28px, 5vw, 76px);

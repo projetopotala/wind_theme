@@ -92,5 +92,7 @@ test("correção móvel trata a caixa causadora sem esconder overflow global", (
   assert.match(especialistas, /\.com-page[\s\S]*box-sizing: border-box;[\s\S]*width: 100%;/);
   assert.match(especialistas, /\.com-ficha-corpo[\s\S]*min-width: 0/);
   assert.match(atendimentosCss, /\.care-page > :is\(section, header, footer\)[^}]*box-sizing: border-box[^}]*max-width: 100%[^}]*min-width: 0/);
+  assert.match(especialistas, /html,\s*body\[data-section="especialistas"\]\s*\{\s*min-width:\s*0/);
+  assert.match(atendimentosCss, /html,\s*body\[data-section="atendimentos"\]\s*\{\s*min-width:\s*0/);
   assert.doesNotMatch(`${especialistas}\n${atendimentosCss}`, /(?:html|body|\.care-page)\s*\{[^}]*overflow-x:\s*hidden/);
 });

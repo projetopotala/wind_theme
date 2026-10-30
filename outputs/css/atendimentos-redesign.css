@@ -21,6 +21,11 @@
   --care-closing-paper: #d9c5a7;
 }
 
+/* A folha compartilhada `secoes.css` fixa 320px em html/body. Em navegadores
+   com scrollbar clássica isso deixa só 305px úteis e cria 15px de overflow. */
+html,
+body[data-section="atendimentos"] { min-width: 0; }
+
 body[data-section="atendimentos"] {
   --progresso-cor: var(--care-brass);
   --fio-cor: rgba(195, 156, 85, .62);
