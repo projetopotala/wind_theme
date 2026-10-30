@@ -173,8 +173,10 @@ function wireComments(root, blog) {
     .catch(() => { if (list) list.innerHTML = ""; });
 
   form?.elements?.texto?.addEventListener("input", () => { if (counter) counter.textContent = form.elements.texto.value.length; });
+  let enviandoComentario = false;
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (enviandoComentario) return;
     const errors = validarComentario({ nome: form.elements.nome.value, texto: form.elements.texto.value });
     for (const field of ["nome", "texto"]) {
       const target = root.querySelector(`[data-erro-${field}]`);
@@ -183,6 +185,7 @@ function wireComments(root, blog) {
     }
     if (Object.keys(errors).length) return form.querySelector('[aria-invalid="true"]')?.focus();
     const enviar = form.querySelector('[type="submit"]');
+    enviandoComentario = true;
     enviar?.setAttribute("disabled", "");
     if (status) status.textContent = "Enviando…";
     try {
@@ -193,6 +196,7 @@ function wireComments(root, blog) {
     } catch (erro) {
       if (status) status.textContent = `Não foi possível enviar: ${erro.message}`;
     } finally {
+      enviandoComentario = false;
       enviar?.removeAttribute("disabled");
     }
   });
@@ -328,8 +332,10 @@ export function montar(root = document) {
   if (globalThis.location?.hash === "#buscar") abrirBusca(true);
 
   const newsletter = root.querySelector("[data-blog-newsletter]");
+  let enviandoNewsletter = false;
   newsletter?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (enviandoNewsletter) return;
     const aviso = root.querySelector("[data-blog-newsletter-status]");
     const campo = newsletter.querySelector('input[type="email"]');
     if (!campo?.value.trim() || campo.validity?.valid === false) {
@@ -337,6 +343,9 @@ export function montar(root = document) {
       campo?.focus();
       return;
     }
+    const enviar = newsletter.querySelector('[type="submit"]');
+    enviandoNewsletter = true;
+    enviar?.setAttribute("disabled", "");
     if (aviso) aviso.textContent = "Enviando…";
     try {
       await blog.inscrever(campo.value, "blog");
@@ -344,6 +353,9 @@ export function montar(root = document) {
       if (aviso) aviso.textContent = "Inscrição registrada. Obrigado por acompanhar o Caderno.";
     } catch (erro) {
       if (aviso) aviso.textContent = `Não foi possível inscrever: ${erro.message}`;
+    } finally {
+      enviandoNewsletter = false;
+      enviar?.removeAttribute("disabled");
     }
   });
 

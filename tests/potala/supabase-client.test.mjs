@@ -9,8 +9,8 @@ import {
   validateSupabaseConfig,
 } from "../../outputs/js/supabase/client.js";
 
-test("configuração aponta para o projeto Potala com chave publicável", () => {
-  assert.equal(SUPABASE_CONFIG.url, "https://gotrumwuimpoeggwamut.supabase.co");
+test("preview integrada aponta somente ao laboratório com chave publicável", () => {
+  assert.equal(SUPABASE_CONFIG.url, "https://hmspabllgxqfzzricijv.supabase.co");
   assert.match(SUPABASE_CONFIG.publishableKey, /^sb_publishable_/);
   assert.doesNotMatch(SUPABASE_CONFIG.publishableKey, /sb_secret_|service_role/i);
 });

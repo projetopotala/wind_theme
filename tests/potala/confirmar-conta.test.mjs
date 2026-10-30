@@ -5,10 +5,10 @@ import test from "node:test";
 import { SUPABASE_CONFIG } from "../../outputs/js/supabase/config.js";
 import { confirmarConta, erroDaUrl } from "../../outputs/js/conta/confirmar-conta.js";
 
-test("a configuracao publica nunca aponta confirmacoes para um endereco local", () => {
+test("a preview local usa sua propria origem para confirmacoes", () => {
   const url = new URL(SUPABASE_CONFIG.siteUrl);
-  assert.equal(url.protocol, "https:");
-  assert.doesNotMatch(url.hostname, /^(localhost|127(?:\.\d+){3})$/);
+  assert.equal(url.protocol, "http:");
+  assert.equal(url.hostname, "localhost");
 });
 
 test("a tela traduz o erro devolvido pelo Supabase sem expor dados tecnicos", () => {

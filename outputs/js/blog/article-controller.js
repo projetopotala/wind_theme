@@ -126,10 +126,13 @@ function mount(root = document) {
   const comentario = (item) => `<li><span class="article-comentario__inicial" aria-hidden="true">${escapeHtml(String(item.nome || "?").trim().charAt(0).toUpperCase())}</span><div><strong>${escapeHtml(item.nome)}</strong> <small>${escapeHtml(quandoFoi(item.criadoEm))}</small><p>${escapeHtml(item.texto)}</p></div></li>`;
 
   const form = root.querySelector("[data-article-comment-form]");
+  let enviandoComentario = false;
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (enviandoComentario) return;
     const values = new FormData(form);
     const enviar = form.querySelector('[type="submit"]');
+    enviandoComentario = true;
     enviar?.setAttribute("disabled", "");
     if (status) status.textContent = "Enviando…";
     try {
@@ -139,6 +142,7 @@ function mount(root = document) {
     } catch (erro) {
       if (status) status.textContent = `Não foi possível enviar: ${erro.message}`;
     } finally {
+      enviandoComentario = false;
       enviar?.removeAttribute("disabled");
     }
   });

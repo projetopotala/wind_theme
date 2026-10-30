@@ -39,16 +39,23 @@ export function buildCourseInterest(raw = {}) {
   if (topic.length < 3) {
     throw new Error("Conte qual tema você gostaria de aprender.");
   }
+  if (topic.length > 160) {
+    throw new Error("Use até 160 caracteres para o tema.");
+  }
   if (!LABELS[modalityKey] || availabilityKeys.length === 0) {
     throw new Error("Escolha uma modalidade e ao menos um período disponível.");
   }
 
+  const goal = String(raw.goal || "").trim();
+  if (goal.length > 1000) {
+    throw new Error("Use até 1.000 caracteres para seu objetivo.");
+  }
   const contact = String(raw.contact || "").trim().slice(0, 120);
   return {
     topic,
     modality: LABELS[modalityKey],
     availability: availabilityKeys.map((key) => LABELS[key] || key),
-    goal: String(raw.goal || "").trim(),
+    goal,
     ...(contact ? { contact } : {}),
   };
 }
@@ -110,8 +117,13 @@ export function mountLearningStudio(root = document) {
 
   const form = studio.querySelector("[data-course-interest-form]");
   const status = studio.querySelector("[data-interest-status]");
+  let envioEmAndamento = false;
+  let enviadoComSucesso = false;
   const onSubmit = async (event) => {
     event.preventDefault();
+    // Impede duplo clique/Enter repetido, inclusive eventos programáticos.
+    // Não é idempotência entre abas ou dispositivos: isso exige suporte do banco.
+    if (envioEmAndamento || enviadoComSucesso) return;
     const submit = form.querySelector('[type="submit"]');
     let interest;
     try {
@@ -121,11 +133,13 @@ export function mountLearningStudio(root = document) {
       status.dataset.state = "error";
       return;
     }
+    envioEmAndamento = true;
     submit?.setAttribute("disabled", "");
     status.textContent = "Enviando ao Instituto…";
     status.dataset.state = "";
     try {
       await enviarInteresse({ kind: "curso", subject: interest.topic, details: interest });
+      enviadoComSucesso = true;
       renderInterestReview(studio, interest);
       status.textContent = "Interesse enviado. A equipe do Instituto já pode ver sua proposta.";
       status.dataset.state = "success";
@@ -133,7 +147,8 @@ export function mountLearningStudio(root = document) {
       status.textContent = `Não foi possível enviar agora: ${error.message}`;
       status.dataset.state = "error";
     } finally {
-      submit?.removeAttribute("disabled");
+      envioEmAndamento = false;
+      if (!enviadoComSucesso) submit?.removeAttribute("disabled");
     }
   };
   form?.addEventListener("submit", onSubmit);

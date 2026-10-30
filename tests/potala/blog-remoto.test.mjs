@@ -6,7 +6,7 @@ import { DEFAULT_BLOG_POSTS } from "../../scripts/dados/blog-acervo-inicial.mjs"
 import { BlogIndisponivelError, criarBlogAdministrativo, criarBlogDeDemonstracao, criarBlogPublico, quandoFoi } from "../../outputs/js/blog/blog-remoto.js";
 import { createBlogRepository } from "../../outputs/js/blog/blog-repository.js";
 import { RestError, criarRestPublico } from "../../outputs/js/supabase/rest.js";
-import { enviarInteresse, montarInteresse } from "../../outputs/js/shared/participacao.js";
+import { chaveDeEnvio, enviarInteresse, montarInteresse } from "../../outputs/js/shared/participacao.js";
 import { carregarDadosDaMesa } from "../../outputs/js/blog-admin/blog-desk.js";
 
 function restFalso(respostas = {}) {
@@ -247,7 +247,34 @@ test("interesse enviado pelas seções tem tipo conhecido e tamanho contido", as
   assert.deepEqual(linha.details, {});
   const rest = restFalso();
   await enviarInteresse({ kind: "retorno-recepcao", subject: "Em parte", details: { answer: "partial" }, page: "/recepcao.html" }, { rest });
-  assert.equal(rest.pedidos[0].nome, "site_interests");
+  assert.equal(rest.pedidos[0].nome, "submit_site_interest");
+  assert.equal(rest.pedidos[0].corpo.p_kind, "retorno-recepcao");
+  assert.match(rest.pedidos[0].corpo.p_submission_key, /^site-/);
+});
+
+test("uma nova tentativa do mesmo interesse reutiliza a chave idempotente", () => {
+  const dados = new Map();
+  const storage = { getItem: (key) => dados.get(key) || null, setItem: (key, value) => dados.set(key, value) };
+  const interesse = { kind: "curso", subject: "Filosofia", details: { modality: "Online" }, page: "/cursos.html" };
+  const primeira = chaveDeEnvio(interesse, { storage, cryptoImpl: { randomUUID: () => "11111111-1111-4111-8111-111111111111" } });
+  const segunda = chaveDeEnvio(interesse, { storage, cryptoImpl: { randomUUID: () => "22222222-2222-4222-8222-222222222222" } });
+  assert.equal(segunda, primeira);
+  assert.notEqual(chaveDeEnvio({ ...interesse, subject: "Yoga" }, { storage, cryptoImpl: { randomUUID: () => "33333333-3333-4333-8333-333333333333" } }), primeira);
+});
+
+test("sem sessionStorage, falha preserva a chave e sucesso libera uma nova tentativa", async () => {
+  const interesse = { kind: "curso", subject: "Tentativa sem storage", details: { modality: "Online" }, page: "/cursos.html" };
+  const falha = restFalso({ "rpc:submit_site_interest": new Error("rede incerta") });
+  await assert.rejects(enviarInteresse(interesse, { rest: falha }), /rede incerta/);
+  const chaveDaFalha = falha.pedidos[0].corpo.p_submission_key;
+
+  const repeticao = restFalso();
+  await enviarInteresse(interesse, { rest: repeticao });
+  assert.equal(repeticao.pedidos[0].corpo.p_submission_key, chaveDaFalha, "a repetição usa a chave da resposta incerta");
+
+  const novaSolicitacao = restFalso();
+  await enviarInteresse(interesse, { rest: novaSolicitacao });
+  assert.notEqual(novaSolicitacao.pedidos[0].corpo.p_submission_key, chaveDaFalha, "depois do sucesso, o visitante pode iniciar outra solicitação");
 });
 
 test("as páginas não prometem mais que o envio é local", async () => {
