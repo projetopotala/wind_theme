@@ -35,7 +35,8 @@ function clientFake() {
       if (name === "list_my_appointment_requests") return { data: [{
         id: "3f2b8a6e-1c4d-4e5f-9a7b-2c8d1e0f3a4b", service: "Reiki", modality: "online",
         preferred_date: "2026-11-03", preferred_period: "noite", status: "recebida",
-        created_at: "2026-10-21T12:00:00Z", updated_at: "2026-10-21T12:00:00Z",
+        slot_id: "slot-1", starts_at: "2026-11-03T22:00:00Z", ends_at: "2026-11-03T23:00:00Z",
+        reservation_schedule_id: null, created_at: "2026-10-21T12:00:00Z", updated_at: "2026-10-21T12:00:00Z",
       }], error: null };
       return { data: { id: "3f2b8a6e-1c4d-4e5f-9a7b-2c8d1e0f3a4b", status: "recebida" }, error: null };
     },
@@ -89,6 +90,8 @@ test("o adaptador lê só campos do cliente e usa a RPC autenticada para escreve
   const data = criarDadosSupabase({ client });
   const [request] = await data.listar("atendimentos", "cliente-1");
   assert.equal(request.servico, "Reiki");
+  assert.equal(request.horarioId, "slot-1");
+  assert.equal(request.inicio, "2026-11-03T22:00:00.000Z");
   assert.deepEqual(client.calls[0], ["rpc", "list_my_appointment_requests", undefined]);
 
   const args = {

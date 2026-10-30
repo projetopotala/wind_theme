@@ -17,16 +17,63 @@ test("Meu Potala separa pendências, confirmados e histórico com ação princip
     atendimentoDisponivel: true,
     atendimentos: [
       pedido("pendente", "recebida"),
-      pedido("confirmado", "encerrada", { inicio: "2026-11-12T22:00:00Z" }),
+      pedido("confirmado", "encerrada", { inicio: new Date("2026-11-12T22:00:00Z"), reservaId: "reserva-1" }),
+      pedido("anterior", "encerrada", { inicio: new Date("2026-10-20T22:00:00Z"), reservaId: "reserva-2" }),
       pedido("cancelado", "cancelada"),
     ],
-    opcoesAtendimento: [], horariosAtendimento: [],
+    opcoesAtendimento: [], horariosAtendimento: [], agora: new Date("2026-10-30T12:00:00Z"),
   });
   assert.match(html, /aria-label="Resumo dos atendimentos"/);
   assert.match(html, /id="mp-atendimentos-novo"[\s\S]*Solicitar um atendimento/);
   assert.match(html, /id="mp-atendimentos-pendentes"[\s\S]*Atendimento pendente/);
   assert.match(html, /id="mp-atendimentos-confirmados"[\s\S]*Atendimento confirmado/);
-  assert.match(html, /id="mp-atendimentos-historico"[\s\S]*Atendimento cancelado/);
+  assert.match(html, /id="mp-atendimentos-historico"[\s\S]*Atendimento anterior/);
+  assert.match(html, /id="mp-atendimentos-cancelados"[\s\S]*Atendimento cancelado/);
+  assert.match(html, /não informa, sozinho, se o atendimento foi realizado/);
+  for (const id of ["pendente", "confirmado", "anterior", "cancelado"]) {
+    assert.equal((html.match(new RegExp(`Atendimento ${id}`, "g")) || []).length, 1, `${id} não pode ser duplicado`);
+  }
+});
+
+test("horários confirmados usam São Paulo e encerrada futura não significa realizada", () => {
+  const html = atendimentos.renderizar({
+    atendimentoDisponivel: false, agora: new Date("2026-10-30T12:00:00Z"),
+    atendimentos: [pedido("futuro", "encerrada", {
+      inicio: new Date("2026-11-12T22:00:00Z"), fim: new Date("2026-11-12T23:00:00Z"), reservaId: "reserva-1",
+    })],
+  });
+  assert.match(html, /12 de novembro de 2026 às 19:00/);
+  assert.match(html, /Consultas confirmadas[\s\S]*Atendimento futuro/);
+  assert.doesNotMatch(html, /realizad[oa]/i);
+});
+
+test("campos ausentes ou inválidos não inventam uma próxima consulta", () => {
+  const html = atendimentos.renderizar({
+    atendimentoDisponivel: false, agora: new Date("2026-10-30T12:00:00Z"),
+    atendimentos: [
+      pedido("sem-horario", "encerrada", { reservaId: "reserva-1", inicio: null }),
+      pedido("horario-invalido", "encerrada", { reservaId: "reserva-2", inicio: "não-é-data" }),
+      pedido("sem-reserva", "encerrada", { inicio: "2026-11-12T22:00:00Z", reservaId: null }),
+      pedido("pendente-sem-horario", "recebida", { inicio: null }),
+    ],
+  });
+  assert.match(html, /Consultas confirmadas[\s\S]*Quando uma consulta futura for confirmada/);
+  assert.match(html, /Horários confirmados anteriores[\s\S]*Atendimento sem-horario/);
+  assert.match(html, /Horários confirmados anteriores[\s\S]*Atendimento horario-invalido/);
+  assert.match(html, /Horários confirmados anteriores[\s\S]*Atendimento sem-reserva/);
+  assert.match(html, /Solicitações pendentes[\s\S]*Atendimento pendente-sem-horario/);
+  for (const id of ["sem-horario", "horario-invalido", "sem-reserva", "pendente-sem-horario"]) {
+    assert.equal((html.match(new RegExp(`Atendimento ${id}`, "g")) || []).length, 1);
+  }
+});
+
+test("adaptador usa os nomes efetivamente devolvidos pela RPC de histórico", () => {
+  const source = readFileSync(new URL("../../outputs/js/conta/adaptadores/supabase.js", import.meta.url), "utf8");
+  assert.match(source, /horarioId: "slot_id"/);
+  assert.match(source, /inicio: "starts_at"/);
+  assert.match(source, /fim: "ends_at"/);
+  assert.match(source, /reservaId: "reservation_schedule_id"/);
+  assert.match(source, /rpc\("list_my_appointment_requests"\)/);
 });
 
 test("visão geral administrativa oferece atalhos para triagem e agenda", () => {

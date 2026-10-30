@@ -39,7 +39,7 @@ const CAMPOS = Object.freeze({
   inscricoes: { id: "id", cursoRef: "course_ref", curso: "course_title", professor: "teacher_name", modalidade: "modality", status: "status", proximaAula: "next_session_at", conteudoHref: "content_href", imagem: "image_url", inscritoEm: "enrolled_at" },
   progressos: { inscricaoId: "enrollment_id", total: "lessons_total", concluidas: "lessons_done", ultimaAulaRef: "last_lesson_ref", ultimoAcesso: "last_access_at" },
   agenda: { id: "id", tipo: "kind", titulo: "title", inicio: "starts_at", fim: "ends_at", local: "location", origem: "origin", fonteRef: "source_ref", fonteHref: "source_href" },
-  atendimentos: { id: "id", servico: "service", modalidade: "modality", dataPreferida: "preferred_date", periodoPreferido: "preferred_period", status: "status", horarioId: "appointment_slot_id", reservaId: "reservation_schedule_id", criadaEm: "created_at", atualizadaEm: "updated_at" },
+  atendimentos: { id: "id", servico: "service", modalidade: "modality", dataPreferida: "preferred_date", periodoPreferido: "preferred_period", status: "status", horarioId: "slot_id", inicio: "starts_at", fim: "ends_at", reservaId: "reservation_schedule_id", criadaEm: "created_at", atualizadaEm: "updated_at" },
   notificacoes: { id: "id", tipo: "kind", titulo: "title", corpo: "body", href: "href", criadaEm: "created_at", lidaEm: "read_at" },
   preferencias: { tipo: "kind", ativa: "enabled" },
 });

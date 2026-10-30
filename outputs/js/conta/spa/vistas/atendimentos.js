@@ -14,19 +14,23 @@ function dataLegivel(valor) {
 function horarioLegivel(valor) {
   const data = valor ? new Date(valor) : null;
   return data && !Number.isNaN(data.valueOf())
-    ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeStyle: "short" }).format(data)
+    ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(data)
     : "Horário a confirmar";
 }
 
-function listaDePedidos(atendimentos, vazioTexto = "Você ainda não fez uma solicitação de atendimento.") {
+function listaDePedidos(atendimentos, vazioTexto = "Você ainda não fez uma solicitação de atendimento.", tipo = "pedido") {
   if (!atendimentos.length) return vazio({ texto: vazioTexto });
   return `<ol class="mp-atendimentos-lista">${atendimentos.map((pedido) => `<li class="mp-atendimento">
     <div>
-      <p class="mp-status" data-status="${e(pedido.status)}">${e(STATUS_DE_ATENDIMENTO[pedido.status])}</p>
+      <p class="mp-status" data-status="${e(pedido.status)}">${e(tipo === "confirmada" ? "Confirmada" : STATUS_DE_ATENDIMENTO[pedido.status])}</p>
       <h3>${e(pedido.servico)}</h3>
       <p class="mp-cartao-detalhe">${e(MODALIDADES[pedido.modalidade])} · ${e(pedido.inicio ? horarioLegivel(pedido.inicio) : `${dataLegivel(pedido.dataPreferida)} · ${PERIODOS[pedido.periodoPreferido]}`)}</p>
     </div>
-    <p class="mp-atendimento-nota">${pedido.status === "recebida"
+    <p class="mp-atendimento-nota">${tipo === "confirmada"
+      ? "Consulta confirmada. Os detalhes também estão disponíveis na sua Agenda."
+      : tipo === "anterior"
+        ? "O horário confirmado já passou. Este registro não informa, sozinho, se o atendimento foi realizado."
+        : pedido.status === "recebida"
       ? "A equipe recebeu seu pedido. Ele ainda não é uma consulta confirmada."
       : pedido.status === "em_contato"
         ? "A equipe está combinando os detalhes com você."
@@ -81,24 +85,34 @@ function formulario(opcoes, horarios, ofertaEscolhida = null) {
 }
 
 export default {
-  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], atendimentoDisponivel = false, parametros = null }) {
+  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], atendimentoDisponivel = false, parametros = null, agora = new Date() }) {
+    const referencia = agora instanceof Date ? agora : new Date(agora);
+    const futura = (pedido) => {
+      const inicio = pedido.inicio ? new Date(pedido.inicio) : null;
+      return inicio && Number.isFinite(inicio.valueOf()) && inicio > referencia;
+    };
     const pendentes = atendimentos.filter((pedido) => ["recebida", "em_contato"].includes(pedido.status));
-    const confirmados = atendimentos.filter((pedido) => pedido.status === "encerrada" && pedido.inicio);
-    const historico = atendimentos.filter((pedido) => pedido.status === "cancelada" || (pedido.status === "encerrada" && !pedido.inicio));
+    const confirmados = atendimentos.filter((pedido) => pedido.status === "encerrada" && pedido.reservaId && futura(pedido));
+    const anteriores = atendimentos.filter((pedido) => pedido.status === "encerrada" && (!pedido.reservaId || !futura(pedido)));
+    const cancelados = atendimentos.filter((pedido) => pedido.status === "cancelada");
     const resumo = `<nav class="mp-atendimentos-resumo" aria-label="Resumo dos atendimentos">
       <a href="#mp-atendimentos-pendentes"><strong>${pendentes.length}</strong><span>Aguardando a equipe</span></a>
       <a href="#mp-atendimentos-confirmados"><strong>${confirmados.length}</strong><span>Confirmados</span></a>
-      <a href="#mp-atendimentos-historico"><strong>${historico.length}</strong><span>No histórico</span></a>
+      <a href="#mp-atendimentos-historico"><strong>${anteriores.length}</strong><span>Horários anteriores</span></a>
+      <a href="#mp-atendimentos-cancelados"><strong>${cancelados.length}</strong><span>Cancelados</span></a>
     </nav>`;
     const acompanhamento = `${secao({
       id: "mp-atendimentos-pendentes", kicker: "Aguardando ação", titulo: "Solicitações pendentes",
       corpo: listaDePedidos(pendentes, "Nenhuma solicitação aguarda retorno da equipe."),
     })}${secao({
       id: "mp-atendimentos-confirmados", kicker: "Próximos atendimentos", titulo: "Consultas confirmadas",
-      corpo: listaDePedidos(confirmados, "Quando uma consulta for confirmada, ela aparecerá aqui e na sua Agenda."),
+      corpo: listaDePedidos(confirmados, "Quando uma consulta futura for confirmada, ela aparecerá aqui e na sua Agenda.", "confirmada"),
     })}${secao({
-      id: "mp-atendimentos-historico", classe: "mp-secao-discreta", kicker: "Histórico", titulo: "Pedidos encerrados ou cancelados",
-      corpo: listaDePedidos(historico, "Seu histórico de solicitações está vazio."),
+      id: "mp-atendimentos-historico", classe: "mp-secao-discreta", kicker: "Histórico", titulo: "Horários confirmados anteriores",
+      corpo: listaDePedidos(anteriores, "Nenhum horário confirmado anterior.", "anterior"),
+    })}${secao({
+      id: "mp-atendimentos-cancelados", classe: "mp-secao-discreta", kicker: "Cancelamentos", titulo: "Solicitações canceladas",
+      corpo: listaDePedidos(cancelados, "Nenhuma solicitação cancelada."),
     })}`;
     if (!atendimentoDisponivel) {
       return `${resumo}<p class="mp-aviso" role="status">Novas solicitações continuam desativadas enquanto o fluxo completo é preparado.</p>${acompanhamento}`;
