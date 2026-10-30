@@ -1,0 +1,44 @@
+:root { color-scheme: light; }
+
+.legal-page { background:#f5efe7; color:#25201c; min-height:100vh; }
+.legal-shell { width:min(76rem, calc(100% - 2rem)); margin:0 auto; padding:clamp(2rem,6vw,6rem) 0; }
+.legal-breadcrumbs, .legal-links { display:flex; flex-wrap:wrap; gap:.75rem 1.25rem; }
+.legal-breadcrumbs a, .legal-links a { color:inherit; text-underline-offset:.22em; }
+.legal-header { max-width:58rem; margin:clamp(2rem,6vw,5rem) 0; }
+.legal-kicker { font-size:.78rem; letter-spacing:.16em; text-transform:uppercase; }
+.legal-header h1 { font:500 clamp(2.5rem,8vw,6.5rem)/.95 Georgia,serif; margin:.4rem 0 1.25rem; }
+.legal-status { border-left:.25rem solid #8b5f45; background:#fff9; padding:1rem 1.25rem; max-width:52rem; }
+.legal-sections { display:grid; gap:1rem; max-width:58rem; }
+.legal-sections section { background:#fff9; border:1px solid #d8c9bb; border-radius:1rem; padding:clamp(1.1rem,3vw,2rem); }
+.legal-sections h2 { font:500 clamp(1.35rem,3vw,2rem)/1.15 Georgia,serif; margin:0 0 .65rem; }
+.legal-footer { border-top:1px solid #cdbdad; margin-top:4rem; padding-top:1.5rem; }
+
+.potala-consent { position:fixed; z-index:10000; inset:auto 1rem 1rem; margin:auto; width:min(48rem,calc(100% - 2rem)); background:#201b18; color:#fff; border:1px solid #ffffff40; border-radius:1rem; box-shadow:0 1rem 4rem #0005; padding:1.1rem; }
+.potala-consent[hidden] { display:none; }
+.potala-consent h2 { margin:0 0 .45rem; font:500 1.35rem/1.2 Georgia,serif; }
+.potala-consent p { margin:.4rem 0 1rem; line-height:1.55; }
+.potala-consent__actions { display:flex; flex-wrap:wrap; gap:.65rem; }
+.potala-consent button { min-height:2.75rem; border:1px solid currentColor; border-radius:999px; padding:.65rem 1rem; background:transparent; color:inherit; font:inherit; cursor:pointer; }
+.potala-consent button[data-consent-accept] { background:#fff; color:#201b18; }
+.potala-consent-settings { border:0; padding:0; border-radius:1rem; width:min(34rem,calc(100% - 2rem)); color:#25201c; }
+.potala-consent-settings::backdrop { background:#0009; }
+.potala-consent-settings form { padding:1.4rem; }
+.potala-consent-settings label { display:flex; gap:.75rem; align-items:flex-start; margin:1rem 0; }
+.potala-consent-settings menu { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.65rem; padding:0; }
+.potala-consent-manage { position:fixed; z-index:9999; left:.75rem; bottom:.75rem; min-height:2.75rem; border:1px solid #6c5b50; border-radius:999px; padding:.55rem .85rem; background:#f5efe7; color:#25201c; font:inherit; }
+.potala-legal-nav { display:flex; flex-wrap:wrap; gap:.5rem 1rem; align-items:center; margin-top:1rem; font-size:.85rem; }
+.potala-global-legal-footer { padding:1.25rem; background:#201b18; color:#fff; }
+.potala-global-legal-footer a, .potala-global-legal-footer button { color:inherit; }
+.potala-legal-nav button { border:0; padding:0; background:transparent; font:inherit; text-decoration:underline; text-underline-offset:.22em; cursor:pointer; }
+.skip-link { position:absolute; left:.75rem; top:.75rem; z-index:10001; transform:translateY(-200%); background:#fff; color:#111; padding:.75rem 1rem; }
+.skip-link:focus { transform:none; }
+
+@media (max-width:390px) {
+  .legal-shell { width:min(100% - 1.25rem,76rem); }
+  .potala-consent { inset:auto .625rem .625rem; width:calc(100% - 1.25rem); }
+  .potala-consent__actions > * { width:100%; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .potala-consent, .potala-consent-settings { scroll-behavior:auto; }
+}

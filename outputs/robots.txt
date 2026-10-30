@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /blog-admin
+Disallow: /meu-potala
+Disallow: /confirmar-conta
+Sitemap: https://www.institutopotala.com/sitemap.xml

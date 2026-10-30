@@ -33,6 +33,122 @@
     {
       "source": "/meu-potala/:path*",
       "destination": "/meu-potala.html"
+    },
+    {
+      "source": "/artigo",
+      "destination": "/artigo.html"
+    },
+    {
+      "source": "/atendimentos-conceito",
+      "destination": "/atendimentos-conceito.html"
+    },
+    {
+      "source": "/atendimentos",
+      "destination": "/atendimentos.html"
+    },
+    {
+      "source": "/atividades",
+      "destination": "/atividades.html"
+    },
+    {
+      "source": "/cultura",
+      "destination": "/cultura.html"
+    },
+    {
+      "source": "/cursos",
+      "destination": "/cursos.html"
+    },
+    {
+      "source": "/especialistas",
+      "destination": "/especialistas.html"
+    },
+    {
+      "source": "/eventos",
+      "destination": "/eventos.html"
+    },
+    {
+      "source": "/experiencias-culturais",
+      "destination": "/experiencias-culturais.html"
+    },
+    {
+      "source": "/grupos-de-estudo",
+      "destination": "/grupos-de-estudo.html"
+    },
+    {
+      "source": "/inspiracao",
+      "destination": "/inspiracao.html"
+    },
+    {
+      "source": "/marketplace",
+      "destination": "/marketplace.html"
+    },
+    {
+      "source": "/mentorias",
+      "destination": "/mentorias.html"
+    },
+    {
+      "source": "/palacio",
+      "destination": "/palacio.html"
+    },
+    {
+      "source": "/politica-de-compra-troca-cancelamento",
+      "destination": "/politica-de-compra-troca-cancelamento.html"
+    },
+    {
+      "source": "/politica-de-cookies",
+      "destination": "/politica-de-cookies.html"
+    },
+    {
+      "source": "/politica-de-privacidade",
+      "destination": "/politica-de-privacidade.html"
+    },
+    {
+      "source": "/profissionais",
+      "destination": "/profissionais.html"
+    },
+    {
+      "source": "/profissional",
+      "destination": "/profissional.html"
+    },
+    {
+      "source": "/programacao",
+      "destination": "/programacao.html"
+    },
+    {
+      "source": "/quem-somos",
+      "destination": "/quem-somos.html"
+    },
+    {
+      "source": "/recepcao",
+      "destination": "/recepcao.html"
+    },
+    {
+      "source": "/revista",
+      "destination": "/revista.html"
+    },
+    {
+      "source": "/saude-integrativa",
+      "destination": "/saude-integrativa.html"
+    },
+    {
+      "source": "/termos-de-uso",
+      "destination": "/termos-de-uso.html"
+    },
+    {
+      "source": "/transcender",
+      "destination": "/transcender.html"
+    },
+    {
+      "source": "/transcendido",
+      "destination": "/transcendido.html"
+    },
+    {
+      "source": "/travessia",
+      "destination": "/travessia.html"
+    },
+    {
+      "source": "/workshops",
+      "destination": "/workshops.html"
     }
   ]
 }
