@@ -144,8 +144,12 @@ test("adaptador rejeita revisão ausente e estados inválidos antes de escrever"
 
 test("integração preserva carregamento existente e não chama RPC operacional (estático)", () => {
   const read = path => readFileSync(new URL(`../../outputs/js/admin/${path}`, import.meta.url), "utf8");
+  const views = read("operations/views.js");
+  const dashboard = views.slice(views.indexOf("function dashboard"), views.indexOf("const DIA"));
+  const reports = views.slice(views.indexOf("function reports"), views.indexOf("export function renderView"));
   assert.match(read("admin-entry.js"), /carregarRecebidos\(client\)/);
-  assert.match(read("operations/views.js"), /recebidosDoSite\(o\)\+`<div data-appointment-admin>/);
+  assert.match(dashboard, /<div data-appointment-admin><\/div>/);
+  assert.doesNotMatch(reports, /data-appointment-admin/);
   assert.doesNotMatch(read("appointment-panel.js") + read("appointment-requests.js"), /op_apply|op_snapshot|service_role/);
 });
 
