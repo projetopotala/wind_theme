@@ -1,4 +1,5 @@
 import { APPOINTMENT_ADMIN_ENABLED, APPOINTMENT_RESERVATIONS_ENABLED } from "../appointments/config.js";
+import { APPOINTMENT_LAB_PREVIEW_ENABLED } from "../appointments/lab-preview.js";
 import { getAdminAccess } from "./admin-auth.js";
 import { loadAppointmentRequests, updateAppointmentRequestStatus, STATES } from "./appointment-requests.js";
 import { confirmAppointmentReservation } from "./appointment-reservations.js";
@@ -68,8 +69,8 @@ export function renderAppointmentPanel({ rows, phase, message, busy, drafts, ope
 }
 
 // Defesa de interface e sessão; a autorização efetiva continua nas políticas RLS.
-export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADMIN_ENABLED, access = getAdminAccess,
-  reservationsEnabled = APPOINTMENT_RESERVATIONS_ENABLED, getOperationalState = () => null,
+export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADMIN_ENABLED || APPOINTMENT_LAB_PREVIEW_ENABLED, access = getAdminAccess,
+  reservationsEnabled = APPOINTMENT_RESERVATIONS_ENABLED || APPOINTMENT_LAB_PREVIEW_ENABLED, getOperationalState = () => null,
   confirmReservation = confirmAppointmentReservation, createSlot = createAppointmentSlot, id = () => globalThis.crypto.randomUUID() } = {}) {
   let epoch = 0;
   const state = { rows: [], drafts: {}, phase: enabled === true ? "idle" : "disabled", busy: false,

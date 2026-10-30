@@ -32,7 +32,7 @@ import acompanhando from "./vistas/acompanhando.js";
 import notificacoes from "./vistas/notificacoes.js";
 import configuracoes from "./vistas/configuracoes.js";
 import atendimentos from "./vistas/atendimentos.js";
-import { APPOINTMENT_REQUESTS_ENABLED } from "../../appointments/config.js";
+import { APPOINTMENT_LAB_PREVIEW_ENABLED } from "../../appointments/lab-preview.js";
 import { erroDaUrl } from "../confirmar-conta.js";
 import { lerArtigosPublicados } from "../../blog/artigos-publicados.js";
 
@@ -56,7 +56,7 @@ export function avisoDoLinkDeAcesso(href) {
 export const VISTAS = Object.freeze({ inicio, perfil, cursos, agenda, atendimentos, salvos, historico, acompanhando, notificacoes, configuracoes });
 const COLECOES_DA_AREA = Object.freeze(["salvos", "historico", "acompanhando", "inscricoes", "progressos", "agenda", "notificacoes", "preferencias",
   "enderecos", "privacidade", "atividadesDaConta",
-  ...(APPOINTMENT_REQUESTS_ENABLED ? ["atendimentos"] : [])]);
+  ...(APPOINTMENT_LAB_PREVIEW_ENABLED ? ["atendimentos"] : [])]);
 
 export async function montarMeuPotala({ documento = document, janela = window } = {}) {
   const palco = documento.querySelector("[data-meu-potala]");
@@ -95,10 +95,10 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     const leituras = COLECOES_DA_AREA.map((nome) => sessao.colecao(nome).listar()
       .then((lista) => ({ nome, lista }))
       .catch((erro) => ({ nome, lista: [], erro })));
-    if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.opcoesAtendimento()
+    if (APPOINTMENT_LAB_PREVIEW_ENABLED) leituras.push(sessao.opcoesAtendimento()
       .then((lista) => ({ nome: "opcoesAtendimento", lista }))
       .catch((erro) => ({ nome: "opcoesAtendimento", lista: [], erro })));
-    if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.horariosAtendimento()
+    if (APPOINTMENT_LAB_PREVIEW_ENABLED) leituras.push(sessao.horariosAtendimento()
       .then((lista) => ({ nome: "horariosAtendimento", lista }))
       .catch((erro) => ({ nome: "horariosAtendimento", lista: [], erro })));
     /* "Para você" só recomenda texto do Blog confirmado no ar; sem confirmação, nenhum. */
@@ -214,7 +214,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     }
 
     const atual = sessao.obter();
-    const contexto = { ...dados, estado: atual, agora: new Date(), parametros: new URLSearchParams(janela.location.search), atendimentoDisponivel: APPOINTMENT_REQUESTS_ENABLED };
+    const contexto = { ...dados, estado: atual, agora: new Date(), parametros: new URLSearchParams(janela.location.search), atendimentoDisponivel: APPOINTMENT_LAB_PREVIEW_ENABLED };
     let corpo;
     try {
       corpo = VISTAS[rota.nome].renderizar(contexto);
