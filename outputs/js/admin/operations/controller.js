@@ -281,6 +281,7 @@ export function createOperationsController({root,client,onNavigate=()=>{},onRend
     if(kind==='setup'){if(confirm('Criar os dez cadastros provisórios de sala? Eles continuarão indisponíveis até a confirmação dos dados.'))await run('setup.rooms',{},'Dez salas preparadas para conferência.');return;}
     if(kind==='complete'){if(confirm('Marcar esta atividade como realizada?'))await run('schedule.complete',{id,scope:'occurrence'},'Atividade concluída.');return;}
     if(kind==='goto-rooms'){onNavigate('salas');return;}
+    if(kind==='goto-agenda'){onNavigate('agenda');return;}
     if(kind==='goto-reports'){onNavigate('relatorios');return;}
     if(kind==='export'){const blob=new Blob([JSON.stringify(client.snapshot,null,2)],{type:'application/json'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`potala-operacao-${today()}.json`;link.click();URL.revokeObjectURL(link.href);return;}
     if(kind==='schedule'){abrirEscolhaDeTipo(target.dataset.room?{room_id:target.dataset.room}:{});return;}

@@ -46,6 +46,7 @@ body[data-section="atendimentos"] .portal-header__account.conta-gatilho {
 }
 
 .care-page { position: relative; }
+.care-page > :is(section, header, footer) { box-sizing: border-box; max-width: 100%; min-width: 0; }
 .care-page .fio-da-jornada { left: clamp(6px, 1.6vw, 28px); }
 
 /* ------------------------------------------------------------------
@@ -502,6 +503,7 @@ body[data-section="atendimentos"] .portal-header__account.conta-gatilho {
 }
 
 @media (max-width: 600px) {
+  .care-page :is(.care-hero-content, .care-hero-copy, .care-indice, .care-caminhos-grade, .resource-hero__tools, .resource-hero__panel) { min-width: 0; }
   .care-hero-visual { min-height: 57svh; }
   .care-hero-visual figcaption { bottom: 24px; }
   .care-hero-content { padding: 42px 20px; }

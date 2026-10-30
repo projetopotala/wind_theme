@@ -78,7 +78,7 @@ export function renderAppointmentPanel({ rows, phase, message, busy, drafts, ope
     <label>Sala presencial<select data-slot-room><option value="">Sem sala (online)</option>${rooms.map(item => option(item,"name")).join("")}</select></label>
     <label>Início<input data-slot-start type="datetime-local" required></label><label>Fim<input data-slot-end type="datetime-local" required></label>
     <button type="button" data-appointment-slot-create ${busy ? "disabled" : ""}>Disponibilizar horário</button></fieldset>` : "";
-  return `<section class="op-card" style="min-width:0;overflow-wrap:anywhere" aria-label="Solicitações de atendimento" aria-busy="${busy}"><h3>Recebido pelo site — Atendimentos</h3>
+  return `<section class="op-card" id="appointment-triage" style="min-width:0;overflow-wrap:anywhere" aria-label="Solicitações de atendimento" aria-busy="${busy}"><h3>Recebido pelo site — Atendimentos</h3>
     <p class="op-muted">Solicitações não são reservas. Nenhum horário é confirmado por esta triagem.</p>
     <p role="status" aria-live="polite" tabindex="-1" data-appointment-feedback>${esc(message)}</p>
     ${controls ? `<button type="button" data-appointment-reload ${busy ? "disabled" : ""}>Recarregar solicitações</button>${slotForm}` : ""}

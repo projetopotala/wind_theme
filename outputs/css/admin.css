@@ -1482,3 +1482,8 @@ button {
 .admin-related-options [data-related-options] { max-height: 240px; overflow-y: auto; }
 .admin-related-options label { display: flex; gap: 10px; align-items: center; min-height: 40px; }
 .admin-related-options input[type="checkbox"] { width: auto; flex: 0 0 auto; }
+.op-dashboard-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 0 18px; }
+.op-dashboard-shortcuts :is(a, button) { display: grid; gap: 5px; min-width: 0; padding: 14px 16px; border: 1px solid var(--admin-line); border-radius: 12px; color: var(--admin-ivory); background: var(--admin-panel); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.op-dashboard-shortcuts span { color: var(--admin-muted); font-size: .78rem; }
+.op-dashboard-shortcuts :is(a, button):hover { border-color: var(--admin-gold); }
+@media (max-width: 620px) { .op-dashboard-shortcuts { grid-template-columns: 1fr; } }
