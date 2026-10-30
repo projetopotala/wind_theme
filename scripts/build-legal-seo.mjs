@@ -6,6 +6,14 @@ const output = path.resolve("outputs");
 const origin = "https://www.institutopotala.com";
 const privatePages = new Set(["admin.html", "blog-admin.html", "confirmar-conta.html", "meu-potala.html"]);
 const excluded = new Set(["index.html", "blog.html"]);
+const metadata = new Map([
+  ["index.html", { title:"Instituto Cultural Potala", description:"Portal institucional do Instituto Cultural Potala: atendimentos, profissionais, cursos, eventos, cultura e revista." }],
+  ["atendimentos-conceito.html", { title:"Caminhos de Atendimento — Instituto Potala", description:"Conheça os caminhos de cuidado e as modalidades de atendimento apresentadas pelo Instituto Potala." }],
+  ["atendimentos.html", { title:"Agendamento de Atendimentos — Instituto Potala" }],
+  ["transcendido.html", { title:"Portal Institucional — Instituto Potala" }],
+  ["profissionais.html", { title:"Profissionais e Especialidades — Instituto Potala" }],
+  ["profissional.html", { title:"Perfil Profissional — Instituto Potala" }],
+]);
 const legal = [
   ["termos-de-uso", "Termos de Uso", ["Escopo e aceite", "Uso responsável do Portal", "Responsabilidades e contato"]],
   ["politica-de-privacidade", "Política de Privacidade", ["Dados tratados", "Finalidades e bases legais", "Direitos e contato"]],
@@ -32,6 +40,14 @@ const htmlFiles = readdirSync(output).filter(file => file.endsWith(".html") && !
 for (const file of htmlFiles) {
   const target = path.join(output, file);
   let html = await readFile(target, "utf8");
+  const pageMetadata = metadata.get(file);
+  if (pageMetadata?.title) html = html.replace(/<title[^>]*>.*?<\/title>/is, `<title>${pageMetadata.title}</title>`);
+  if (pageMetadata?.description) {
+    const description = `<meta name="description" content="${pageMetadata.description}">`;
+    html = /<meta\s+(?=[^>]*name=["']description["'])[^>]*>/i.test(html)
+      ? html.replace(/<meta\s+(?=[^>]*name=["']description["'])[^>]*>/i, description)
+      : html.replace(/<\/head>/i, `  ${description}\n</head>`);
+  }
   const slug = file === "index.html" ? "/" : file === "blog.html" ? "/revista" : `/${file.replace(/\.html$/, "")}`;
   const canonical = `${origin}${slug}`;
   if (!/rel=["']canonical["']/i.test(html)) html = html.replace(/<\/head>/i, `  <link rel="canonical" href="${canonical}">\n</head>`);

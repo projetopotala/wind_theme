@@ -66,6 +66,18 @@ test("páginas públicas recebem canonical e áreas privadas permanecem noindex"
   for (const file of ["admin.html","blog-admin.html","meu-potala.html","confirmar-conta.html"]) assert.match(await read(file), /name="robots"[^>]*noindex/i);
 });
 
+test("títulos e descrições públicas são únicos e a raiz tem descrição", async () => {
+  const files = ["index.html","atendimentos-conceito.html","atendimentos.html","transcendido.html","profissionais.html","profissional.html"];
+  const pages = await Promise.all(files.map(read));
+  const titles = pages.map(html => html.match(/<title[^>]*>(.*?)<\/title>/is)?.[1]);
+  assert.equal(new Set(titles).size, titles.length);
+  assert.match(pages[0], /<meta name="description" content="[^"]+">/);
+  assert.notEqual(
+    pages[1].match(/<meta name="description" content="([^"]+)">/)?.[1],
+    pages[3].match(/<meta name="description" content="([^"]+)">/)?.[1],
+  );
+});
+
 test("CSS preserva 320px sem esconder overflow global", async () => {
   const css = await read("css/legal-privacy.css");
   assert.match(css, /@media \(max-width:390px\)/);
