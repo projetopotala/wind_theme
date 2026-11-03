@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validar:
+    name: Lint, testes e verificação de ambiente
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Testes do portal
+        run: npm run test:portal
+
+      - name: Verificação de ambiente de produção
+        run: npm run verificar:ambiente
+
+      - name: Build (inclui a guarda de ambiente)
+        run: npm run build
+
+      # Falhas CONHECIDAS e anteriores a este workflow (já presentes na main):
+      # tests/rendered-html.test.mjs procura app/_sites-preview/SkeletonPreview.tsx e a meta
+      # "codex-preview", que não existem. O resultado aparece em todo PR, mas não bloqueia
+      # até que o teste seja corrigido ou removido em uma PR própria.
+      - name: rendered-html (informativo, falhas preexistentes conhecidas)
+        continue-on-error: true
+        run: node --test tests/rendered-html.test.mjs
