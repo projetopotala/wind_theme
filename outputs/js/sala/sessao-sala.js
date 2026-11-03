@@ -19,14 +19,18 @@ export function criarApiDaSala({ client, config = SUPABASE_CONFIG, fetchImpl = g
     contexto: (requestId) => rpc("appointment_room_context", { p_request_id: requestId }),
     listar: (requestId, depois) => rpc("list_appointment_room_messages", { p_request_id: requestId, p_after: depois }),
     enviar: (requestId, texto) => rpc("post_appointment_room_message", { p_request_id: requestId, p_body: texto }),
-    encerrar: (requestId) => rpc("close_appointment_room_session", { p_request_id: requestId }),
-    async emitir(requestId) {
+    // Encerrar passa pela função de borda: o banco autoriza e o provedor expulsa quem já entrou.
+    encerrar: (requestId) => chamarFuncao("close-appointment-room", requestId),
+    emitir: (requestId) => chamarFuncao("issue-appointment-room-token", requestId),
+  };
+  async function chamarFuncao(nomeDaFuncao, requestId) {
+    {
       const { data } = await client.auth.getSession();
       const jwt = data?.session?.access_token;
       if (!jwt) throw Object.assign(new Error("sem sessão"), { code: "42501", status: 401 });
       let resposta;
       try {
-        resposta = await fetchImpl(`${config.url.replace(/\/$/, "")}/functions/v1/issue-appointment-room-token`, {
+        resposta = await fetchImpl(`${config.url.replace(/\/$/, "")}/functions/v1/${nomeDaFuncao}`, {
           method: "POST",
           headers: { apikey: config.publishableKey, Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
           body: JSON.stringify({ request_id: requestId }),
@@ -35,8 +39,8 @@ export function criarApiDaSala({ client, config = SUPABASE_CONFIG, fetchImpl = g
       const corpo = await resposta.json().catch(() => null);
       if (!resposta.ok) throw Object.assign(new Error(corpo?.message || "erro"), { status: resposta.status, code: corpo?.code ?? "" });
       return corpo;
-    },
-  };
+    }
+  }
 }
 
 export function criarSessaoSala({ requestId, api, video, ui, criarChat }) {

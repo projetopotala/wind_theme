@@ -8,3 +8,7 @@ verify_jwt = false
 # Funcao para usuario autenticado: a plataforma valida o JWT antes do handler
 # (recomendacao atual do Supabase) e o banco valida de novo ao chamar a RPC.
 verify_jwt = true
+
+[functions.close-appointment-room]
+  # Encerra a sala: banco autoriza com o JWT do usuario; provedor so e chamado depois.
+  verify_jwt = true
