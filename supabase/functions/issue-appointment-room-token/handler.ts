@@ -58,7 +58,12 @@ export function createRoomTokenHandler(deps: Deps) {
     }
 
     // Falha de rede do banco ou do provedor vira resposta genérica, sem detalhe.
-    const down = () => ({ status: 503, json: {} as Record<string, unknown> });
+    const down = () => ({ status: 503, json: { error: "unreachable" } as Record<string, unknown> });
+    // Diagnóstico seguro: só o passo, o status HTTP e o código curto de erro do provedor (nunca corpo, chave ou token).
+    const falha = (passo: string, r: { status: number; json: Record<string, unknown> }) => {
+      const e = typeof r.json?.error === "string" && /^[a-z0-9-]{1,40}$/.test(r.json.error) ? r.json.error : undefined;
+      return reply(502, { message: "Não foi possível abrir a sala.", step: passo, provider_status: r.status, ...(e ? { provider_error: e } : {}) }, headers);
+    };
     const { data, error } = await deps.issue(jwt, requestId)
       .catch(() => ({ data: null, error: { code: "unavailable" } }));
     if (error || !data) {
@@ -80,7 +85,7 @@ export function createRoomTokenHandler(deps: Deps) {
       properties: { exp, eject_at_room_exp: true, enable_chat: false,
         enable_knocking: false, max_participants: 2 } }).catch(down);
     const already = room.status === 400 && String(room.json?.info ?? "").includes("already exists");
-    if (room.status >= 400 && !already) return reply(502, { message: "Não foi possível abrir a sala." }, headers);
+    if (room.status >= 400 && !already) return falha("room", room);
 
     const token = await deps.daily("/meeting-tokens", { properties: {
       room_name: data.room_name, user_id: data.participant_id,
@@ -102,7 +107,7 @@ export function createRoomTokenHandler(deps: Deps) {
     };
     const resultado = await reconciliar();
     if (resultado === "aberta") {
-      if (!tokenOk) return reply(502, { message: "Não foi possível abrir a sala." }, headers);
+      if (!tokenOk) return falha("token", token);
       return reply(200, { url: `https://${domain}.daily.co/${data.room_name}`, token: token.json.token,
         expires_at: data.expires_at, role: data.role }, headers);
     }

@@ -38,13 +38,22 @@ async function lookup(requestId: string) {
   return { room_name: sessions[0].provider_room_name as string, user_ids: ids as string[] };
 }
 
+// Remove espaços, quebras de linha e aspas coladas junto com a chave.
+const chaveDaily = () => (env("DAILY_API_KEY") ?? "").trim().replace(/^["']+|["']+$/g, "").trim();
+
 async function daily(method: "POST" | "DELETE", path: string, body?: unknown) {
-  const response = await fetch(`https://api.daily.co/v1${path}`, {
+  let response: Response;
+  try {
+    response = await fetch(`https://api.daily.co/v1${path}`, {
     method,
-    headers: { Authorization: `Bearer ${env("DAILY_API_KEY")}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${chaveDaily()}`, "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
+  } catch (e) {
+    // Só o tipo do erro (TypeError, TimeoutError...), nunca a mensagem: ela poderia citar cabeçalhos.
+    return { status: 599, json: { error: `net-${String((e as Error)?.name ?? "error").toLowerCase()}` } };
+  }
   return { status: response.status, json: await response.json().catch(() => ({})) };
 }
 

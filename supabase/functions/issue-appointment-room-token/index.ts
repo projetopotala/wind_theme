@@ -29,13 +29,22 @@ async function context(jwt: string, requestId: string) {
 // Tarefas de reconciliação continuam depois da resposta (Edge Runtime).
 const later = (tarefa: Promise<unknown>) => { (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } }).EdgeRuntime?.waitUntil(tarefa); };
 
+// Remove espaços, quebras de linha e aspas coladas junto com a chave.
+const chaveDaily = () => (env("DAILY_API_KEY") ?? "").trim().replace(/^["']+|["']+$/g, "").trim();
+
 async function daily(path: string, body: unknown, method: "POST" | "DELETE" = "POST") {
-  const response = await fetch(`https://api.daily.co/v1${path}`, {
+  let response: Response;
+  try {
+    response = await fetch(`https://api.daily.co/v1${path}`, {
     method,
-    headers: { Authorization: `Bearer ${env("DAILY_API_KEY")}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${chaveDaily()}`, "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(8000),
   });
+  } catch (e) {
+    // Só o tipo do erro (TypeError, TimeoutError...), nunca a mensagem: ela poderia citar cabeçalhos.
+    return { status: 599, json: { error: `net-${String((e as Error)?.name ?? "error").toLowerCase()}` } };
+  }
   return { status: response.status, json: await response.json().catch(() => ({})) };
 }
 
