@@ -4,6 +4,7 @@ import { loadAppointmentRequests, updateAppointmentRequestStatus, STATES } from 
 import { confirmAppointmentReservation } from "./appointment-reservations.js";
 import { createAppointmentSlot } from "./appointment-slots.js";
 import { esc } from "./operations/comum.js";
+import { caminhoDaSala } from "../sala/estado-sala.js";
 
 const LABELS = { recebida: "Recebida", em_contato: "Em contato", encerrada: "Encerrada", cancelada: "Cancelada" };
 const PERIODS = { manha: "Manhã", tarde: "Tarde", noite: "Noite" };
@@ -38,7 +39,7 @@ export function suggestedTime(row) {
 const option = (item, label, selected = false) => `<option value="${esc(item.id)}" ${selected ? "selected" : ""}>${esc(item[label] || item.title || item.display_name || item.name || item.id)}</option>`;
 
 function reservationForm(row, operational = {}) {
-  if (row.reservation_schedule_id) return `<p class="mp-status">Reserva vinculada à agenda.</p>`;
+  if (row.reservation_schedule_id) return roomLink(row) + `<p class="mp-status">Reserva vinculada à agenda.</p>`;
   const rooms = (operational.rooms || []).filter(item => item.status === "available" && item.capacity);
   const offerings = (operational.activity_offerings || []).filter(item => item.active !== false);
   const professionals = (operational.profiles || []).filter(item => item.active !== false && item.roles?.includes("professional"));
@@ -57,6 +58,13 @@ function reservationForm(row, operational = {}) {
     <label class="appointment-reservation-wide"><input data-reservation-confirm type="checkbox" required> Revisei horário, profissional, modalidade${row.modality === "presencial" ? " e sala" : ""} e confirmo esta reserva.</label>
     <button type="button" data-appointment-confirm="${esc(row.id)}">Confirmar reserva</button>
   </fieldset>`;
+}
+
+// Acesso à sala para o profissional da reserva. O banco confere quem entra.
+export function roomLink(row) {
+  if (row.modality !== "online" || !row.reservation_schedule_id || row.status !== "encerrada") return "";
+  try { return `<p><a class="mp-botao" href="${esc(caminhoDaSala(row.id))}">Abrir sala do atendimento</a></p>`; }
+  catch { return ""; }
 }
 
 export function renderAppointmentPanel({ rows, phase, message, busy, drafts, operationalState = {}, reservationsEnabled = false }) {
