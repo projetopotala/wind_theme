@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { SUPABASE_CONFIG } from "../../outputs/js/supabase/config.js";
 import { confirmarConta, erroDaUrl } from "../../outputs/js/conta/confirmar-conta.js";
+
+process.env.POTALA_AMBIENTE_ORIGEM = "https://wind-theme.vercel.app";
+const { SUPABASE_CONFIG } = await import("../../outputs/js/supabase/config.js");
 
 test("a configuracao publica nunca aponta confirmacoes para um endereco local", () => {
   const url = new URL(SUPABASE_CONFIG.siteUrl);

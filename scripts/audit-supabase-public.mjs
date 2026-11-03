@@ -1,6 +1,9 @@
 import { pathToFileURL } from "node:url";
 
-import { SUPABASE_CONFIG } from "../outputs/js/supabase/config.js";
+// A auditoria é da superfície pública da PRODUÇÃO e declara isso explicitamente.
+// Outra origem pode ser escolhida exportando POTALA_AMBIENTE_ORIGEM antes de rodar.
+process.env.POTALA_AMBIENTE_ORIGEM ??= "https://wind-theme.vercel.app";
+const { SUPABASE_CONFIG } = await import("../outputs/js/supabase/config.js");
 
 const PUBLIC_READS = [
   ["home_blocks publicado", "/rest/v1/home_blocks?select=id&published=eq.true&limit=1"],

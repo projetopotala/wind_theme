@@ -1,0 +1,5 @@
+{
+  "projectRef": "<20 caracteres do projeto LAB>",
+  "url": "https://<projectRef>.supabase.co",
+  "publishableKey": "sb_publishable_<chave publicavel do LAB>"
+}
