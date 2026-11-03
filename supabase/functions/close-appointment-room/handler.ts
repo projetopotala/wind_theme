@@ -2,6 +2,7 @@
 // o provedor é chamado para expulsar e banir quem já entrou e apagar a sala.
 // Repetir a chamada é seguro: o banco aceita o profissional de uma sala já encerrada,
 // o que permite completar a revogação se o provedor falhou antes.
+import { esperarReal, revogarSala, type DailyCall, type Esperar } from "../_shared/daily-revoke.ts";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 512;
 
@@ -9,7 +10,10 @@ export type Deps = {
   env: (name: string) => string | undefined;
   close: (jwt: string, requestId: string) => Promise<{ data?: { closed?: boolean } | null; error?: { code?: string } | null }>;
   lookup: (requestId: string) => Promise<{ room_name: string; user_ids: string[] } | null>;
-  daily: (method: "POST" | "DELETE", path: string, body?: unknown) => Promise<{ status: number; json: Record<string, unknown> }>;
+  daily: DailyCall;
+  // Reconciliação em segundo plano (EdgeRuntime.waitUntil em produção); ausente nos testes simples.
+  later?: (tarefa: Promise<unknown>) => void;
+  esperar?: Esperar;
 };
 
 function reply(status: number, body: Record<string, unknown>, headers: Record<string, string>) {
@@ -21,12 +25,6 @@ function cors(request: Request, allowed: string[]): Record<string, string> {
   if (!origin || !allowed.includes(origin)) return {};
   return { "Access-Control-Allow-Origin": origin, "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "apikey, authorization, content-type", Vary: "Origin" };
-}
-
-function confirmou(r: { status: number; json: Record<string, unknown> }, campo: "ejectedIds" | "deleted") {
-  if (r.status === 404) return true;
-  if (r.status !== 200) return false;
-  return campo === "deleted" ? r.json?.deleted === true : Array.isArray(r.json?.ejectedIds);
 }
 
 export function createCloseRoomHandler(deps: Deps) {
@@ -68,20 +66,25 @@ export function createCloseRoomHandler(deps: Deps) {
       if (!found) revoked = true;
       else if (!deps.env("DAILY_API_KEY")) revoked = false;
       else {
-        const room = encodeURIComponent(found.room_name);
-        // Sucesso é só o que o Daily confirma de forma inequívoca; 404 = sala já ausente
-        // (nunca criada ou já removida), que é o estado desejado. Timeout, 5xx, 401/403,
-        // 2xx sem a confirmação esperada ou corpo ilegível contam como não revogado.
-        // Cada passo é tentado mesmo que o outro falhe, para a falha parcial ser mínima.
-        const passo = async (chamada: () => ReturnType<Deps["daily"]>, campo: "ejectedIds" | "deleted") => {
-          try { return confirmou(await chamada(), campo); } catch { return false; }
-        };
-        const ejected = found.user_ids.length === 0 ? true
-          : await passo(() => deps.daily("POST", `/rooms/${room}/eject`, { user_ids: found.user_ids, ban: true }), "ejectedIds");
-        const removed = await passo(() => deps.daily("DELETE", `/rooms/${room}`), "deleted");
-        revoked = ejected && removed;
+        revoked = await revogarSala(deps.daily, found.room_name, found.user_ids);
+        // Falhou: não depende de o profissional repetir. A reconciliação continua em segundo plano.
       }
     } catch { revoked = false; }
+    // Falhou (Daily, leitura ou chave): não depende de o profissional repetir. Reconcilia em segundo plano,
+    // relendo a sala a cada tentativa; o banco já está fechado, então nada reabre.
+    if (!revoked && deps.env("DAILY_API_KEY")) {
+      const esperar = deps.esperar ?? esperarReal;
+      deps.later?.((async () => {
+        for (const ms of [1000, 3000, 8000]) {
+          await esperar(ms);
+          try {
+            const again = await deps.lookup(requestId);
+            if (!again || await revogarSala(deps.daily, again.room_name, again.user_ids)) return true;
+          } catch { /* próxima tentativa */ }
+        }
+        return false;
+      })());
+    }
     return reply(200, { closed: true, revoked }, headers);
   };
 }

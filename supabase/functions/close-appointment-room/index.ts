@@ -6,6 +6,9 @@ import { createCloseRoomHandler } from "./handler.ts";
 const env = (name: string) => Deno.env.get(name);
 const TIMEOUT_MS = 8000; // sem resposta nao e sucesso: a chamada falha e a revogacao fica pendente
 
+// Reconciliação continua depois da resposta (Edge Runtime).
+const later = (tarefa: Promise<unknown>) => { (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } }).EdgeRuntime?.waitUntil(tarefa); };
+
 async function close(jwt: string, requestId: string) {
   const response = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/close_appointment_room_session`, {
     method: "POST",
@@ -45,4 +48,4 @@ async function daily(method: "POST" | "DELETE", path: string, body?: unknown) {
   return { status: response.status, json: await response.json().catch(() => ({})) };
 }
 
-export default { fetch: createCloseRoomHandler({ env, close, lookup, daily }) };
+export default { fetch: createCloseRoomHandler({ env, close, lookup, daily, later }) };

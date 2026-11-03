@@ -1,6 +1,7 @@
 // Emite o meeting token da sala. A autorização vem do banco (RPC com o JWT do
 // usuário); o ID recebido no corpo nunca é prova de nada. A chave do provedor
 // existe só aqui, via variável de ambiente.
+import { esperarReal, revogarSala, type Esperar } from "../_shared/daily-revoke.ts";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 512;
 
@@ -11,7 +12,11 @@ export type Access = {
 export type Deps = {
   env: (name: string) => string | undefined;
   issue: (jwt: string, requestId: string) => Promise<{ data?: Access | null; error?: { code?: string } | null }>;
-  daily: (path: string, body: unknown) => Promise<{ status: number; json: Record<string, unknown> }>;
+  daily: (path: string, body: unknown, method?: "POST" | "DELETE") => Promise<{ status: number; json: Record<string, unknown> }>;
+  // Estado do atendimento lido de novo no banco com o JWT do usuário (revalidação depois do provedor).
+  context: (jwt: string, requestId: string) => Promise<{ data?: { state?: string } | null; error?: { code?: string } | null }>;
+  later?: (tarefa: Promise<unknown>) => void;
+  esperar?: Esperar;
 };
 
 function reply(status: number, body: Record<string, unknown>, headers: Record<string, string>) {
@@ -81,10 +86,35 @@ export function createRoomTokenHandler(deps: Deps) {
       room_name: data.room_name, user_id: data.participant_id,
       user_name: data.role === "professional" ? "Profissional" : "Cliente",
       is_owner: false, exp, eject_at_token_exp: true } }).catch(down);
-    if (token.status >= 400 || typeof token.json?.token !== "string") {
+    const tokenOk = token.status < 400 && typeof token.json?.token === "string";
+
+    // Revalida DEPOIS das operações externas: o encerramento pode ter acontecido entre a emissão
+    // no banco e a criação da sala/token (a sala apagada pelo encerramento seria recriada aqui).
+    // O token só é entregue se o banco ainda diz "open"; qualquer outra coisa (inclusive não
+    // conseguir confirmar) falha fechado e a sala é compensada.
+    const revogar = (m: "POST" | "DELETE", p: string, b?: unknown) => deps.daily(p, b, m);
+    const reconciliar = async (): Promise<"aberta" | "revogada" | "pendente"> => {
+      let estado: string | undefined;
+      try { estado = (await deps.context(jwt, requestId)).data?.state; } catch { /* desconhecido */ }
+      if (estado === "open") return "aberta";
+      if (estado === undefined) return "pendente";
+      return (await revogarSala(revogar, data.room_name, [data.participant_id])) ? "revogada" : "pendente";
+    };
+    const resultado = await reconciliar();
+    if (resultado === "aberta") {
+      if (!tokenOk) return reply(502, { message: "Não foi possível abrir a sala." }, headers);
+      return reply(200, { url: `https://${domain}.daily.co/${data.room_name}`, token: token.json.token,
+        expires_at: data.expires_at, role: data.role }, headers);
+    }
+    if (resultado === "pendente") {
+      // Não depende de ninguém repetir: reconcilia em segundo plano até confirmar.
+      const esperar = deps.esperar ?? esperarReal;
+      deps.later?.((async () => {
+        for (const ms of [1000, 3000, 8000]) { await esperar(ms); if (await reconciliar() !== "pendente") return true; }
+        return false;
+      })().catch(() => false));
       return reply(502, { message: "Não foi possível abrir a sala." }, headers);
     }
-    return reply(200, { url: `https://${domain}.daily.co/${data.room_name}`, token: token.json.token,
-      expires_at: data.expires_at, role: data.role }, headers);
+    return reply(409, { code: "P0001", message: "A sala não está disponível agora." }, headers);
   };
 }

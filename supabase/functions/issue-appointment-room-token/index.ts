@@ -15,14 +15,28 @@ async function issue(jwt: string, requestId: string) {
   return response.ok ? { data: json } : { error: { code: json?.code ?? String(response.status) } };
 }
 
-async function daily(path: string, body: unknown) {
-  const response = await fetch(`https://api.daily.co/v1${path}`, {
+async function context(jwt: string, requestId: string) {
+  const response = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/appointment_room_context`, {
     method: "POST",
+    headers: { apikey: env("SUPABASE_ANON_KEY") ?? "", Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_request_id: requestId }),
+    signal: AbortSignal.timeout(8000),
+  });
+  const json = await response.json().catch(() => null);
+  return response.ok ? { data: json } : { error: { code: json?.code ?? String(response.status) } };
+}
+
+// Tarefas de reconciliação continuam depois da resposta (Edge Runtime).
+const later = (tarefa: Promise<unknown>) => { (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } }).EdgeRuntime?.waitUntil(tarefa); };
+
+async function daily(path: string, body: unknown, method: "POST" | "DELETE" = "POST") {
+  const response = await fetch(`https://api.daily.co/v1${path}`, {
+    method,
     headers: { Authorization: `Bearer ${env("DAILY_API_KEY")}`, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(8000),
   });
   return { status: response.status, json: await response.json().catch(() => ({})) };
 }
 
-export default { fetch: createRoomTokenHandler({ env, issue, daily }) };
+export default { fetch: createRoomTokenHandler({ env, issue, context, daily, later }) };

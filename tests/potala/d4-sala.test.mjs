@@ -134,7 +134,7 @@ test("sessão: falha ao emitir token mostra erro e não monta vídeo", async () 
 function borda(over = {}) {
   const chamadas = { daily: [], issue: 0 };
   const env = (n) => ({ DAILY_API_KEY: "segredo-ficticio", DAILY_DOMAIN: "potala", ROOM_ALLOWED_ORIGINS: "https://app.invalid", ...over.env })[n];
-  const handler = createRoomTokenHandler({ env,
+  const handler = createRoomTokenHandler({ env, context: async () => over.context ?? { data: { state: "open" } },
     issue: async (jwt, id) => { chamadas.issue++; chamadas.jwt = jwt; chamadas.id = id;
       return over.issue ? over.issue() : { data: { session_id: "s", room_name: SALA, provider: "daily", role: "client",
         expires_at: new Date(Date.now() + 3600e3).toISOString(), participant_id: "u1" } }; },
