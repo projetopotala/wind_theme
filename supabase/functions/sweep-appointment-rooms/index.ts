@@ -1,8 +1,8 @@
 import { createSweepHandler } from "./handler.ts";
 import { criarLk } from "../_shared/livekit-sdk.ts";
-import { credencialDeServico } from "../_shared/credencial-servico.ts";
+import { credencialDoVarredor } from "../_shared/credencial-varredor.ts";
 
-// verify_jwt=false (chaves sb_secret_* não são JWT): a ÚNICA barreira é credencialDeServico, conferida no handler
+// verify_jwt=false (chaves sb_secret_* não são JWT): a ÚNICA barreira é credencialDoVarredor (segredo próprio, x-sweeper-secret), conferida no handler
 // antes de qualquer leitura ou chamada ao LiveKit.
 const env = (name: string) => Deno.env.get(name);
 const TIMEOUT_MS = 8000;
@@ -32,4 +32,4 @@ async function pendentes(limite: number) {
 const marcar = (sessionId: string) =>
   ler(`${env("SUPABASE_URL")}/rest/v1/rpc/mark_appointment_room_revoked`, { method: "POST", body: JSON.stringify({ p_session_id: sessionId }) });
 
-export default { fetch: createSweepHandler({ env, autorizado: (req) => credencialDeServico(env, req), pendentes, lk: criarLk(env), marcar }) };
+export default { fetch: createSweepHandler({ env, autorizado: (req) => credencialDoVarredor(env, req), pendentes, lk: criarLk(env), marcar }) };

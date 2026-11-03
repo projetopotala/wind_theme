@@ -22,7 +22,7 @@ function chavesAceitas(env: Env): string[] {
 }
 
 // Comparação sem saída antecipada por posição; o comprimento só vaza se for diferente de todas.
-function igual(a: string, b: string) {
+export function igual(a: string, b: string) {
   let d = a.length ^ b.length;
   const n = Math.max(a.length, b.length);
   for (let i = 0; i < n; i++) d |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
