@@ -75,3 +75,10 @@ Segredos `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` e `ROOM_ALLOWED_
 - Varredor: 401 sem credencial, invalida, anon e JWT de usuario; o runtime aceita a chave de servico do proprio projeto (autoteste interno). Agendamento (pg_cron/pg_net) NAO ativado. A `sb_secret` listada pela CLI foi recusada pelo gateway (UNAUTHORIZED_INVALID_API_KEY): o teste positivo externo exige a chave do painel.
 - RemoveParticipant usa `revokeTokenTs` (agora+5 s) antes de DeleteRoom; a sala so e dada como revogada apos `findRoom` confirmar ausencia.
 - Pendente para o teste real (Preview protegido + 2 contas): persistencia do `revokeTokenTs` depois de DeleteRoom, auto-criacao de sala por token antigo, janela residual de tokens renovados pelo cliente LiveKit, limite de 2 participantes com conexoes reais, audio e video.
+
+## Preview e teste real (2026-11-03)
+
+- Preview protegida final: `https://wind-theme-m2-lab-preview-h9yb0c4aj-potala.vercel.app` (dpl_BhNRkRyudn6mzNB1tw1DXxs7QqXr, SSO + noindex, aliases intactos), commit `60d9e51`. `ROOM_ALLOWED_ORIGINS` = essa origem.
+- Chamada real entre duas contas sinteticas (Edge com camera/microfone falsos, origem real da Preview): video e audio nos dois sentidos, liga/desliga, chat, reconexao (6 s e 35 s), sair/reentrar, aba fechada e reaberta, terceiro bloqueado, encerramento, 6 larguras: 30/30.
+- Revogacao: apos encerrar, token original e 9 tokens renovados pelo LiveKit (TTL 600 s) foram recusados com `invalid token: revoked`; depois do TTL tambem; emissao pela aplicacao devolve 409.
+- Defeitos corrigidos: botao de voltar ausente apos "Sair da sala" (6218c5f); videos remotos presos apos a outra pessoa fechar a aba e reentrar (60d9e51).
