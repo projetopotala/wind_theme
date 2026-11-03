@@ -146,6 +146,8 @@ begin
   values (p_request_id, 'potala-' || replace(gen_random_uuid()::text, '-', ''))
   on conflict (request_id) do nothing;
   select * into sess from public.appointment_room_sessions where request_id = p_request_id;
+  -- Serializa por usuário e tipo: sem isso, chamadas simultâneas passam juntas pelo limite.
+  perform pg_advisory_xact_lock(hashtextextended(actor::text || ':token', 0));
   select count(*) into recent from public.appointment_room_access_log
   where user_id = actor and kind = 'token' and created_at > clock_timestamp() - interval '1 minute';
   if recent >= 6 then
@@ -174,8 +176,12 @@ as $$
 declare
   ctx jsonb := public.appointment_room_context(p_request_id);
 begin
-  if ctx ->> 'state' in ('denied', 'cancelled', 'not_confirmed') then
+  if ctx ->> 'state' = 'denied' then
     raise exception 'Sala inexistente ou inacessível.' using errcode = '42501';
+  end if;
+  -- Leitura só com a sala aberta: encerrada, vencida ou cancelada não expõe o chat.
+  if ctx ->> 'state' <> 'open' then
+    raise exception 'Sala indisponível: %.', ctx ->> 'state' using errcode = 'P0001';
   end if;
   return coalesce((
     select jsonb_agg(jsonb_build_object('id', m.id, 'role', m.sender_role,
@@ -211,13 +217,14 @@ begin
   if ctx ->> 'state' <> 'open' then
     raise exception 'Sala indisponível: %.', ctx ->> 'state' using errcode = 'P0001';
   end if;
-  if char_length(clean) not between 1 and 1000 then
+  if char_length(clean) not between 1 and 1000 or clean ~ '[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]' then
     raise exception 'Mensagem inválida.' using errcode = '22023';
   end if;
   select * into sess from public.appointment_room_sessions where request_id = p_request_id;
   if not found then
     raise exception 'Entre na sala antes de enviar mensagens.' using errcode = 'P0001';
   end if;
+  perform pg_advisory_xact_lock(hashtextextended(actor::text || ':message', 0));
   select count(*) into recent from public.appointment_room_access_log
   where user_id = actor and kind = 'message' and created_at > clock_timestamp() - interval '1 minute';
   if recent >= 30 then
@@ -284,6 +291,8 @@ begin
     where m.session_id = s.id and sl.ends_at + interval '30 minutes' < clock_timestamp()
     returning 1)
   select count(*) into n from gone;
+  -- Log de limite de taxa não precisa de mais de um dia.
+  delete from public.appointment_room_access_log where created_at < clock_timestamp() - interval '1 day';
   return n;
 end;
 $$;
