@@ -1,5 +1,7 @@
 /* Sala de atendimento: mobile primeiro; vídeo acima do chat, lado a lado a partir de 900px. */
 .sala-pagina { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; padding-inline: 16px; max-width: 1200px; margin-inline: auto; }
+/* .mp-botao define display e anularia o atributo hidden: sem isto, botões ocultos apareceriam. */
+.sala-pagina [hidden] { display: none !important; }
 .sala-titulo { margin: 0; font-size: clamp(1.4rem, 4vw, 2rem); }
 .sala-texto, .sala-nota { margin: 0; line-height: 1.5; }
 .sala-conexao { margin: 0; padding: .6rem .8rem; border: 1px solid currentColor; border-radius: 8px; font-weight: 600; }
@@ -21,5 +23,15 @@
 .sala-aviso { margin: 0; min-height: 1.2em; font-size: .9rem; }
 .sala-controles { grid-column: 1 / -1; }
 .sala-pagina button:focus-visible, .sala-form textarea:focus-visible, .sala-voltar:focus-visible { outline: 3px solid currentColor; outline-offset: 2px; }
+/* LiveKit: pessoa remota em destaque, a própria imagem em miniatura, controles embaixo. */
+.sala-video-grade { position: absolute; inset: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.sala-video-remoto { position: relative; min-height: 0; }
+.sala-video-remoto video { width: 100%; height: 100%; object-fit: cover; background: #000; }
+.sala-video-local { position: absolute; right: 8px; top: 8px; width: min(28%, 140px); aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; background: #000; border: 2px solid rgba(255, 255, 255, .7); }
+.sala-video-local video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.sala-video-aviso { position: absolute; left: 8px; right: 8px; bottom: 64px; margin: 0; padding: .4rem .6rem; border-radius: 8px; background: rgba(0, 0, 0, .7); color: #fff; font-size: .9rem; text-align: center; }
+.sala-video-aviso[hidden] { display: none; }
+.sala-video-controles { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; padding: .5rem; background: rgba(0, 0, 0, .55); }
+.sala-video-botao { min-height: 44px; }
 @media (min-width: 900px) { .sala-palco { grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); } .sala-mensagens { max-height: 50vh; } }
 @media (prefers-reduced-motion: reduce) { .sala-pagina * { scroll-behavior: auto; transition: none; animation: none; } }

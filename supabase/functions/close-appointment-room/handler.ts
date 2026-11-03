@@ -2,15 +2,17 @@
 // o provedor é chamado para expulsar e banir quem já entrou e apagar a sala.
 // Repetir a chamada é seguro: o banco aceita o profissional de uma sala já encerrada,
 // o que permite completar a revogação se o provedor falhou antes.
-import { esperarReal, revogarSala, type DailyCall, type Esperar } from "../_shared/daily-revoke.ts";
+import { esperarReal, revogarSala, varrerDepoisDaJanela, type Esperar, type LkAdmin } from "../_shared/livekit-revoke.ts";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 512;
 
 export type Deps = {
   env: (name: string) => string | undefined;
   close: (jwt: string, requestId: string) => Promise<{ data?: { closed?: boolean } | null; error?: { code?: string } | null }>;
-  lookup: (requestId: string) => Promise<{ room_name: string; user_ids: string[] } | null>;
-  daily: DailyCall;
+  lookup: (requestId: string) => Promise<{ session_id: string; provider: string; room_name: string; user_ids: string[] } | null>;
+  lk: LkAdmin;
+  // Marca a sessão como revogada (confirmada no provedor); falha aqui não muda o resultado.
+  marcar?: (sessionId: string) => Promise<unknown>;
   // Reconciliação em segundo plano (EdgeRuntime.waitUntil em produção); ausente nos testes simples.
   later?: (tarefa: Promise<unknown>) => void;
   esperar?: Esperar;
@@ -58,33 +60,39 @@ export function createCloseRoomHandler(deps: Deps) {
     // Nada foi aberto: não há o que revogar no provedor.
     if (!data.closed) return reply(200, { closed: false, revoked: true }, headers);
 
-    // A partir daqui o banco já bloqueia novas entradas; falhas do provedor só
-    // significam que a revogação precisa ser repetida.
+    // A partir daqui o banco já bloqueia novas emissões; falhas do provedor só
+    // significam que a revogação precisa ser repetida. LiveKit não revoga JWT: a sala é apagada,
+    // a ausência é verificada e uma varredura final pega quem reentrou com token ainda válido.
     let revoked = false;
+    let found: Awaited<ReturnType<Deps["lookup"]>> = null;
     try {
-      const found = await deps.lookup(requestId); // lança se a leitura falhar
+      found = await deps.lookup(requestId); // lança se a leitura falhar
       if (!found) revoked = true;
-      else if (!deps.env("DAILY_API_KEY")) revoked = false;
-      else {
-        revoked = await revogarSala(deps.daily, found.room_name, found.user_ids);
-        // Falhou: não depende de o profissional repetir. A reconciliação continua em segundo plano.
-      }
+      // Histórico Daily: sala com validade própria (eject_at_room_exp); nada a fazer no LiveKit.
+      else if (found.provider !== "livekit") revoked = true;
+      else if (!deps.env("LIVEKIT_API_KEY") || !deps.env("LIVEKIT_API_SECRET")) revoked = false;
+      else revoked = await revogarSala(deps.lk, found.room_name, found.user_ids);
     } catch { revoked = false; }
-    // Falhou (Daily, leitura ou chave): não depende de o profissional repetir. Reconcilia em segundo plano,
-    // relendo a sala a cada tentativa; o banco já está fechado, então nada reabre.
-    if (!revoked && deps.env("DAILY_API_KEY")) {
+    const marcar = async (sessao: string) => { try { await deps.marcar?.(sessao); } catch { /* o varredor repete */ } };
+    if (revoked && found?.provider === "livekit") await marcar(found.session_id);
+    // Falhou ou precisa da varredura final: não depende de o profissional repetir.
+    if (deps.env("LIVEKIT_API_KEY") && deps.env("LIVEKIT_API_SECRET") && (!found || found.provider === "livekit")) {
       const esperar = deps.esperar ?? esperarReal;
       deps.later?.((async () => {
-        for (const ms of [1000, 3000, 8000]) {
+        let atual = found;
+        for (const ms of revoked ? [] : [1000, 3000, 8000]) {
           await esperar(ms);
           try {
-            const again = await deps.lookup(requestId);
-            if (!again || await revogarSala(deps.daily, again.room_name, again.user_ids)) return true;
+            atual = await deps.lookup(requestId);
+            if (!atual || atual.provider !== "livekit" || await revogarSala(deps.lk, atual.room_name, atual.user_ids)) { revoked = true; break; }
           } catch { /* próxima tentativa */ }
         }
-        return false;
-      })());
-    }
-    return reply(200, { closed: true, revoked }, headers);
+        if (atual && atual.provider === "livekit") {
+          const ok = await varrerDepoisDaJanela(deps.lk, atual.room_name, atual.user_ids, esperar);
+          if (ok) await marcar(atual.session_id);
+        }
+        return revoked;
+      })().catch(() => false));
+    }    return reply(200, { closed: true, revoked }, headers);
   };
 }

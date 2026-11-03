@@ -32,13 +32,15 @@
     "build:media-manifest": "node scripts/build-media-manifest.mjs",
     "build:home": "node scripts/build-home-editorial.mjs",
     "build:blocos": "node scripts/build-cenas-blocos.mjs",
-    "vendor:lucide-blocos": "node scripts/vendor-lucide-blocos.mjs"
+    "vendor:lucide-blocos": "node scripts/vendor-lucide-blocos.mjs",
+    "vendor:livekit": "node scripts/vendor-livekit.mjs"
   },
   "dependencies": {
     "@gsap/react": "2.1.2",
     "@supabase/supabase-js": "2.57.4",
     "drizzle-orm": "0.45.2",
     "gsap": "3.15.0",
+    "livekit-client": "2.23.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "three": "0.185.1"
@@ -59,6 +61,7 @@
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "16.4.0",
+    "livekit-server-sdk": "2.19.2",
     "react-server-dom-webpack": "19.2.6",
     "sharp": "^0.35.3",
     "tailwindcss": "4.2.1",

@@ -1,7 +1,7 @@
 import { getSupabaseClient } from "../supabase/client.js";
 import { pedidoDoEndereco } from "./estado-sala.js";
 import { criarApiDaSala, criarSessaoSala } from "./sessao-sala.js";
-import { adaptadorDaily, criarPortaDeVideo } from "./video-sala.js";
+import { adaptadorLiveKit, criarPortaDeVideo } from "./video-sala.js";
 import { criarChat } from "./chat-sala.js";
 
 const $ = (seletor) => document.querySelector(seletor);
@@ -34,7 +34,7 @@ if (!requestId) {
   const sessao = criarSessaoSala({
     requestId,
     api: criarApiDaSala({ client: getSupabaseClient() }),
-    video: criarPortaDeVideo(adaptadorDaily()),
+    video: criarPortaDeVideo(adaptadorLiveKit()),
     ui,
     criarChat: (ganchos) => criarChat({ lista: el.mensagens, formulario: el.form, campo: el.campo, aviso: el.aviso, ...ganchos }),
   });

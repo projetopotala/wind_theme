@@ -3,10 +3,11 @@ import test from "node:test";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { pedidoDoEndereco, caminhoDaSala, visaoDoContexto, mensagemDeErro } from "../../outputs/js/sala/estado-sala.js";
-import { urlDeSalaValida, adaptadorDaily, criarPortaDeVideo } from "../../outputs/js/sala/video-sala.js";
+import { urlDeSalaValida, adaptadorLiveKit, criarPortaDeVideo, motivoDaDesconexao } from "../../outputs/js/sala/video-sala.js";
 import { criarChat, normalizarMensagem } from "../../outputs/js/sala/chat-sala.js";
 import { criarSessaoSala } from "../../outputs/js/sala/sessao-sala.js";
 import { createRoomTokenHandler } from "../../supabase/functions/issue-appointment-room-token/handler.ts";
+import { modeloLiveKit } from "./d4-livekit-modelo.mjs";
 
 const ID = "10000000-0000-4000-8000-000000000001";
 const SALA = "potala-" + "a".repeat(32);
@@ -41,20 +42,82 @@ test("estados: cada estado do banco tem tela; desconhecido nega", () => {
   assert.match(mensagemDeErro({ code: "network", status: 0 }), /conexão/i);
 });
 
-test("vídeo: só URL de sala potala-* em daily.co, sem query nem credencial", () => {
-  assert.equal(urlDeSalaValida(`https://x.daily.co/${SALA}`), true);
-  for (const u of [`http://x.daily.co/${SALA}`, `https://evil.com/${SALA}`, `https://x.daily.co.evil.com/${SALA}`,
-    "https://x.daily.co/outra", `https://x.daily.co/${SALA}?t=1`, `https://u:p@x.daily.co/${SALA}`, "lixo"]) {
+test("vídeo: só wss://*.livekit.cloud, sem caminho, query, porta nem credencial", () => {
+  assert.equal(urlDeSalaValida("wss://potala-lab.livekit.cloud"), true);
+  for (const u of ["ws://x.livekit.cloud", "https://x.livekit.cloud", "wss://evil.com", "wss://x.livekit.cloud.evil.com",
+    "wss://x.livekit.cloud/sala", "wss://x.livekit.cloud?t=1", "wss://u:p@x.livekit.cloud", "wss://x.livekit.cloud:8443", "lixo"]) {
     assert.equal(urlDeSalaValida(u), false, u);
   }
+});
+
+function sdkFalso() {
+  const eventos = {}, estado = { conectou: null, desconectou: 0, mic: [], cam: [], recusar: false };
+  class Room {
+    constructor(opcoes) { estado.opcoes = opcoes; this.remoteParticipants = new Map(); this.localParticipant = {
+      setMicrophoneEnabled: async (v) => { if (estado.recusar) throw new Error("negado"); estado.mic.push(v); },
+      setCameraEnabled: async (v) => { if (estado.recusar) throw new Error("negado"); estado.cam.push(v); } }; }
+    on(ev, fn) { (eventos[ev] ??= []).push(fn); return this; }
+    async connect(url, token) { estado.conectou = { url, token }; }
+    disconnect() { estado.desconectou++; }
+  }
+  const RoomEvent = { TrackSubscribed: "ts", TrackUnsubscribed: "tu", LocalTrackPublished: "lp", LocalTrackUnpublished: "lu", Reconnecting: "rc", Reconnected: "rd", Disconnected: "dc" };
+  const emitir = (ev, ...a) => (eventos[ev] ?? []).forEach((fn) => fn(...a));
+  return { sdk: { Room, RoomEvent, DisconnectReason: { CLIENT_INITIATED: 1, DUPLICATE_IDENTITY: 2, PARTICIPANT_REMOVED: 4, ROOM_DELETED: 5 } }, estado, emitir, RoomEvent };
+}
+const aguardar = () => new Promise((r) => setImmediate(r));
+
+test("vídeo LiveKit: conecta com url e token, liga câmera e microfone, mostra controles e recusa dados inválidos", async () => {
+  const f = sdkFalso(); const eventos = [];
   const container = no("div");
-  const porta = criarPortaDeVideo(adaptadorDaily({ documento: doc }));
-  assert.throws(() => porta.entrar(container, { url: "https://evil.com/x", token: "t" }));
-  porta.entrar(container, { url: `https://x.daily.co/${SALA}`, token: "a b" });
-  assert.match(container.children[0].src, /\?t=a%20b$/);
-  assert.match(container.children[0].allow, /camera; microphone/);
+  const porta = criarPortaDeVideo(adaptadorLiveKit({ documento: doc, sdk: f.sdk }));
+  assert.throws(() => porta.entrar(container, { url: "wss://evil.com", token: "t" }));
+  assert.throws(() => porta.entrar(container, { url: "wss://x.livekit.cloud", token: "" }));
+  assert.throws(() => criarPortaDeVideo(adaptadorLiveKit({ documento: doc, sdk: {} })).entrar(container, { url: "wss://x.livekit.cloud", token: "t" }), /não foi carregado/);
+  porta.entrar(container, { url: "wss://x.livekit.cloud", token: "tok" }, { aoConectar: () => eventos.push("conectou") });
+  await aguardar();
+  assert.deepEqual(f.estado.conectou, { url: "wss://x.livekit.cloud", token: "tok" });
+  assert.deepEqual(f.estado.mic, [true]); assert.deepEqual(f.estado.cam, [true]);
+  assert.deepEqual(eventos, ["conectou"]);
+  const grade = container.children[0];
+  const controles = grade.children.find((c) => c.className === "sala-video-controles");
+  assert.equal(controles.children.length, 2);
+  assert.match(controles.children[0].textContent, /Desligar microfone/);
+  controles.children[0].listeners.click(); await aguardar();
+  assert.deepEqual(f.estado.mic, [true, false]);
+  assert.match(controles.children[0].textContent, /Ligar microfone/);
   porta.sair();
-  assert.equal(container.children[0].removed, true);
+  assert.equal(f.estado.desconectou, 1); assert.equal(grade.removed, true);
+});
+
+test("vídeo LiveKit: permissão de câmera/microfone negada não derruba a chamada e avisa em português", async () => {
+  const f = sdkFalso(); f.estado.recusar = true; const falhas = [];
+  const container = no("div");
+  criarPortaDeVideo(adaptadorLiveKit({ documento: doc, sdk: f.sdk })).entrar(container, { url: "wss://x.livekit.cloud", token: "t" }, { aoFalhar: () => falhas.push(1) });
+  await aguardar();
+  const aviso = container.children[0].children.find((c) => c.className === "sala-video-aviso");
+  assert.match(aviso.textContent, /permissão do navegador/);
+  assert.equal(falhas.length, 0); assert.equal(f.estado.desconectou, 0);
+});
+
+test("vídeo LiveKit: quedas e saída; sair() não dispara o gancho de desconexão; falha ao conectar avisa a sessão", async () => {
+  const f = sdkFalso(); const visto = [];
+  const ganchos = { aoPerder: () => visto.push("perdeu"), aoRecuperar: () => visto.push("voltou"), aoDesconectar: (m) => visto.push(m) };
+  const porta = criarPortaDeVideo(adaptadorLiveKit({ documento: doc, sdk: f.sdk }));
+  porta.entrar(no("div"), { url: "wss://x.livekit.cloud", token: "t" }, ganchos);
+  await aguardar();
+  f.emitir(f.RoomEvent.Reconnecting); f.emitir(f.RoomEvent.Reconnected);
+  f.emitir(f.RoomEvent.Disconnected, 4); f.emitir(f.RoomEvent.Disconnected, 5);
+  f.emitir(f.RoomEvent.Disconnected, 2); f.emitir(f.RoomEvent.Disconnected, 3);
+  assert.deepEqual(visto, ["perdeu", "voltou", "removida", "removida", "duplicada", "rede"]);
+  porta.sair();
+  f.emitir(f.RoomEvent.Disconnected, 1);
+  assert.equal(visto.length, 6, "saída voluntária não conta como queda");
+  assert.equal(motivoDaDesconexao(1), "saiu"); assert.equal(motivoDaDesconexao(undefined), "rede");
+  const g = sdkFalso(); g.sdk.Room.prototype.connect = async () => { throw new Error("401"); };
+  const falhou = [];
+  criarPortaDeVideo(adaptadorLiveKit({ documento: doc, sdk: g.sdk })).entrar(no("div"), { url: "wss://x.livekit.cloud", token: "t" }, { aoFalhar: () => falhou.push(1) });
+  await aguardar();
+  assert.equal(falhou.length, 1);
 });
 
 test("chat: HTML malicioso entra como texto, nunca como marcação", async () => {
@@ -109,7 +172,7 @@ test("sessão: fluxo aberto monta vídeo, inicia chat; cliente não encerra para
   const s = criarSessaoSala({ requestId: ID, ui: uiFalsa(), video,
     criarChat: () => ({ iniciar: async () => { chatIniciado++; }, parar: () => { parado++; } }),
     api: { contexto: async () => ({ state: "open", role: "client" }),
-      emitir: async () => ({ url: `https://x.daily.co/${SALA}`, token: "t", expires_at: "2099-01-01T00:00:00Z" }),
+      emitir: async () => ({ url: "wss://x.livekit.cloud", token: "t", expires_at: "2099-01-01T00:00:00Z" }),
       encerrar: async () => { encerrou++; } } });
   await s.carregar();
   assert.equal(await s.entrar(), true);
@@ -130,20 +193,20 @@ test("sessão: falha ao emitir token mostra erro e não monta vídeo", async () 
   assert.ok(ui.log.includes("erro"));
 });
 
-// ---- Função de borda do token ----
+// ---- Função de borda do token (LiveKit) ----
 function borda(over = {}) {
-  const chamadas = { daily: [], issue: 0 };
-  const env = (n) => ({ DAILY_API_KEY: "segredo-ficticio", DAILY_DOMAIN: "potala", ROOM_ALLOWED_ORIGINS: "https://app.invalid", ...over.env })[n];
-  const handler = createRoomTokenHandler({ env, context: async () => over.context ?? { data: { state: "open" } },
+  const { m, lk } = modeloLiveKit();
+  const chamadas = { issue: 0, get lk() { return m.chamadas; } };
+  const env = (n) => ({ LIVEKIT_URL: "wss://potala-lab.livekit.cloud", LIVEKIT_API_KEY: "APIchaveficticia", LIVEKIT_API_SECRET: "segredo-ficticio", ROOM_ALLOWED_ORIGINS: "https://app.invalid", ...over.env })[n];
+  const lkUsado = over.lk ? over.lk(lk) : lk;
+  const handler = createRoomTokenHandler({ env, lk: lkUsado, context: async () => over.context ?? { data: { state: "open" } },
     issue: async (jwt, id) => { chamadas.issue++; chamadas.jwt = jwt; chamadas.id = id;
-      return over.issue ? over.issue() : { data: { session_id: "s", room_name: SALA, provider: "daily", role: "client",
-        expires_at: new Date(Date.now() + 3600e3).toISOString(), participant_id: "u1" } }; },
-    daily: async (path, body) => { chamadas.daily.push([path, body]);
-      return over.daily ? over.daily(path) : { status: 200, json: { token: "tok" } }; } });
+      return over.issue ? over.issue() : { data: { session_id: "s", room_name: SALA, provider: "livekit", role: "client",
+        expires_at: new Date(Date.now() + 3600e3).toISOString(), participant_id: "u1" } }; } });
   const req = (body = { request_id: ID }, headers = {}, method = "POST") => new Request("https://f.invalid/x", { method,
     headers: { "Content-Type": "application/json", Origin: "https://app.invalid", Authorization: "Bearer jwt-do-usuario", ...headers },
     ...(method === "POST" ? { body: typeof body === "string" ? body : JSON.stringify(body) } : {}) });
-  return { handler, chamadas, req };
+  return { handler, chamadas, req, m };
 }
 
 test("borda: sem JWT, com corpo extra ou ID inválido não chega ao banco nem ao provedor", async () => {
@@ -152,7 +215,7 @@ test("borda: sem JWT, com corpo extra ou ID inválido não chega ao banco nem ao
   assert.equal((await b.handler(b.req({ request_id: ID, extra: 1 }))).status, 400);
   assert.equal((await b.handler(b.req({ request_id: "x" }))).status, 400);
   assert.equal((await b.handler(b.req(undefined, {}, "GET"))).status, 405);
-  assert.equal(b.chamadas.issue, 0); assert.equal(b.chamadas.daily.length, 0);
+  assert.equal(b.chamadas.issue, 0); assert.equal(b.m.chamadas.length, 0);
 });
 
 test("borda: negação do banco (não participante / cancelado / limite) nunca chama o provedor", async () => {
@@ -160,30 +223,25 @@ test("borda: negação do banco (não participante / cancelado / limite) nunca c
     const b = borda({ issue: () => ({ error: { code } }) });
     const r = await b.handler(b.req());
     assert.equal(r.status, status);
-    assert.equal(b.chamadas.daily.length, 0);
+    assert.equal(b.m.chamadas.length, 0);
   }
 });
 
-test("borda: token preso à sala e ao participante, não-dono, sem gravação, usa o JWT do usuário", async () => {
+test("borda: token preso à sala e ao participante, usa o JWT do usuário e não devolve segredo", async () => {
   const b = borda();
   const r = await b.handler(b.req());
   assert.equal(r.status, 200);
   const corpo = await r.json();
-  assert.equal(corpo.token, "tok");
-  assert.equal(corpo.url, `https://potala.daily.co/${SALA}`);
+  assert.match(corpo.token, /^tok\|/);
+  assert.equal(corpo.url, "wss://potala-lab.livekit.cloud");
   assert.equal(b.chamadas.jwt, "jwt-do-usuario");
-  const sala = b.chamadas.daily.find(([p]) => p === "/rooms")[1];
-  const tk = b.chamadas.daily.find(([p]) => p === "/meeting-tokens")[1].properties;
-  assert.equal(sala.privacy, "private");
-  assert.equal(tk.room_name, SALA); assert.equal(tk.user_id, "u1");
-  assert.equal(tk.is_owner, false); assert.equal(tk.eject_at_token_exp, true);
-  assert.ok(!JSON.stringify(b.chamadas.daily).includes("enable_recording\":\"cloud"));
-  assert.ok(!("enable_recording" in sala.properties) && !("enable_recording" in tk));
+  assert.deepEqual(b.m.chamadas.find((c) => c[0] === "token").slice(1, 3), [SALA, "u1"]);
   assert.ok(!JSON.stringify(corpo).includes("segredo-ficticio"));
+  assert.ok(!JSON.stringify(b.m.chamadas).match(/egress|record/i), "nenhuma gravação é solicitada");
 });
 
 test("borda: sem credencial do provedor responde 503 e não consulta o banco", async () => {
-  const b = borda({ env: { DAILY_API_KEY: undefined } });
+  const b = borda({ env: { LIVEKIT_API_SECRET: undefined } });
   assert.equal((await b.handler(b.req())).status, 503);
   assert.equal(b.chamadas.issue, 0);
 });
@@ -228,20 +286,20 @@ function arquivos(dir, lista = []) {
 test("artefatos servidos: sem chave do provedor nem referência a segredo", () => {
   for (const f of arquivos("outputs/js/sala").concat(["outputs/sala-atendimento.html", "outputs/css/sala.css"])) {
     const t = readFileSync(f, "utf8");
-    assert.doesNotMatch(t, /DAILY_API_KEY|api\.daily\.co|Bearer\s+[A-Za-z0-9]{20,}|service_role/i, f);
+    assert.doesNotMatch(t, /LIVEKIT_API_(KEY|SECRET)|api\.daily\.co|Bearer\s+[A-Za-z0-9]{20,}|service_role/i, f);
     assert.doesNotMatch(t, /innerHTML|insertAdjacentHTML|document\.write|eval\(/, f);
   }
 });
 
 test("borda: provedor ou banco fora do ar => 502 genérico, sem vazar detalhe nem segredo", async () => {
-  const quedaDaily = borda({ daily: () => { throw new Error("ECONNRESET api.daily.co segredo-ficticio"); } });
-  const r1 = await quedaDaily.handler(quedaDaily.req());
+  const quedaLk = borda({ lk: (lk) => ({ ...lk, createRoom: async () => { throw new Error("ECONNRESET livekit.cloud segredo-ficticio"); } }) });
+  const r1 = await quedaLk.handler(quedaLk.req());
   assert.equal(r1.status, 502);
-  assert.ok(!JSON.stringify(await r1.json()).match(/ECONNRESET|daily|segredo/i));
+  assert.ok(!JSON.stringify(await r1.json()).match(/ECONNRESET|livekit|segredo/i));
   const quedaBanco = borda({ issue: () => { throw new Error("fetch failed https://x.supabase.co jwt-do-usuario"); } });
   const r2 = await quedaBanco.handler(quedaBanco.req());
   assert.equal(r2.status, 502);
-  assert.equal(quedaBanco.chamadas.daily.length, 0);
+  assert.equal(quedaBanco.m.chamadas.length, 0);
   assert.ok(!JSON.stringify(await r2.json()).match(/supabase|jwt/i));
 });
 
@@ -265,6 +323,10 @@ test("SQL: leitura do chat só com sala aberta, rate limit serializado e control
   const lista = sql.slice(sql.indexOf("create function public.list_appointment_room_messages"), sql.indexOf("create function public.post_appointment_room_message"));
   assert.match(lista, /ctx ->> 'state' <> 'open'/);
 });
+test("CSS da sala: botões com hidden realmente somem (.mp-botao define display)", () => {
+  assert.match(readFileSync("outputs/css/sala.css", "utf8"), /\.sala-pagina \[hidden\]\s*\{\s*display:\s*none\s*!important/);
+});
+
 test("CSS da sala: vídeo ocupa a largura (sem estourar em 320 px) e alvos de toque >= 44 px", () => {
   const css = readFileSync("outputs/css/sala.css", "utf8");
   assert.match(css, /\.sala-video \{[^}]*width: 100%;[^}]*min-width: 0;/);

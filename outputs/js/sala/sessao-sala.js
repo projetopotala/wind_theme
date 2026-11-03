@@ -43,8 +43,41 @@ export function criarApiDaSala({ client, config = SUPABASE_CONFIG, fetchImpl = g
   }
 }
 
-export function criarSessaoSala({ requestId, api, video, ui, criarChat }) {
-  let contexto = null, chat = null;
+export function criarSessaoSala({ requestId, api, video, ui, criarChat, esperar = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
+  let contexto = null, chat = null, acesso = null, tentativas = 0, reconectando = false;
+  const ESPERAS = [1500, 4000, 8000];
+
+  // Reconexão: o SDK já tenta reconectar sozinho; se a conexão cai de vez, pede um token NOVO
+  // (o banco recusa se a sala foi encerrada ou venceu) e entra de novo. Nunca reaproveita token velho.
+  function ganchosVideo() {
+    return {
+      aoPerder: () => ui.mostrarConexao(false),
+      aoRecuperar: () => { tentativas = 0; ui.mostrarConexao(true); },
+      aoConectar: () => { tentativas = 0; ui.mostrarConexao(true); },
+      aoFalhar: () => reconectar(),
+      aoDesconectar: (motivo) => (motivo === "duplicada" ? sair({ motivo: "saiu" }) : reconectar()),
+    };
+  }
+
+  async function reconectar() {
+    if (!chat || reconectando) return;
+    reconectando = true;
+    ui.mostrarConexao(false);
+    try {
+      while (chat && tentativas < ESPERAS.length) {
+        await esperar(ESPERAS[tentativas++]);
+        if (!chat) return;
+        try { acesso = await api.emitir(requestId); }
+        catch (erro) {
+          if ([401, 403, 409].includes(Number(erro?.status))) { sair({ motivo: "encerrada" }); return; }
+          continue;
+        }
+        try { video.entrar(ui.areaDoVideo, { url: acesso.url, token: acesso.token }, ganchosVideo()); return; }
+        catch { /* próxima tentativa */ }
+      }
+      if (chat) sair({ motivo: "saiu" });
+    } finally { reconectando = false; }
+  }
 
   async function carregar() {
     ui.mostrarCarregando();
@@ -65,10 +98,9 @@ export function criarSessaoSala({ requestId, api, video, ui, criarChat }) {
   async function entrar() {
     if (!contexto || contexto.state !== "open") return false;
     ui.mostrarEntrando();
-    let acesso;
     try { acesso = await api.emitir(requestId); }
     catch (erro) { ui.mostrarErro(mensagemDeErro(erro), { podeTentarDeNovo: ![401, 403].includes(Number(erro?.status)) && erro?.code !== "42501" }); return false; }
-    try { video.entrar(ui.areaDoVideo, { url: acesso.url, token: acesso.token }); }
+    try { video.entrar(ui.areaDoVideo, { url: acesso.url, token: acesso.token }, ganchosVideo()); }
     catch { ui.mostrarErro("Não foi possível abrir a videochamada.", { podeTentarDeNovo: true }); return false; }
     chat = criarChat({
       listar: (depois) => api.listar(requestId, depois),

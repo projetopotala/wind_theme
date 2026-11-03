@@ -12,3 +12,8 @@ verify_jwt = true
 [functions.close-appointment-room]
   # Encerra a sala: banco autoriza com o JWT do usuario; provedor so e chamado depois.
   verify_jwt = true
+
+[functions.sweep-appointment-rooms]
+# Chamada so por agendador. O handler exige a chave de servico (comparacao em tempo constante);
+# a plataforma nao valida JWT aqui para aceitar tambem chaves que nao sao JWT.
+verify_jwt = false

@@ -1,6 +1,6 @@
-// Servidor de TESTE da pagina da sala com SDK Supabase falso por cenario (?cenario=open|too_early|expired|closed|cancelled|not_confirmed|denied|rede|erro403|chat|perda|encerra|pro|tokenfail|sem_daily).
+// Servidor de TESTE da pagina da sala com SDK Supabase falso por cenario (?cenario=open|too_early|expired|closed|cancelled|not_confirmed|denied|rede|erro403|chat|perda|encerra|pro|tokenfail|sem_video).
 // Uso: node d4-sala-servidor-de-teste.mjs <caminho-de-outputs>  ->  http://127.0.0.1:4173/sala-atendimento.html?pedido=<uuid>&cenario=open
-// Nao entra em npm run test:portal; nao fala com o Supabase nem com o Daily.
+// Nao entra em npm run test:portal; nao fala com o Supabase nem com o LiveKit (SDK de video falso em /vendor/livekit-client.umd.js).
 // Servidor de TESTE local (fora do repo): serve outputs/ e troca o SDK do Supabase por um falso com cenÃ¡rios.
 import http from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
@@ -27,8 +27,12 @@ const FAKE = `
     if (String(url).includes("/functions/v1/issue-appointment-room-token")) {
       window.__sala.chamadas.push({ url: String(url), auth: init?.headers?.Authorization, body: init?.body });
       if (c === "tokenfail") return new Response(JSON.stringify({ code: "42501", message: "x" }), { status: 403 });
-      if (c === "sem_daily") return new Response(JSON.stringify({ message: "x" }), { status: 503 });
-      return new Response(JSON.stringify({ url: "https://teste.daily.co/potala-" + "a".repeat(32), token: "tok-falso", expires_at: iso(60), role: ctx[c]?.role || "client" }), { status: 200 });
+      if (c === "sem_video") return new Response(JSON.stringify({ message: "x" }), { status: 503 });
+      return new Response(JSON.stringify({ url: "wss://teste.livekit.cloud", token: "tok-falso", expires_at: iso(60), role: ctx[c]?.role || "client" }), { status: 200 });
+    }
+    if (String(url).includes("/functions/v1/close-appointment-room")) {
+      window.__sala.chamadas.push({ url: String(url), auth: init?.headers?.Authorization, body: init?.body });
+      return new Response(JSON.stringify({ closed: true, revoked: c !== "revoga_pendente" }), { status: 200 });
     }
     return real(url, init);
   };
@@ -39,7 +43,7 @@ const FAKE = `
       if (nome === "appointment_room_context") {
         if (c === "rede") { if (!window.__sala.tentou) { window.__sala.tentou = 1; return rede(); } return { data: ctx.open, error: null }; }
         if (c === "erro403") return { data: null, error: { code: "42501", message: "x" }, status: 403 };
-        return { data: ctx[c === "chat" || c === "perda" || c === "encerra" || c === "tokenfail" || c === "sem_daily" || c === "sem_sessao" ? "open" : c] ?? ctx.denied, error: null };
+        return { data: ctx[c === "chat" || c === "perda" || c === "encerra" || c === "tokenfail" || c === "sem_video" || c === "sem_sessao" ? "open" : c] ?? ctx.denied, error: null };
       }
       if (nome === "list_appointment_room_messages") {
         listagens++;
@@ -55,10 +59,28 @@ const FAKE = `
   if (c === "chat" || c === "perda") { msgs.push({ id: ++nid, role: "professional", mine: false, body: "<img src=x onerror=\\"window.__xss=1\\"><b>negrito</b>" }); }
 })();`;
 
+// SDK de video FALSO: cria elementos <video> coloridos para checar layout; nao ha rede.
+const FAKE_LIVEKIT = `
+(() => {
+  const eventos = {};
+  const RoomEvent = { TrackSubscribed: "ts", TrackUnsubscribed: "tu", LocalTrackPublished: "lp", LocalTrackUnpublished: "lu", Reconnecting: "rc", Reconnected: "rd", Disconnected: "dc" };
+  const emite = (e, ...a) => (eventos[e] || []).forEach((f) => f(...a));
+  const faixa = (cor) => ({ kind: "video", attach() { const v = document.createElement("video"); v.style.background = cor; v.setAttribute("data-fake", cor); return v; }, detach() { return []; } });
+  class Room {
+    constructor() { this.remoteParticipants = new Map(); window.__lk = { sala: this, emite, RoomEvent }; this.localParticipant = {
+      setMicrophoneEnabled: async () => {}, setCameraEnabled: async (v) => { if (v) emite("lp", { track: faixa("#2a5") }); } }; }
+    on(e, f) { (eventos[e] = eventos[e] || []).push(f); return this; }
+    async connect(url, token) { window.__lk.conectou = { url, token }; setTimeout(() => emite("ts", faixa("#35a")), 50); }
+    disconnect() { window.__lk.desconectou = (window.__lk.desconectou || 0) + 1; }
+  }
+  window.LivekitClient = { Room, RoomEvent, DisconnectReason: { CLIENT_INITIATED: 1, DUPLICATE_IDENTITY: 2, PARTICIPANT_REMOVED: 4, ROOM_DELETED: 5 } };
+})();`;
+
 http.createServer((req, res) => {
   const url = new URL(req.url, "http://x");
   let p = decodeURIComponent(url.pathname);
-  if (p === "/js/vendor/supabase.js") { res.writeHead(200, { "Content-Type": TIPOS[".js"] }); return res.end(FAKE); }
+  if (p === "/vendor/livekit-client.umd.js") { res.writeHead(200, { "Content-Type": TIPOS[".js"] }); return res.end(FAKE_LIVEKIT); }
+  if (p === "/vendor/supabase.js") { res.writeHead(200, { "Content-Type": TIPOS[".js"] }); return res.end(FAKE); }
   let f = join(ROOT, p);
   if (!f.startsWith(ROOT) || !existsSync(f) || statSync(f).isDirectory()) { res.writeHead(404); return res.end("nf"); }
   res.writeHead(200, { "Content-Type": TIPOS[extname(f)] || "application/octet-stream", "Cache-Control": "no-store" });
