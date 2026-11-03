@@ -14,10 +14,18 @@ export function normalizarMensagem(texto) {
   return limpo.length >= 1 && [...limpo].length <= LIMITE_DA_MENSAGEM ? limpo : null;
 }
 
-export function criarChat({ lista, formulario, campo, aviso, listar, enviar, documento = globalThis.document,
+// Hora local da mensagem (HH:MM); data inválida não mostra nada.
+export function horaDaMensagem(valor) {
+  const data = new Date(valor);
+  if (!valor || Number.isNaN(data.getTime())) return null;
+  return { iso: data.toISOString(), texto: data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) };
+}
+
+export function criarChat({ lista, formulario, campo, aviso, listar, enviar, vazio = null, botao = null, documento = globalThis.document,
   agendar = (fn, ms) => globalThis.setTimeout(fn, ms), cancelar = (id) => globalThis.clearTimeout(id),
   intervalo = 3000, aoPerder = () => {}, aoRecuperar = () => {}, aoEncerrar = () => {} } = {}) {
-  let ultimo = 0, timer = null, parado = false, offline = false;
+  let ultimo = 0, timer = null, parado = false, offline = false, enviando = false;
+  if (vazio) vazio.hidden = false;
 
   function desenhar(m) {
     const item = documento.createElement("li");
@@ -28,7 +36,19 @@ export function criarChat({ lista, formulario, campo, aviso, listar, enviar, doc
     const corpo = documento.createElement("p");
     corpo.textContent = String(m.body ?? "");
     item.append(quem, corpo);
+    const hora = horaDaMensagem(m.created_at);
+    if (hora) {
+      const marca = documento.createElement("time");
+      marca.className = "sala-msg-hora";
+      marca.setAttribute("datetime", hora.iso);
+      marca.textContent = hora.texto;
+      item.append(marca);
+    }
+    // Só rola para o fim se a pessoa já estava lendo o fim (ou se a mensagem é dela).
+    const noFim = typeof lista.scrollHeight !== "number" || lista.scrollHeight - lista.scrollTop - lista.clientHeight < 80;
     lista.append(item);
+    if (vazio) vazio.hidden = true;
+    if ((noFim || m.mine) && typeof lista.scrollHeight === "number") lista.scrollTop = lista.scrollHeight;
   }
 
   async function rodada() {
@@ -46,13 +66,28 @@ export function criarChat({ lista, formulario, campo, aviso, listar, enviar, doc
 
   async function agora() { cancelar(timer); await rodada(); }
 
-  formulario.addEventListener("submit", async (evento) => {
-    evento.preventDefault();
+  const marcarEnvio = (ativo) => {
+    enviando = ativo;
+    if (!botao) return;
+    botao.disabled = ativo;
+    botao.setAttribute("aria-busy", String(ativo));
+    if (botao.rotulo) botao.rotulo.textContent = ativo ? "Enviando…" : "Enviar";
+  };
+  async function submeter(evento) {
+    evento?.preventDefault?.();
+    if (enviando) return;
     const texto = normalizarMensagem(campo.value);
     if (!texto) { aviso.textContent = "Escreva uma mensagem de até 1000 caracteres."; return; }
     aviso.textContent = "";
+    marcarEnvio(true);
     try { await enviar(texto); campo.value = ""; await agora(); }
-    catch (erro) { aviso.textContent = mensagemDeErro(erro); }
+    catch (erro) { aviso.textContent = `Não enviada. ${mensagemDeErro(erro)}`; } // o texto continua no campo
+    finally { marcarEnvio(false); }
+  }
+  formulario.addEventListener("submit", submeter);
+  // Enter envia; Shift+Enter quebra a linha (e a composição de teclado IME não envia).
+  campo.addEventListener?.("keydown", (evento) => {
+    if (evento.key === "Enter" && !evento.shiftKey && !evento.isComposing) { evento.preventDefault(); submeter(); }
   });
 
   return {

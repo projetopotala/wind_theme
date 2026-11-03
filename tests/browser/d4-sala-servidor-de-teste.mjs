@@ -63,14 +63,18 @@ const FAKE = `
 const FAKE_LIVEKIT = `
 (() => {
   const eventos = {};
-  const RoomEvent = { TrackSubscribed: "ts", TrackUnsubscribed: "tu", LocalTrackPublished: "lp", LocalTrackUnpublished: "lu", Reconnecting: "rc", Reconnected: "rd", Disconnected: "dc" };
+  const RoomEvent = { TrackSubscribed: "ts", TrackUnsubscribed: "tu", LocalTrackPublished: "lp", LocalTrackUnpublished: "lu", Reconnecting: "rc", Reconnected: "rd", Disconnected: "dc",
+    ParticipantConnected: "pc", ParticipantDisconnected: "pd", TrackMuted: "tm", TrackUnmuted: "tun", ActiveSpeakersChanged: "as", AudioPlaybackStatusChanged: "ap" };
   const emite = (e, ...a) => (eventos[e] || []).forEach((f) => f(...a));
   const faixa = (cor) => ({ kind: "video", attach() { const v = document.createElement("video"); v.style.background = cor; v.setAttribute("data-fake", cor); return v; }, detach() { return []; } });
   class Room {
-    constructor() { this.remoteParticipants = new Map(); window.__lk = { sala: this, emite, RoomEvent }; this.localParticipant = {
-      setMicrophoneEnabled: async () => {}, setCameraEnabled: async (v) => { if (v) emite("lp", { track: faixa("#2a5") }); } }; }
+    constructor() { this.remoteParticipants = new Map(); this.canPlaybackAudio = true; window.__lk = { sala: this, emite, RoomEvent }; const lp = this.localParticipant = {
+      isMicrophoneEnabled: false, isCameraEnabled: false, isSpeaking: false,
+      setMicrophoneEnabled: async (v) => { lp.isMicrophoneEnabled = v; emite("tm"); },
+      setCameraEnabled: async (v) => { lp.isCameraEnabled = v; if (v) emite("lp", { track: faixa("#2a5") }); emite("tm"); } }; }
     on(e, f) { (eventos[e] = eventos[e] || []).push(f); return this; }
-    async connect(url, token) { window.__lk.conectou = { url, token }; setTimeout(() => emite("ts", faixa("#35a")), 50); }
+    async startAudio() { this.canPlaybackAudio = true; window.__lk.startAudio = (window.__lk.startAudio || 0) + 1; }
+    async connect(url, token) { window.__lk.conectou = { url, token }; setTimeout(() => { this.remoteParticipants.set("r", { isMicrophoneEnabled: true, isCameraEnabled: true, isSpeaking: false }); emite("pc"); emite("ts", faixa("#35a")); }, 50); }
     disconnect() { window.__lk.desconectou = (window.__lk.desconectou || 0) + 1; }
   }
   window.LivekitClient = { Room, RoomEvent, DisconnectReason: { CLIENT_INITIATED: 1, DUPLICATE_IDENTITY: 2, PARTICIPANT_REMOVED: 4, ROOM_DELETED: 5 } };

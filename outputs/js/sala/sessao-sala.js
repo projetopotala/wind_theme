@@ -72,7 +72,7 @@ export function criarSessaoSala({ requestId, api, video, ui, criarChat, esperar 
           if ([401, 403, 409].includes(Number(erro?.status))) { sair({ motivo: "encerrada" }); return; }
           continue;
         }
-        try { video.entrar(ui.areaDoVideo, { url: acesso.url, token: acesso.token }, ganchosVideo()); return; }
+        try { video.entrar(ui.areaDoVideo, { url: acesso.url, token: acesso.token, papel: contexto?.role }, ganchosVideo()); return; }
         catch { /* próxima tentativa */ }
       }
       if (chat) sair({ motivo: "saiu" });
@@ -100,7 +100,7 @@ export function criarSessaoSala({ requestId, api, video, ui, criarChat, esperar 
     ui.mostrarEntrando();
     try { acesso = await api.emitir(requestId); }
     catch (erro) { ui.mostrarErro(mensagemDeErro(erro), { podeTentarDeNovo: ![401, 403].includes(Number(erro?.status)) && erro?.code !== "42501" }); return false; }
-    try { video.entrar(ui.areaDoVideo, { url: acesso.url, token: acesso.token }, ganchosVideo()); }
+    try { video.entrar(ui.areaDoVideo, { url: acesso.url, token: acesso.token, papel: contexto.role }, ganchosVideo()); }
     catch { ui.mostrarErro("Não foi possível abrir a videochamada.", { podeTentarDeNovo: true }); return false; }
     chat = criarChat({
       listar: (depois) => api.listar(requestId, depois),
