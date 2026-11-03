@@ -68,8 +68,14 @@ export function adaptadorLiveKit({ documento = globalThis.document, sdk = global
         if (track.kind === "video") { elemento.setAttribute("playsinline", ""); elemento.muted = true; }
         onde.append(elemento);
       };
-      room.on(sdk.RoomEvent.TrackSubscribed, (track) => { aviso.hidden = true; anexar(track, remoto); });
-      room.on(sdk.RoomEvent.TrackUnsubscribed, (track) => { track.detach().forEach((el) => el.remove()); });
+      // O SDK ja solta o elemento ao cancelar a assinatura: detach() devolve vazio e o <video> ficaria preso na tela.
+      const limparRemotos = () => [...remoto.children].forEach((el) => { const trilhas = el.srcObject?.getTracks?.() ?? []; if (!trilhas.some((t) => t.readyState === "live")) el.remove(); });
+      room.on(sdk.RoomEvent.TrackSubscribed, (track) => { aviso.hidden = true; limparRemotos(); anexar(track, remoto); });
+      room.on(sdk.RoomEvent.TrackUnsubscribed, (track) => { track.detach().forEach((el) => el.remove()); limparRemotos(); });
+      room.on(sdk.RoomEvent.ParticipantDisconnected, () => {
+        if (room.remoteParticipants?.size) return;
+        remoto.replaceChildren(); aviso.hidden = false; aviso.textContent = "Aguardando a outra pessoa entrar\u2026";
+      });
       room.on(sdk.RoomEvent.LocalTrackPublished, (pub) => { if (pub.track?.kind === "video") anexar(pub.track, local); });
       room.on(sdk.RoomEvent.LocalTrackUnpublished, (pub) => { pub.track?.detach().forEach((el) => el.remove()); });
       room.on(sdk.RoomEvent.Reconnecting, () => ganchos.aoPerder?.());
