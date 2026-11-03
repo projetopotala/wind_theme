@@ -121,7 +121,11 @@ const msgs = await db.query("select count(*)::int c from public.appointment_room
 ok("encerrar apaga o chat", msgs.rows[0].c === 0);
 ok("apÃ³s encerrar: closed, sem emissÃ£o e sem leitura", (await ctx(U.cli, aberta)).v?.state === "closed" && (await emitir(U.cli, aberta)).code === "P0001" && (await listar(U.cli, aberta)).code === "P0001");
 // privilÃ©gios diretos
-for (const t of ["appointment_room_sessions", "appointment_room_messages", "appointment_room_access_log"]) {
+// repeticao do encerramento (recuperacao de revogacao pendente no provedor)
+const de2 = await fechar(U.pro, aberta);
+ok("profissional repete o encerramento numa sala ja encerrada (idempotente)", de2.ok && de2.v?.closed === true);
+ok("repetir nao reabre a sala (continua closed, closed_by preservado)", (await ctx(U.pro, aberta)).v?.state === "closed" && (await db.query("select count(*)::int c from public.appointment_room_sessions where request_id=$1 and closed_at is not null and closed_by=$2", [aberta, U.pro])).rows[0].c === 1);
+ok("apos fechada, cliente e terceiro continuam sem poder encerrar/emitir", (await fechar(U.cli, aberta)).code === "42501" && (await fechar(U.intruso, aberta)).code === "42501" && (await emitir(U.intruso, aberta)).code === "42501" && (await emitir(U.pro, aberta)).code === "P0001");for (const t of ["appointment_room_sessions", "appointment_room_messages", "appointment_room_access_log"]) {
   const r = await como(U.cli, `select count(*)::int c from public.${t}`);
   ok(`SELECT direto em ${t} negado`, !r.ok && r.code === "42501");
   const w = await como(U.cli, `delete from public.${t}`);

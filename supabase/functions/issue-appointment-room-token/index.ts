@@ -9,6 +9,7 @@ async function issue(jwt: string, requestId: string) {
     method: "POST",
     headers: { apikey: env("SUPABASE_ANON_KEY") ?? "", Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
     body: JSON.stringify({ p_request_id: requestId }),
+    signal: AbortSignal.timeout(8000),
   });
   const json = await response.json().catch(() => null);
   return response.ok ? { data: json } : { error: { code: json?.code ?? String(response.status) } };
@@ -19,6 +20,7 @@ async function daily(path: string, body: unknown) {
     method: "POST",
     headers: { Authorization: `Bearer ${env("DAILY_API_KEY")}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(8000),
   });
   return { status: response.status, json: await response.json().catch(() => ({})) };
 }

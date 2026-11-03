@@ -21,3 +21,16 @@ Estado confirmado: LAB `hmspabllgxqfzzricijv`, migration `202611020001` registra
 
 ## Testes
 `tests/potala/d4-encerramento.test.mjs` (6 casos): sem JWT/corpo inválido/método não chegam ao banco; banco nega => Daily não é chamado; autorizado expulsa+bane e apaga; falha do provedor sinaliza `revoked:false` sem vazar detalhe; 404 conta como revogado; front chama a função com o JWT.
+
+## Revisão de encerramento e recuperação (defeitos comprovados e correções)
+Banco: a repetição é segura. `close_appointment_room_session` aceita o profissional vinculado mesmo com a sala `closed` ou `expired` (o contexto devolve o papel), é idempotente (`coalesce`), não reabre nada e continua negando cliente e terceiros (provado na matriz PGlite, 59/59).
+
+Defeitos encontrados no resto da cadeia:
+1. **Tela**: ignorava `revoked:false` e mostrava "A sala foi encerrada", sem botão para repetir. Agora oferece "Confirmar desconexão de todos" (também ao reabrir uma sala já encerrada, só para o profissional); a repetição só mostra "concluída" com `revoked:true`.
+2. **Leitura da sala (service role)**: erro do PostgREST virava "nada a revogar" = sucesso. Agora a leitura lança erro e a resposta é `revoked:false`, sem chamar o Daily.
+3. **Validação do Daily**: qualquer status <400 era sucesso. Agora só 200 com `ejectedIds` (eject) ou `deleted:true` (delete), ou 404 (sala já ausente = idempotente). 202/204/200 vazio, 401, 5xx, timeout e corpo ilegível = pendente.
+4. **Timeouts**: chamadas sem limite. Agora 8 s (RPC, leitura, Daily) nas duas funções.
+5. **Falha parcial**: se a expulsão falhava, a exclusão nem era tentada. Agora cada passo é tentado; a repetição repete ambos (404 = ok).
+
+Recuperação: o banco fica fechado desde a primeira chamada (novas entradas negadas); a revogação pendente é refeita por qualquer repetição do profissional. Se ninguém repetir, o token e a sala do Daily expiram no fim da janela (`eject_at_token_exp`, `eject_at_room_exp`).
+Risco residual (depende do Daily real): corrida entre uma emissão em andamento e o encerramento pode recriar a sala após o DELETE; a repetição do profissional (ou a expiração da janela) a remove. A lista de `user_ids` vem do log de acessos, que a rotina de limpeza apaga após 1 dia; depois disso a revogação só apaga a sala.

@@ -56,6 +56,9 @@ export function criarSessaoSala({ requestId, api, video, ui, criarChat }) {
     }
     const visao = visaoDoContexto(contexto);
     ui.mostrarVisao(visao, { papel: contexto?.role ?? null, servico: contexto?.service ?? "" });
+    // Sala já encerrada: o profissional pode confirmar a desconexão (idempotente), caso uma
+    // tentativa anterior tenha falhado no provedor.
+    if (contexto?.state === "closed" && contexto?.role === "professional") ui.oferecerRevogacao?.();
     return visao;
   }
 
@@ -86,10 +89,24 @@ export function criarSessaoSala({ requestId, api, video, ui, criarChat }) {
 
   async function encerrar() {
     if (contexto?.role !== "professional") return false;
-    try { await api.encerrar(requestId); } catch (erro) { ui.mostrarErro(mensagemDeErro(erro), { podeTentarDeNovo: false }); return false; }
+    let resposta;
+    try { resposta = await api.encerrar(requestId); } catch (erro) { ui.mostrarErro(mensagemDeErro(erro), { podeTentarDeNovo: false }); return false; }
     sair({ motivo: "encerrada" });
+    // O banco já fechou; se o provedor não confirmou a expulsão, a revogação segue pendente
+    // e precisa ficar visível e repetível (nunca apresentada como concluída).
+    if (resposta?.revoked !== true) ui.oferecerRevogacao?.();
     return true;
   }
 
-  return { carregar, entrar, sair, encerrar, get contexto() { return contexto; } };
+  // Repete só a revogação no provedor. O banco aceita o profissional numa sala já encerrada.
+  async function revogar() {
+    if (contexto?.role !== "professional") return false;
+    let resposta;
+    try { resposta = await api.encerrar(requestId); } catch { ui.oferecerRevogacao?.(); return false; }
+    if (resposta?.revoked === true) { ui.revogacaoConcluida?.(); return true; }
+    ui.oferecerRevogacao?.();
+    return false;
+  }
+
+  return { carregar, entrar, sair, encerrar, revogar, get contexto() { return contexto; } };
 }

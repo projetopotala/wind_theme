@@ -23,6 +23,12 @@ function cors(request: Request, allowed: string[]): Record<string, string> {
     "Access-Control-Allow-Headers": "apikey, authorization, content-type", Vary: "Origin" };
 }
 
+function confirmou(r: { status: number; json: Record<string, unknown> }, campo: "ejectedIds" | "deleted") {
+  if (r.status === 404) return true;
+  if (r.status !== 200) return false;
+  return campo === "deleted" ? r.json?.deleted === true : Array.isArray(r.json?.ejectedIds);
+}
+
 export function createCloseRoomHandler(deps: Deps) {
   return async (request: Request): Promise<Response> => {
     const allowed = (deps.env("ROOM_ALLOWED_ORIGINS") ?? "").split(",").map(s => s.trim()).filter(Boolean);
@@ -58,16 +64,22 @@ export function createCloseRoomHandler(deps: Deps) {
     // significam que a revogação precisa ser repetida.
     let revoked = false;
     try {
-      const found = await deps.lookup(requestId);
+      const found = await deps.lookup(requestId); // lança se a leitura falhar
       if (!found) revoked = true;
       else if (!deps.env("DAILY_API_KEY")) revoked = false;
       else {
         const room = encodeURIComponent(found.room_name);
-        const ejected = found.user_ids.length === 0 ? { status: 200 }
-          : await deps.daily("POST", `/rooms/${room}/eject`, { user_ids: found.user_ids, ban: true });
-        const removed = await deps.daily("DELETE", `/rooms/${room}`);
-        // 404 = sala nunca criada ou já removida; é o estado desejado.
-        revoked = (ejected.status < 400 || ejected.status === 404) && (removed.status < 400 || removed.status === 404);
+        // Sucesso é só o que o Daily confirma de forma inequívoca; 404 = sala já ausente
+        // (nunca criada ou já removida), que é o estado desejado. Timeout, 5xx, 401/403,
+        // 2xx sem a confirmação esperada ou corpo ilegível contam como não revogado.
+        // Cada passo é tentado mesmo que o outro falhe, para a falha parcial ser mínima.
+        const passo = async (chamada: () => ReturnType<Deps["daily"]>, campo: "ejectedIds" | "deleted") => {
+          try { return confirmou(await chamada(), campo); } catch { return false; }
+        };
+        const ejected = found.user_ids.length === 0 ? true
+          : await passo(() => deps.daily("POST", `/rooms/${room}/eject`, { user_ids: found.user_ids, ban: true }), "ejectedIds");
+        const removed = await passo(() => deps.daily("DELETE", `/rooms/${room}`), "deleted");
+        revoked = ejected && removed;
       }
     } catch { revoked = false; }
     return reply(200, { closed: true, revoked }, headers);
