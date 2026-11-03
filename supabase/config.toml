@@ -3,3 +3,7 @@ project_id = "potala_portal_local"
 [functions.submit-appointment-request]
 # Chaves publicáveis não são JWTs. O wrapper valida a chave em `apikey`.
 verify_jwt = false
+
+[functions.issue-appointment-room-token]
+# O JWT do usuario e validado pelo banco ao chamar a RPC com ele.
+verify_jwt = false

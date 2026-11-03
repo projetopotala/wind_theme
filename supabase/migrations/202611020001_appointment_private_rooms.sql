@@ -153,7 +153,9 @@ begin
   end if;
   insert into public.appointment_room_access_log(session_id, user_id, kind)
   values (sess.id, actor, 'token');
-  expires := least(clock_timestamp() + interval '15 minutes', (ctx ->> 'closes_at')::timestamptz);
+  -- O token vale até o fim da janela da sala e o provedor ejeta o participante
+  -- nesse instante. Não é reutilizável depois da janela.
+  expires := (ctx ->> 'closes_at')::timestamptz;
   return jsonb_build_object('session_id', sess.id, 'room_name', sess.provider_room_name,
     'provider', sess.provider, 'role', ctx ->> 'role', 'expires_at', expires,
     'participant_id', actor);
