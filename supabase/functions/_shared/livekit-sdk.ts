@@ -1,7 +1,7 @@
 // Cliente LiveKit das Edge Functions: SDK oficial (livekit-server-sdk) por trás da interface
 // LkAdmin, que é o que os handlers e os testes conhecem. Nenhum segredo sai deste módulo.
 import { AccessToken, RoomServiceClient, TrackSource } from "npm:livekit-server-sdk@2.19.2";
-import { gerarToken } from "./livekit-token.ts";
+import { gerarToken, opcoesDeRevogacao } from "./livekit-token.ts";
 import { urlLiveKit, type LkAdmin, type LkResult } from "./livekit-revoke.ts";
 
 const TIMEOUT_MS = 8000;
@@ -32,7 +32,7 @@ export function criarLk(env: (nome: string) => string | undefined): LkAdmin & {
   const admin = () => new RoomServiceClient(wss.replace(/^wss:/, "https:"), key, secret);
   return {
     createRoom: (name) => chamar(() => admin().createRoom({ name, maxParticipants: 2, emptyTimeout: 120, departureTimeout: 30 })),
-    removeParticipant: (room, identity) => chamar(() => admin().removeParticipant(room, identity)),
+    removeParticipant: (room, identity) => chamar(() => admin().removeParticipant(room, identity, opcoesDeRevogacao())),
     deleteRoom: (room) => chamar(() => admin().deleteRoom(room)),
     // listRooms filtrado por nome devolve lista vazia quando a sala não existe (404 aqui).
     async findRoom(room) {

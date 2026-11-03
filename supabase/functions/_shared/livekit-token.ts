@@ -11,6 +11,11 @@ type Sdk<S> = {
   TrackSource: { CAMERA: S; MICROPHONE: S };
 };
 
+// LiveKit Cloud: RemoveParticipant com revokeTokenTs invalida tokens emitidos antes desse instante (nbf),
+// mesmo que o participante já tenha saído, e não falha se ele não existe mais. O instante precisa estar
+// a até 60 s do relógio do servidor; +5 s cobre token emitido no mesmo segundo.
+export const opcoesDeRevogacao = (agoraSeg = Math.floor(Date.now() / 1000)) => ({ revokeTokenTs: BigInt(agoraSeg + 5) });
+
 export type TokenSpec = { room: string; identity: string; name: string; ttlSeconds: number };
 
 export async function gerarToken<S>(sdk: Sdk<S>, key: string, secret: string, spec: TokenSpec): Promise<string> {

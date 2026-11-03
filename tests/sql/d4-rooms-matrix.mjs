@@ -1,16 +1,16 @@
 // Matriz de seguranca da D4 em Postgres real (PGlite, em memoria; nao toca o Supabase).
-// Uso: instalar @electric-sql/pglite fora do repo e rodar: node d4-rooms-matrix.mjs <migration.sql>
+// Uso: instalar @electric-sql/pglite fora do repo e rodar: node d4-rooms-matrix.mjs <202611020001...sql> [<202611030001...sql>]
 // Nao faz parte de npm run test:portal para nao exigir a dependencia.
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 
-const MIG = process.argv[2];
+const MIGS = process.argv.slice(2); // base; com a migration do LiveKit, a matriz espera 8 funcoes (nomes e permissoes conferidos um a um)
 const db = new PGlite();
 const out = [];
 const ok = (nome, cond, extra = "") => { out.push([cond ? "PASS" : "FAIL", nome, extra]); };
 
 await db.exec(`
-create role anon nologin; create role authenticated nologin;
+create role anon nologin; create role authenticated nologin; create role service_role nologin;
 create schema auth;
 create table auth.users (id uuid primary key);
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
@@ -27,7 +27,7 @@ create function public.is_appointment_professional(p_profile_id text) returns bo
   select (select auth.uid()) is not null and exists (select 1 from public.appointment_profile_accounts c join public.op_records p on p.collection='profiles' and p.id=c.profile_id
    where c.user_id=(select auth.uid()) and c.profile_id=p_profile_id and c.active and coalesce(p.document->'roles','[]'::jsonb) ? 'professional') $$;
 `);
-await db.exec(readFileSync(MIG, "utf8"));
+for (const m of MIGS) await db.exec(readFileSync(m, "utf8"));
 
 const U = { cli: "00000000-0000-4000-8000-0000000000a1", pro: "00000000-0000-4000-8000-0000000000b2",
   intruso: "00000000-0000-4000-8000-0000000000c3", outroPro: "00000000-0000-4000-8000-0000000000d4", admin: "00000000-0000-4000-8000-0000000000e5" };
@@ -142,7 +142,19 @@ await db.exec(`select set_config('test.admin','${U.admin}',false)`);
 const pa = await como(U.admin, "select public.purge_expired_appointment_room_messages() as c");
 ok("purge permitida a admin", pa.ok);
 const sd = await db.query(`select proname, prosecdef, proconfig::text from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and proname like '%appointment_room%'`);
-ok("6 funÃ§Ãµes, todas SECURITY DEFINER com search_path vazio", sd.rows.length === 6 && sd.rows.every((r) => r.prosecdef && /search_path=/.test(r.proconfig) && /""/.test(r.proconfig)));
+{
+  const base = { appointment_room_context: [0, 1, null], close_appointment_room_session: [0, 1, null], issue_appointment_room_access: [0, 1, null],
+    list_appointment_room_messages: [0, 1, null], post_appointment_room_message: [0, 1, null], purge_expired_appointment_room_messages: [0, 1, null] };
+  const livekit = { appointment_rooms_pending_revocation: [0, 0, 1], mark_appointment_room_revoked: [0, 0, 1] }; // anon, authenticated, service_role (null = nao asserido: no Supabase real vem dos privilegios padrao, conferido no LAB)
+  const esperado = MIGS.length > 1 ? { ...base, ...livekit } : base;
+  const nomes = sd.rows.map((r) => r.proname).sort();
+  ok(`${Object.keys(esperado).length} funcoes com os nomes esperados`, JSON.stringify(nomes) === JSON.stringify(Object.keys(esperado).sort()), nomes.join(","));
+  ok("todas SECURITY DEFINER com search_path vazio", sd.rows.every((r) => r.prosecdef && /search_path=/.test(r.proconfig) && /""/.test(r.proconfig)));
+  for (const [nome, [anon, auth, serv]] of Object.entries(esperado)) {
+    const p = await db.query(`select has_function_privilege('anon', p.oid, 'EXECUTE') a, has_function_privilege('authenticated', p.oid, 'EXECUTE') u, has_function_privilege('service_role', p.oid, 'EXECUTE') s from pg_proc p where proname = $1`, [nome]);
+    ok(`permissoes de ${nome}: anon=${anon} authenticated=${auth} service_role=${serv}`, p.rows[0] && +p.rows[0].a === anon && +p.rows[0].u === auth && (serv === null || +p.rows[0].s === serv), JSON.stringify(p.rows[0]));
+  }
+}
 const rls = await db.query(`select relname, relrowsecurity from pg_class where relname like 'appointment_room_%' and relkind='r'`);
 ok("RLS ligada nas 3 tabelas", rls.rows.length === 3 && rls.rows.every((r) => r.relrowsecurity));
 const pol = await db.query(`select count(*)::int c from pg_policies where tablename like 'appointment_room_%'`);

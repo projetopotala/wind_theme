@@ -7,6 +7,8 @@ import { revogarSala, type LkAdmin } from "../_shared/livekit-revoke.ts";
 export type Pendente = { session_id: string; room_name: string; user_ids: string[] };
 export type Deps = {
   env: (name: string) => string | undefined;
+  // Credencial de serviço (chave secreta do projeto); nunca JWT de usuário, anon ou chave publicável.
+  autorizado: (request: Request) => boolean;
   pendentes: (limite: number) => Promise<Pendente[]>; // lança se a leitura falhar
   lk: LkAdmin;
   marcar: (sessionId: string) => Promise<unknown>;
@@ -15,19 +17,10 @@ export type Deps = {
 const reply = (status: number, body: Record<string, unknown>) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
-function igual(a: string, b: string) {
-  if (a.length !== b.length) return false;
-  let d = 0;
-  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return d === 0;
-}
-
 export function createSweepHandler(deps: Deps) {
   return async (request: Request): Promise<Response> => {
     if (request.method !== "POST") return reply(405, { message: "Método não permitido." });
-    const chave = deps.env("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const bearer = /^Bearer\s+(\S+)$/i.exec(request.headers.get("authorization") ?? "")?.[1] ?? "";
-    if (!chave || !igual(bearer, chave)) return reply(401, { message: "Não autorizado." });
+    if (!deps.autorizado(request)) return reply(401, { message: "Não autorizado." });
     if (!deps.env("LIVEKIT_API_KEY") || !deps.env("LIVEKIT_API_SECRET") || !deps.env("LIVEKIT_URL")) {
       return reply(503, { message: "A videochamada ainda não está configurada." });
     }

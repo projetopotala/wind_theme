@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createCloseRoomHandler } from "../../supabase/functions/close-appointment-room/handler.ts";
 import { createRoomTokenHandler } from "../../supabase/functions/issue-appointment-room-token/handler.ts";
+import { credencialDeServico } from "../../supabase/functions/_shared/credencial-servico.ts";
 import { createSweepHandler } from "../../supabase/functions/sweep-appointment-rooms/handler.ts";
 import { JANELA_VARREDURA_MS, TTL_TOKEN_SEGUNDOS, revogarSala } from "../../supabase/functions/_shared/livekit-revoke.ts";
 import { criarApiDaSala, criarSessaoSala } from "../../outputs/js/sala/sessao-sala.js";
@@ -182,7 +183,8 @@ function varredor(fila, over = {}) {
   const { m, lk } = modeloLiveKit();
   for (const s of fila) m.salas.set(s.room_name, { max: 2, conectados: new Map(s.user_ids.map((u) => [u, true])) });
   const marcadas = [];
-  const h = createSweepHandler({ env: envPadrao({ SUPABASE_SERVICE_ROLE_KEY: "chave-de-servico-ficticia", ...over.env }), lk,
+  const ambiente = envPadrao({ SUPABASE_SERVICE_ROLE_KEY: "chave-de-servico-ficticia", ...over.env });
+  const h = createSweepHandler({ env: ambiente, autorizado: (r) => credencialDeServico(ambiente, r), lk,
     pendentes: async () => { if (over.leituraFalha) throw new Error("x"); return fila; },
     marcar: async (id) => { if (over.marcarFalha) throw new Error("x"); marcadas.push(id); } });
   const req = (auth = "Bearer chave-de-servico-ficticia", method = "POST") => new Request("https://f.invalid/x", { method, headers: { Authorization: auth } });

@@ -14,6 +14,7 @@ verify_jwt = true
   verify_jwt = true
 
 [functions.sweep-appointment-rooms]
-# Chamada so por agendador. O handler exige a chave de servico (comparacao em tempo constante);
-# a plataforma nao valida JWT aqui para aceitar tambem chaves que nao sao JWT.
+# Chamada so por agendador (pg_cron/pg_net). Chaves sb_secret_* nao sao JWT, entao a plataforma nao pode
+# valida-las; o handler confere a credencial de servico (apikey/Bearer contra SUPABASE_SECRET_KEYS e a chave
+# legada) em tempo constante, antes de qualquer acao, e nega tudo se nenhuma chave estiver configurada.
 verify_jwt = false
