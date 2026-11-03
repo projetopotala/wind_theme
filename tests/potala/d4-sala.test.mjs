@@ -343,3 +343,8 @@ test("sessão: 401/403 ao emitir token não oferece tentar de novo", async () =>
   await s.carregar(); await s.entrar();
   assert.equal(podeTentar, false);
 });
+test("depois de sair da sala a pagina oferece o botao para voltar (e nao em sala encerrada)", () => {
+  const fonte = readFileSync("outputs/js/sala/pagina-sala.js", "utf8");
+  const linha = fonte.split("\n").find((l) => l.includes("mostrarSaida(motivo)")) ?? "";
+  assert.match(linha, /el\.entrar\.hidden = motivo === "encerrada"/);
+});

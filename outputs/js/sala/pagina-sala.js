@@ -24,7 +24,7 @@ const ui = {
   oferecerRevogacao() { el.texto.textContent = "Se alguém ainda estiver conectado, confirme a desconexão."; el.tentar.textContent = "Confirmar desconexão de todos"; el.tentar.dataset.acao = "revogar"; el.tentar.hidden = false; },
   revogacaoConcluida() { el.texto.textContent = "Todos foram desconectados."; el.tentar.hidden = true; delete el.tentar.dataset.acao; },
   mostrarConexao(ok) { el.conexao.hidden = ok; },
-  mostrarSaida(motivo) { el.palco.hidden = true; el.mensagens.replaceChildren(); el.titulo.textContent = motivo === "encerrada" ? "Atendimento encerrado" : "Você saiu da sala"; el.texto.textContent = motivo === "encerrada" ? "A sala foi encerrada." : "Você pode voltar enquanto a sala estiver aberta."; el.conexao.hidden = true; },
+  mostrarSaida(motivo) { el.palco.hidden = true; el.entrar.hidden = motivo === "encerrada"; el.tentar.hidden = true; el.mensagens.replaceChildren(); el.titulo.textContent = motivo === "encerrada" ? "Atendimento encerrado" : "Você saiu da sala"; el.texto.textContent = motivo === "encerrada" ? "A sala foi encerrada." : "Você pode voltar enquanto a sala estiver aberta."; el.conexao.hidden = true; },
 };
 
 const requestId = pedidoDoEndereco(new URLSearchParams(location.search));
