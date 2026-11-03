@@ -33,7 +33,25 @@ Informe a origem em `POTALA_AMBIENTE_ORIGEM`. Os scripts `test:portal`/`check:po
 ## Build de produção
 `npm run build` executa `ambiente-supabase.mjs auto` e falha se `outputs/` contiver o ID do LAB, `ambiente-lab.js`, `ambiente-local.js`, `sb_secret_` ou JWT `service_role`. Também falha se for executado no projeto Vercel LAB.
 
-## Pendências institucionais (não alteradas nesta etapa)
-1. O projeto Vercel de **produção** deve usar `npm run build` (ou `node scripts/ambiente-supabase.mjs producao`) como comando de build.
-2. Aprovar e acrescentar à lista `HOSTS_OFICIAIS` qualquer domínio próprio definitivo.
-3. Supabase Auth de produção: Site URL e Redirect URLs do domínio oficial.
+## Build na Vercel
+O projeto `wind-theme` usa preset *Other* e Root Directory `outputs`. A guarda roda por `outputs/vercel.json`, versionado e revisado:
+
+```json
+"buildCommand": "node ../scripts/ambiente-supabase.mjs producao",
+"outputDirectory": "."
+```
+
+- O comando executa dentro de `outputs/` e alcança `../scripts` porque *Include files outside the root directory in the Build Step* está ligado (padrão). Se for desligado, o build **falha** (nunca publica sem a guarda).
+- `outputDirectory` é obrigatório: com um Build Command definido, a Vercel passa a exigir a pasta `public`. `"."` mantém a publicação estática de `outputs/`.
+- Não há Install Command (não existe `package.json` em `outputs/`).
+- Homologado em projeto temporário isolado (Preview real): guarda executada e aprovada, deploy READY, páginas, assets e rewrites servidos, referência sintética ao LAB derrubou o build.
+
+## CI (GitHub Actions)
+`.github/workflows/ci.yml` roda em PRs para `main`: `npm ci`, lint, `test:portal`, `verificar:ambiente` e `build`, sem credenciais.
+
+**Falhas preexistentes conhecidas**: `npm test` executa `tests/rendered-html.test.mjs`, que falha em 2 casos já na `main` (`app/_sites-preview/SkeletonPreview.tsx` e a meta `codex-preview` não existem). O workflow executa esse teste como passo **informativo** (`continue-on-error`), à vista em todo PR, sem bloquear até haver correção em PR própria.
+
+## Pendências institucionais
+1. Aprovar e acrescentar à lista `HOSTS_OFICIAIS` qualquer domínio próprio definitivo. Hoje só `wind-theme.vercel.app`; `wind-theme-potala.vercel.app` (domínio automático, atrás de SSO) **não** está autorizado e fica bloqueado.
+2. Supabase Auth de produção: Site URL e Redirect URLs do domínio oficial.
+3. Tornar o check de CI obrigatório (ruleset da `main`) quando a equipe decidir; não configurado.

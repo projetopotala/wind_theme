@@ -218,6 +218,28 @@ test("a árvore atual passa na verificação de produção e a decisão efetiva 
   assert.deepEqual(await conferirDecisao(RAIZ_FS, { modo: "producao" }), []);
 });
 
+test("outputs/vercel.json roda a guarda no build da Vercel e preserva os rewrites", () => {
+  const v = JSON.parse(readFileSync(new URL("outputs/vercel.json", RAIZ), "utf8"));
+  // Root Directory = outputs: o comando roda ali e acha ../scripts (opção "arquivos fora do Root" ligada).
+  assert.equal(v.buildCommand, "node ../scripts/ambiente-supabase.mjs producao");
+  // Com Build Command definido a Vercel passa a exigir "public"; "." mantém a publicação estática de outputs/.
+  assert.equal(v.outputDirectory, ".");
+  assert.deepEqual(v.rewrites.map((r) => r.source), [
+    "/admin", "/admin/", "/blog", "/blog/", "/confirmar-conta", "/confirmar-conta/", "/meu-potala", "/meu-potala/:path*",
+  ]);
+  assert.equal(v.rewrites.find((r) => r.source === "/meu-potala/:path*").destination, "/meu-potala.html");
+  assert.equal(existsSync(new URL("scripts/ambiente-supabase.mjs", RAIZ)), true);
+});
+
+test("o workflow de CI roda as verificações da PR sem credenciais e mantém o rendered-html informativo", () => {
+  const ci = readFileSync(new URL(".github/workflows/ci.yml", RAIZ), "utf8");
+  assert.match(ci, /pull_request:\s*\n\s*branches: \[main\]/);
+  for (const passo of ["npm ci", "npm run lint", "npm run test:portal", "npm run verificar:ambiente", "npm run build"]) assert.ok(ci.includes(`run: ${passo}`), passo);
+  assert.match(ci, /rendered-html[^\n]*\n\s*continue-on-error: true/);
+  assert.doesNotMatch(ci, /secrets\.|SUPABASE|service_role|sb_secret_/i);
+  assert.match(ci, /permissions:\s*\n\s*contents: read/);
+});
+
 test("o build e o início da página chamam a verificação de ambiente", () => {
   const p = JSON.parse(readFileSync(new URL("package.json", RAIZ), "utf8"));
   assert.match(p.scripts.build, /^node scripts\/ambiente-supabase\.mjs auto && /);
