@@ -60,7 +60,7 @@ export function criarSessaoSala({ requestId, api, video, ui, criarChat }) {
     ui.mostrarEntrando();
     let acesso;
     try { acesso = await api.emitir(requestId); }
-    catch (erro) { ui.mostrarErro(mensagemDeErro(erro), { podeTentarDeNovo: true }); return false; }
+    catch (erro) { ui.mostrarErro(mensagemDeErro(erro), { podeTentarDeNovo: ![401, 403].includes(Number(erro?.status)) && erro?.code !== "42501" }); return false; }
     try { video.entrar(ui.areaDoVideo, { url: acesso.url, token: acesso.token }); }
     catch { ui.mostrarErro("Não foi possível abrir a videochamada.", { podeTentarDeNovo: true }); return false; }
     chat = criarChat({

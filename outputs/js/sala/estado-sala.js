@@ -47,7 +47,7 @@ export function mensagemDeErro(erro) {
   if (codigo === "54000" || status === 429) return "Muitas tentativas em pouco tempo. Aguarde um instante e tente de novo.";
   if (codigo === "P0001") return "A sala não está disponível agora.";
   if (codigo === "22023") return "Revise a mensagem e envie de novo.";
-  if (status === 0 || codigo === "network") return "Sem conexão. Tentando reconectar…";
+  if (status === 0 || codigo === "network") return "Sem conexão com o Portal. Verifique sua internet e tente de novo.";
   return "Não foi possível concluir. Tente de novo em instantes.";
 }
 

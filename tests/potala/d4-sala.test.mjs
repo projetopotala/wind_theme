@@ -232,3 +232,52 @@ test("artefatos servidos: sem chave do provedor nem referência a segredo", () =
     assert.doesNotMatch(t, /innerHTML|insertAdjacentHTML|document\.write|eval\(/, f);
   }
 });
+
+test("borda: provedor ou banco fora do ar => 502 genérico, sem vazar detalhe nem segredo", async () => {
+  const quedaDaily = borda({ daily: () => { throw new Error("ECONNRESET api.daily.co segredo-ficticio"); } });
+  const r1 = await quedaDaily.handler(quedaDaily.req());
+  assert.equal(r1.status, 502);
+  assert.ok(!JSON.stringify(await r1.json()).match(/ECONNRESET|daily|segredo/i));
+  const quedaBanco = borda({ issue: () => { throw new Error("fetch failed https://x.supabase.co jwt-do-usuario"); } });
+  const r2 = await quedaBanco.handler(quedaBanco.req());
+  assert.equal(r2.status, 502);
+  assert.equal(quedaBanco.chamadas.daily.length, 0);
+  assert.ok(!JSON.stringify(await r2.json()).match(/supabase|jwt/i));
+});
+
+test("borda: CORS só ecoa origem permitida; sem origem prevista não há cabeçalho", async () => {
+  const b = borda();
+  assert.equal((await b.handler(b.req(undefined, { Origin: "https://app.invalid" }, "OPTIONS"))).headers.get("access-control-allow-origin"), "https://app.invalid");
+  assert.equal((await b.handler(b.req(undefined, { Origin: "https://evil.invalid" }, "OPTIONS"))).headers.get("access-control-allow-origin"), null);
+  const sem = borda({ env: { ROOM_ALLOWED_ORIGINS: "" } });
+  assert.equal((await sem.handler(sem.req(undefined, {}, "OPTIONS"))).headers.get("access-control-allow-origin"), null);
+});
+
+test("config: a função do token exige JWT validado pela plataforma", () => {
+  const cfg = readFileSync("supabase/config.toml", "utf8");
+  assert.match(cfg, /\[functions\.issue-appointment-room-token\][^[]*verify_jwt = true/);
+});
+
+test("SQL: leitura do chat só com sala aberta, rate limit serializado e controle rejeitado no servidor", () => {
+  assert.match(sql, /pg_advisory_xact_lock\(hashtextextended\(actor::text \|\| ':token'/);
+  assert.match(sql, /pg_advisory_xact_lock\(hashtextextended\(actor::text \|\| ':message'/);
+  assert.match(sql, /clean ~ '\[\\x01-\\x08/);
+  const lista = sql.slice(sql.indexOf("create function public.list_appointment_room_messages"), sql.indexOf("create function public.post_appointment_room_message"));
+  assert.match(lista, /ctx ->> 'state' <> 'open'/);
+});
+test("CSS da sala: vídeo ocupa a largura (sem estourar em 320 px) e alvos de toque >= 44 px", () => {
+  const css = readFileSync("outputs/css/sala.css", "utf8");
+  assert.match(css, /\.sala-video \{[^}]*width: 100%;[^}]*min-width: 0;/);
+  assert.match(css, /\.sala-pagina \{[^}]*grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(css, /\.sala-pagina button \{ min-height: 44px; \}/);
+  assert.match(css, /\.sala-voltar \{[^}]*min-height: 44px/);
+});
+
+test("sessão: 401/403 ao emitir token não oferece tentar de novo", async () => {
+  let podeTentar = null;
+  const ui = { ...uiFalsa(), mostrarErro: (_t, o) => { podeTentar = o.podeTentarDeNovo; } };
+  const s = criarSessaoSala({ requestId: ID, ui, video: videoFalso(), criarChat: () => ({}),
+    api: { contexto: async () => ({ state: "open", role: "client" }), emitir: async () => { throw { code: "42501", status: 403 }; } } });
+  await s.carregar(); await s.entrar();
+  assert.equal(podeTentar, false);
+});
