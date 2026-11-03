@@ -52,7 +52,10 @@ export function createRoomTokenHandler(deps: Deps) {
       return reply(503, { message: "A videochamada ainda não está configurada." }, headers);
     }
 
-    const { data, error } = await deps.issue(jwt, requestId);
+    // Falha de rede do banco ou do provedor vira resposta genérica, sem detalhe.
+    const down = () => ({ status: 503, json: {} as Record<string, unknown> });
+    const { data, error } = await deps.issue(jwt, requestId)
+      .catch(() => ({ data: null, error: { code: "unavailable" } }));
     if (error || !data) {
       const code = error?.code ?? "";
       if (code === "42501") return reply(403, { code, message: "Acesso negado." }, headers);
@@ -70,14 +73,14 @@ export function createRoomTokenHandler(deps: Deps) {
     // propriedade enable_recording é enviada, o que a mantém desligada.
     const room = await deps.daily("/rooms", { name: data.room_name, privacy: "private",
       properties: { exp, eject_at_room_exp: true, enable_chat: false,
-        enable_knocking: false, max_participants: 2 } });
+        enable_knocking: false, max_participants: 2 } }).catch(down);
     const already = room.status === 400 && String(room.json?.info ?? "").includes("already exists");
     if (room.status >= 400 && !already) return reply(502, { message: "Não foi possível abrir a sala." }, headers);
 
     const token = await deps.daily("/meeting-tokens", { properties: {
       room_name: data.room_name, user_id: data.participant_id,
       user_name: data.role === "professional" ? "Profissional" : "Cliente",
-      is_owner: false, exp, eject_at_token_exp: true } });
+      is_owner: false, exp, eject_at_token_exp: true } }).catch(down);
     if (token.status >= 400 || typeof token.json?.token !== "string") {
       return reply(502, { message: "Não foi possível abrir a sala." }, headers);
     }

@@ -1,7 +1,7 @@
 import { createRoomTokenHandler } from "./handler.ts";
 
-// verify_jwt=false em config.toml: o JWT do usuário é validado pelo banco, ao chamar
-// a RPC com ele (auth.uid()). A chave do provedor só existe como secret desta função.
+// verify_jwt=true em config.toml: a plataforma valida o JWT; o banco valida de novo
+// ao chamar a RPC com ele (auth.uid()). A chave do provedor só existe como secret desta função.
 const env = (name: string) => Deno.env.get(name);
 
 async function issue(jwt: string, requestId: string) {

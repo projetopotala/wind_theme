@@ -5,5 +5,6 @@ project_id = "potala_portal_local"
 verify_jwt = false
 
 [functions.issue-appointment-room-token]
-# O JWT do usuario e validado pelo banco ao chamar a RPC com ele.
-verify_jwt = false
+# Funcao para usuario autenticado: a plataforma valida o JWT antes do handler
+# (recomendacao atual do Supabase) e o banco valida de novo ao chamar a RPC.
+verify_jwt = true
