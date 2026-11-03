@@ -67,3 +67,11 @@ Segredos `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` e `ROOM_ALLOWED_
 ## GO / NO-GO
 - **GO** para o deploy de homologação do LiveKit no LAB (passos 1–5): código e testes locais verdes, segredos presentes, nada de produção envolvido.
 - **NO-GO** para declarar a D4 concluída: vídeo, áudio, expulsão e a janela de token antigo só contam depois do teste real. O varredor agendado é pré-requisito de produção.
+
+## Ativacao controlada no LAB (2026-11-03)
+
+- Migration `202611030001` aplicada somente no LAB `hmspabllgxqfzzricijv` e registrada no historico (checks SQL: constraint aceita daily/livekit, default livekit, `revoked_at` e fila de revogacao presentes, registros Daily intactos, sem acesso anonimo novo).
+- Funcoes publicadas no LAB: `issue-appointment-room-token` v9 (verify_jwt=true), `close-appointment-room` v6 (verify_jwt=true), `sweep-appointment-rooms` v4 (verify_jwt=false + credencial de servico conferida no handler, `_shared/credencial-servico.ts`). `submit-appointment-request` nao foi tocada (v8).
+- Varredor: 401 sem credencial, invalida, anon e JWT de usuario; o runtime aceita a chave de servico do proprio projeto (autoteste interno). Agendamento (pg_cron/pg_net) NAO ativado. A `sb_secret` listada pela CLI foi recusada pelo gateway (UNAUTHORIZED_INVALID_API_KEY): o teste positivo externo exige a chave do painel.
+- RemoveParticipant usa `revokeTokenTs` (agora+5 s) antes de DeleteRoom; a sala so e dada como revogada apos `findRoom` confirmar ausencia.
+- Pendente para o teste real (Preview protegido + 2 contas): persistencia do `revokeTokenTs` depois de DeleteRoom, auto-criacao de sala por token antigo, janela residual de tokens renovados pelo cliente LiveKit, limite de 2 participantes com conexoes reais, audio e video.
