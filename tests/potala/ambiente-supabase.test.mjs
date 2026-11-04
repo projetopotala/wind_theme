@@ -224,7 +224,8 @@ test("outputs/vercel.json roda a guarda no build da Vercel e preserva os rewrite
   assert.equal(v.buildCommand, "node ../scripts/ambiente-supabase.mjs producao");
   // Com Build Command definido a Vercel passa a exigir "public"; "." mantém a publicação estática de outputs/.
   assert.equal(v.outputDirectory, ".");
-  assert.deepEqual(v.rewrites.map((r) => r.source), [
+  // Os 8 rewrites originais seguem intactos e na frente; a PR-1A so acrescenta rotas publicas depois deles.
+  assert.deepEqual(v.rewrites.slice(0, 8).map((r) => r.source), [
     "/admin", "/admin/", "/blog", "/blog/", "/confirmar-conta", "/confirmar-conta/", "/meu-potala", "/meu-potala/:path*",
   ]);
   assert.equal(v.rewrites.find((r) => r.source === "/meu-potala/:path*").destination, "/meu-potala.html");
