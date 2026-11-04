@@ -32,7 +32,7 @@ test("a página orienta antes de apresentar possibilidades de atendimento", asyn
   assert.match(html, /id="acesso"/);
   assert.match(html, /presencial e online/i);
   assert.match(html, /atendimento solidário/i);
-  assert.match(html, /href="transcendido\.html"[^>]*>Voltar à travessia/i);
+  assert.match(html, /href="travessia\.html"[^>]*>Voltar à travessia/i);
 });
 
 test("a composição se reduz a uma coluna no mobile", async () => {

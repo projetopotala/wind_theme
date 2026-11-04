@@ -62,7 +62,7 @@ test("Atendimentos mantém todo o conteúdo dos capítulos anteriores", () => {
   ];
   for (const trecho of obrigatorios) assert.ok(html.includes(trecho), `sumiu do conteúdo: ${trecho}`);
 
-  for (const destino of ["recepcao.html", "institutopotala.com/oraculos", "institutopotala.com/terapias", "transcendido.html"]) {
+  for (const destino of ["recepcao.html", "institutopotala.com/oraculos", "institutopotala.com/terapias", "travessia.html"]) {
     assert.ok(html.includes(destino), `sumiu o destino: ${destino}`);
   }
   assert.ok(html.includes('data-resource-hero="atendimentos"'), "a busca e os caminhos continuam na página");
