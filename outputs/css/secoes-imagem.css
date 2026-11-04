@@ -1,0 +1,159 @@
+/*
+ * SEÇÕES COM IMAGEM DA HOME — imagem maior, texto junto dela e movimento automático sutil.
+ *
+ * Vale só na Home (`.cine-home`). Três famílias de bloco:
+ *   - `.materia-slides`  carrosséis "Cuidar não cabe em uma só gaveta" e equivalentes;
+ *   - `.portal-window`   Sala Virtual;
+ *   - `.people-scene`    cena de pessoas ao fim dos Profissionais.
+ *
+ * Movimento: CSS nativo, em `transform`, sem biblioteca e sem ouvir a rolagem. Roda sozinho em
+ * quem não pediu movimento reduzido; com `prefers-reduced-motion: reduce` nada disto existe e a
+ * imagem fica parada, sem botão nem aviso. A única linha de JS (secoes-imagem.js) só pausa a
+ * animação das imagens fora da tela.
+ */
+
+/* ---------- Composição: a imagem passa a ser protagonista ---------- */
+
+@media (min-width: 981px) {
+  .cine-home .materia {
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    gap: clamp(32px, 5vw, 76px);
+  }
+
+  .cine-home .virtual-wrap {
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    gap: clamp(32px, 5vw, 76px);
+  }
+
+  .cine-home .portal-window {
+    aspect-ratio: 4 / 3.15;
+  }
+}
+
+.cine-home .materia-slide__foto {
+  border-radius: 28px;
+  box-shadow: 0 34px 60px -38px rgba(18, 38, 32, .55);
+}
+
+.cine-home .materia-slide img {
+  aspect-ratio: 7 / 5;
+  /* O quadro fica preso à tela enquanto se lê: nunca mais alto do que cabe com a legenda. */
+  max-height: max(300px, calc(100svh - 330px));
+}
+
+.cine-home .materia-slide figcaption {
+  gap: 10px;
+  padding: 22px 4px 0;
+}
+
+.cine-home .materia-slide figcaption strong {
+  font-size: clamp(1.5rem, 2.2vw, 2.1rem);
+}
+
+.cine-home .materia-slide figcaption span {
+  max-width: 56ch;
+  font-size: .98rem;
+}
+
+/* Sala Virtual: a foto preenche a janela inteira, sem moldura escura em volta. */
+.cine-home .portal-window {
+  padding: 0;
+  border-radius: 30px;
+}
+
+.cine-home .portal-window::before,
+.cine-home .portal-window::after {
+  display: none;
+}
+
+.cine-home .portal-window .screen {
+  position: absolute;
+  inset: 0;
+}
+
+.cine-home .portal-window .virtual-caption {
+  padding: 64px clamp(20px, 3vw, 36px) clamp(20px, 3vw, 32px);
+  background: linear-gradient(transparent, rgba(12, 33, 28, .88) 70%);
+}
+
+.cine-home .portal-window .virtual-caption strong {
+  font: 500 clamp(1.5rem, 2.4vw, 2.2rem) / 1.12 var(--serif);
+}
+
+.cine-home .people-scene {
+  min-height: min(56vw, 700px);
+}
+
+@media (max-width: 980px) {
+  .cine-home .materia-slide img {
+    aspect-ratio: 4 / 3.4;
+    max-height: none;
+  }
+
+  .cine-home .portal-window {
+    aspect-ratio: 4 / 3.2;
+    border-radius: 24px;
+  }
+}
+
+@media (max-width: 760px) {
+  .cine-home .materia-slide__foto {
+    border-radius: 22px;
+  }
+
+  .cine-home .people-scene {
+    min-height: 92vw;
+  }
+}
+
+/* ---------- Movimento automático: deriva lenta, só com movimento permitido ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .cine-home .materia-slide img,
+  .cine-home .portal-window .virtual-image,
+  .cine-home .people-scene img {
+    animation: secao-deriva var(--deriva-dur, 22s) ease-in-out infinite alternate;
+    will-change: transform;
+  }
+
+  /* Cada imagem anda para um lado, para o conjunto não parecer um metrônomo. */
+  .cine-home .materia-slide:nth-child(2n) img { --deriva-x: 1.6%; --deriva-y: -1%; --deriva-dur: 26s; }
+  .cine-home .materia-slide:nth-child(3n) img { --deriva-x: -.8%; --deriva-y: -1.6%; --deriva-dur: 24s; }
+  .cine-home .portal-window .virtual-image { --deriva-x: -1.4%; --deriva-y: 0%; --deriva-dur: 24s; }
+  .cine-home .people-scene img { --deriva-x: 1.2%; --deriva-y: 0%; --deriva-dur: 28s; }
+
+  /* Só o slide em cena anda; os outros esperam parados. */
+  .cine-home .materia-slide:not(.is-ativo) img,
+  .cine-home .fora-de-vista img {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes secao-deriva {
+  from { transform: scale(1.04) translate3d(var(--deriva-x, -1.5%), var(--deriva-y, 1%), 0); }
+  to { transform: scale(1.14) translate3d(calc(var(--deriva-x, -1.5%) * -1), calc(var(--deriva-y, 1%) * -1), 0); }
+}
+
+/* A profundidade ligada à rolagem (portal-cinema.css) cortava a foto demais; aqui ela fica mais
+ * leve e convive com a deriva, que usa `transform` enquanto ela usa `translate`/`scale`. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cine-home .people-scene img,
+    .cine-home .portal-window .virtual-image {
+      animation:
+        secao-profundidade linear both,
+        secao-deriva var(--deriva-dur, 22s) ease-in-out infinite alternate;
+      animation-timeline: --cine-moldura, auto;
+      animation-range: cover 0% cover 100%, normal;
+    }
+
+    .cine-home .fora-de-vista img {
+      animation-play-state: running, paused;
+    }
+  }
+}
+
+@keyframes secao-profundidade {
+  from { translate: 0 -3%; scale: 1.08; }
+  to { translate: 0 3%; scale: 1.04; }
+}
