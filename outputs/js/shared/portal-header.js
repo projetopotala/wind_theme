@@ -1,3 +1,4 @@
+import { mountPortalMenu } from "./portal-menu.js";
 const accountIcon = `
   <svg class="conta-icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <circle cx="12" cy="8.2" r="3.2" fill="none" stroke="currentColor" stroke-width="1.5"/>
@@ -30,4 +31,13 @@ export function mountPortalHeader({ documentRef = document, current = "", traves
       ${accountIcon}<span class="portal-header__account-label">Minha conta</span><span class="conta-iniciais" aria-hidden="true"></span>
     </button>`;
   documentRef.body.prepend(header);
+  /* Menu global: o botão entra em linha, ao lado do botão da conta (as duas ações dividem a mesma coluna da grade). */
+  const conta = header.querySelector?.(".portal-header__account");
+  if (conta) {
+    const ferramentas = documentRef.createElement("div");
+    ferramentas.className = "portal-header__tools";
+    header.insertBefore(ferramentas, conta);
+    ferramentas.appendChild(conta);
+    mountPortalMenu({ documentRef, host: ferramentas, antes: conta });
+  }
 }
