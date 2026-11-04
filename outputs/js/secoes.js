@@ -47,7 +47,7 @@ import { mountPortalHeader } from "./shared/portal-header.js";
 
   function mountLegacyNavigation() {
     const current = body.dataset.section || "inicio";
-    if (["quem-somos", "recepcao", "atendimentos", "cursos", "atividades", "profissionais", "programacao", "cultura", "saude-integrativa", "marketplace", "inspiracao"].includes(current)) mountPortalHeader({ current });
+    if (["quem-somos", "recepcao", "atendimentos", "cursos", "atividades", "profissionais", "programacao", "cultura", "saude-integrativa", "marketplace", "inspiracao"].includes(current)) mountPortalHeader({ current, ...(current === "atendimentos" ? { travessiaHref: "travessia.html" } : {}) });
     if (temBarra(current)) {
       const navigation = document.createElement("nav");
       navigation.className = "site-nav";
