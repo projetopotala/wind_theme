@@ -107,10 +107,6 @@
       "destination": "/profissionais.html"
     },
     {
-      "source": "/profissional",
-      "destination": "/profissional.html"
-    },
-    {
       "source": "/programacao",
       "destination": "/programacao.html"
     },
