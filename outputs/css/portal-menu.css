@@ -135,3 +135,17 @@ body[data-story-page]:has(#erro-ambiente) .potala-menu__trigger { left: calc(max
 @media (max-width: 560px) {
   body:has(#erro-ambiente) .potala-menu__trigger { top: 132px; }
 }
+/* ---------- Blog público e Meu Potala: o botão entra no cabeçalho que cada página já tem ---------- */
+/* No Caderno a conta fica num botão flutuante no canto direito: o menu fica ao lado dele, com o mesmo comportamento fixo. */
+.cad-cabecalho > .potala-menu__trigger {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  right: calc(max(16px, env(safe-area-inset-right)) + 54px);
+  z-index: 60;
+  color: #f6efe2;
+  background: rgba(33, 27, 21, .6);
+  border-color: rgba(246, 239, 226, .34);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.mp-topo > .potala-menu__trigger { margin-left: auto; color: var(--conta-marrom, #3b2a1d); }

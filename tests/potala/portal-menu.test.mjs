@@ -78,3 +78,25 @@ test("CSS: alvos de 44px, foco visível, painel sem overflow e movimento reduzid
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*animation:\s*none/);
   assert.match(css, /overscroll-behavior:\s*contain/);
 });
+
+test("o Blog público e o Meu Potala carregam o mesmo menu, sem duplicar nem tocar na autenticação", () => {
+  const blog = ler("blog.html");
+  const conta = ler("meu-potala.html");
+  assert.match(blog, /<script type="module" src="js\/shared\/portal-menu-boot\.js"><\/script>/);
+  assert.match(blog, /href="css\/portal-menu\.css"/);
+  assert.match(conta, /<script type="module" src="\/js\/shared\/portal-menu-boot\.js"><\/script>/);
+  assert.match(conta, /href="\/css\/portal-menu\.css"/);
+  assert.match(conta, /<script type="module" src="\/js\/conta\/spa\/app\.js"><\/script>/, "o app do Meu Potala segue carregando como antes");
+  const boot = ler("js/shared/portal-menu-boot.js");
+  assert.match(boot, /\.cad-cabecalho/);
+  assert.match(boot, /\.mp-topo/);
+  assert.doesNotMatch(boot.replace(/\/\*[\s\S]*?\*\//g, ""), /supabase|auth|fetch\(/i);
+});
+
+test("em subrotas do Meu Potala os destinos do menu são absolutos", () => {
+  const html = menuHtml("meu-potala", "/");
+  const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(hrefs.length >= 9);
+  assert.ok(hrefs.every((h) => h.startsWith("/")), hrefs.join(","));
+  assert.ok(!menuHtml("blog").includes('href="/transcendido.html"'), "sem base, os destinos continuam relativos");
+});
