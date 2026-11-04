@@ -69,3 +69,15 @@ test("a imagem humana possui resolução suficiente para a abertura", async () =
   assert.ok((metadata.width ?? 0) >= 1200);
   assert.ok((metadata.height ?? 0) >= 900);
 });
+
+test("navegação de Atendimentos tem alvos de ~44px e o retorno vai para a Travessia", async () => {
+  const html = await readFile(pageUrl, "utf8");
+  const css = (await readFile(styleUrl, "utf8")).replace(/\/\*[\s\S]*?\*\//g, "");
+  const redesign = (await readFile(new URL("../../outputs/css/atendimentos-redesign.css", import.meta.url), "utf8")).replace(/\/\*[\s\S]*?\*\//g, "");
+
+  assert.match(html, /<a href="travessia\.html">Voltar à travessia<\/a>/);
+  assert.doesNotMatch(html, /href="transcendido\.html"/, "o rodapé não deve voltar para a Home");
+  assert.match(css, /\.care-footer a\s*\{[^}]*min-height:\s*44px/);
+  assert.match(redesign, /\[data-section="atendimentos"\] \.portal-header__brand\s*\{[^}]*min-height:\s*44px/);
+  assert.match(redesign, /\[data-section="atendimentos"\] \.portal-header__nav a\s*\{[^}]*padding-block:\s*16px/);
+});
