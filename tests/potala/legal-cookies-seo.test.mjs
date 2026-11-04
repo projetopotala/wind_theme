@@ -69,7 +69,7 @@ test("sitemap só lista páginas públicas e existentes; jurídicas incompletas 
   for (const url of urls) {
     assert.ok(url.startsWith(`${ORIGEM}/`), `origem canônica provisória em ${url}`);
     const caminho = new URL(url).pathname;
-    const arquivo = caminho === "/" ? "index.html" : `${caminho.slice(1)}.html`;
+    const arquivo = caminho === "/" ? "index.html" : caminho.endsWith(".html") ? caminho.slice(1) : `${caminho.slice(1)}.html`;
     assert.ok(existsSync(new URL(`../../outputs/${arquivo}`, import.meta.url)), `${url} deve existir na main`);
     const html = await read(arquivo);
     assert.doesNotMatch(html, /name="robots"[^>]*noindex/i, `${url} é noindex`);

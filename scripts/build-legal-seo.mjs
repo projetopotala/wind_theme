@@ -24,8 +24,11 @@ export const ORIGEM_CANONICA_PROVISORIA = "https://wind-theme.vercel.app";
 export const LEGAIS_APROVADOS = new Set();
 
 const PAGINAS_PRIVADAS = new Set(["admin.html", "blog-admin.html", "confirmar-conta.html", "meu-potala.html"]);
-// blog.html tem canonical próprio e a rota /blog é o editor (privado): fora do sitemap.
-const FORA_DO_SITEMAP = new Set(["blog.html"]);
+// Na produção, /blog e /blog/ são rewrites para blog-admin.html (editor, privado). O blog público
+// é servido como /blog.html; por isso o canonical dele é fixo e nunca pode ser /blog.
+const CANONICO_FIXO = new Map([["blog.html", "/blog.html"]]);
+// blog.html é servido direto pelo arquivo: não precisa de rewrite.
+const SEM_REWRITE = new Set(["blog.html"]);
 
 const METADADOS = new Map([
   ["index.html", { title: "Instituto Cultural Potala", description: "Portal institucional do Instituto Cultural Potala: atendimentos, profissionais, cursos, eventos, cultura e revista." }],
@@ -103,11 +106,11 @@ ${robots}<link rel="canonical" href="${origem}/${slug}"><link rel="stylesheet" h
 }
 
 /** Mantém o caminho do canonical existente e troca só a origem; sem canonical, usa o caminho calculado. */
-export function definirCanonical(html, origem, caminhoPadrao) {
+export function definirCanonical(html, origem, caminhoPadrao, forcar = false) {
   const existente = /<link\s+rel=["']canonical["']\s+href=["']([^"']+)["'][^>]*>/i.exec(html);
   if (existente) {
     let caminho = caminhoPadrao;
-    try { caminho = new URL(existente[1]).pathname; } catch { /* mantém o padrão */ }
+    if (!forcar) { try { caminho = new URL(existente[1]).pathname; } catch { /* mantém o padrão */ } }
     return html.replace(existente[0], `<link rel="canonical" href="${origem}${caminho}">`);
   }
   return html.replace(/<\/head>/i, `  <link rel="canonical" href="${origem}${caminhoPadrao}">\n</head>`);
@@ -130,6 +133,11 @@ export async function gerar({ saida = path.resolve("outputs"), origem = resolver
   const caminhoVercel = path.join(saida, "vercel.json");
   const vercelAtual = JSON.parse(await readFile(caminhoVercel, "utf8"));
   mesclarVercelJson(vercelAtual, []);
+  const rotasPrivadas = new Set(
+    vercelAtual.rewrites
+      .filter(item => PAGINAS_PRIVADAS.has(item.destination.replace(/^\//, "")))
+      .map(item => item.source.replace(/\/$/, "") || "/"),
+  );
 
   for (const [slug, titulo, secoes] of PAGINAS_LEGAIS) {
     await writeFile(path.join(saida, `${slug}.html`), paginaLegalHtml({ origem, slug, titulo, secoes, aprovado: legaisAprovados.has(slug) }));
@@ -150,7 +158,11 @@ export async function gerar({ saida = path.resolve("outputs"), origem = resolver
         : html.replace(/<\/head>/i, `  ${descricao}\n</head>`);
     }
     const slug = arquivo === "index.html" ? "/" : `/${arquivo.replace(/\.html$/, "")}`;
-    html = definirCanonical(html, origem, slug);
+    html = definirCanonical(html, origem, CANONICO_FIXO.get(arquivo) ?? slug, CANONICO_FIXO.has(arquivo));
+    const canonicoAtual = new URL(/<link\s+rel="canonical"\s+href="([^"]+)"/i.exec(html)[1]).pathname.replace(/\/$/, "");
+    if (rotasPrivadas.has(canonicoAtual)) {
+      throw new Error(`${arquivo}: canonical ${canonicoAtual} aponta para uma rota administrativa; abortando.`);
+    }
     if (!/js\/shared\/privacy-consent\.js/.test(html)) {
       html = html.replace(/<\/head>/i, `  <link rel="stylesheet" href="/css/legal-privacy.css">\n  <script type="module" src="/js/shared/privacy-consent.js"></script>\n  <script type="module" src="/js/shared/analytics-gate.js"></script>\n</head>`);
     }
@@ -159,7 +171,7 @@ export async function gerar({ saida = path.resolve("outputs"), origem = resolver
 
     const nome = arquivo.replace(/\.html$/, "");
     const legalPendente = legaisSlugs.has(nome) && !legaisAprovados.has(nome);
-    if (!FORA_DO_SITEMAP.has(arquivo) && !legalPendente && !temNoindex(html)) noSitemap.push(slug);
+    if (!legalPendente && !temNoindex(html)) noSitemap.push(CANONICO_FIXO.get(arquivo) ?? slug);
   }
 
   const urls = [...new Set(noSitemap)].sort();
@@ -170,7 +182,7 @@ export async function gerar({ saida = path.resolve("outputs"), origem = resolver
   await writeFile(path.join(saida, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${origem}/sitemap.xml\n`);
 
   const rewritesGerados = arquivosHtml
-    .filter(arquivo => arquivo !== "index.html" && !FORA_DO_SITEMAP.has(arquivo))
+    .filter(arquivo => arquivo !== "index.html" && !SEM_REWRITE.has(arquivo))
     .map(arquivo => ({ source: `/${arquivo.replace(/\.html$/, "")}`, destination: `/${arquivo}` }));
   const vercel = mesclarVercelJson(vercelAtual, rewritesGerados);
   await writeFile(caminhoVercel, `${JSON.stringify(vercel, null, 2)}\n`);

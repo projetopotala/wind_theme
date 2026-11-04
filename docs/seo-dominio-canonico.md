@@ -22,6 +22,13 @@
 - Não habilita nenhuma ferramenta de rastreamento. `analytics-gate.js` só carrega um script se houver
   consentimento **e** `POTALA_ANALYTICS = { approved: true, src }` definido por quem aprovar o provedor.
 
+## Blog
+
+Na produção, /blog e /blog/ são rewrites para log-admin.html (editor, privado, oindex).
+O blog público é /blog.html: seu canonical é fixo nesse caminho (CANONICO_FIXO no gerador), ele entra no
+sitemap e o gerador aborta se algum canonical público apontar para uma rota administrativa.
+Previsões da Vercel (deployments de Preview) já respondem X-Robots-Tag: noindex e não precisam de regra aqui.
+
 ## Páginas legais
 
 As quatro rotas (`termos-de-uso`, `politica-de-privacidade`, `politica-de-cookies`,

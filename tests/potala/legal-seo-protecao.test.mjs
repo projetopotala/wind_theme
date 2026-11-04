@@ -91,3 +91,42 @@ test("a PR não traz migrations nem referências ao LAB nos arquivos publicados"
     assert.doesNotMatch(texto, /hmspabllgxqfzzricijv/, arquivo);
   }
 });
+
+test("blog: /blog é a administração; o blog público tem canonical próprio e nunca aponta para ela", async () => {
+  const config = await vercelReal();
+  const rota = origem => config.rewrites.find(item => item.source === origem)?.destination;
+  assert.equal(rota("/blog"), "/blog-admin.html");
+  assert.equal(rota("/blog/"), "/blog-admin.html");
+  const leia = nome => readFile(new URL(`../../outputs/${nome}`, import.meta.url), "utf8");
+  const publico = await leia("blog.html");
+  assert.match(publico, /rel="canonical" href="https:\/\/wind-theme\.vercel\.app\/blog\.html"/);
+  assert.doesNotMatch(publico, /rel="canonical" href="[^"]*\/blog"/);
+  assert.match(await leia("blog-admin.html"), /name="robots"[^>]*noindex/i);
+  const sitemap = await leia("sitemap.xml");
+  assert.match(sitemap, /<loc>https:\/\/wind-theme\.vercel\.app\/blog\.html<\/loc>/);
+  assert.doesNotMatch(sitemap, /<loc>[^<]*\/blog<\/loc>|blog-admin/);
+});
+
+test("nenhuma página pública usa como canonical uma rota que o vercel.json envia para a administração", async () => {
+  const { readdirSync } = await import("node:fs");
+  const config = await vercelReal();
+  const privadas = new Set(config.rewrites.filter(item => /^\/(admin|blog-admin|confirmar-conta|meu-potala)\.html$/.test(item.destination)).map(item => item.source.replace(/\/$/, "").replace(/\/:path\*$/, "")));
+  const dir = new URL("../../outputs/", import.meta.url);
+  for (const arquivo of readdirSync(dir).filter(nome => nome.endsWith(".html") && !/^(admin|blog-admin|confirmar-conta|meu-potala)\.html$/.test(nome))) {
+    const caminho = /rel="canonical" href="([^"]+)"/.exec(await readFile(new URL(arquivo, dir), "utf8"))?.[1];
+    if (caminho) assert.ok(!privadas.has(new URL(caminho).pathname.replace(/\/$/, "")), `${arquivo}: canonical ${caminho} é rota administrativa`);
+  }
+});
+
+test("o gerador corrige o canonical do blog público e recusa canonical apontando para a administração", async () => {
+  const base = await vercelReal();
+  const dir = await fixture(base);
+  try {
+    await writeFile(path.join(dir, "blog.html"), HEAD('<link rel="canonical" href="https://www.institutopotala.com/blog">'));
+    await gerar({ saida: dir, origem: ORIGEM_CANONICA_PROVISORIA });
+    assert.match(await readFile(path.join(dir, "blog.html"), "utf8"), /href="https:\/\/wind-theme\.vercel\.app\/blog\.html"/);
+    assert.match(await readFile(path.join(dir, "sitemap.xml"), "utf8"), /\/blog\.html</);
+    await writeFile(path.join(dir, "cultura.html"), HEAD('<link rel="canonical" href="https://wind-theme.vercel.app/admin">'));
+    await assert.rejects(() => gerar({ saida: dir, origem: ORIGEM_CANONICA_PROVISORIA }), /rota administrativa/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
