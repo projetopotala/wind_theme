@@ -37,16 +37,18 @@ test("o shader soma a deriva ambiente por profundidade e a cena envia os uniform
   assert.match(cena, /reducedMotion \? 0 : Math\.sin\(turn\)/, "sem deriva com movimento reduzido");
 });
 
-test("movimento reduzido do sistema continua estatico por padrao; so o botao liga o movimento", () => {
+test("movimento reduzido do sistema continua estatico por padrao; so o botao liga (e desliga) o movimento", () => {
   const css = ler("css/chegada-scene.css");
   assert.match(css, /html:not\(\.chegada-movimento\) \.arrival-canvas\s*\{\s*display:\s*none/);
   assert.match(css, /html:not\(\.chegada-movimento\) \.arrival-nature-canvas\s*\{\s*display:\s*none/);
   const js = ler("js/chegada/arrival-controller.js");
-  assert.match(js, /const reducedMotion = systemReducesMotion && !motionOptIn;/);
-  assert.match(js, /localStorage\.getItem\(MOTION_KEY\) === "on"/);
+  assert.match(js, /const motionOn = motionPref === "on" \? true : motionPref === "off" \? false : !systemReducesMotion;/);
+  assert.match(js, /const reducedMotion = !motionOn;/);
+  assert.match(js, /localStorage\.getItem\(MOTION_KEY\)/);
   assert.match(js, /try \{[^}]*localStorage/, "armazenamento sempre em try/catch");
   const html = ler("transcender.html");
   assert.match(html, /id="arrival-motion"[^>]*hidden/);
+  assert.match(css, /html\.chegada-parado \.arrival-canvas/);
   for (const id of ["breath-launcher", "ambient-sound"]) assert.ok(html.includes(`id="${id}"`), id);
 });
 

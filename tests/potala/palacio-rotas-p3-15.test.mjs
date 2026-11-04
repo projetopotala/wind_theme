@@ -31,13 +31,13 @@ test("as texturas da cena 3D sao carregadas a partir da raiz", async () => {
 });
 
 /* O destino e ancorado no call-site. transition-handoff.js e compartilhado com
-   outras paginas e seu padrao continua sendo atendimentos-conceito.html. */
+   outras paginas e seu padrao e travessia.html (a Chegada conduz a Travessia). */
 test("a transicao do Palacio aponta para a raiz sem alterar o modulo compartilhado", async () => {
   const [controlador, handoff] = await Promise.all([
     ler("js/palacio/palace-controller.js"), ler("js/chegada/transition-handoff.js"),
   ]);
   assert.match(controlador, /crossTo\(\{ destination: "\/transcender\.html"/);
   assert.doesNotMatch(controlador, /destination: "transcender\.html"/);
-  assert.match(handoff, /destination = "atendimentos-conceito\.html"/);
-  assert.doesNotMatch(handoff, /destination = "\/atendimentos-conceito\.html"/);
+  assert.match(handoff, /destination = "travessia\.html"/);
+  assert.doesNotMatch(handoff, /destination = "\/travessia\.html"/);
 });

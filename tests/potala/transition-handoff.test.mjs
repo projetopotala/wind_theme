@@ -58,7 +58,7 @@ test("o atraso da passagem encurta em movimento reduzido", async () => {
 });
 
 // Testes que exercitam o comportamento real de crossTo e enterHome
-test("enterHome navega para atendimentos-conceito.html sem destination explícita", async () => {
+test("enterHome navega para travessia.html (primeira etapa, Bem-vindo) sem destination explícita", async () => {
   const ambiente = montarAmbiente();
   try {
     const handoff = await import("../../outputs/js/chegada/transition-handoff.js");
@@ -66,7 +66,7 @@ test("enterHome navega para atendimentos-conceito.html sem destination explícit
     const resultado = handoff.enterHome({ entry: "scroll", soundEnabled: true });
 
     assert.equal(resultado, true, "enterHome deve retornar true");
-    assert.equal(ambiente.destino(), "atendimentos-conceito.html", "destino deve ser a Home atual");
+    assert.equal(ambiente.destino(), "travessia.html", "a Chegada conduz ao inicio da Travessia");
   } finally {
     limparAmbiente();
   }

@@ -579,3 +579,11 @@ body.is-arrival-transitioning .breathing-guide {
 .arrival-motion:hover { color: #fff8eb; border-color: rgba(246, 231, 203, .76); background: rgba(35, 40, 36, .44); }
 .arrival-motion:focus-visible { outline: 2px solid rgba(243, 222, 181, .9); outline-offset: 4px; }
 @media (max-width: 720px) { .arrival-motion { left: 16px; } }
+
+/* Movimento desligado pelo visitante (sistema sem preferencia de reducao): paisagem estatica. */
+html.chegada-parado .arrival-canvas,
+html.chegada-parado .arrival-nature-canvas { display: none; }
+html.chegada-parado .arrival-visual.is-scene-ready .arrival-fallback img { opacity: 1; }
+html.chegada-parado .cine-dawn { display: none; }
+html.chegada-parado .cine-title,
+html.chegada-parado .cine-title * { animation: none !important; }
