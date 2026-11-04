@@ -26,7 +26,7 @@ test("todo movimento fica sob prefers-reduced-motion: no-preference (exceto o es
     .replace(/@media \(hover: hover\) and \(prefers-reduced-motion: no-preference\) \{(?:[^{}]|\{[^{}]*\})*\}/g, "")
     .replace(/@supports[^{]*\{\s*@media \(prefers-reduced-motion: no-preference\) \{(?:[^{}]|\{[^{}]*\})*\}\s*\}/g, "");
   assert.doesNotMatch(fora, /\banimation\s*:/, "há animação fora do bloco de movimento permitido");
-  assert.doesNotMatch(fora.replace(/@supports \(animation-timeline: scroll\(\)\)/g, ""), /animation-timeline\s*:/);
+  assert.doesNotMatch(fora.replace(/@supports \(animation-timeline: (?:scroll|view)\(\)\)/g, ""), /animation-timeline\s*:/);
 });
 
 test("a camada não redefine o transform da paisagem nem prende a rolagem", () => {
@@ -64,4 +64,17 @@ test("as regras do hero/cartões valem só na Home; a Atendimentos-conceito pres
   const sem = semComentarios(css);
   assert.doesNotMatch(sem, /(^|\n)\s*\.hero\s/, "regra de hero sem o escopo .cine-home");
   assert.doesNotMatch(sem, /(^|\n)\s*\.(therapy-card|oracle-card|special-card|person|feature|side-feature)[^{]*\{/, "regra de cartão sem escopo");
+});
+test("profundidade da Home: linha do tempo nomeada, so com movimento permitido e suporte, sem JS de scroll", () => {
+  const sem = semComentarios(css);
+  const bloco = sem.slice(sem.indexOf("--cine-moldura block") - 400);
+  assert.match(sem, /view-timeline:\s*--cine-moldura block/);
+  assert.match(sem, /animation-timeline:\s*--cine-moldura/);
+  const inicio = sem.indexOf("@supports (animation-timeline: view())");
+  assert.ok(inicio >= 0, "falta @supports (animation-timeline: view())");
+  assert.match(sem.slice(inicio, inicio + 120), /prefers-reduced-motion: no-preference/);
+  assert.match(sem, /\.cine-home \.people-scene img/);
+  assert.match(sem, /@keyframes cine-profundidade[^}]*translate[^}]*scale/s);
+  assert.doesNotMatch(semComentarios(js), /addEventListener\(\s*["']scroll/);
+  assert.ok(bloco.length > 0);
 });
