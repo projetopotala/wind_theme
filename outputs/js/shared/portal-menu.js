@@ -38,11 +38,14 @@ export function itemAtual(pathname = "") {
   return mapa[nome] || "";
 }
 
-export function menuHtml(atual = "") {
+/* `base` ("/" nas rotas com subcaminhos, como /meu-potala/salvos) torna absolutos os destinos relativos. */
+const destino = (href, base) => (base && !/^([a-z]+:|\/)/i.test(href) ? base + href : href);
+
+export function menuHtml(atual = "", base = "") {
   const itens = MENU_ITEMS.map((i) => {
     const cur = i.key === atual ? ' aria-current="page"' : "";
-    const extra = i.extra ? `<a class="potala-menu__extra" href="${esc(i.extra.href)}">${esc(i.extra.label)}</a>` : "";
-    return `<li><a class="potala-menu__link" href="${esc(i.href)}"${cur}><span class="potala-menu__label">${esc(i.label)}</span><span class="potala-menu__hint">${esc(i.hint)}</span></a>${extra}</li>`;
+    const extra = i.extra ? `<a class="potala-menu__extra" href="${esc(destino(i.extra.href, base))}">${esc(i.extra.label)}</a>` : "";
+    return `<li><a class="potala-menu__link" href="${esc(destino(i.href, base))}"${cur}><span class="potala-menu__label">${esc(i.label)}</span><span class="potala-menu__hint">${esc(i.hint)}</span></a>${extra}</li>`;
   }).join("");
   return `<div class="potala-menu__sheet">
     <header class="potala-menu__head">
@@ -68,7 +71,7 @@ const parar = (e) => e.stopPropagation();
  * Monta o botão e o diálogo. `host` (opcional) é um elemento onde o botão entra
  * em linha (cabeçalhos já existentes); sem host, o botão fica fixo no canto.
  */
-export function mountPortalMenu({ documentRef = document, host = null, antes = null, pathname = documentRef.defaultView?.location?.pathname || "" } = {}) {
+export function mountPortalMenu({ documentRef = document, host = null, antes = null, base = "", pathname = documentRef.defaultView?.location?.pathname || "" } = {}) {
   if (!documentRef || !documentRef.body || !documentRef.head || typeof documentRef.createElement !== "function") return null;
   if (documentRef.querySelector("[data-potala-menu-trigger]")) return null;
   carregarCss(documentRef);
@@ -88,7 +91,7 @@ export function mountPortalMenu({ documentRef = document, host = null, antes = n
   dlg.className = "potala-menu";
   dlg.setAttribute("aria-labelledby", "potala-menu-titulo");
   dlg.setAttribute("data-potala-menu", "");
-  dlg.innerHTML = menuHtml(atual);
+  dlg.innerHTML = menuHtml(atual, base);
 
   const abrir = () => {
     if (dlg.open) return;
