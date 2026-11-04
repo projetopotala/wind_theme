@@ -130,6 +130,16 @@ test("CSS preserva 320px sem esconder overflow global", async () => {
   assert.match(css, /prefers-reduced-motion/);
 });
 
+test("consentimento usa border-box: as páginas legais não carregam o reset global e o banner não pode passar da tela", async () => {
+  const css = (await read("css/legal-privacy.css")).replace(/\/\*[\s\S]*?\*\//g, "");
+  const bloco = css.match(/([^{}]*)\{\s*box-sizing:\s*border-box;?\s*\}/)?.[1] ?? "";
+  for (const seletor of [".potala-consent", ".potala-consent *", ".potala-consent-settings", ".potala-consent-settings *", ".potala-consent-manage", ".potala-legal-nav"]) {
+    assert.ok(bloco.split(",").map(item => item.trim()).includes(seletor), `falta border-box em ${seletor}`);
+  }
+  assert.doesNotMatch(bloco, /(^|,)\s*(\*|html|body)\s*(,|$)/, "reset restrito ao consentimento, sem afetar o resto do Portal");
+  assert.match(css, /\.potala-consent-settings menu button\s*\{[^}]*min-height:\s*2\.75rem/, "botões do diálogo com área de toque de 44px");
+});
+
 test("diálogo devolve foco para um controle que permanece visível", async () => {
   const source = await read("js/shared/privacy-consent.js");
   assert.match(source, /saved && banner\.hidden \? manageButton : dialogOpener/);

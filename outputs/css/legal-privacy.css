@@ -1,5 +1,11 @@
 :root { color-scheme: light; }
 
+/* As páginas legais não carregam secoes.css (que tem o reset global). Sem isto o banner,
+   em content-box, soma padding e borda à largura e passa da tela em até 12px. Escopo só nos
+   componentes de consentimento: o resto do Portal não é afetado. */
+.potala-consent, .potala-consent *, .potala-consent-settings, .potala-consent-settings *,
+.potala-consent-manage, .potala-legal-nav, .potala-legal-nav * { box-sizing:border-box; }
+
 .legal-page { background:#f5efe7; color:#25201c; min-height:100vh; }
 .legal-shell { width:min(76rem, calc(100% - 2rem)); margin:0 auto; padding:clamp(2rem,6vw,6rem) 0; }
 .legal-breadcrumbs, .legal-links { display:flex; flex-wrap:wrap; gap:.75rem 1.25rem; }
@@ -25,6 +31,8 @@
 .potala-consent-settings form { padding:1.4rem; }
 .potala-consent-settings label { display:flex; gap:.75rem; align-items:flex-start; margin:1rem 0; }
 .potala-consent-settings menu { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.65rem; padding:0; }
+.potala-consent-settings menu button { min-height:2.75rem; border:1px solid currentColor; border-radius:999px; padding:.65rem 1rem; background:transparent; color:inherit; font:inherit; cursor:pointer; }
+.potala-consent-settings menu button[value="save"] { background:#201b18; color:#fff; border-color:#201b18; }
 .potala-consent-manage { position:fixed; z-index:9999; left:.75rem; bottom:.75rem; min-height:2.75rem; border:1px solid #6c5b50; border-radius:999px; padding:.55rem .85rem; background:#f5efe7; color:#25201c; font:inherit; }
 .potala-legal-nav { display:flex; flex-wrap:wrap; gap:.5rem 1rem; align-items:center; margin-top:1rem; font-size:.85rem; }
 .potala-global-legal-footer { padding:1.25rem; background:#201b18; color:#fff; }
