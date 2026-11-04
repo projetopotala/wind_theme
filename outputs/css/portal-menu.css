@@ -1,0 +1,137 @@
+/* Menu global do Portal (js/shared/portal-menu.js). Só usa a identidade que já existe:
+   marfim, verde-musgo e dourado do Instituto. Sem bibliotecas, sem imagens. */
+
+.potala-menu__trigger {
+  --pm-ink: #f6efe2;
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 18px 0 15px;
+  border: 1px solid rgba(246, 239, 226, .32);
+  border-radius: 999px;
+  background: rgba(33, 27, 21, .5);
+  color: var(--pm-ink);
+  font: 600 .8rem/1 Manrope, Arial, Helvetica, sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: background .3s ease, border-color .3s ease, transform .3s ease;
+}
+.potala-menu__trigger:hover { background: rgba(33, 27, 21, .72); border-color: rgba(246, 239, 226, .55); }
+.potala-menu__trigger:focus-visible { outline: 2px solid #d9b878; outline-offset: 3px; }
+
+/* A Travessia já usa o canto superior esquerdo (perfil) e o direito (convite): o botão fica ao lado do perfil. */
+body[data-story-page] .potala-menu__trigger { left: calc(max(18px, env(safe-area-inset-left)) + 56px); right: auto; }
+
+/* Em cabeçalhos que já existem, o botão entra em linha e herda a cor do cabeçalho. */
+.potala-menu__trigger--inline {
+  position: static;
+  z-index: auto;
+  flex: none;
+  color: inherit;
+  background: transparent;
+  border-color: color-mix(in srgb, currentColor 34%, transparent);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.potala-menu__trigger--inline:hover { background: color-mix(in srgb, currentColor 9%, transparent); border-color: color-mix(in srgb, currentColor 55%, transparent); }
+
+@media (max-width: 560px) {
+  .potala-menu__trigger { padding: 0; width: 44px; justify-content: center; }
+  .potala-menu__trigger-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+/* ---------- Diálogo ---------- */
+.potala-menu {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #1d3a31;
+  overflow: hidden;
+}
+.potala-menu::backdrop { background: rgba(24, 20, 16, .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.potala-menu[open] { display: flex; justify-content: flex-end; }
+.potala-menu__sheet {
+  box-sizing: border-box;
+  width: min(460px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: max(20px, env(safe-area-inset-top)) clamp(22px, 5vw, 40px) max(28px, env(safe-area-inset-bottom));
+  background: #f6efe2;
+  box-shadow: -24px 0 60px rgba(24, 20, 16, .28);
+  animation: potala-menu-entra .38s cubic-bezier(.22, .8, .24, 1) both;
+}
+.potala-menu__head { display: flex; align-items: center; justify-content: space-between; min-height: 44px; margin-bottom: 18px; }
+.potala-menu__eyebrow { margin: 0; font: 600 .74rem/1 Manrope, Arial, Helvetica, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: #a9824a; }
+.potala-menu__close {
+  display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0;
+  border: 1px solid rgba(29, 58, 49, .28); border-radius: 50%; background: transparent; color: inherit; cursor: pointer;
+}
+.potala-menu__close:hover { background: rgba(29, 58, 49, .08); }
+.potala-menu__close:focus-visible, .potala-menu a:focus-visible { outline: 2px solid #a9824a; outline-offset: 3px; }
+
+.potala-menu__list { margin: 0; padding: 0; list-style: none; }
+.potala-menu__list li { position: relative; border-top: 1px solid rgba(29, 58, 49, .14); }
+.potala-menu__list li:last-child { border-bottom: 1px solid rgba(29, 58, 49, .14); }
+.potala-menu__link {
+  display: grid; gap: 3px; min-height: 44px; padding: clamp(8px, 1.3vh, 14px) 0; color: inherit; text-decoration: none;
+  transition: padding-left .3s ease, color .3s ease;
+}
+.potala-menu__link:hover { padding-left: 8px; color: #8a6532; }
+.potala-menu__label { font: 500 clamp(1.45rem, 4.4vw, 1.8rem)/1.1 "Cormorant Garamond", Georgia, "Times New Roman", serif; }
+.potala-menu__hint { font: 500 .8rem/1.3 Manrope, Arial, Helvetica, sans-serif; color: rgba(29, 58, 49, .68); }
+.potala-menu__link[aria-current="page"] .potala-menu__label::after { content: "  ·  você está aqui"; font: 600 .66rem/1 Manrope, Arial, Helvetica, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #a9824a; }
+.potala-menu__extra {
+  position: absolute; top: 50%; right: 0; transform: translateY(-50%);
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 6px;
+  font: 600 .74rem/1 Manrope, Arial, Helvetica, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #8a6532; text-decoration: none;
+}
+.potala-menu__extra:hover { text-decoration: underline; }
+
+html.potala-menu-aberto { overflow: hidden; }
+
+@keyframes potala-menu-entra { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 560px) {
+  .potala-menu__sheet { width: 100%; box-shadow: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .potala-menu__sheet { animation: none; }
+  .potala-menu__trigger, .potala-menu__link { transition: none; }
+  .potala-menu__link:hover { padding-left: 0; }
+}
+
+/* Na abertura contemplativa do "Bem-vindo" clássico o cabeçalho fica invisível de propósito
+   (.na-entrada .topbar). O menu é a única peça que permanece: o resto continua escondido. */
+.na-entrada .topbar { opacity: 1; }
+.na-entrada .topbar .brand,
+.na-entrada .topbar .top-actions > :not(.potala-menu__trigger),
+.na-entrada .topbar .progress { opacity: 0; pointer-events: none; }
+.topbar .brand,
+.topbar .top-actions > :not(.potala-menu__trigger) { transition: opacity .6s ease; }
+.na-entrada .topbar .potala-menu__trigger { pointer-events: auto; }
+
+/* Se a guarda de ambiente (PR-0) bloquear a página, o aviso vermelho ocupa o topo da tela.
+   O botão desce para ficar abaixo dele e continua acessível; a guarda não é alterada. */
+body:has(#erro-ambiente) .potala-menu__trigger { position: fixed; top: 76px; z-index: 60; }
+body:has(#erro-ambiente) .potala-menu__trigger--inline { right: max(16px, env(safe-area-inset-right)); left: auto; color: #f6efe2; background: rgba(33, 27, 21, .72); border-color: rgba(246, 239, 226, .4); }
+body[data-story-page]:has(#erro-ambiente) .potala-menu__trigger { left: calc(max(18px, env(safe-area-inset-left)) + 56px); right: auto; }
+@media (max-width: 560px) {
+  body:has(#erro-ambiente) .potala-menu__trigger { top: 132px; }
+}
