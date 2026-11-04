@@ -1,0 +1,250 @@
+/*
+ * CAMADA CINEMATOGRÁFICA DO PORTAL
+ *
+ * Acrescenta movimento às entradas (Chegada, Travessia, Home) SEM trocar nada do
+ * que já existe: nenhuma regra aqui redefine `transform` de elementos que o
+ * código atual anima. Onde preciso compor com isso uso as propriedades
+ * individuais `translate` e `scale`, que somam ao `transform` em vez de
+ * competir com ele.
+ *
+ * Princípios:
+ *  - só `transform`, `opacity` e `filter` pontuais (compostos pela GPU);
+ *  - nenhum listener de rolagem: o progresso de leitura usa animation-timeline;
+ *  - tudo que se move fica dentro de prefers-reduced-motion: no-preference;
+ *  - sem JavaScript o conteúdo aparece do mesmo jeito (as animações são só
+ *    entrada; o estado final é o estado normal).
+ */
+
+:root {
+  --cine-ease: cubic-bezier(.2, .7, .2, 1);
+  --cine-gold: #cbb48b;
+  --cine-ivory: #f4ecd9;
+}
+
+/* ------------------------------------------------------------------
+ * Transição entre ambientes: Chegada → Home → Travessia
+ * Navegadores sem suporte ignoram a regra e navegam como sempre.
+ * ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root) { animation: cine-sai .4s ease both; }
+  ::view-transition-new(root) { animation: cine-entra .7s var(--cine-ease) both; }
+}
+@keyframes cine-sai { to { opacity: 0; } }
+@keyframes cine-entra { from { opacity: 0; } }
+
+/* ------------------------------------------------------------------
+ * CHEGADA — alvorada e título
+ * ------------------------------------------------------------------ */
+.cine-dawn { display: none; }
+.cine-title {
+  position: absolute;
+  z-index: 8;
+  top: clamp(92px, 15svh, 170px);
+  left: 0;
+  right: 0;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  text-align: center;
+  color: var(--cine-ivory);
+  text-shadow: 0 2px 30px rgba(18, 14, 10, .6);
+  pointer-events: none;
+  transition: opacity 1.1s ease, translate 1.1s var(--cine-ease);
+}
+.cine-title__eyebrow {
+  margin: 0;
+  color: var(--cine-ivory);
+  opacity: .92;
+  text-shadow: 0 1px 14px rgba(18, 14, 10, .85), 0 0 2px rgba(18, 14, 10, .6);
+  font: 700 clamp(.66rem, .9vw, .82rem)/1 Manrope, Arial, Helvetica, sans-serif;
+  letter-spacing: .34em;
+  text-transform: uppercase;
+}
+.cine-title__heading {
+  margin: 0;
+  font: 400 clamp(1.9rem, 4.2vw, 3.7rem)/1 Georgia, "Times New Roman", serif;
+  letter-spacing: -.03em;
+}
+.cine-title__line {
+  display: block;
+  width: min(220px, 48vw);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cine-gold), transparent);
+  transform-origin: center;
+}
+/* Quando a pessoa começa a agir (rolar, segurar, tocar), o título cede a cena. */
+html.cine-quieto .cine-title { opacity: 0; translate: 0 -14px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cine-dawn {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    background: radial-gradient(ellipse at 50% 70%, #1b1f1c 0%, #0d100e 80%);
+    pointer-events: none;
+    animation: cine-alvorada 2.4s .15s ease-out both;
+  }
+  .cine-title__eyebrow { animation: cine-sobe 1.2s 1.1s var(--cine-ease) both; }
+  .cine-title__heading { animation: cine-titulo 1.9s 1.35s var(--cine-ease) both; }
+  .cine-title__line { animation: cine-traco 1.6s 2.1s var(--cine-ease) both; }
+  /* Depois de contemplada, a frase se recolhe sozinha; a cena segue. */
+  .cine-title { animation: cine-recolhe 1.6s 13s ease forwards; }
+}
+@keyframes cine-alvorada { from { opacity: .94; } to { opacity: 0; visibility: hidden; } }
+@keyframes cine-sobe { from { opacity: 0; translate: 0 14px; } }
+@keyframes cine-titulo { from { opacity: 0; translate: 0 22px; filter: blur(12px); letter-spacing: .04em; } }
+@keyframes cine-traco { from { opacity: 0; scale: 0 1; } }
+@keyframes cine-recolhe { to { opacity: 0; } }
+
+/* ------------------------------------------------------------------
+ * TRAVESSIA — entrada coordenada do "Bem-vindo." + luz e poeira
+ * (o conteúdo da jornada é montado por JS; `body.is-ready` marca o fim da montagem)
+ * ------------------------------------------------------------------ */
+.journey-prologue { position: relative; overflow-x: clip; }
+.journey-prologue::before,
+.journey-prologue::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  body.is-ready .prologue-copy > p:first-child { animation: cine-sobe 1.1s .45s var(--cine-ease) both; }
+  body.is-ready .prologue-copy h1 { animation: cine-titulo 1.9s .6s var(--cine-ease) both; }
+  body.is-ready .prologue-copy > span { animation: cine-sobe 1.2s 1.45s var(--cine-ease) both; }
+  body.is-ready .prologue-copy .home-welcome-context { animation: cine-sobe 1.2s 1.8s var(--cine-ease) both; }
+
+  /* Feixes de luz quente atravessando a névoa: lentos, só transform/opacity. */
+  .journey-prologue::before {
+    inset: -12% -10%;
+    z-index: 0;
+    background:
+      linear-gradient(104deg, transparent 18%, rgba(255, 233, 186, .16) 30%, transparent 42%),
+      linear-gradient(110deg, transparent 46%, rgba(255, 226, 170, .12) 56%, transparent 66%),
+      linear-gradient(98deg, transparent 66%, rgba(255, 240, 205, .10) 74%, transparent 82%);
+    mix-blend-mode: screen;
+    translate: calc(var(--cine-x, 0) * -22px) calc(var(--cine-y, 0) * -12px);
+    animation: cine-luz 22s ease-in-out infinite alternate;
+  }
+  /* Poeira de luz: pontos pequenos que sobem devagar. */
+  .journey-prologue::after {
+    left: 0; right: 0; bottom: -20%; height: 120%;
+    background-image:
+      radial-gradient(circle, rgba(255, 244, 214, .9) 0 1.2px, transparent 2px),
+      radial-gradient(circle, rgba(255, 244, 214, .7) 0 1px, transparent 1.8px),
+      radial-gradient(circle, rgba(255, 244, 214, .8) 0 1.5px, transparent 2.4px);
+    background-size: 340px 300px, 520px 440px, 260px 380px;
+    background-position: 20px 40px, 180px 220px, 90px 120px;
+    opacity: .55;
+    translate: calc(var(--cine-x, 0) * -34px) calc(var(--cine-y, 0) * -18px);
+    animation: cine-poeira 46s linear infinite;
+    -webkit-mask-image: linear-gradient(to top, transparent, #000 25%, #000 70%, transparent);
+    mask-image: linear-gradient(to top, transparent, #000 25%, #000 70%, transparent);
+  }
+  .prologue-copy { translate: calc(var(--cine-x, 0) * 10px) calc(var(--cine-y, 0) * 6px); }
+}
+.prologue-copy { position: relative; z-index: 1; }
+@keyframes cine-luz {
+  from { transform: translate3d(-3%, 0, 0); opacity: .55; }
+  to { transform: translate3d(4%, 1.5%, 0); opacity: 1; }
+}
+@keyframes cine-poeira {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(2%, -300px, 0); }
+}
+@media (max-width: 720px) {
+  .journey-prologue::after { opacity: .4; background-size: 260px 240px, 400px 340px, 200px 300px; }
+}
+
+/* ------------------------------------------------------------------
+ * HOME — hero e cartões (somente transcendido.html: html.cine-home; a Atendimentos-conceito
+ * tem o título em partículas próprio e não recebe estas regras)
+ * ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: no-preference) {
+  .cine-home .hero .pill { animation: cine-sobe 1s .15s var(--cine-ease) both; }
+  .cine-home .hero .hero-copy .eyebrow { animation: cine-sobe 1s .3s var(--cine-ease) both; }
+  .cine-home .hero .display { animation: cine-titulo 1.7s .4s var(--cine-ease) both; }
+  .cine-home .hero .hero-copy .lead { animation: cine-sobe 1.1s .95s var(--cine-ease) both; }
+  .cine-home .hero .hero-note { animation: cine-sobe 1.1s 1.2s var(--cine-ease) both; }
+  .cine-home .hero .hero-card { animation: cine-cartao 1.4s .6s var(--cine-ease) both; }
+  .cine-home .hero .hero-card__image { animation: cine-foto 3.2s .6s var(--cine-ease) both; }
+}
+@keyframes cine-cartao { from { opacity: 0; translate: 0 34px; } }
+@keyframes cine-foto { from { scale: 1.12; } }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .cine-home .therapy-card, .cine-home .oracle-card, .cine-home .special-card, .cine-home .person, .cine-home .feature, .cine-home .side-feature {
+    transition: translate .45s var(--cine-ease), box-shadow .45s ease;
+  }
+  .cine-home .therapy-card:hover, .cine-home .oracle-card:hover, .cine-home .special-card:hover, .cine-home .person:hover, .cine-home .feature:hover, .cine-home .side-feature:hover {
+    translate: 0 -5px;
+    box-shadow: 0 22px 46px rgba(31, 48, 41, .16);
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Progresso de leitura: um fio dourado no alto, sem JavaScript e sem ouvir a rolagem.
+ * ------------------------------------------------------------------ */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html.cine-leitura::after {
+      content: "";
+      position: fixed;
+      z-index: 45;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(203, 180, 139, .2), var(--cine-gold));
+      transform-origin: 0 50%;
+      pointer-events: none;
+      animation: cine-progresso linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+@keyframes cine-progresso { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ------------------------------------------------------------------
+ * HOME — profundidade ligada à rolagem (referência: imagens que "andam" dentro da moldura)
+ *
+ * A foto da seção Profissionais e a da Sala Virtual vivem dentro de molduras com
+ * `overflow: hidden` (o cartão da legenda, por cima). Conforme a moldura atravessa a tela,
+ * a foto desliza e muda de escala DENTRO dela, e a legenda anda em sentido oposto e mais
+ * rápido: duas camadas, duas velocidades — é isso que dá a sensação de profundidade.
+ *
+ * Linha do tempo nativa (`animation-timeline: view()`): roda no compositor, sem JS e sem
+ * ouvir a rolagem. A foto é ampliada por `scale` para a borda nunca aparecer durante o
+ * deslize (curso de ±8%; a folga de cada lado é (escala-1)/2: 15% no início e 9% no fim).
+ * Sem suporte, ou com movimento reduzido, nada disto existe: fica a imagem estática de sempre.
+ * ------------------------------------------------------------------ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* A moldura (overflow: hidden) é um contêiner de rolagem para os filhos: a linha do tempo precisa ser nomeada nela, olhando para a PÁGINA. */
+    .cine-home .people-scene,
+    .cine-home .portal-window { view-timeline: --cine-moldura block; }
+    .cine-home .people-scene img,
+    .cine-home .portal-window .virtual-image {
+      animation: cine-profundidade linear both;
+      animation-timeline: --cine-moldura;
+      animation-range: cover 0% cover 100%;
+      will-change: translate, scale;
+    }
+    .cine-home .people-scene figcaption {
+      animation: cine-legenda linear both;
+      animation-timeline: --cine-moldura;
+      animation-range: cover 0% cover 100%;
+    }
+  }
+}
+@keyframes cine-profundidade {
+  from { translate: 0 -8%; scale: 1.3; }
+  to { translate: 0 8%; scale: 1.18; }
+}
+@keyframes cine-legenda {
+  from { translate: 0 34px; }
+  to { translate: 0 -34px; }
+}
