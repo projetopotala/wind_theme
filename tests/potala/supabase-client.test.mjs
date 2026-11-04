@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { SUPABASE_CONFIG } from "../../outputs/js/supabase/config.js";
-import {
+// O ambiente é sempre explícito: estes testes validam a configuração do domínio oficial.
+process.env.POTALA_AMBIENTE_ORIGEM = "https://wind-theme.vercel.app";
+const { SUPABASE_CONFIG } = await import("../../outputs/js/supabase/config.js");
+const {
   getSupabaseClient,
   resetSupabaseClientForTests,
   validateSupabaseConfig,
-} from "../../outputs/js/supabase/client.js";
+} = await import("../../outputs/js/supabase/client.js");
 
 test("configuração aponta para o projeto Potala com chave publicável", () => {
   assert.equal(SUPABASE_CONFIG.url, "https://gotrumwuimpoeggwamut.supabase.co");

@@ -1,4 +1,6 @@
 {
+  "buildCommand": "node ../scripts/ambiente-supabase.mjs producao",
+  "outputDirectory": ".",
   "rewrites": [
     {
       "source": "/admin",

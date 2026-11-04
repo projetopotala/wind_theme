@@ -60,3 +60,8 @@ yarn-error.log*
 /assets-source/home-travessia/home-travessia-source.mp4
 
 .superdesign/tmp/
+
+# Dados da Preview LAB: nunca versionar em outputs/ (veja docs/ambientes-supabase.md)
+outputs/js/supabase/ambiente-lab.js
+outputs/js/supabase/ambiente-local.js
+ops/lab-preview/ambiente-lab.local.json
