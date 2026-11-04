@@ -20,7 +20,24 @@ const canvas = document.getElementById("arrival-scene");
 const natureCanvas = document.getElementById("arrival-nature");
 const worldRoot = document.getElementById("arrival-world");
 const poemRoot = document.getElementById("world-poem");
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const systemReducesMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Quem pede menos movimento no sistema continua com a imagem parada por padrao. So um gesto
+// explicito, neste botao, liga o movimento da paisagem (e fica lembrado neste navegador).
+const MOTION_KEY = "potala.chegada.movimento";
+let motionOptIn = false;
+try { motionOptIn = localStorage.getItem(MOTION_KEY) === "on"; } catch { /* sem armazenamento: vale a preferencia do sistema */ }
+const reducedMotion = systemReducesMotion && !motionOptIn;
+if (systemReducesMotion && motionOptIn) document.documentElement.classList.add("chegada-movimento");
+const motionButton = document.getElementById("arrival-motion");
+if (motionButton && systemReducesMotion) {
+  motionButton.hidden = false;
+  motionButton.setAttribute("aria-pressed", String(motionOptIn));
+  motionButton.querySelector("span").textContent = motionOptIn ? "PAUSAR MOVIMENTO" : "ATIVAR MOVIMENTO";
+  motionButton.addEventListener("click", () => {
+    try { localStorage.setItem(MOTION_KEY, motionOptIn ? "off" : "on"); } catch { /* sem armazenamento: nao lembra a escolha */ }
+    window.location.reload();
+  });
+}
 const search = window.location.search;
 
 if (arrival && visual && canvas) {

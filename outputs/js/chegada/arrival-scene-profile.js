@@ -3,18 +3,18 @@ import { clamp } from "../core/math.js";
 export const ARRIVAL_PLATE_V2 = { width: 1024, height: 576 };
 
 export const ARRIVAL_MOTION = {
-  overscan: 0.975,
+  overscan: 0.95,
   pointerMaxUv: 0.008,
   cameraZoom: 0.025,
   cameraAdvance: 0.004,
   farParallax: 0.001,
   midParallax: 0.003,
   nearParallax: 0.007,
-  canopyMaxUv: 0.002,
-  waterMaxUv: 0.0018,
+  canopyMaxUv: 0.0055,
+  waterMaxUv: 0.005,
   // A queda deforma um pouco mais que o rio: é ela que precisa parecer rápida, e
   // a máscara a mantém presa ao paredão, então a amplitude extra não vaza.
-  waterfallMaxUv: 0.0032,
+  waterfallMaxUv: 0.008,
   mistDrift: 0.028,
   attentionFalloff: 42,
   cloudAmount: 0.95,
@@ -22,7 +22,12 @@ export const ARRIVAL_MOTION = {
   // ruído cobrem a largura visível, a velocidade precisa ser dividida por elas
   // para virar movimento perceptível. Aqui a massa alta cruza a tela em ~115s e
   // o detalhe baixo em ~65s, o que dá paralaxe sem virar céu de tempestade.
-  cloudSpeed: 0.12,
+  cloudSpeed: 0.3,
+  // Deriva ambiente: a camera passeia sozinha, sem mouse nem rolagem. A paralaxe e por
+  // profundidade (perto anda mais que longe), em UV da imagem; o overscan guarda a margem.
+  ambientFar: 0.002,
+  ambientNear: 0.011,
+  ambientPeriod: 26,
 };
 
 export const ARRIVAL_SMOOTHING = {
@@ -204,6 +209,8 @@ export const ARRIVAL_SCENE_PROFILES = {
       canopyMaxUv: 0.0012,
       waterMaxUv: 0.0012,
       waterfallMaxUv: 0.0016,
+      ambientFar: 0.003,
+      ambientNear: 0.014,
     },
     nature: {
       treeEmitter: { x: 0.08, y: 0.04, w: 0.3, h: 0.18 },
