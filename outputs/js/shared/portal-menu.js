@@ -14,6 +14,7 @@
  */
 
 export const MENU_ITEMS = Object.freeze([
+  { key: "chegada", label: "Voltar à Chegada", hint: "A paisagem inicial", href: "/transcender.html" },
   { key: "home", label: "Explorar o Potala", hint: "A Home do Portal", href: "transcendido.html" },
   { key: "travessia", label: "Viver a Travessia", hint: "A jornada em 12 etapas", href: "travessia.html" },
   { key: "atendimentos", label: "Atendimentos", hint: "Caminhos de cuidado", href: "atendimentos.html" },
@@ -34,7 +35,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 export function itemAtual(pathname = "") {
   const nome = String(pathname).split("/").pop().replace(/\.html$/, "") || "";
   if (/^meu-potala/.test(String(pathname).replace(/^\//, ""))) return "meu-potala";
-  const mapa = { transcendido: "home", travessia: "travessia", atendimentos: "atendimentos", profissionais: "profissionais", cursos: "cursos", eventos: "cursos", blog: "blog", revista: "blog", artigo: "blog", marketplace: "loja", recepcao: "recepcao" };
+  const mapa = { transcender: "chegada", transcendido: "home", travessia: "travessia", atendimentos: "atendimentos", profissionais: "profissionais", cursos: "cursos", eventos: "cursos", blog: "blog", revista: "blog", artigo: "blog", marketplace: "loja", recepcao: "recepcao" };
   return mapa[nome] || "";
 }
 

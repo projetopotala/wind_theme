@@ -6,13 +6,14 @@ const raiz = new URL("../../outputs/", import.meta.url);
 const ler = (nome) => readFileSync(new URL(nome, raiz), "utf8");
 const { MENU_ITEMS, itemAtual, menuHtml, mountPortalMenu } = await import("../../outputs/js/shared/portal-menu.js");
 
-test("o menu global oferece os nove caminhos essenciais, com destinos reais", () => {
+test("o menu global oferece os nove caminhos essenciais mais o retorno a Chegada, com destinos reais", () => {
   assert.deepEqual(
     MENU_ITEMS.map((i) => i.href),
-    ["transcendido.html", "travessia.html", "atendimentos.html", "profissionais.html", "cursos.html", "blog.html", "marketplace.html", "recepcao.html", "/meu-potala"],
+    ["/transcender.html", "transcendido.html", "travessia.html", "atendimentos.html", "profissionais.html", "cursos.html", "blog.html", "marketplace.html", "recepcao.html", "/meu-potala"],
   );
   for (const item of MENU_ITEMS) {
-    if (item.href === "/meu-potala") continue; // rota reescrita pelo vercel.json (veja o teste abaixo)
+    if (item.href === "/meu-potala") continue;
+    if (item.href.startsWith("/")) { assert.ok(existsSync(new URL(item.href.slice(1), raiz)), `destino inexistente: ${item.href}`); continue; } // rota reescrita pelo vercel.json (veja o teste abaixo)
     assert.ok(existsSync(new URL(item.href, raiz)), `destino inexistente: ${item.href}`);
     if (item.extra) assert.ok(existsSync(new URL(item.extra.href, raiz)), `destino inexistente: ${item.extra.href}`);
   }
@@ -40,7 +41,7 @@ test("o menu não depende de Supabase nem de dados remotos", () => {
 
 test("o HTML do menu é acessível: navegação nomeada, diálogo rotulado e destino atual marcado", () => {
   const html = menuHtml("atendimentos");
-  assert.equal((html.match(/class="potala-menu__link"/g) || []).length, 9);
+  assert.equal((html.match(/class="potala-menu__link"/g) || []).length, 10);
   assert.match(html, /<nav aria-label="Caminhos do Portal">/);
   assert.match(html, /id="potala-menu-titulo"/);
   assert.match(html, /aria-label="Fechar menu"/);
@@ -50,6 +51,7 @@ test("o HTML do menu é acessível: navegação nomeada, diálogo rotulado e des
 
 test("itemAtual relaciona a página aberta ao item do menu", () => {
   assert.equal(itemAtual("/travessia.html"), "travessia");
+  assert.equal(itemAtual("/transcender.html"), "chegada");
   assert.equal(itemAtual("/transcendido.html"), "home");
   assert.equal(itemAtual("/eventos.html"), "cursos");
   assert.equal(itemAtual("/revista.html"), "blog");

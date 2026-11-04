@@ -28,6 +28,9 @@ export const ARRIVAL_FRAGMENT_SHADER = `
   uniform float uLight;
   uniform float uPath;
   uniform float uTime;
+  uniform vec2 uAmbient;
+  uniform float uAmbientFar;
+  uniform float uAmbientNear;
   uniform float uRiverMotion;
   uniform float uWind;
   uniform vec2 uWindDir;
@@ -88,7 +91,8 @@ export const ARRIVAL_FRAGMENT_SHADER = `
     float nearFactor = smoothstep(0.32, 0.86, depth);
     vec2 pointerParallax = uPointer
       * mix(uFarParallax, uNearParallax, nearFactor)
-      * max(uDepthAmount, 0.35);
+      * max(uDepthAmount, 0.35)
+      + uAmbient * mix(uAmbientFar, uAmbientNear, nearFactor);
 
     // DEPTH PARALLAX
     vec2 uv = sceneUv + pointerParallax;
@@ -174,8 +178,8 @@ export const ARRIVAL_FRAGMENT_SHADER = `
     color += fallLip * pow(veil, 3.0) * vec3(0.12, 0.13, 0.14);
 
     // MIST
-    float mistA = noise(vec2(uv.x * 1.6 + uTime * 0.018, uv.y * 3.0));
-    float mistB = noise(vec2(uv.x * 0.8 - uTime * 0.031, uv.y * 1.7 + uTime * 0.008));
+    float mistA = noise(vec2(uv.x * 1.6 + uTime * 0.05, uv.y * 3.0));
+    float mistB = noise(vec2(uv.x * 0.8 - uTime * 0.08, uv.y * 1.7 + uTime * 0.02));
     float mist = smoothstep(0.28, 0.78, mix(mistA, mistB, 0.48)) * mistMask * uFog;
     mist *= 1.0 - uMistReveal * 0.72;
     color = mix(color, vec3(0.86, 0.88, 0.90), mist * 0.22);

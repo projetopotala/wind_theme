@@ -479,15 +479,15 @@ body.is-arrival-transitioning .breathing-guide {
     min-height: 120svh;
   }
 
-  .arrival-canvas {
+  html:not(.chegada-movimento) .arrival-canvas {
     display: none;
   }
 
-  .arrival-nature-canvas {
+  html:not(.chegada-movimento) .arrival-nature-canvas {
     display: none;
   }
 
-  .arrival-visual.is-scene-ready .arrival-fallback img {
+  html:not(.chegada-movimento) .arrival-visual.is-scene-ready .arrival-fallback img {
     opacity: 1;
   }
 
@@ -556,3 +556,34 @@ body.is-arrival-transitioning .breathing-guide {
   margin: 8px 0 0;
   opacity: .85;
 }
+
+/* Botao opcional: so aparece quando o sistema pede movimento reduzido. */
+.arrival-motion {
+  position: fixed;
+  z-index: 35;
+  bottom: max(78px, calc(env(safe-area-inset-bottom) + 72px));
+  left: max(24px, calc(env(safe-area-inset-left) + 20px));
+  min-height: 40px;
+  padding: 0 15px;
+  border: 1px solid rgba(239, 228, 207, .46);
+  border-radius: 999px;
+  color: rgba(246, 238, 222, .84);
+  background: rgba(22, 27, 24, .28);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font: 700 9px/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .22em;
+  cursor: pointer;
+}
+.arrival-motion[hidden] { display: none; }
+.arrival-motion:hover { color: #fff8eb; border-color: rgba(246, 231, 203, .76); background: rgba(35, 40, 36, .44); }
+.arrival-motion:focus-visible { outline: 2px solid rgba(243, 222, 181, .9); outline-offset: 4px; }
+@media (max-width: 720px) { .arrival-motion { left: 16px; } }
+
+/* Movimento desligado pelo visitante (sistema sem preferencia de reducao): paisagem estatica. */
+html.chegada-parado .arrival-canvas,
+html.chegada-parado .arrival-nature-canvas { display: none; }
+html.chegada-parado .arrival-visual.is-scene-ready .arrival-fallback img { opacity: 1; }
+html.chegada-parado .cine-dawn { display: none; }
+html.chegada-parado .cine-title,
+html.chegada-parado .cine-title * { animation: none !important; }

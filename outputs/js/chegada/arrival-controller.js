@@ -20,8 +20,33 @@ const canvas = document.getElementById("arrival-scene");
 const natureCanvas = document.getElementById("arrival-nature");
 const worldRoot = document.getElementById("arrival-world");
 const poemRoot = document.getElementById("world-poem");
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const systemReducesMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// A preferencia do sistema vale por padrao. Um gesto explicito neste botao liga ou desliga o
+// movimento da paisagem e fica lembrado neste navegador. Nunca ligamos sozinhos para quem pediu menos.
+const MOTION_KEY = "potala.chegada.movimento";
+let motionPref = null;
+try {
+  const saved = localStorage.getItem(MOTION_KEY);
+  if (saved === "on" || saved === "off") motionPref = saved;
+} catch { /* sem armazenamento: vale a preferencia do sistema */ }
+const motionOn = motionPref === "on" ? true : motionPref === "off" ? false : !systemReducesMotion;
+const reducedMotion = !motionOn;
+if (systemReducesMotion && motionOn) document.documentElement.classList.add("chegada-movimento");
+if (!systemReducesMotion && !motionOn) document.documentElement.classList.add("chegada-parado");
+const motionButton = document.getElementById("arrival-motion");
+if (motionButton) {
+  motionButton.hidden = false;
+  motionButton.setAttribute("aria-pressed", String(motionOn));
+  motionButton.querySelector("span").textContent = motionOn ? "PAUSAR MOVIMENTO" : "ATIVAR MOVIMENTO";
+  motionButton.addEventListener("click", () => {
+    try { localStorage.setItem(MOTION_KEY, motionOn ? "off" : "on"); } catch { /* sem armazenamento: nao lembra a escolha */ }
+    window.location.reload();
+  });
+}
+
 const search = window.location.search;
+// A Chegada sempre recomeca do alto: restaurar a rolagem deixaria quem volta no fim dela.
+try { history.scrollRestoration = "manual"; } catch { /* navegador sem suporte: vale o padrao */ }
 
 if (arrival && visual && canvas) {
   const profile = selectArrivalProfile(
@@ -197,6 +222,9 @@ if (arrival && visual && canvas) {
     } else cleanup();
   };
   const onPageShow = (event) => {
+    // Voltar do navegador devolve a Chegada no fim da rolagem, onde nao ha mais para onde rolar
+    // e a travessia nunca recomeca. Reabrir no topo deixa o gesto de seguir viagem funcionar.
+    if (window.scrollY > 0) window.scrollTo(0, 0);
     if (!event.persisted) return;
     delete document.documentElement.dataset.transitioning;
     document.documentElement.classList.remove("is-crossing");

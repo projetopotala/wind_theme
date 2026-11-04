@@ -34,6 +34,7 @@ export const UNIFORM_NAMES = [
   "uImage", "uDepth", "uWaterMask", "uWaterfallMask", "uCanopyMask", "uMistMask", "uSkyMask",
   "uPointer", "uResolution", "uImageSize",
   "uCamera", "uDepthAmount", "uFog", "uLight", "uPath", "uTime", "uRiverMotion",
+  "uAmbient", "uAmbientFar", "uAmbientNear",
   "uWind", "uWindDir", "uSun", "uMistReveal", "uAttention", "uAttentionUv",
   "uHasWaterMask", "uHasWaterfallMask", "uHasCanopyMask", "uHasMistMask", "uHasSkyMask",
   "uClouds", "uRiverPhase", "uFallPhase", "uCloudDrift",
@@ -333,6 +334,10 @@ export function createArrivalScene({
     gl.uniform1f(uniforms.uLight, state.light);
     gl.uniform1f(uniforms.uPath, clamp(state.path + world.path * 0.55));
     gl.uniform1f(uniforms.uTime, reducedMotion ? 0 : waterClock);
+      const turn = reducedMotion ? 0 : (waterClock * Math.PI * 2) / (motion.ambientPeriod || 26);
+      gl.uniform2f(uniforms.uAmbient, reducedMotion ? 0 : Math.sin(turn), reducedMotion ? 0 : Math.cos(turn * 0.73) * 0.55);
+      gl.uniform1f(uniforms.uAmbientFar, reducedMotion ? 0 : (motion.ambientFar ?? 0));
+      gl.uniform1f(uniforms.uAmbientNear, reducedMotion ? 0 : (motion.ambientNear ?? 0));
     gl.uniform1f(uniforms.uRiverMotion, riverFlow.intensity);
     gl.uniform1f(uniforms.uWind, reducedMotion ? 0 : world.wind);
     gl.uniform2f(uniforms.uWindDir, world.windDir[0], world.windDir[1]);
