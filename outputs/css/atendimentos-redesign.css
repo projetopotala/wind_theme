@@ -523,3 +523,7 @@ body[data-section="atendimentos"] .portal-header__account.conta-gatilho {
   .care-access-list article,
   .care-indice a { transition: none; }
 }
+
+/* Navegação do cabeçalho em Atendimentos: alvos de toque de ~44px, sem alterar cores nem layout. */
+body[data-section="atendimentos"] .portal-header__brand { min-height: 44px; }
+body[data-section="atendimentos"] .portal-header__nav a { padding-block: 16px; }

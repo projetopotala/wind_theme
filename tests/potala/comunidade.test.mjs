@@ -75,7 +75,9 @@ test("toda pagina de secao mantem um caminho de volta", async () => {
   ];
   for (const secao of secoes) {
     const html = await ler(`${secao}.html`);
-    assert.match(html, /href="transcendido\.html"/, `${secao}.html ficou sem caminho de volta`);
+    /* Atendimentos volta para a Travessia (travessia.html); as demais voltam para a Home. */
+    const volta = secao === "atendimentos" ? /href="travessia\.html"/ : /href="transcendido\.html"/;
+    assert.match(html, volta, `${secao}.html ficou sem caminho de volta`);
   }
 });
 

@@ -32,7 +32,7 @@ test("a página orienta antes de apresentar possibilidades de atendimento", asyn
   assert.match(html, /id="acesso"/);
   assert.match(html, /presencial e online/i);
   assert.match(html, /atendimento solidário/i);
-  assert.match(html, /href="transcendido\.html"[^>]*>Voltar à travessia/i);
+  assert.match(html, /href="travessia\.html"[^>]*>Voltar à travessia/i);
 });
 
 test("a composição se reduz a uma coluna no mobile", async () => {
@@ -68,4 +68,36 @@ test("a imagem humana possui resolução suficiente para a abertura", async () =
 
   assert.ok((metadata.width ?? 0) >= 1200);
   assert.ok((metadata.height ?? 0) >= 900);
+});
+
+test("navegação de Atendimentos tem alvos de ~44px e o retorno vai para a Travessia", async () => {
+  const html = await readFile(pageUrl, "utf8");
+  const css = (await readFile(styleUrl, "utf8")).replace(/\/\*[\s\S]*?\*\//g, "");
+  const redesign = (await readFile(new URL("../../outputs/css/atendimentos-redesign.css", import.meta.url), "utf8")).replace(/\/\*[\s\S]*?\*\//g, "");
+
+  assert.match(html, /<a href="travessia\.html">Voltar à travessia<\/a>/);
+  assert.doesNotMatch(html, /href="transcendido\.html"/, "o rodapé não deve voltar para a Home");
+  assert.match(css, /\.care-footer a\s*\{[^}]*min-height:\s*44px/);
+  assert.match(redesign, /\[data-section="atendimentos"\] \.portal-header__brand\s*\{[^}]*min-height:\s*44px/);
+  assert.match(redesign, /\[data-section="atendimentos"\] \.portal-header__nav a\s*\{[^}]*padding-block:\s*16px/);
+});
+
+test("cabeçalho: o link Travessia de Atendimentos vai a travessia.html e a marca continua na Home", async () => {
+  const { mountPortalHeader } = await import("../../outputs/js/shared/portal-header.js");
+  const montar = (opcoes) => {
+    let header = null;
+    mountPortalHeader({ ...opcoes, documentRef: { querySelector: () => null, createElement: () => ({}), body: { prepend: (h) => { header = h; } } } });
+    return header.innerHTML;
+  };
+  const atendimentos = montar({ current: "atendimentos", travessiaHref: "travessia.html" });
+  assert.match(atendimentos, /class="portal-header__brand" href="transcendido\.html"/);
+  assert.match(atendimentos, /<a href="travessia\.html">Travessia<\/a>/);
+
+  // as outras páginas não mudam: sem a opção, o padrão continua sendo a Home
+  const padrao = montar({ current: "cursos" });
+  assert.match(padrao, /<a href="transcendido\.html">Travessia<\/a>/);
+
+  // e só Atendimentos passa a opção
+  const secoes = await readFile(new URL("../../outputs/js/secoes.js", import.meta.url), "utf8");
+  assert.match(secoes, /mountPortalHeader\(\{ current, \.\.\.\(current === "atendimentos" \? \{ travessiaHref: "travessia\.html" \} : \{\}\) \}\)/);
 });

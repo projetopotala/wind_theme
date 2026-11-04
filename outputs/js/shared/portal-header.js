@@ -11,7 +11,7 @@ const links = [
   { key: "programacao", label: "Programação", href: "programacao.html" },
 ];
 
-export function mountPortalHeader({ documentRef = document, current = "" } = {}) {
+export function mountPortalHeader({ documentRef = document, current = "", travessiaHref = "transcendido.html" } = {}) {
   if (documentRef.querySelector(".portal-header")) return;
 
   const header = documentRef.createElement("header");
@@ -22,7 +22,7 @@ export function mountPortalHeader({ documentRef = document, current = "" } = {})
       <span><strong>Instituto</strong> Potala</span>
     </a>
     <nav class="portal-header__nav" aria-label="Navegação principal">
-      <a href="transcendido.html">Travessia</a>
+      <a href="${travessiaHref}">Travessia</a>
       ${links.map((link) => `<a href="${link.href}"${link.key === current ? ' class="is-active" aria-current="page"' : ""}>${link.label}</a>`).join("")}
     </nav>
     <button class="portal-header__account conta-gatilho" type="button" data-conta-gatilho data-keeps-expansion

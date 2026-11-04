@@ -269,7 +269,12 @@ body[data-section="atendimentos"] {
 }
 
 .care-footer p { margin: 0; }
-.care-footer a { color: #efe4d5; }
+.care-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* área de toque confortável, sem mudar a aparência do texto */
+  color: #efe4d5;
+}
 
 .care-page a:focus-visible {
   outline: 2px solid var(--care-gold);
