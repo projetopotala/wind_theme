@@ -1,5 +1,17 @@
 import { STATUS_DE_ATENDIMENTO } from "../../modelos.js";
 import { e, secao, vazio } from "./comum.js";
+import { caminhoDaSala } from "../../../sala/estado-sala.js";
+
+/*
+ * O link existe só para consulta online confirmada e futura. Ele não prova
+ * acesso: a página da sala pergunta ao banco quem é a pessoa e se a janela abriu.
+ */
+export function ligacaoDaSala(pedido, tipo) {
+  if (tipo !== "confirmada" || pedido?.modalidade !== "online" || !pedido.id) return "";
+  try {
+    return `<p class="mp-atendimento-sala"><a class="mp-botao" href="${e(caminhoDaSala(pedido.id))}">Entrar na sala</a> <span class="mp-nota">A sala abre 15 minutos antes do horário.</span></p>`;
+  } catch { return ""; }
+}
 
 const PERIODOS = Object.freeze({ manha: "Manhã", tarde: "Tarde", noite: "Noite" });
 const MODALIDADES = Object.freeze({ presencial: "Presencial", online: "Online" });
@@ -26,6 +38,7 @@ function listaDePedidos(atendimentos, vazioTexto = "Você ainda não fez uma sol
       <h3>${e(pedido.servico)}</h3>
       <p class="mp-cartao-detalhe">${e(MODALIDADES[pedido.modalidade])} · ${e(pedido.inicio ? horarioLegivel(pedido.inicio) : `${dataLegivel(pedido.dataPreferida)} · ${PERIODOS[pedido.periodoPreferido]}`)}</p>
     </div>
+    ${ligacaoDaSala(pedido, tipo)}
     <p class="mp-atendimento-nota">${tipo === "confirmada"
       ? "Consulta confirmada. Os detalhes também estão disponíveis na sua Agenda."
       : tipo === "anterior"
