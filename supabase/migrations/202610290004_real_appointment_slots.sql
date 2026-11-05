@@ -107,6 +107,8 @@ declare
   offering public.op_records%rowtype;
   room jsonb;
   professional_id text := nullif(btrim(p_details ->> 'professional_profile_id'), '');
+  selected_room_id text := nullif(btrim(p_details ->> 'room_id'), '');
+  lock_key text;
   start_at timestamptz;
   end_at timestamptz;
   slot public.appointment_slots%rowtype;
@@ -123,14 +125,14 @@ begin
   if not found or professional_id is null or coalesce(offering.document->>'professional_id',professional_id) is distinct from professional_id then
     raise exception 'Oferta e profissional incompatíveis.' using errcode='22023';
   end if;
-  if coalesce(offering.document->>'mode','presencial') = 'online' and nullif(btrim(p_details->>'room_id'),'') is not null then
+  if coalesce(offering.document->>'mode','presencial') = 'online' and selected_room_id is not null then
     raise exception 'Atendimento online não aceita sala física.' using errcode='22023';
   end if;
   if coalesce(offering.document->>'mode','presencial') = 'presencial' then
-    if nullif(btrim(p_details->>'room_id'),'') is null then
+    if selected_room_id is null then
       raise exception 'Selecione uma sala para o atendimento presencial.' using errcode='22023';
     end if;
-    select document into room from public.op_records where collection='rooms' and id=nullif(btrim(p_details->>'room_id'),'');
+    select document into room from public.op_records where collection='rooms' and id=selected_room_id;
     if room is null or room->>'status' <> 'available' or coalesce((room->>'capacity')::integer,0) < 1 then
       raise exception 'Sala indisponível.' using errcode='23514';
     end if;
@@ -149,21 +151,39 @@ begin
     and coalesce(p.document->'roles','[]'::jsonb) ? 'professional') then
     raise exception 'Profissional indisponível.' using errcode='22023';
   end if;
-  perform pg_advisory_xact_lock(hashtextextended('appointment-slot:' || professional_id, 0));
+  -- Toda criacao usa a mesma ordem lexical de locks. Assim, horarios do mesmo
+  -- profissional e horarios presenciais da mesma sala sao serializados sem
+  -- introduzir uma ordem circular entre transacoes concorrentes.
+  for lock_key in
+    select candidate
+    from unnest(array[
+      'appointment-professional:' || professional_id,
+      case when selected_room_id is not null then 'appointment-room:' || selected_room_id end
+    ]) as locks(candidate)
+    where candidate is not null
+    order by candidate
+  loop
+    perform pg_advisory_xact_lock(hashtextextended(lock_key, 0));
+  end loop;
   if exists(select 1 from public.appointment_slots s where s.professional_profile_id=professional_id
     and s.status <> 'cancelled' and s.starts_at < end_at and start_at < s.ends_at) then
     raise exception 'O profissional já possui horário sobreposto.' using errcode='PT409';
+  end if;
+  if selected_room_id is not null and exists(select 1 from public.appointment_slots s
+    where s.room_id=selected_room_id and s.status <> 'cancelled'
+      and s.starts_at < end_at and start_at < s.ends_at) then
+    raise exception 'A sala já possui horário sobreposto.' using errcode='PT409';
   end if;
   if exists(select 1 from public.op_records schedule where schedule.collection='schedule_items'
     and coalesce(schedule.document->>'status','booked') = 'booked'
     and (schedule.document->>'starts_at')::timestamptz < end_at
     and start_at < (schedule.document->>'ends_at')::timestamptz
     and (schedule.document->>'professional_id'=professional_id
-      or (nullif(btrim(p_details->>'room_id'),'') is not null and schedule.document->>'room_id'=nullif(btrim(p_details->>'room_id'),'')))) then
+      or (selected_room_id is not null and schedule.document->>'room_id'=selected_room_id))) then
     raise exception 'O horário conflita com a agenda operacional.' using errcode='PT409';
   end if;
   insert into public.appointment_slots(offering_id,professional_profile_id,starts_at,ends_at,room_id,created_by)
-    values(offering.id,professional_id,start_at,end_at,nullif(btrim(p_details->>'room_id'),''),actor)
+    values(offering.id,professional_id,start_at,end_at,selected_room_id,actor)
     returning * into slot;
   return jsonb_build_object('id',slot.id,'status',slot.status,'starts_at',slot.starts_at,'ends_at',slot.ends_at);
 exception when unique_violation then raise exception 'Já existe horário para o profissional neste período.' using errcode='PT409';

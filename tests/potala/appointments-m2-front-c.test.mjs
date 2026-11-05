@@ -49,6 +49,23 @@ test("horários presenciais respeitam sala e agenda operacional antes de serem p
   assert.match(sql, /schedule\.collection='schedule_items'[\s\S]*O horário conflita com a agenda operacional/);
 });
 
+test("criação de horários serializa profissional e sala em ordem determinística", async () => {
+  const sql = await readFile(migrationUrl, "utf8");
+  assert.match(sql, /selected_room_id text := nullif\(btrim\(p_details ->> 'room_id'\), ''\)/i);
+  assert.match(sql, /unnest\(array\[[\s\S]*appointment-professional:[\s\S]*appointment-room:[\s\S]*order by candidate/i);
+  assert.match(sql, /pg_advisory_xact_lock\(hashtextextended\(lock_key, 0\)\)/i);
+  assert.match(sql, /s\.room_id=selected_room_id[\s\S]*s\.status <> 'cancelled'[\s\S]*s\.starts_at < end_at[\s\S]*start_at < s\.ends_at/i);
+  assert.match(sql, /A sala já possui horário sobreposto\./i);
+});
+
+test("limites consecutivos, slots cancelados e online sem sala preservam as regras", async () => {
+  const sql = await readFile(migrationUrl, "utf8");
+  assert.match(sql, /s\.starts_at < end_at and start_at < s\.ends_at/i);
+  assert.match(sql, /s\.status <> 'cancelled'/i);
+  assert.match(sql, /mode','presencial'\) = 'online' and selected_room_id is not null/i);
+  assert.match(sql, /values\(offering\.id,professional_id,start_at,end_at,selected_room_id,actor\)/i);
+});
+
 test("cliente só cancela o próprio pedido ainda não confirmado", async () => {
   const sql = await readFile(migrationUrl, "utf8");
   assert.match(sql, /r\.requester_user_id is distinct from \(select auth\.uid\(\)\)/i);
