@@ -20,8 +20,8 @@ test("a abertura de Atendimentos usa a fotografia da sala e a carrega cedo", () 
   assert.match(pagina, /<script type="module" src="js\/atendimentos\/atendimentos-hero-vivo\.js"><\/script>/);
 });
 
-test("a cena viva vale só nesta página", () => {
-  for (const outra of ["transcender.html", "travessia.html", "transcendido.html", "atendimentos-conceito.html", "blog.html"]) {
+test("a cena viva vale só nas duas aberturas de Atendimentos", () => {
+  for (const outra of ["transcender.html", "travessia.html", "atendimentos-conceito.html", "blog.html"]) {
     assert.doesNotMatch(ler(outra), /cena-viva|atendimentos-hero-vivo/, outra);
   }
 });
