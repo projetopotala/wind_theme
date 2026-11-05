@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import test from "node:test";
 
 const raiz = new URL("../../outputs/", import.meta.url);
@@ -25,12 +25,14 @@ test("a Home reaproveita os recursos da cena sem duplicar sua animação", () =>
   assert.doesNotMatch(css, /@keyframes|cena-chama|cena-bambu/);
 });
 
-test("a cena mantém todas as camadas automáticas e não cria controle de movimento", () => {
-  for (const camada of ["sombras", "ramos", "bambu", "bambu-alto", "halo", "chama"]) {
-    assert.match(pagina, new RegExp(`cena-viva__${camada}`), camada);
-  }
+test("a Home usa o vídeo real sem sobrepor as antigas cópias mascaradas", () => {
+  const video = new URL("media/atendimentos-sala-viva.mp4", raiz);
+  assert.ok(existsSync(video), "o vídeo precisa estar no pacote publicado");
+  assert.ok(statSync(video).size < 2 * 1024 * 1024, "o loop precisa continuar leve");
   const inicio = pagina.indexOf('<section class="hero hero--cena-viva"');
   const hero = pagina.slice(inicio, pagina.indexOf("</section>", inicio));
+  assert.match(hero, /<video class="cena-viva__video" data-src="media\/atendimentos-sala-viva\.mp4" poster="media\/atendimentos-sala-viva\.webp" autoplay muted loop playsinline preload="none"/);
+  assert.doesNotMatch(hero, /cena-viva__(sombras|ramos|bambu|bambu-alto|halo|chama)/);
   assert.doesNotMatch(hero, /ATIVAR MOVIMENTO|PAUSAR MOVIMENTO|<button/);
 });
 
@@ -38,5 +40,6 @@ test("a composição responde sem esconder overflow global", () => {
   assert.match(css, /@media \(max-width: 980px\)/);
   assert.match(css, /@media \(max-width: 680px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(css, /prefers-reduced-motion: reduce[\s\S]*?\.hero-card__cena \.cena-viva__video[\s\S]*?display: none/);
   assert.doesNotMatch(css, /html\s*,?\s*body[^}]*overflow-x\s*:\s*hidden|body[^}]*overflow-x\s*:\s*hidden/);
 });

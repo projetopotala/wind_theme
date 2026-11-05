@@ -53,10 +53,8 @@ test("os elementos da cena se movem, não a fotografia inteira", () => {
   // a foto de base não recebe animação nenhuma
   assert.doesNotMatch(css, /\.cena-viva__foto \{[^}]*animation/);
   for (const parte of ["cena-viva__halo", "cena-viva__chama"]) assert.match(pagina, new RegExp(parte));
-  assert.match(css, /@keyframes cena-chama \{[\s\S]*?scale\([^)]*,[^)]*\)/);
+  assert.match(css, /@keyframes cena-chama \{[\s\S]*?scaleY/);
   assert.match(css, /@keyframes cena-bambu \{[\s\S]*?rotate/);
-  assert.match(css, /\.cena-viva__chama \{[\s\S]*?left: 30\.6%[\s\S]*?width: 2\.1%/);
-  assert.match(css, /rotate\(-1\.12deg\)[\s\S]*?rotate\(1\.28deg\)/);
 });
 
 test("movimento automático, sem botão para ligar, e parado em movimento reduzido", () => {

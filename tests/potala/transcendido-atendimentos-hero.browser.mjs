@@ -75,20 +75,32 @@ try {
   await cenaTempo.scrollIntoViewIfNeeded();
   const caixaCena = await cenaTempo.boundingBox();
   assert.ok(caixaCena, "a cena precisa ter geometria para as evidências ampliadas");
+  const midia = await paginaTempo.evaluate(() => {
+    const video = document.querySelector(".hero-card__cena .cena-viva__video");
+    const fluxo = video.captureStream();
+    return {
+      audioTracks: fluxo.getAudioTracks().length,
+      videoTracks: fluxo.getVideoTracks().length,
+      muted: video.muted,
+      loop: video.loop,
+      autoplay: video.autoplay,
+      playsInline: video.playsInline,
+    };
+  });
+  assert.deepEqual(midia, { audioTracks: 0, videoTracks: 1, muted: true, loop: true, autoplay: true, playsInline: true });
   const estados = [];
   let segundoAnterior = 0;
   for (const segundos of [0, 2, 5, 10]) {
     if (segundos) await paginaTempo.waitForTimeout((segundos - segundoAnterior) * 1000);
     estados.push(await paginaTempo.evaluate((tempo) => {
-      const estilo = (seletor) => getComputedStyle(document.querySelector(seletor));
+      const video = document.querySelector(".hero-card__cena .cena-viva__video");
       return {
         segundos: tempo,
-        bambu: estilo(".hero-card__cena .cena-viva__bambu").transform,
-        bambuAlto: estilo(".hero-card__cena .cena-viva__bambu-alto").transform,
-        ramos: estilo(".hero-card__cena .cena-viva__ramos").transform,
-        sombras: estilo(".hero-card__cena .cena-viva__sombras").transform,
-        chama: estilo(".hero-card__cena .cena-viva__chama").opacity,
-        halo: estilo(".hero-card__cena .cena-viva__halo").opacity,
+        currentTime: video.currentTime,
+        duration: video.duration,
+        paused: video.paused,
+        readyState: video.readyState,
+        active: video.closest(".cena-viva").classList.contains("cena-viva--video-ativo"),
       };
     }, segundos));
     if (evidencia) await cenaTempo.screenshot({ path: join(evidencia, `movimento-${segundos}s.png`) });
@@ -114,13 +126,23 @@ try {
     }
     segundoAnterior = segundos;
   }
-  assert.ok(new Set(estados.map((item) => item.bambu)).size > 1, "o bambu não se moveu");
-  assert.ok(new Set(estados.map((item) => item.bambuAlto)).size > 1, "as pontas do bambu não se moveram");
-  assert.ok(new Set(estados.map((item) => item.ramos)).size > 1, "os ramos não se moveram");
-  assert.ok(new Set(estados.map((item) => item.sombras)).size > 1, "as sombras não se moveram");
-  assert.ok(new Set(estados.map((item) => item.chama)).size > 1, "a chama não tremulou");
-  assert.ok(new Set(estados.map((item) => item.halo)).size > 1, "a luz da vela não variou");
-  resultados.push({ movimento: estados });
+  assert.ok(estados.every((item) => item.active && item.readyState >= 2), "o vídeo não ficou pronto");
+  assert.ok(new Set(estados.map((item) => item.currentTime.toFixed(2))).size > 1, "o vídeo não avançou");
+  assert.ok(estados.every((item) => item.duration > 4 && item.duration < 11), "duração inesperada");
+  if (evidencia) {
+    for (const [tempo, nome] of [[.05, "inicio"], [4.95, "fim"]]) {
+      await paginaTempo.locator(".cena-viva__video").evaluate((video, atual) => { video.currentTime = atual; }, tempo);
+      await paginaTempo.waitForTimeout(250);
+      await cenaTempo.screenshot({ path: join(evidencia, `loop-${nome}.png`) });
+    }
+  }
+  await paginaTempo.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await paginaTempo.waitForTimeout(250);
+  assert.equal(await paginaTempo.locator(".cena-viva__video").evaluate((video) => video.paused), true, "o vídeo deve pausar fora da tela");
+  await cenaTempo.scrollIntoViewIfNeeded();
+  await paginaTempo.waitForTimeout(250);
+  assert.equal(await paginaTempo.locator(".cena-viva__video").evaluate((video) => video.paused), false, "o vídeo deve retomar ao voltar à tela");
+  resultados.push({ midia, movimento: estados });
   await paginaTempo.close();
 
   const contextoReduzido = await navegador.newContext({
@@ -129,13 +151,12 @@ try {
   });
   const paginaReduzida = await contextoReduzido.newPage();
   await paginaReduzida.goto(url, { waitUntil: "networkidle" });
-  const animacoes = await paginaReduzida.evaluate(() => [
-    ".cena-viva__bambu",
-    ".cena-viva__ramos",
-    ".cena-viva__chama",
-  ].map((seletor) => getComputedStyle(document.querySelector(`.hero-card__cena ${seletor}`)).animationName));
-  assert.deepEqual(animacoes, ["none", "none", "none"]);
-  resultados.push({ movimentoReduzido: animacoes });
+  const movimentoReduzido = await paginaReduzida.evaluate(() => {
+    const video = document.querySelector(".hero-card__cena .cena-viva__video");
+    return { src: video.getAttribute("src"), currentSrc: video.currentSrc, display: getComputedStyle(video).display };
+  });
+  assert.deepEqual(movimentoReduzido, { src: null, currentSrc: "", display: "none" });
+  resultados.push({ movimentoReduzido });
   await contextoReduzido.close();
 
   if (evidencia) await writeFile(join(evidencia, "resultado.json"), JSON.stringify(resultados, null, 2));
