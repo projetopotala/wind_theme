@@ -24,7 +24,7 @@ try {
   if (urlAntes && evidencia) {
     const paginaAntes = await navegador.newPage({ viewport: { width: 1366, height: 768 } });
     await paginaAntes.goto(urlAntes, { waitUntil: "networkidle" });
-    await paginaAntes.locator(".hero-card").screenshot({ path: join(evidencia, "antes-1366.png") });
+    await paginaAntes.locator(".hero").screenshot({ path: join(evidencia, "antes-1366.png") });
     await paginaAntes.close();
   }
 
@@ -73,23 +73,51 @@ try {
   await paginaTempo.goto(url, { waitUntil: "networkidle" });
   const cenaTempo = paginaTempo.locator(".hero-card__cena.cena-viva");
   await cenaTempo.scrollIntoViewIfNeeded();
+  const caixaCena = await cenaTempo.boundingBox();
+  assert.ok(caixaCena, "a cena precisa ter geometria para as evidências ampliadas");
   const estados = [];
-  for (const segundos of [0, 5, 10]) {
-    if (segundos) await paginaTempo.waitForTimeout(5000);
+  let segundoAnterior = 0;
+  for (const segundos of [0, 2, 5, 10]) {
+    if (segundos) await paginaTempo.waitForTimeout((segundos - segundoAnterior) * 1000);
     estados.push(await paginaTempo.evaluate((tempo) => {
       const estilo = (seletor) => getComputedStyle(document.querySelector(seletor));
       return {
         segundos: tempo,
         bambu: estilo(".hero-card__cena .cena-viva__bambu").transform,
+        bambuAlto: estilo(".hero-card__cena .cena-viva__bambu-alto").transform,
         ramos: estilo(".hero-card__cena .cena-viva__ramos").transform,
+        sombras: estilo(".hero-card__cena .cena-viva__sombras").transform,
         chama: estilo(".hero-card__cena .cena-viva__chama").opacity,
         halo: estilo(".hero-card__cena .cena-viva__halo").opacity,
       };
     }, segundos));
     if (evidencia) await cenaTempo.screenshot({ path: join(evidencia, `movimento-${segundos}s.png`) });
+    if (evidencia) {
+      await paginaTempo.screenshot({
+        path: join(evidencia, `chama-${segundos}s.png`),
+        clip: {
+          x: caixaCena.x + caixaCena.width * .19,
+          y: caixaCena.y + caixaCena.height * .27,
+          width: caixaCena.width * .23,
+          height: caixaCena.height * .3,
+        },
+      });
+      await paginaTempo.screenshot({
+        path: join(evidencia, `folhas-${segundos}s.png`),
+        clip: {
+          x: caixaCena.x + caixaCena.width * .5,
+          y: caixaCena.y,
+          width: caixaCena.width * .47,
+          height: caixaCena.height * .55,
+        },
+      });
+    }
+    segundoAnterior = segundos;
   }
   assert.ok(new Set(estados.map((item) => item.bambu)).size > 1, "o bambu não se moveu");
+  assert.ok(new Set(estados.map((item) => item.bambuAlto)).size > 1, "as pontas do bambu não se moveram");
   assert.ok(new Set(estados.map((item) => item.ramos)).size > 1, "os ramos não se moveram");
+  assert.ok(new Set(estados.map((item) => item.sombras)).size > 1, "as sombras não se moveram");
   assert.ok(new Set(estados.map((item) => item.chama)).size > 1, "a chama não tremulou");
   assert.ok(new Set(estados.map((item) => item.halo)).size > 1, "a luz da vela não variou");
   resultados.push({ movimento: estados });

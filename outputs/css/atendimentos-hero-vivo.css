@@ -100,43 +100,52 @@
 
   /* Sombras de folhas na parede, à esquerda: a luz que entra pela janela. */
   .cena-viva__sombras {
-    mask-image: radial-gradient(ellipse 16% 38% at 8% 30%, #000 40%, transparent 78%);
-    -webkit-mask-image: radial-gradient(ellipse 16% 38% at 8% 30%, #000 40%, transparent 78%);
+    mask-image: radial-gradient(ellipse 18% 40% at 8% 30%, #000 38%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse 18% 40% at 8% 30%, #000 38%, transparent 80%);
   }
 
   /* Os ramos floridos do vaso. Giram a partir da boca do vaso, não do próprio centro. */
   .cena-viva__ramos {
     transform-origin: 26% 36%;
-    mask-image: radial-gradient(ellipse 12% 16% at 29% 18%, #000 38%, transparent 76%);
-    -webkit-mask-image: radial-gradient(ellipse 12% 16% at 29% 18%, #000 38%, transparent 76%);
+    mask-image: radial-gradient(ellipse 14% 19% at 29% 18%, #000 36%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse 14% 19% at 29% 18%, #000 36%, transparent 80%);
   }
 
   /* A massa do bambu, girando a partir do vaso. */
   .cena-viva__bambu {
     transform-origin: 64% 51%;
-    mask-image: radial-gradient(ellipse 25% 26% at 66% 22%, #000 36%, transparent 74%);
-    -webkit-mask-image: radial-gradient(ellipse 25% 26% at 66% 22%, #000 36%, transparent 74%);
+    mask-image: radial-gradient(ellipse 26% 29% at 66% 22%, #000 34%, transparent 79%);
+    -webkit-mask-image: radial-gradient(ellipse 26% 29% at 66% 22%, #000 34%, transparent 79%);
   }
 
   /* As pontas altas da direita: andam mais e em outro compasso, senão o bambu vira um bloco só. */
   .cena-viva__bambu-alto {
     transform-origin: 64% 51%;
-    mask-image: radial-gradient(ellipse 15% 14% at 82% 12%, #000 34%, transparent 76%);
-    -webkit-mask-image: radial-gradient(ellipse 15% 14% at 82% 12%, #000 34%, transparent 76%);
+    mask-image: radial-gradient(ellipse 19% 18% at 80% 13%, #000 32%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse 19% 18% at 80% 13%, #000 32%, transparent 80%);
   }
 
   /* Luz da vela medida na própria fotografia: a chama está em 30,6% x 42,0%. */
   .cena-viva__halo {
     background:
-      radial-gradient(ellipse 17% 24% at 30.4% 38.5%, rgba(255, 168, 70, .3), rgba(255, 146, 54, .11) 44%, transparent 72%),
-      radial-gradient(ellipse 6% 9% at 30.5% 42.4%, rgba(255, 176, 78, .34), transparent 68%);
+      radial-gradient(ellipse 18% 25% at 30.4% 38.5%, rgba(255, 168, 70, .36), rgba(255, 146, 54, .14) 44%, transparent 74%),
+      radial-gradient(ellipse 7% 10% at 30.5% 42.4%, rgba(255, 185, 88, .42), transparent 70%);
   }
 
   /* Tons quentes de propósito: um núcleo esbranquiçado sobre a cera branca da vela esfria a
    * chama e ela sai azulada no meio de uma cena de fim de tarde. */
   .cena-viva__chama {
-    background: radial-gradient(ellipse 1.2% 2.2% at 30.6% 41.8%, rgba(255, 210, 128, .76), rgba(255, 160, 58, .4) 48%, transparent 74%);
-    transform-origin: 30.6% 43.8%;
+    inset: auto;
+    left: 30.6%;
+    top: 41.8%;
+    width: 2.1%;
+    height: 4.8%;
+    border-radius: 52% 48% 48% 52% / 68% 68% 32% 32%;
+    background:
+      radial-gradient(ellipse at 50% 68%, rgba(255, 243, 190, .98) 0 18%, rgba(255, 196, 92, .92) 38%, rgba(255, 139, 44, .64) 60%, transparent 78%);
+    filter: blur(.2px) drop-shadow(0 0 6px rgba(255, 165, 64, .72));
+    transform: translate(-50%, -50%);
+    transform-origin: 50% 86%;
   }
 }
 
@@ -147,32 +156,32 @@
 @supports (container-type: size) and (width: 1cqw) {
   @media (prefers-reduced-motion: no-preference) {
     .cena-viva__sombras {
-      animation: cena-sombras 19s ease-in-out infinite alternate;
+      animation: cena-sombras 12s ease-in-out infinite alternate;
       will-change: transform;
     }
 
     .cena-viva__ramos {
-      animation: cena-ramos 7.4s ease-in-out infinite alternate;
+      animation: cena-ramos 5.8s ease-in-out infinite alternate;
       will-change: transform;
     }
 
     .cena-viva__bambu {
-      animation: cena-bambu 9.6s ease-in-out infinite alternate;
+      animation: cena-bambu 7.8s ease-in-out infinite alternate;
       will-change: transform;
     }
 
     .cena-viva__bambu-alto {
-      animation: cena-bambu-alto 6.3s ease-in-out infinite alternate;
+      animation: cena-bambu-alto 4.9s ease-in-out infinite alternate;
       will-change: transform;
     }
 
     .cena-viva__halo {
-      animation: cena-halo 5.2s ease-in-out infinite;
+      animation: cena-halo 3.8s ease-in-out infinite;
       will-change: opacity;
     }
 
     .cena-viva__chama {
-      animation: cena-chama 2.3s ease-in-out infinite;
+      animation: cena-chama 1.7s ease-in-out infinite;
       will-change: opacity, transform;
     }
 
@@ -186,47 +195,46 @@
 }
 
 @keyframes cena-sombras {
-  from { transform: translate3d(-.22%, -.12%, 0) scale(1.004); }
-  to { transform: translate3d(.26%, .14%, 0) scale(1.009); }
+  from { transform: translate3d(-.55%, -.24%, 0) scale(1.006); }
+  to { transform: translate3d(.65%, .28%, 0) scale(1.015); }
 }
 
 @keyframes cena-ramos {
-  from { transform: rotate(-.34deg) translate3d(-.1%, 0, 0); }
-  to { transform: rotate(.3deg) translate3d(.12%, -.05%, 0); }
+  from { transform: rotate(-.72deg) translate3d(-.18%, .04%, 0); }
+  to { transform: rotate(.84deg) translate3d(.22%, -.12%, 0); }
 }
 
 @keyframes cena-bambu {
-  from { transform: rotate(-.26deg) translate3d(-.08%, 0, 0); }
-  to { transform: rotate(.3deg) translate3d(.1%, -.04%, 0); }
+  from { transform: rotate(-.56deg) translate3d(-.16%, .04%, 0); }
+  to { transform: rotate(.64deg) translate3d(.2%, -.1%, 0); }
 }
 
 @keyframes cena-bambu-alto {
-  from { transform: rotate(-.52deg) translate3d(-.16%, .04%, 0); }
-  to { transform: rotate(.58deg) translate3d(.2%, -.08%, 0); }
+  from { transform: rotate(-1.12deg) translate3d(-.3%, .08%, 0); }
+  to { transform: rotate(1.28deg) translate3d(.36%, -.18%, 0); }
 }
 
 /* Pulsos irregulares: luz de chama não bate compasso. */
 @keyframes cena-halo {
-  0% { opacity: .62; }
+  0% { opacity: .56; }
   17% { opacity: 1; }
-  29% { opacity: .74; }
-  44% { opacity: .95; }
-  58% { opacity: .66; }
-  71% { opacity: .9; }
-  86% { opacity: .71; }
-  100% { opacity: .62; }
+  29% { opacity: .68; }
+  44% { opacity: .96; }
+  58% { opacity: .6; }
+  71% { opacity: .92; }
+  86% { opacity: .65; }
+  100% { opacity: .56; }
 }
 
 @keyframes cena-chama {
-  0% { opacity: .82; transform: scaleY(1) translate3d(0, 0, 0); }
-  13% { opacity: 1; transform: scaleY(1.09) translate3d(.03%, -.08%, 0); }
-  24% { opacity: .74; transform: scaleY(.95) translate3d(-.02%, .04%, 0); }
-  38% { opacity: .96; transform: scaleY(1.06) translate3d(.02%, -.05%, 0); }
-  52% { opacity: .8; transform: scaleY(.98) translate3d(-.03%, .02%, 0); }
-  66% { opacity: 1; transform: scaleY(1.11) translate3d(.01%, -.09%, 0); }
-  79% { opacity: .77; transform: scaleY(.96) translate3d(-.01%, .03%, 0); }
-  91% { opacity: .92; transform: scaleY(1.04) translate3d(.02%, -.04%, 0); }
-  100% { opacity: .82; transform: scaleY(1) translate3d(0, 0, 0); }
+  0% { opacity: .76; transform: translate(-50%, -50%) rotate(-2deg) scale(.92, .9); }
+  14% { opacity: 1; transform: translate(calc(-50% + 1px), calc(-50% - 3px)) rotate(3deg) scale(1.04, 1.28); }
+  27% { opacity: .7; transform: translate(calc(-50% - 1px), calc(-50% + 1px)) rotate(-4deg) scale(.88, .82); }
+  43% { opacity: .96; transform: translate(calc(-50% + 1px), calc(-50% - 2px)) rotate(2deg) scale(1.02, 1.2); }
+  58% { opacity: .78; transform: translate(-50%, -50%) rotate(-3deg) scale(.92, .94); }
+  72% { opacity: 1; transform: translate(calc(-50% - 1px), calc(-50% - 3px)) rotate(4deg) scale(1.06, 1.3); }
+  86% { opacity: .72; transform: translate(calc(-50% + 1px), calc(-50% + 1px)) rotate(-2deg) scale(.9, .84); }
+  100% { opacity: .76; transform: translate(-50%, -50%) rotate(-2deg) scale(.92, .9); }
 }
 
 /* ------------------------------------------------------------------
