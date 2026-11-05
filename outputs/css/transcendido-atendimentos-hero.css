@@ -1,36 +1,76 @@
-/* Integra a cena viva existente à abertura de Atendimentos na Home. */
+/* Composição da cena viva na abertura de Atendimentos da Home.
+ * A reprodução e a pausa do vídeo continuam centralizadas em atendimentos-hero-vivo.js. */
 
 .hero--cena-viva .hero-grid {
-  grid-template-columns: minmax(0, .88fr) minmax(430px, 1.12fr);
-  align-items: center;
+  width: min(1520px, calc(100% - 64px));
+  grid-template-columns: minmax(360px, .7fr) minmax(620px, 1.3fr);
+  grid-template-areas:
+    "copy scene"
+    "copy links";
+  gap: 22px clamp(56px, 5vw, 104px);
+  align-items: start;
 }
 
-.hero-card--cena-viva {
+.hero--cena-viva .hero-copy {
+  grid-area: copy;
   align-self: center;
-  padding: 12px;
-  overflow: hidden;
 }
 
 .hero-card__cena {
+  grid-area: scene;
+  width: 100%;
   min-height: 0;
   height: auto;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 9;
   margin: 0;
-  border-radius: 22px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2);
+  border-radius: clamp(24px, 2vw, 38px);
+  box-shadow: 0 28px 70px rgba(24, 54, 47, .16);
+}
+
+.hero-card__cena .cena-viva__video {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.hero-card__cena.cena-viva--video-ativo .cena-viva__video {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* A mídia recebida já traz esta frase. A legenda semitransparente da página passa a ser opaca
+ * durante o vídeo para cobrir a cópia incorporada e manter uma única leitura visível. */
+.hero-card__cena.cena-viva--video-ativo figcaption {
+  right: -1px;
+  bottom: -1px;
+  min-width: 21rem;
+  min-height: 5rem;
+  display: grid;
+  place-items: center end;
+  padding: 10px 18px;
+  border-color: #6b665b;
+  border-radius: 999px 0 0 999px;
+  background: #5b574e;
 }
 
 .hero-card__cena figcaption {
   position: absolute;
   z-index: 2;
-  right: 16px;
-  bottom: 14px;
+  right: 20px;
+  bottom: 18px;
   max-width: 25ch;
-  padding: 7px 10px;
-  border: 1px solid rgba(255, 255, 255, .2);
+  padding: 7px 11px;
   border-radius: 999px;
-  color: rgba(255, 255, 255, .92);
-  background: rgba(16, 25, 21, .58);
+  color: rgba(255, 255, 255, .94);
+  background: rgba(16, 25, 21, .56);
   backdrop-filter: blur(8px);
   font-size: .7rem;
   line-height: 1.35;
@@ -38,47 +78,108 @@
 }
 
 .hero-card__conteudo {
-  padding: 20px 12px 12px;
+  grid-area: links;
+  display: grid;
+  grid-template-columns: minmax(210px, .78fr) minmax(300px, 1.22fr);
+  gap: 20px 34px;
+  align-items: start;
+  padding: 4px 6px 0;
 }
 
-@media (max-width: 980px) {
+.hero-card__conteudo h3 {
+  margin: 3px 0 7px;
+  font-family: var(--serif);
+  font-size: clamp(1.65rem, 2vw, 2.25rem);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.hero-card__conteudo .small {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.hero-card__conteudo .hero-index {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+  margin-top: 0;
+}
+
+@media (max-width: 1120px) {
   .hero--cena-viva .hero-grid {
-    grid-template-columns: 1fr;
+    width: min(100% - 40px, 1180px);
+    grid-template-columns: minmax(300px, .82fr) minmax(0, 1.18fr);
+    column-gap: 48px;
   }
 
-  .hero-card--cena-viva {
+  .hero-card__conteudo {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero--cena-viva .hero-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "copy"
+      "scene"
+      "links";
+    gap: 28px;
+  }
+
+  .hero--cena-viva .hero-copy {
+    max-width: 720px;
+  }
+
+  .hero-card__cena {
     width: 100%;
-    max-width: 760px;
+    max-width: 900px;
+  }
+
+  .hero-card__conteudo {
+    grid-template-columns: minmax(210px, .72fr) minmax(300px, 1.28fr);
   }
 }
 
 @media (max-width: 680px) {
-  .hero-card--cena-viva {
-    padding: 8px;
-    border-radius: 24px;
+  .hero--cena-viva .hero-grid {
+    width: min(100% - 28px, 1180px);
+    gap: 24px;
   }
 
   .hero-card__cena {
     aspect-ratio: 4 / 3;
-    border-radius: 18px;
+    border-radius: 24px;
+    box-shadow: 0 20px 46px rgba(24, 54, 47, .15);
   }
 
   .hero-card__cena figcaption {
-    right: 10px;
-    bottom: 10px;
+    right: 12px;
+    bottom: 12px;
     max-width: 21ch;
     font-size: .64rem;
   }
 
+  .hero-card__cena.cena-viva--video-ativo figcaption {
+    min-width: 11.5rem;
+    min-height: 4rem;
+    padding: 8px 11px;
+  }
+
   .hero-card__conteudo {
-    padding: 18px 10px 10px;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 2px 4px 0;
+  }
+
+  .hero-card__conteudo .hero-index {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-card__cena .cena-viva__camada,
-  .hero-card__cena .cena-viva__halo,
-  .hero-card__cena .cena-viva__chama {
-    animation: none !important;
+  .hero-card__cena .cena-viva__video {
+    display: none;
   }
+
 }
