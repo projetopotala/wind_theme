@@ -1,0 +1,312 @@
+/*
+ * ABERTURA DE ATENDIMENTOS — a sala respira
+ *
+ * Vale só em atendimentos.html, só no bloco `.care-hero`. A fotografia é a mesma do começo ao
+ * fim: nada aqui a substitui, recorta de novo ou pinta por cima dela. O que se move são partes
+ * dela.
+ *
+ * Como o movimento é feito, já que a foto é parada:
+ *   - `.cena-viva__palco` tem a proporção exata do arquivo (1746x1090) e é dimensionado para
+ *     cobrir a moldura. Com isso, 30% do palco é 30% da fotografia em qualquer tela, e as
+ *     máscaras abaixo podem apontar para a vela e para o bambu por coordenada fixa. Fazer isso
+ *     com `object-fit: cover` seria impossível: o recorte muda a cada largura e as máscaras
+ *     escorregariam para fora dos elementos.
+ *   - cada `.cena-viva__camada` é uma cópia da mesma fotografia (mesmo URL, decodificado uma
+ *     vez) recortada por uma máscara suave sobre um elemento da cena e deslocada por frações
+ *     de 1%. A borda da máscara é um degradê, então o encontro entre a cópia que anda e a foto
+ *     parada não é uma emenda: é o farfalhar da folha.
+ *   - a vela não é cópia nenhuma. É luz: um halo quente na parede e uma chama, ambos em
+ *     `screen`, com tremulação de ritmo irregular — chama que pisca em compasso certinho
+ *     denuncia a animação.
+ *
+ * Sem biblioteca, sem ouvir a rolagem, sem botão para ligar. Com `prefers-reduced-motion:
+ * reduce` nada disto anima: a cena fica parada, inteira e sem aviso na tela.
+ */
+
+.cena-viva {
+  --foto: url("../media/atendimentos-sala-viva.webp");
+  position: relative;
+  overflow: hidden;
+  background: #241c15;
+}
+
+.cena-viva__palco {
+  position: absolute;
+  display: block;
+  /* Sem suporte a container queries fica este palco simples e a fotografia de sempre. */
+  inset: 0;
+  isolation: isolate;
+  filter: saturate(1.02) contrast(1.01) brightness(1.03);
+}
+
+.cena-viva__foto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  object-position: center 44%;
+  /* o filtro agora é do palco inteiro: na imagem sozinha, as camadas ficariam mais claras que ela */
+  filter: none;
+}
+
+.cena-viva__camada,
+.cena-viva__halo,
+.cena-viva__chama {
+  display: none;
+}
+
+/* ------------------------------------------------------------------
+ * O palco com a proporção da fotografia (requisito das máscaras)
+ * ------------------------------------------------------------------ */
+
+@supports (container-type: size) and (width: 1cqw) {
+  .cena-viva { container-type: size; }
+
+  /* `cover` escrito à mão: o maior entre a moldura e a proporção da foto, nos dois eixos.
+   * É o mesmo enquadramento de `object-fit: cover`, mas aqui o elemento tem o tamanho da
+   * fotografia — e por isso 30% dele é 30% dela, que é o que as máscaras precisam. */
+  .cena-viva__palco {
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    width: max(100cqw, 100cqh * 1746 / 1090);
+    height: max(100cqh, 100cqw * 1090 / 1746);
+    translate: -50% -50%;
+  }
+
+  .cena-viva__foto { object-fit: fill; }
+
+  .cena-viva__camada {
+    position: absolute;
+    inset: 0;
+    display: block;
+    background-image: var(--foto);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    pointer-events: none;
+  }
+
+  .cena-viva__halo,
+  .cena-viva__chama {
+    position: absolute;
+    display: block;
+    inset: 0;
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+
+  /* Sombras de folhas na parede, à esquerda: a luz que entra pela janela. */
+  .cena-viva__sombras {
+    mask-image: radial-gradient(ellipse 16% 38% at 8% 30%, #000 40%, transparent 78%);
+    -webkit-mask-image: radial-gradient(ellipse 16% 38% at 8% 30%, #000 40%, transparent 78%);
+  }
+
+  /* Os ramos floridos do vaso. Giram a partir da boca do vaso, não do próprio centro. */
+  .cena-viva__ramos {
+    transform-origin: 26% 36%;
+    mask-image: radial-gradient(ellipse 12% 16% at 29% 18%, #000 38%, transparent 76%);
+    -webkit-mask-image: radial-gradient(ellipse 12% 16% at 29% 18%, #000 38%, transparent 76%);
+  }
+
+  /* A massa do bambu, girando a partir do vaso. */
+  .cena-viva__bambu {
+    transform-origin: 64% 51%;
+    mask-image: radial-gradient(ellipse 25% 26% at 66% 22%, #000 36%, transparent 74%);
+    -webkit-mask-image: radial-gradient(ellipse 25% 26% at 66% 22%, #000 36%, transparent 74%);
+  }
+
+  /* As pontas altas da direita: andam mais e em outro compasso, senão o bambu vira um bloco só. */
+  .cena-viva__bambu-alto {
+    transform-origin: 64% 51%;
+    mask-image: radial-gradient(ellipse 15% 14% at 82% 12%, #000 34%, transparent 76%);
+    -webkit-mask-image: radial-gradient(ellipse 15% 14% at 82% 12%, #000 34%, transparent 76%);
+  }
+
+  /* Luz da vela medida na própria fotografia: a chama está em 30,6% x 42,0%. */
+  .cena-viva__halo {
+    background:
+      radial-gradient(ellipse 17% 24% at 30.4% 38.5%, rgba(255, 168, 70, .3), rgba(255, 146, 54, .11) 44%, transparent 72%),
+      radial-gradient(ellipse 6% 9% at 30.5% 42.4%, rgba(255, 176, 78, .34), transparent 68%);
+  }
+
+  /* Tons quentes de propósito: um núcleo esbranquiçado sobre a cera branca da vela esfria a
+   * chama e ela sai azulada no meio de uma cena de fim de tarde. */
+  .cena-viva__chama {
+    background: radial-gradient(ellipse 1.2% 2.2% at 30.6% 41.8%, rgba(255, 210, 128, .76), rgba(255, 160, 58, .4) 48%, transparent 74%);
+    transform-origin: 30.6% 43.8%;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * O movimento — só para quem não pediu menos
+ * ------------------------------------------------------------------ */
+
+@supports (container-type: size) and (width: 1cqw) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cena-viva__sombras {
+      animation: cena-sombras 19s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+
+    .cena-viva__ramos {
+      animation: cena-ramos 7.4s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+
+    .cena-viva__bambu {
+      animation: cena-bambu 9.6s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+
+    .cena-viva__bambu-alto {
+      animation: cena-bambu-alto 6.3s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+
+    .cena-viva__halo {
+      animation: cena-halo 5.2s ease-in-out infinite;
+      will-change: opacity;
+    }
+
+    .cena-viva__chama {
+      animation: cena-chama 2.3s ease-in-out infinite;
+      will-change: opacity, transform;
+    }
+
+    /* Fora da tela não há o que animar. */
+    .cena-viva.fora-de-cena .cena-viva__camada,
+    .cena-viva.fora-de-cena .cena-viva__halo,
+    .cena-viva.fora-de-cena .cena-viva__chama {
+      animation-play-state: paused;
+    }
+  }
+}
+
+@keyframes cena-sombras {
+  from { transform: translate3d(-.22%, -.12%, 0) scale(1.004); }
+  to { transform: translate3d(.26%, .14%, 0) scale(1.009); }
+}
+
+@keyframes cena-ramos {
+  from { transform: rotate(-.34deg) translate3d(-.1%, 0, 0); }
+  to { transform: rotate(.3deg) translate3d(.12%, -.05%, 0); }
+}
+
+@keyframes cena-bambu {
+  from { transform: rotate(-.26deg) translate3d(-.08%, 0, 0); }
+  to { transform: rotate(.3deg) translate3d(.1%, -.04%, 0); }
+}
+
+@keyframes cena-bambu-alto {
+  from { transform: rotate(-.52deg) translate3d(-.16%, .04%, 0); }
+  to { transform: rotate(.58deg) translate3d(.2%, -.08%, 0); }
+}
+
+/* Pulsos irregulares: luz de chama não bate compasso. */
+@keyframes cena-halo {
+  0% { opacity: .62; }
+  17% { opacity: 1; }
+  29% { opacity: .74; }
+  44% { opacity: .95; }
+  58% { opacity: .66; }
+  71% { opacity: .9; }
+  86% { opacity: .71; }
+  100% { opacity: .62; }
+}
+
+@keyframes cena-chama {
+  0% { opacity: .82; transform: scaleY(1) translate3d(0, 0, 0); }
+  13% { opacity: 1; transform: scaleY(1.09) translate3d(.03%, -.08%, 0); }
+  24% { opacity: .74; transform: scaleY(.95) translate3d(-.02%, .04%, 0); }
+  38% { opacity: .96; transform: scaleY(1.06) translate3d(.02%, -.05%, 0); }
+  52% { opacity: .8; transform: scaleY(.98) translate3d(-.03%, .02%, 0); }
+  66% { opacity: 1; transform: scaleY(1.11) translate3d(.01%, -.09%, 0); }
+  79% { opacity: .77; transform: scaleY(.96) translate3d(-.01%, .03%, 0); }
+  91% { opacity: .92; transform: scaleY(1.04) translate3d(.02%, -.04%, 0); }
+  100% { opacity: .82; transform: scaleY(1) translate3d(0, 0, 0); }
+}
+
+/* ------------------------------------------------------------------
+ * Composição: a fotografia ocupa a abertura inteira e o texto fica sobre ela
+ *
+ * Antes a foto era uma coluna de 42% ao lado do texto. Agora é o fundo da abertura — maior,
+ * sem moldura, sem canto arredondado e sem sombra de cartão.
+ * ------------------------------------------------------------------ */
+
+@media (min-width: 901px) {
+  .care-hero {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .care-hero > .care-hero-visual,
+  .care-hero > .care-hero-content {
+    grid-area: 1 / 1;
+  }
+
+  .care-hero-visual {
+    z-index: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .care-hero-content {
+    position: relative;
+    z-index: 1;
+    grid-template-columns: minmax(0, 1fr) minmax(208px, 268px);
+  }
+
+  /* O véu que devolve a leitura ao texto sem apagar a fotografia. */
+  .care-hero-visual::after {
+    z-index: 1;
+    background:
+      linear-gradient(101deg, rgba(12, 15, 12, .82) 0%, rgba(12, 15, 12, .58) 18%, rgba(12, 15, 12, .2) 36%, rgba(12, 15, 12, .03) 54%, transparent 68%),
+      linear-gradient(180deg, rgba(12, 15, 12, .34), transparent 18%, transparent 68%, rgba(12, 15, 12, .44));
+  }
+
+  /* O texto sobe para o alto da coluna: a vela fica logo abaixo dele, à vista, em vez de
+   * acender atrás das letras do título. */
+  .care-hero-copy {
+    max-width: 44ch;
+    align-self: start;
+  }
+
+  /* O índice cai sobre a parte clara da cena: ganha um vidro escuro para continuar legível. */
+  .care-hero .care-indice {
+    align-self: start;
+    padding: 20px 22px 22px;
+    border: 1px solid rgba(238, 228, 206, .16);
+    border-radius: 20px;
+    background: rgba(11, 14, 11, .46);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* A legenda sai do caminho do texto e vai para o canto oposto. */
+  .care-hero-visual figcaption {
+    right: clamp(30px, 4vw, 66px);
+    left: auto;
+    max-width: 14ch;
+    text-align: right;
+  }
+}
+
+/* No celular a cena continua empilhada — texto sobre foto em tela estreita não se lê —
+ * mas a fotografia cresce e ganha a tela toda. */
+@media (max-width: 900px) {
+  /* Altura declarada, e não só mínima: o palco é medido em unidades da moldura, e uma altura
+   * que depende do conteúdo não tem medida para dar. */
+  .care-hero-visual {
+    height: 70svh;
+    min-height: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .care-hero-visual { height: 64svh; }
+}

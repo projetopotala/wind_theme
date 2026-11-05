@@ -6,15 +6,15 @@ import sharp from "sharp";
 
 const pageUrl = new URL("../../outputs/atendimentos.html", import.meta.url);
 const styleUrl = new URL("../../outputs/css/atendimentos.css", import.meta.url);
-const imageUrl = new URL("../../outputs/media/atendimentos-acolhimento.webp", import.meta.url);
+const imageUrl = new URL("../../outputs/media/atendimentos-sala-viva.webp", import.meta.url);
 
-test("Atendimentos abre com imagem humana à esquerda e texto editorial à direita", async () => {
+test("Atendimentos abre com a fotografia da sala ocupando a cena e o texto editorial sobre ela", async () => {
   const html = await readFile(pageUrl, "utf8");
   const hero = html.match(/<section class="care-hero"[\s\S]*?<\/section>/)?.[0] ?? "";
 
-  assert.match(hero, /<figure class="care-hero-visual"/);
-  assert.match(hero, /src="media\/atendimentos-acolhimento\.webp"/);
-  assert.match(hero, /alt="[^"]*(profissional|visitante|conversa|acolhimento)[^"]*"/i);
+  assert.match(hero, /<figure class="care-hero-visual cena-viva"/);
+  assert.match(hero, /src="media\/atendimentos-sala-viva\.webp"/);
+  assert.match(hero, /alt="[^"]*(sala|maca|vela|bambu)[^"]*"/i);
   assert.match(hero, /<div class="care-hero-copy"/);
   assert.match(hero, /<h1[^>]*>Atendimentos<\/h1>/);
   assert.match(hero, /&amp; caminhos para cuidar/i);
