@@ -321,7 +321,10 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
 }
 </style>
 <meta name="description" content="Instituto Potala: saúde, cuidado e autoconhecimento — matérias para ler com calma, caminhos de atendimento, profissionais e formas de acesso.">
+<link rel="preload" href="media/atendimentos-sala-viva.webp" as="image" type="image/webp">
 <link rel="stylesheet" href="css/atendimentos-conceito.css">
+<link rel="stylesheet" href="css/atendimentos-hero-vivo.css">
+<link rel="stylesheet" href="css/transcendido-atendimentos-hero.css">
 <link rel="stylesheet" href="css/portal-menu.css">
 <link rel="stylesheet" href="css/portal-cinema.css">
 <link rel="stylesheet" href="css/secoes-imagem.css">
@@ -378,7 +381,7 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
 
 <main id="main">
 <svg class="journey-thread" data-journey-thread aria-hidden="true" focusable="false"><path data-journey-path></path><circle class="journey-thread__ponta" data-journey-tip r="3.2"></circle></svg>
-<section class="hero" id="inicio" data-search="apresentação atendimentos potala picshi biblioteca revista banco vivo concierge">
+<section class="hero hero--cena-viva" id="inicio" data-search="apresentação atendimentos potala picshi biblioteca revista banco vivo concierge">
   <div class="hero-orb one"></div><div class="hero-orb two"></div><div class="hero-orb three"></div>
   <svg class="botanical" viewBox="0 0 500 420" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
     <path d="M448 410C362 343 324 259 329 168C332 112 357 65 398 24"/><path d="M331 184C277 166 246 133 236 87C281 91 315 112 337 149"/><path d="M335 229C388 203 433 201 470 222C436 250 392 260 344 247"/><path d="M351 296C299 288 260 263 236 220C283 216 324 232 355 268"/><path d="M386 357C424 321 461 306 498 314C474 351 440 372 398 379"/>
@@ -391,15 +394,29 @@ footer{background:#0e1e1b;color:#fff;padding:54px 0 30px}
       <p class="lead">Você chegou à página de atendimentos do Instituto Potala. Aqui, você pode compreender melhor a saúde e a prevenção, conhecer técnicas integrativas, holísticas e regulamentadas, explorar dezenas de oráculos e encontrar diferentes formas de cuidado para aliviar dores físicas e emocionais, recuperar equilíbrio, aprofundar o autoconhecimento e encontrar apoio em diferentes momentos da vida.</p>
       <div class="hero-note">Antes de escolher uma técnica, você pode compreender o território, reconhecer diferenças e chegar pelo caminho que fizer sentido para o seu momento.</div>
     </div>
-    <aside class="hero-card"><img class="hero-card__image" src="media/atendimentos-acolhimento.webp" alt="Profissional acolhe uma pessoa em uma conversa de cuidado" width="1440" height="1800">
-      <div class="eyebrow">Você encontrará aqui</div>
-      <h3>Um universo organizado</h3>
-      <p class="small">Saúde, experiências humanas, diferentes naturezas de cuidado, técnicas, Oráculos, profissionais, atendimentos especiais e formas de acesso.</p>
-      <div class="hero-index">
-        <a href="#vivemos">Situações humanas <span>↘</span></a>
-        <a href="#praca">Explorar atendimentos <span>↘</span></a>
-        <a href="#oraculos">Conhecer Oráculos <span>↘</span></a>
-        <a href="#especiais">Cuidados especiais <span>↘</span></a>
+    <aside class="hero-card hero-card--cena-viva">
+      <figure class="hero-card__cena cena-viva">
+        <span class="cena-viva__palco">
+          <img class="cena-viva__foto" src="media/atendimentos-sala-viva.webp" alt="Sala de atendimento acolhedora com maca, vela acesa, bambu e plantas" width="1746" height="1090" fetchpriority="high" decoding="async">
+          <span class="cena-viva__camada cena-viva__sombras" aria-hidden="true"></span>
+          <span class="cena-viva__camada cena-viva__ramos" aria-hidden="true"></span>
+          <span class="cena-viva__camada cena-viva__bambu" aria-hidden="true"></span>
+          <span class="cena-viva__camada cena-viva__bambu-alto" aria-hidden="true"></span>
+          <span class="cena-viva__halo" aria-hidden="true"></span>
+          <span class="cena-viva__chama" aria-hidden="true"></span>
+        </span>
+        <figcaption>Um espaço preparado para acolher corpo, mente e história.</figcaption>
+      </figure>
+      <div class="hero-card__conteudo">
+        <div class="eyebrow">Você encontrará aqui</div>
+        <h3>Um universo organizado</h3>
+        <p class="small">Saúde, experiências humanas, diferentes naturezas de cuidado, técnicas, Oráculos, profissionais, atendimentos especiais e formas de acesso.</p>
+        <div class="hero-index">
+          <a href="#vivemos">Situações humanas <span>↘</span></a>
+          <a href="#praca">Explorar atendimentos <span>↘</span></a>
+          <a href="#oraculos">Conhecer Oráculos <span>↘</span></a>
+          <a href="#especiais">Cuidados especiais <span>↘</span></a>
+        </div>
       </div>
     </aside>
   </div>
@@ -1047,6 +1064,7 @@ $('#conciergeBtn').addEventListener('click',()=>alert('Protótipo: aqui abriria 
 </script>
 <script type="module" src="js/atendimentos-conceito.js"></script>
 <script type="module" src="js/atendimentos-materia.js"></script>
+<script type="module" src="js/atendimentos/atendimentos-hero-vivo.js"></script>
 <script type="module" src="js/blog/indicacoes-do-blog.js"></script>
 <script type="module" src="js/shared/portal-menu-boot.js"></script>
 <script type="module" src="js/shared/portal-cinema.js"></script>

@@ -1,9 +1,9 @@
 /*
  * ABERTURA DE ATENDIMENTOS — a sala respira
  *
- * Vale só em atendimentos.html, só no bloco `.care-hero`. A fotografia é a mesma do começo ao
- * fim: nada aqui a substitui, recorta de novo ou pinta por cima dela. O que se move são partes
- * dela.
+ * A cena é compartilhada pelas aberturas de Atendimentos em `atendimentos.html` e na Home.
+ * A fotografia é a mesma do começo ao fim: nada aqui a substitui, recorta de novo ou pinta por
+ * cima dela. O que se move são partes dela.
  *
  * Como o movimento é feito, já que a foto é parada:
  *   - `.cena-viva__palco` tem a proporção exata do arquivo (1746x1090) e é dimensionado para
