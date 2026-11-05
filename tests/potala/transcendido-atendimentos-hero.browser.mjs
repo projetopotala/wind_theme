@@ -22,10 +22,13 @@ const resultados = [];
 
 try {
   if (urlAntes && evidencia) {
-    const paginaAntes = await navegador.newPage({ viewport: { width: 1366, height: 768 } });
-    await paginaAntes.goto(urlAntes, { waitUntil: "networkidle" });
-    await paginaAntes.locator(".hero").screenshot({ path: join(evidencia, "antes-1366.png") });
-    await paginaAntes.close();
+    for (const largura of [390, 1366]) {
+      const paginaAntes = await navegador.newPage({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
+      await paginaAntes.goto(urlAntes, { waitUntil: "networkidle" });
+      await paginaAntes.waitForTimeout(1500);
+      await paginaAntes.locator(".hero").screenshot({ path: join(evidencia, `antes-${largura}.png`) });
+      await paginaAntes.close();
+    }
   }
 
   for (const largura of larguras) {
@@ -41,6 +44,7 @@ try {
     });
 
     await pagina.goto(url, { waitUntil: "networkidle" });
+    await pagina.waitForTimeout(1500);
     const cena = pagina.locator(".hero-card__cena.cena-viva");
     await cena.waitFor({ state: "visible" });
     await cena.scrollIntoViewIfNeeded();
@@ -55,7 +59,8 @@ try {
     assert.equal(medidas.scrollWidth, medidas.clientWidth, `overflow horizontal em ${largura}px`);
     assert.equal(medidas.foto, "media/atendimentos-sala-viva.webp");
     assert.equal(medidas.titulo, "Atendimentos");
-    assert.ok(medidas.cena?.width > 300, `cena pequena em ${largura}px`);
+    const larguraMinima = largura === 390 ? 350 : largura === 1366 ? 750 : 900;
+    assert.ok(medidas.cena?.width >= larguraMinima, `cena pequena em ${largura}px`);
     const errosInesperados = erros.filter((erro) => (
       !erro.includes("Ambiente LOCAL sem os dados de configuração")
       && !erro.startsWith("Failed to load resource:")

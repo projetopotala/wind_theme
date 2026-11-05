@@ -9,8 +9,9 @@ const css = ler("css/transcendido-atendimentos-hero.css");
 
 test("a abertura de Atendimentos na Home usa a cena viva publicada", () => {
   assert.match(pagina, /<h1 class="display">Atendimentos<\/h1>/);
-  assert.match(pagina, /<aside class="hero-card hero-card--cena-viva">/);
-  assert.match(pagina, /class="hero-card__cena cena-viva"/);
+  assert.match(pagina, /<figure class="hero-card__cena cena-viva">/);
+  assert.match(pagina, /<aside class="hero-card__conteudo" aria-label="Caminhos de Atendimentos">/);
+  assert.doesNotMatch(pagina, /hero-card--cena-viva/);
   assert.match(pagina, /src="media\/atendimentos-sala-viva\.webp"/);
   const inicio = pagina.indexOf('<section class="hero hero--cena-viva"');
   const hero = pagina.slice(inicio, pagina.indexOf("</section>", inicio));
@@ -37,7 +38,9 @@ test("a Home usa o vídeo real sem sobrepor as antigas cópias mascaradas", () =
 });
 
 test("a composição responde sem esconder overflow global", () => {
-  assert.match(css, /@media \(max-width: 980px\)/);
+  assert.match(css, /grid-template-areas:[\s\S]*?"copy scene"[\s\S]*?"copy links"/);
+  assert.match(css, /width: min\(1520px, calc\(100% - 64px\)\)/);
+  assert.match(css, /@media \(max-width: 900px\)/);
   assert.match(css, /@media \(max-width: 680px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /prefers-reduced-motion: reduce[\s\S]*?\.hero-card__cena \.cena-viva__video[\s\S]*?display: none/);
