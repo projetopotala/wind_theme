@@ -131,7 +131,7 @@ test("painel autoriza antes da RPC e preserva a chave numa tentativa repetida", 
 
 test("flag de reservas permanece fechada mesmo com a triagem administrativa disponível", async () => {
   const config = readFileSync(new URL("../../outputs/js/appointments/config.js", import.meta.url), "utf8");
-  assert.match(config, /APPOINTMENT_RESERVATIONS_ENABLED\s*=\s*false/);
+  assert.match(config, /APPOINTMENT_RESERVATIONS_ENABLED\s*=\s*flags\.reservations\s*===\s*true/);
   const markup = renderAppointmentPanel({ rows: [], phase: "ready", message: "", busy: false, drafts: {}, reservationsEnabled: false });
   assert.doesNotMatch(markup, /data-appointment-confirm|data-appointment-reservation/);
 });

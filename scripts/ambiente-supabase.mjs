@@ -11,16 +11,17 @@
  * ops/lab-preview/ambiente-lab.local.json (ignorado pelo Git). Só valores públicos.
  * Nunca imprime chaves.
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { HOSTS_OFICIAIS, HOST_LAB, PROJETO_PRODUCAO, escolherAmbiente } from "../outputs/js/supabase/ambiente.js";
+import { HOSTS_OFICIAIS, HOST_LAB, PROJETO_PRODUCAO, PUBLICAVEL_PRODUCAO, escolherAmbiente } from "../outputs/js/supabase/ambiente.js";
 
 // Projetos que nunca podem aparecer em um pacote de produção.
 export const PROJETOS_BLOQUEADOS_EM_PRODUCAO = Object.freeze(["hmspabllgxqfzzricijv"]);
 export const ARQUIVO_LAB = "js/supabase/ambiente-lab.js";
 export const ARQUIVO_LOCAL = "js/supabase/ambiente-local.js";
+export const ARQUIVO_PREVIEW_E2E = "js/preview/ambiente-e2e.js";
 export const FONTE_LAB_JSON = "ops/lab-preview/ambiente-lab.local.json";
 const HOST_LAB_PROJETO = "wind-theme-m2-lab-preview.vercel.app";
 
@@ -49,11 +50,12 @@ function jwtDeServico(texto) {
 }
 
 /* Varre outputs/ e devolve a lista de problemas (vazia = limpo). */
-export function varrerSaida(pastaSaida, { permitirLab = false } = {}) {
+export function varrerSaida(pastaSaida, { permitirLab = false, permitirPreviewE2E = false } = {}) {
   const problemas = [];
   if (!permitirLab && existsSync(join(pastaSaida, ARQUIVO_LAB))) problemas.push(`${ARQUIVO_LAB} não pode existir em um pacote de produção`);
   // A configuração local nunca pertence a um pacote publicado, em nenhum modo.
   if (existsSync(join(pastaSaida, ARQUIVO_LOCAL))) problemas.push(`${ARQUIVO_LOCAL} é só para uso local e não pode existir em um pacote publicado`);
+  if (!permitirPreviewE2E && existsSync(join(pastaSaida, ARQUIVO_PREVIEW_E2E))) problemas.push(`${ARQUIVO_PREVIEW_E2E} só pode existir na Preview E2E autorizada`);
   for (const caminho of arquivos(pastaSaida)) {
     const rel = relative(pastaSaida, caminho).replaceAll("\\", "/");
     const texto = readFileSync(caminho, "utf8");
@@ -69,7 +71,7 @@ export function varrerSaida(pastaSaida, { permitirLab = false } = {}) {
 }
 
 /* Confere a decisão efetiva de ambiente, como o navegador a faria. */
-export async function conferirDecisao(raiz, { modo }) {
+export async function conferirDecisao(raiz, { modo, permitirPreviewE2E = false }) {
   const problemas = [];
   for (const host of HOSTS_OFICIAIS) {
     const c = escolherAmbiente({ origem: `https://${host}` });
@@ -93,7 +95,56 @@ export async function conferirDecisao(raiz, { modo }) {
       } catch (erro) { problemas.push(`dados do LAB inválidos: ${erro.message}`); break; }
     }
   }
+  if (permitirPreviewE2E) {
+    const arquivo = join(raiz, "outputs", ARQUIVO_PREVIEW_E2E);
+    if (!existsSync(arquivo)) problemas.push(`${ARQUIVO_PREVIEW_E2E} ausente na Preview E2E autorizada`);
+    else {
+      const { AMBIENTE_E2E } = await import(`${pathToFileURL(arquivo).href}?v=${Date.now()}`);
+      try {
+        const c = escolherAmbiente({ origem: AMBIENTE_E2E.origin, overlayPreview: AMBIENTE_E2E });
+        if (c.ambiente !== "preview-e2e" || c.projectRef !== PROJETO_PRODUCAO
+          || c.siteUrl !== AMBIENTE_E2E.origin || c.appointments.publicRequests !== false
+          || !c.appointments.authenticatedRequests || !c.appointments.admin || !c.appointments.reservations) {
+          problemas.push("perfil da Preview E2E não preserva os gates autorizados");
+        }
+      } catch (erro) { problemas.push(`dados da Preview E2E inválidos: ${erro.message}`); }
+    }
+  }
   return problemas;
+}
+
+export function previewE2EAtiva(env = process.env) {
+  return env.POTALA_APPOINTMENT_E2E_PREVIEW === "true"
+    && env.VERCEL_ENV === "preview"
+    && env.VERCEL_GIT_COMMIT_REF === "codex/appointments-livekit-production"
+    && env.VERCEL_PROJECT_PRODUCTION_URL === "wind-theme.vercel.app"
+    && /^wind-theme-[a-z0-9]+-potala\.vercel\.app$/.test(String(env.VERCEL_URL || ""));
+}
+
+export function prepararPreviewE2E({ raiz = raizPadrao, env = process.env } = {}) {
+  const destino = join(raiz, "outputs", ARQUIVO_PREVIEW_E2E);
+  if (!previewE2EAtiva(env)) {
+    if (existsSync(destino)) rmSync(destino, { force: true });
+    return null;
+  }
+  const origin = `https://${env.VERCEL_URL}`;
+  const dados = {
+    origin,
+    projectRef: PROJETO_PRODUCAO,
+    url: `https://${PROJETO_PRODUCAO}.supabase.co`,
+    publishableKey: PUBLICAVEL_PRODUCAO,
+    appointments: {
+      authenticatedRequests: true,
+      admin: true,
+      reservations: true,
+      publicRequests: false,
+      turnstileSiteKey: "",
+    },
+  };
+  // Contém somente URL, chave publicável e flags; nunca credenciais privadas.
+  mkdirSync(dirname(destino), { recursive: true });
+  writeFileSync(destino, `// Gerado somente no build protegido da Preview E2E. Não versionar.\nexport const AMBIENTE_E2E = Object.freeze(${JSON.stringify(dados, null, 2)});\n`);
+  return destino;
 }
 
 export function modoAutomatico(env = process.env) {
@@ -105,10 +156,11 @@ export async function verificar(modo, { raiz = raizPadrao, env = process.env } =
   const pastaSaida = join(raiz, "outputs");
   if (modo === "auto") modo = modoAutomatico(env);
   const problemas = [];
+  const permitirPreviewE2E = previewE2EAtiva(env);
   const hostProjeto = String(env.VERCEL_PROJECT_PRODUCTION_URL || "");
   if (modo === "producao" && HOST_LAB.test(hostProjeto)) problemas.push("o projeto Vercel LAB não pode rodar a verificação de produção");
-  problemas.push(...varrerSaida(pastaSaida, { permitirLab: modo === "lab" }));
-  problemas.push(...(await conferirDecisao(raiz, { modo })));
+  problemas.push(...varrerSaida(pastaSaida, { permitirLab: modo === "lab", permitirPreviewE2E }));
+  problemas.push(...(await conferirDecisao(raiz, { modo, permitirPreviewE2E })));
   return { modo, problemas };
 }
 
@@ -145,6 +197,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     process.exit(2);
   }
   try {
+    prepararPreviewE2E();
     if (comando === "preparar-lab") prepararLab();
     const { modo, problemas } = await verificar(comando === "preparar-lab" ? "lab" : comando);
     if (problemas.length) {

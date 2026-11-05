@@ -43,7 +43,8 @@ let perfil;
 try {
   const overlayLab = tipo === "lab" ? await carregar("./ambiente-lab.js", "AMBIENTE_LAB") : null;
   const overlayLocal = tipo === "local" ? await carregar("./ambiente-local.js", "AMBIENTE_LOCAL") : null;
-  perfil = escolherAmbiente({ origem, overlayLab, overlayLocal });
+  const overlayPreview = tipo === "desconhecido" ? await carregar("../preview/ambiente-e2e.js", "AMBIENTE_E2E") : null;
+  perfil = escolherAmbiente({ origem, overlayLab, overlayLocal, overlayPreview });
 } catch (erro) {
   avisar(erro);
   throw erro;

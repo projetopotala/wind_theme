@@ -27,7 +27,7 @@ export const HOSTS_OFICIAIS = Object.freeze(["wind-theme.vercel.app"]);
 export const HOST_LAB = /^wind-theme-m2-lab-preview(?:-[a-z0-9]+-potala)?\.vercel\.app$/;
 const HOST_LOCAL = /^(?:localhost|127\.0\.0\.1|\[::1\]|(?:[a-z0-9-]+\.)+localhost)$/;
 
-const PUBLICAVEL_PRODUCAO = "sb_publishable_daUl7ko5Dg-C5jO67g4sEQ_rGLbbu0e";
+export const PUBLICAVEL_PRODUCAO = "sb_publishable_daUl7ko5Dg-C5jO67g4sEQ_rGLbbu0e";
 const REF = /^[a-z0-9]{20}$/;
 const SEGREDO_NA_CHAVE = /sb_secret_|service_role/i;
 
@@ -94,10 +94,22 @@ export function validarPerfil(perfil) {
     if (perfil.projectRef === PROJETO_PRODUCAO || !ehHostLocal(site.hostname)) {
       throw new TypeError("Perfil local inconsistente: o uso local nunca aponta para a produção.");
     }
+  } else if (perfil.ambiente === "preview-e2e") {
+    if (perfil.projectRef !== PROJETO_PRODUCAO || site.protocol !== "https:"
+      || perfil.origemAutorizada !== site.origin || !/^wind-theme-[a-z0-9]+-potala\.vercel\.app$/.test(site.hostname)) {
+      throw new TypeError("Perfil da Preview E2E inconsistente.");
+    }
   } else {
     throw new TypeError("Ambiente desconhecido.");
   }
-  return Object.freeze({ ...perfil });
+  const appointments = Object.freeze({
+    authenticatedRequests: perfil.appointments?.authenticatedRequests === true,
+    admin: perfil.appointments?.admin === true,
+    reservations: perfil.appointments?.reservations === true,
+    publicRequests: perfil.appointments?.publicRequests === true,
+    turnstileSiteKey: String(perfil.appointments?.turnstileSiteKey || ""),
+  });
+  return Object.freeze({ ...perfil, appointments });
 }
 
 function perfilExterno(ambiente, dados, origem, nomeArquivo) {
@@ -117,7 +129,7 @@ function perfilExterno(ambiente, dados, origem, nomeArquivo) {
  * próprio ambiente: em qualquer outra origem ele é ignorado e não desvia nada.
  * Sem origem conhecida não existe perfil: o resultado é um erro controlado.
  */
-export function escolherAmbiente({ origem = "", overlayLab = null, overlayLocal = null } = {}) {
+export function escolherAmbiente({ origem = "", overlayLab = null, overlayLocal = null, overlayPreview = null } = {}) {
   const tipo = classificarOrigem(origem);
   const u = origemValida(origem);
   if (tipo === "producao") {
@@ -131,6 +143,17 @@ export function escolherAmbiente({ origem = "", overlayLab = null, overlayLocal 
   }
   if (tipo === "lab") return perfilExterno("lab", overlayLab, u, "ambiente-lab.js");
   if (tipo === "local") return perfilExterno("local", overlayLocal, u, "ambiente-local.js");
+  if (tipo === "desconhecido" && overlayPreview && u && overlayPreview.origin === u.origin) {
+    return validarPerfil({
+      ambiente: "preview-e2e",
+      projectRef: overlayPreview.projectRef,
+      url: overlayPreview.url,
+      publishableKey: overlayPreview.publishableKey,
+      siteUrl: u.origin,
+      origemAutorizada: overlayPreview.origin,
+      appointments: overlayPreview.appointments,
+    });
+  }
   throw new ErroDeAmbiente(
     "origem-desconhecida",
     "Origem não autorizada para este portal: a página não se conecta a nenhum banco.",
