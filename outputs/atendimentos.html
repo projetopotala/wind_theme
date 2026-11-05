@@ -7,14 +7,16 @@
   <meta name="description" content="Conheça os atendimentos do Instituto Potala e encontre um caminho de cuidado adequado ao seu momento.">
   <title>Atendimentos — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
-  <link rel="preload" href="media/atendimentos-acolhimento.webp" as="image" type="image/webp" fetchpriority="high">
+  <link rel="preload" href="media/atendimentos-sala-viva.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/atendimentos.css">
   <link rel="stylesheet" href="css/atendimentos-redesign.css">
   <link rel="stylesheet" href="css/section-transition.css">
+  <link rel="stylesheet" href="css/atendimentos-hero-vivo.css">
   <script type="module" src="js/secoes.js"></script>
   <script type="module" src="js/sections/resource-hero.js"></script>
   <script type="module" src="js/sections/movimento.js"></script>
+  <script type="module" src="js/atendimentos/atendimentos-hero-vivo.js"></script>
 </head>
 <body data-section="atendimentos">
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
@@ -28,10 +30,18 @@
     </svg>
 
     <section class="care-hero" id="inicio" data-capitulo="inicio" aria-labelledby="care-title">
-      <figure class="care-hero-visual" data-recorte>
-        <img src="media/atendimentos-acolhimento.webp"
-          alt="Profissional e visitante conversam em um momento de acolhimento"
-          width="1440" height="1800" fetchpriority="high" decoding="async">
+      <figure class="care-hero-visual cena-viva" data-recorte>
+        <span class="cena-viva__palco">
+          <img class="cena-viva__foto" src="media/atendimentos-sala-viva.webp"
+            alt="Sala de atendimento ao fim da tarde: maca preparada com toalhas, vela acesa e tigela tibetana sobre o móvel de madeira, bambu junto à cortina"
+            width="1746" height="1090" fetchpriority="high" decoding="async">
+          <span class="cena-viva__camada cena-viva__sombras" aria-hidden="true"></span>
+          <span class="cena-viva__camada cena-viva__ramos" aria-hidden="true"></span>
+          <span class="cena-viva__camada cena-viva__bambu" aria-hidden="true"></span>
+          <span class="cena-viva__camada cena-viva__bambu-alto" aria-hidden="true"></span>
+          <span class="cena-viva__halo" aria-hidden="true"></span>
+          <span class="cena-viva__chama" aria-hidden="true"></span>
+        </span>
         <figcaption>“Escuta também é um caminho.”</figcaption>
       </figure>
 
