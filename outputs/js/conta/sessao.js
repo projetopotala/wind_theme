@@ -245,6 +245,11 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
       return aposUsarDados(await dados.agendaProfissional(usuarioId));
     },
 
+    async perfisProfissionais() {
+      exigirConta();
+      return aposUsarDados(await dados.perfisProfissionais());
+    },
+
     async solicitarAtendimento(pedido) {
       const usuarioId = exigirConta();
       return aposUsarDados(await dados.solicitarAtendimento(pedido, usuarioId));

@@ -113,10 +113,13 @@ export async function conferirDecisao(raiz, { modo, permitirPreviewE2E = false }
   return problemas;
 }
 
+// Única branch cuja Preview conecta ao Supabase oficial (homologação controlada).
+export const BRANCH_PREVIEW_E2E = "feat/identidades-permissoes";
+
 export function previewE2EAtiva(env = process.env) {
   return env.POTALA_APPOINTMENT_E2E_PREVIEW === "true"
     && env.VERCEL_ENV === "preview"
-    && env.VERCEL_GIT_COMMIT_REF === "codex/appointments-livekit-production"
+    && env.VERCEL_GIT_COMMIT_REF === BRANCH_PREVIEW_E2E
     && env.VERCEL_PROJECT_PRODUCTION_URL === "wind-theme.vercel.app"
     && /^wind-theme-[a-z0-9]+-potala\.vercel\.app$/.test(String(env.VERCEL_URL || ""));
 }

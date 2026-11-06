@@ -1487,3 +1487,11 @@ button {
 .op-dashboard-shortcuts span { color: var(--admin-muted); font-size: .78rem; }
 .op-dashboard-shortcuts :is(a, button):hover { border-color: var(--admin-gold); }
 @media (max-width: 620px) { .op-dashboard-shortcuts { grid-template-columns: 1fr; } }
+
+/* Usuários e acessos: reaproveita op-header, op-toolbar, op-table e op-badge. */
+.op-lista-curta { margin: 0; padding: 0; list-style: none; color: var(--admin-muted); font-size: .78rem; }
+.op-lista-curta li + li { margin-top: 3px; }
+[data-access-view] .op-table td:first-child { min-width: 180px; }
+[data-access-view] .op-badge + .op-badge { margin-left: 4px; }
+[data-access-view] .op-muted { text-align: left; margin: 0 0 8px; }
+

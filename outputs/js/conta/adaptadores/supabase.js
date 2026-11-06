@@ -336,6 +336,23 @@ export function criarDadosSupabase({ client } = {}) {
     },
 
     /*
+     * Perfis profissionais ATIVOS da própria conta, decididos no banco pelo vínculo
+     * (my_appointment_professional_profiles usa auth.uid(); nenhum ID sai daqui).
+     * Enquanto a função não existir no banco (PGRST202/42883), volta vazio: a página
+     * mantém o comportamento anterior sem acusar falha.
+     */
+    async perfisProfissionais() {
+      const { data, error } = await client.rpc("my_appointment_professional_profiles");
+      if (error) {
+        if (["PGRST202", "42883"].includes(error.code)) return [];
+        throw falhouDados(error);
+      }
+      return (Array.isArray(data) ? data : [])
+        .filter((p) => p && typeof p.profile_id === "string" && p.profile_id)
+        .map((p) => ({ id: p.profile_id, nome: String(p.display_name || "") }));
+    },
+
+    /*
      * Agenda de quem atende. `list_my_appointment_requests` só devolve o que a
      * pessoa pediu como cliente; quem atende não pede, então aparecia sem nada.
      *

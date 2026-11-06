@@ -155,14 +155,15 @@ function formulario(opcoes, horarios, ofertaEscolhida = null) {
 }
 
 const vista = {
-  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], atendimentoDisponivel = false, parametros = null, agora = new Date() }) {
+  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], perfisProfissionais = [], atendimentoDisponivel = false, parametros = null, agora = new Date() }) {
     /*
-     * Quem tem consultas atribuídas é reconhecido como profissional pelo próprio
-     * banco. Nesse caso a página abre pela agenda de quem atende; a parte de
-     * cliente só aparece se a pessoa também fez pedidos como cliente.
+     * Profissional é quem o banco reconhece: vínculo ativo com perfil profissional
+     * ativo (perfisProfissionais) ou consultas atribuídas. Com zero consultas a
+     * agenda aparece vazia. A parte de cliente só aparece se houver pedidos próprios.
      */
     const consultasProfissionais = Array.isArray(agendaProfissional) ? agendaProfissional : [];
-    if (consultasProfissionais.length) {
+    const temVinculo = Array.isArray(perfisProfissionais) && perfisProfissionais.length > 0;
+    if (consultasProfissionais.length || temVinculo) {
       const agendaPropria = agendaDeQuemAtende(consultasProfissionais);
       if (!atendimentos.length) return agendaPropria;
       return `${agendaPropria}${vista.renderizar({ atendimentos, opcoesAtendimento, horariosAtendimento, atendimentoDisponivel, parametros, agora })}`;
