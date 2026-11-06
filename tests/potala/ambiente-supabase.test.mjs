@@ -208,7 +208,7 @@ test("artefato E2E só é gerado para a branch e deployment Preview autorizados"
   const raiz = mkdtempSync(join(tmpdir(), "ambiente-e2e-"));
   const env = {
     POTALA_APPOINTMENT_E2E_PREVIEW: "true", VERCEL_ENV: "preview",
-    VERCEL_GIT_COMMIT_REF: "codex/appointments-livekit-production",
+    VERCEL_GIT_COMMIT_REF: "feat/identidades-permissoes",
     VERCEL_PROJECT_PRODUCTION_URL: "wind-theme.vercel.app", VERCEL_URL: "wind-theme-ab12cd34-potala.vercel.app",
   };
   try {
@@ -224,7 +224,7 @@ test("artefato E2E só é gerado para a branch e deployment Preview autorizados"
     assert.deepEqual(await conferirDecisao(raiz, { modo: "producao", permitirPreviewE2E: true }), []);
     assert.equal(prepararPreviewE2E({ raiz, env: { ...env, VERCEL_ENV: "production" } }), null);
     assert.equal(existsSync(destino), false);
-    for (const patch of [{ VERCEL_GIT_COMMIT_REF: "main" }, { VERCEL_URL: "evil.example.com" }, { POTALA_APPOINTMENT_E2E_PREVIEW: "false" }]) {
+    for (const patch of [{ VERCEL_GIT_COMMIT_REF: "main" }, { VERCEL_GIT_COMMIT_REF: "codex/appointments-livekit-production" }, { VERCEL_GIT_COMMIT_REF: "feat/identidades-permissoes-x" }, { VERCEL_URL: "evil.example.com" }, { POTALA_APPOINTMENT_E2E_PREVIEW: "false" }]) {
       assert.equal(previewE2EAtiva({ ...env, ...patch }), false);
     }
   } finally { rmSync(raiz, { recursive: true, force: true }); }
