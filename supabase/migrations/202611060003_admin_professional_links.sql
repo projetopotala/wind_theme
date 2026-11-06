@@ -6,6 +6,11 @@
 -- (closed_at, como close_appointment_room_session): o varredor apaga a sala no LiveKit em
 -- até ~1 min, o que desconecta quem estiver dentro — sem depender da expiração do JWT.
 -- O status da consulta NÃO muda (não é marcada como concluída).
+--
+-- Múltiplos papéis: uma conta tem UM cadastro operacional (PK user_id), e os papéis desse
+-- cadastro ficam em document.roles (ex.: ["client","professional"]) — modelo já usado por
+-- is_appointment_professional e confirm_appointment_request_reservation. Admin/owner/blog
+-- ficam em public.users e portal_module_permissions, por conta. Nada de esquema muda aqui.
 
 create table if not exists public.admin_access_events (
   id bigint generated always as identity primary key,
@@ -92,7 +97,9 @@ begin
     raise exception 'O vínculo existe e está desativado: use reativar.' using errcode = '22023';
   end if;
   if atual.user_id is not null then
-    raise exception 'Esta conta já tem vínculo operacional com outro perfil.' using errcode = '23505';
+    -- Múltiplos papéis moram no MESMO cadastro operacional (document.roles). Uma conta já
+    -- ligada a outro cadastro não ganha um segundo: acrescenta-se o papel no cadastro dela.
+    raise exception 'Esta conta já tem um cadastro operacional. Acrescente o papel profissional a esse cadastro em Pessoas, em vez de vincular outro.' using errcode = '23505';
   end if;
   if do_perfil.user_id is not null then
     raise exception 'Este perfil já está vinculado a outra conta.' using errcode = '23505';
@@ -135,6 +142,11 @@ begin
   select o.document into perfil from public.op_records o where o.collection = 'profiles' and o.id = p_profile_id;
   if perfil is null or not (coalesce(perfil -> 'roles', '[]'::jsonb) ? 'professional') then
     raise exception 'Somente vínculos profissionais são geridos aqui.' using errcode = '22023';
+  end if;
+  -- O vínculo é da conta inteira: num cadastro que também é de cliente, desativá-lo
+  -- bloquearia as consultas como cliente. Nesse caso retira-se só o papel profissional.
+  if not p_active and atual.active and coalesce(perfil -> 'roles', '[]'::jsonb) ? 'client' then
+    raise exception 'Este cadastro também é de cliente: para retirar só o acesso profissional, remova o papel profissional em Pessoas.' using errcode = '22023';
   end if;
   if p_active and not coalesce((perfil ->> 'active')::boolean, true) then
     raise exception 'Reative o perfil profissional antes de reativar o vínculo.' using errcode = '22023';

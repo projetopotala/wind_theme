@@ -69,6 +69,9 @@ function acoesDoVinculo(conta, v, confirmando) {
       ? `<button type="button" class="op-button" data-acao="reativar" data-conta-id="${e(conta.id)}" data-perfil="${e(v.profile_id)}">Reativar vínculo</button>`
       : `<small>Reative o perfil em Pessoas para reativar o vínculo.</small>`;
   }
+  if (v.roles.includes("client")) {
+    return `<small>Cadastro também de cliente: para retirar só o acesso profissional, remova o papel profissional em Pessoas.</small>`;
+  }
   if (confirmando === chave) {
     return `<span role="alert"><small>Desativar remove o acesso profissional e encerra as salas abertas deste profissional (as consultas não são concluídas).</small>
       <button type="button" class="op-button" data-acao="desativar-confirmado" data-conta-id="${e(conta.id)}" data-perfil="${e(v.profile_id)}">Confirmar desativação</button>

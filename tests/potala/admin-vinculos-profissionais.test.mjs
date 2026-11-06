@@ -40,6 +40,16 @@ test("desativar exige confirmação inline que avisa sobre salas e não conclui 
   assert.match(conf, /data-acao="desativar-confirmado"/);
   assert.doesNotMatch(renderizarAcessos({ contas, perfis }).split("cli@x")[1].split("</tr>")[0], /data-acao/);
 });
+test("cadastro com papéis de cliente e profissional não oferece desativar a conta inteira", () => {
+  const multi = [{ ...contas[0], links: [{ ...prof, roles: ["client", "professional"] }] }];
+  const html = renderizarAcessos({ contas: multi, perfis });
+  assert.doesNotMatch(html, /data-acao="desativar"/);
+  assert.match(html, /remova o papel profissional em Pessoas/);
+});
+test("migration recusa desativar vínculo de cadastro que também é de cliente e explica o caminho", () => {
+  assert.match(codigo, /coalesce\(perfil -> 'roles', '\[\]'::jsonb\) \? 'client' then\s+raise exception 'Este cadastro também é de cliente/);
+  assert.match(codigo, /Acrescente o papel profissional a esse cadastro em Pessoas/);
+});
 test("vínculo inativo só reativa se o perfil estiver ativo", () => {
   const inativo = [{ ...contas[0], links: [{ ...prof, link_active: false }] }];
   assert.match(renderizarAcessos({ contas: inativo, perfis }), /data-acao="reativar"/);
