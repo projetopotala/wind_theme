@@ -240,6 +240,11 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
       return aposUsarDados(await dados.horariosAtendimento());
     },
 
+    async agendaProfissional() {
+      const usuarioId = exigirConta();
+      return aposUsarDados(await dados.agendaProfissional(usuarioId));
+    },
+
     async solicitarAtendimento(pedido) {
       const usuarioId = exigirConta();
       return aposUsarDados(await dados.solicitarAtendimento(pedido, usuarioId));

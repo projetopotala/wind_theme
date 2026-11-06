@@ -166,6 +166,7 @@ function dadosPreguicosos(fabricar) {
     marcarLida: delegar("marcarLida"),
     opcoesAtendimento: delegar("opcoesAtendimento"),
     horariosAtendimento: delegar("horariosAtendimento"),
+    agendaProfissional: delegar("agendaProfissional"),
     solicitarAtendimento: delegar("solicitarAtendimento"),
     solicitarHorarioAtendimento: delegar("solicitarHorarioAtendimento"),
     cancelarAtendimento: delegar("cancelarAtendimento"),

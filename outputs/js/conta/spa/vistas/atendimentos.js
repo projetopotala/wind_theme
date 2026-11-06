@@ -54,6 +54,62 @@ function listaDePedidos(atendimentos, vazioTexto = "Você ainda não fez uma sol
 }
 
 /*
+ * Agenda de quem atende. O estado vem do banco (appointment_room_context); o link
+ * da sala só aparece com a janela aberta — fora dela a tela diz quando abre. Mesmo
+ * com o link, quem decide o acesso é a sala, que pergunta de novo ao banco.
+ */
+const ESTADOS_DA_CONSULTA = Object.freeze({
+  open: "Sala aberta",
+  too_early: "Confirmada",
+  expired: "Horário encerrado",
+  closed: "Sala encerrada",
+  cancelled: "Cancelada",
+  not_confirmed: "Aguardando confirmação",
+});
+
+function horaLegivel(valor) {
+  const data = valor ? new Date(valor) : null;
+  return data && !Number.isNaN(data.valueOf())
+    ? new Intl.DateTimeFormat("pt-BR", { timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(data)
+    : "";
+}
+
+export function acessoDaConsultaProfissional(consulta) {
+  if (consulta?.estado === "open" && consulta.modalidade === "online" && consulta.id) {
+    try {
+      return `<p class="mp-atendimento-sala"><a class="mp-botao" href="${e(caminhoDaSala(consulta.id))}">Entrar na sala</a> <span class="mp-nota">A sala fica aberta até ${e(horaLegivel(consulta.fecha))}.</span></p>`;
+    } catch { return ""; }
+  }
+  if (consulta?.estado === "too_early" && consulta.modalidade === "online") {
+    return `<p class="mp-nota">A sala abre às ${e(horaLegivel(consulta.abre))}, 15 minutos antes do horário.</p>`;
+  }
+  return "";
+}
+
+const PROXIMAS = new Set(["open", "too_early"]);
+
+function agendaDeQuemAtende(consultas) {
+  const porInicio = (a, b) => String(a.inicio || "").localeCompare(String(b.inicio || ""));
+  const proximas = consultas.filter((item) => PROXIMAS.has(item.estado)).sort(porInicio);
+  const anteriores = consultas.filter((item) => !PROXIMAS.has(item.estado)).sort((a, b) => porInicio(b, a)).slice(0, 10);
+  const lista = (itens, vazioTexto) => (!itens.length ? vazio({ texto: vazioTexto }) : `<ol class="mp-atendimentos-lista">${itens.map((consulta) => `<li class="mp-atendimento" data-consulta-profissional="${e(consulta.id)}">
+    <div>
+      <p class="mp-status" data-status="${e(consulta.estado)}">${e(ESTADOS_DA_CONSULTA[consulta.estado] || "Consulta")}</p>
+      <h3>${e(consulta.servico)}</h3>
+      <p class="mp-cartao-detalhe">${e(MODALIDADES[consulta.modalidade] || "")} · ${e(horarioLegivel(consulta.inicio))}${consulta.cliente ? ` · ${e(consulta.cliente)}` : ""}</p>
+    </div>
+    ${acessoDaConsultaProfissional(consulta)}
+  </li>`).join("")}</ol>`);
+  return `${secao({
+    id: "mp-agenda-profissional", kicker: "Como profissional", titulo: "Sua agenda de atendimentos",
+    corpo: lista(proximas, "Nenhuma consulta futura atribuída a você."),
+  })}${anteriores.length ? secao({
+    id: "mp-agenda-profissional-anteriores", classe: "mp-secao-discreta", kicker: "Histórico", titulo: "Consultas anteriores",
+    corpo: lista(anteriores, ""),
+  }) : ""}`;
+}
+
+/*
  * O catálogo público manda o serviço escolhido em `?atendimento=<offering_id>`.
  * Aqui isso só pré-seleciona o horário mais próximo daquele serviço: a lista
  * continua inteira, para que ninguém fique preso a uma escolha feita antes, e
@@ -97,8 +153,19 @@ function formulario(opcoes, horarios, ofertaEscolhida = null) {
   </form>`;
 }
 
-export default {
-  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], atendimentoDisponivel = false, parametros = null, agora = new Date() }) {
+const vista = {
+  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], atendimentoDisponivel = false, parametros = null, agora = new Date() }) {
+    /*
+     * Quem tem consultas atribuídas é reconhecido como profissional pelo próprio
+     * banco. Nesse caso a página abre pela agenda de quem atende; a parte de
+     * cliente só aparece se a pessoa também fez pedidos como cliente.
+     */
+    const consultasProfissionais = Array.isArray(agendaProfissional) ? agendaProfissional : [];
+    if (consultasProfissionais.length) {
+      const agendaPropria = agendaDeQuemAtende(consultasProfissionais);
+      if (!atendimentos.length) return agendaPropria;
+      return `${agendaPropria}${vista.renderizar({ atendimentos, opcoesAtendimento, horariosAtendimento, atendimentoDisponivel, parametros, agora })}`;
+    }
     const referencia = agora instanceof Date ? agora : new Date(agora);
     const futura = (pedido) => {
       const inicio = pedido.inicio ? new Date(pedido.inicio) : null;
@@ -134,3 +201,5 @@ export default {
     return `${resumo}${secao({ id: "mp-atendimentos-novo", classe: "mp-atendimentos-acao", kicker: "Começar aqui", titulo: "Solicitar um atendimento", corpo })}${acompanhamento}`;
   },
 };
+
+export default vista;

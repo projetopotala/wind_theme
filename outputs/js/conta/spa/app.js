@@ -100,6 +100,10 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.horariosAtendimento()
       .then((lista) => ({ nome: "horariosAtendimento", lista }))
       .catch((erro) => ({ nome: "horariosAtendimento", lista: [], erro })));
+    /* Quem atende vê as consultas atribuídas a si; para os demais a lista volta vazia. */
+    if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.agendaProfissional()
+      .then((lista) => ({ nome: "agendaProfissional", lista }))
+      .catch((erro) => ({ nome: "agendaProfissional", lista: [], erro })));
     /* "Para você" só recomenda texto do Blog confirmado no ar; sem confirmação, nenhum. */
     leituras.push(lerArtigosPublicados().then((lista) => ({ nome: "textosDoBlog", lista: lista || [] })));
     const promessa = Promise.all(leituras)
@@ -109,6 +113,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         dados.atendimentos ||= [];
         dados.opcoesAtendimento ||= [];
         dados.horariosAtendimento ||= [];
+        dados.agendaProfissional ||= [];
         dados.falhas = respostas.filter((resposta) => resposta.erro).map((resposta) => resposta.nome);
         dono = usuarioId;
         return dados;

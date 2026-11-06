@@ -69,6 +69,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const TABELA_AUSENTE = new Set(["PGRST205", "42P01"]);
 /* O mesmo formato que o envio público aceita como recibo (shared/appointment-requests.js). */
 const UUID_DO_RECIBO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/* Teto de consultas lidas na agenda de quem atende: cada uma custa uma checagem de papel no banco. */
+const LIMITE_AGENDA_PROFISSIONAL = 30;
 
 function tabelaDe(colecao) {
   const tabela = TABELAS[colecao];
@@ -331,6 +333,45 @@ export function criarDadosSupabase({ client } = {}) {
       const { data, error } = await client.rpc("list_available_appointment_slots", { p_offering_id: null });
       if (error) throw falhouDados(error);
       return Array.isArray(data) ? data : [];
+    },
+
+    /*
+     * Agenda de quem atende. `list_my_appointment_requests` só devolve o que a
+     * pessoa pediu como cliente; quem atende não pede, então aparecia sem nada.
+     *
+     * A leitura usa só as colunas já liberadas e a RLS já existente
+     * (appointment_requests_professional_read). Como a RLS também abre linhas a
+     * quem administra, cada linha passa por appointment_room_context, que diz o
+     * papel real de quem chama: fica só o que o banco chama de "professional".
+     * Nada aqui concede acesso — a sala continua perguntando ao banco e à função.
+     */
+    async agendaProfissional(usuarioId) {
+      const { data, error } = await client.from("appointment_requests")
+        .select("id,service,modality,requester_name,status,requester_user_id,reservation_confirmed_at")
+        .not("professional_profile_id", "is", null)
+        .not("reservation_schedule_id", "is", null)
+        .eq("status", "encerrada")
+        .order("reservation_confirmed_at", { ascending: false })
+        .limit(LIMITE_AGENDA_PROFISSIONAL);
+      if (error) throw falhouDados(error);
+      const candidatos = (Array.isArray(data) ? data : [])
+        .filter((linha) => linha.requester_user_id !== usuarioId && UUID_DO_RECIBO.test(String(linha.id || "")));
+      const consultas = await Promise.all(candidatos.map(async (linha) => {
+        const { data: contexto, error: erro } = await client.rpc("appointment_room_context", { p_request_id: linha.id });
+        if (erro || !contexto || contexto.role !== "professional") return null;
+        return {
+          id: String(linha.id).toLowerCase(),
+          servico: contexto.service || linha.service || "Atendimento",
+          modalidade: linha.modality === "online" ? "online" : "presencial",
+          cliente: contexto.requester_name || linha.requester_name || "",
+          estado: contexto.state,
+          inicio: contexto.starts_at || null,
+          fim: contexto.ends_at || null,
+          abre: contexto.opens_at || null,
+          fecha: contexto.closes_at || null,
+        };
+      }));
+      return consultas.filter(Boolean);
     },
 
     async solicitarAtendimento({ idempotencia, ofertaId, modalidade, dataPreferida, periodoPreferido }) {

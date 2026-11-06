@@ -233,6 +233,9 @@ export function criarDadosDemonstracao({
 
     async horariosAtendimento() { return []; },
 
+    /* Demonstração não tem profissional vinculado: agenda de quem atende sempre vazia. */
+    async agendaProfissional() { return []; },
+
     async solicitarHorarioAtendimento() {
       throw new Error("Agendamentos reais exigem uma conta conectada ao ambiente homologado.");
     },
