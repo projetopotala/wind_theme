@@ -71,4 +71,5 @@ test("navegação e carregamento só fora do perfil de Blog", () => {
   assert.match(html, /data-admin-workspace="acessos" data-access-view/);
   const bloco = entry.slice(entry.indexOf('if (access.role !== "blog_editor")'), entry.indexOf("if (!controller)"));
   assert.match(bloco, /createAccessPanel/);
+  assert.match(bloco, /\[data-admin-nav\] \[data-section="acessos"\][\s\S]*accessPanel\.reload\(\)/);
 });

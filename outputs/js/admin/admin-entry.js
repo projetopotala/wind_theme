@@ -91,7 +91,15 @@ try {
       if (access.role !== "blog_editor") {
         operacaoAbrindo ||= abrirOperacao(client, access).catch((error) => console.error("Falha ao abrir a operação.", error));
         /* Usuários e acessos: só para owner/admin; o banco confere de novo (admin_list_accounts). */
-        accessPanel ||= createAccessPanel({ root: panel, client });
+        if (!accessPanel) {
+          accessPanel = createAccessPanel({ root: panel, client });
+          /* Relê ao abrir a seção: mudanças feitas em Pessoas (papel, ativo) aparecem na hora. */
+          panel.addEventListener("click", (evento) => {
+            if (evento.target?.closest?.('[data-admin-nav] [data-section="acessos"]')) {
+              void accessPanel.reload().catch((error) => console.error("Falha ao carregar usuários e acessos.", error));
+            }
+          });
+        }
         void accessPanel.reload().catch((error) => console.error("Falha ao carregar usuários e acessos.", error));
       }
       if (!controller) {
