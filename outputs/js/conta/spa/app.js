@@ -97,6 +97,13 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.opcoesAtendimento()
       .then((lista) => ({ nome: "opcoesAtendimento", lista }))
       .catch((erro) => ({ nome: "opcoesAtendimento", lista: [], erro })));
+    if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.horariosAtendimento()
+      .then((lista) => ({ nome: "horariosAtendimento", lista }))
+      .catch((erro) => ({ nome: "horariosAtendimento", lista: [], erro })));
+    /* Quem atende vê as consultas atribuídas a si; para os demais a lista volta vazia. */
+    if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.agendaProfissional()
+      .then((lista) => ({ nome: "agendaProfissional", lista }))
+      .catch((erro) => ({ nome: "agendaProfissional", lista: [], erro })));
     /* "Para você" só recomenda texto do Blog confirmado no ar; sem confirmação, nenhum. */
     leituras.push(lerArtigosPublicados().then((lista) => ({ nome: "textosDoBlog", lista: lista || [] })));
     const promessa = Promise.all(leituras)
@@ -105,6 +112,8 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         dados = Object.fromEntries(respostas.map(({ nome, lista }) => [nome, lista]));
         dados.atendimentos ||= [];
         dados.opcoesAtendimento ||= [];
+        dados.horariosAtendimento ||= [];
+        dados.agendaProfissional ||= [];
         dados.falhas = respostas.filter((resposta) => resposta.erro).map((resposta) => resposta.nome);
         dono = usuarioId;
         return dados;
@@ -384,16 +393,8 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       evento.preventDefault();
       const campos = Object.fromEntries(new FormData(pedido));
       const aviso = pedido.querySelector("[data-form-status]");
-      if (!campos.ofertaId || !["presencial", "online"].includes(campos.modalidade)
-        || !/^\d{4}-\d{2}-\d{2}$/.test(campos.dataPreferida || "")
-        || !["manha", "tarde", "noite"].includes(campos.periodoPreferido)) {
-        aviso.textContent = "Escolha o serviço, a modalidade, a data e o período.";
-        return;
-      }
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-      if (new Date(`${campos.dataPreferida}T12:00:00`) < hoje) {
-        aviso.textContent = "Escolha uma data de hoje em diante.";
+      if (!campos.horarioId) {
+        aviso.textContent = "Escolha um horário disponível.";
         return;
       }
       if (!globalThis.crypto?.randomUUID) {
@@ -402,13 +403,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       }
       pedido.dataset.idempotencia ||= globalThis.crypto.randomUUID();
       agir(pedido.querySelector("[type='submit']"), async () => {
-        await sessao.solicitarAtendimento({
-          idempotencia: pedido.dataset.idempotencia,
-          ofertaId: campos.ofertaId,
-          modalidade: campos.modalidade,
-          dataPreferida: campos.dataPreferida,
-          periodoPreferido: campos.periodoPreferido,
-        });
+        await sessao.solicitarHorarioAtendimento({ idempotencia: pedido.dataset.idempotencia, horarioId: campos.horarioId });
         delete pedido.dataset.idempotencia;
         dados = null;
         dono = null;
@@ -451,7 +446,13 @@ export async function montarMeuPotala({ documento = document, janela = window } 
 
   const retrato = (estado) => ({ status: estado.status, usuarioId: estado.usuario?.id || null, perfil: estado.perfil });
   let anterior = retrato(sessao.obter());
+  let redirecionandoAdmin = false;
   const desligarSessao = sessao.assinar((estado) => {
+    if (!redirecionandoAdmin && ["owner", "admin", "blog_editor"].includes(estado.papelPortal)) {
+      redirecionandoAdmin = true;
+      janela.location.assign?.("/admin/");
+      return;
+    }
     const agora = retrato(estado);
     if (agora.usuarioId !== dono) {
       dados = null;

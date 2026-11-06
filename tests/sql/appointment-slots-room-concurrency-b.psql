@@ -1,0 +1,8 @@
+\set ON_ERROR_STOP on
+begin;
+set local request.jwt.claim.sub = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+select public.create_appointment_slot(jsonb_build_object(
+  'offering_id','test-offer-e','professional_profile_id','test-prof-e','room_id','test-room-c',
+  'starts_at',date_trunc('day',now()) + interval '401 days 14 hours 30 minutes',
+  'ends_at',date_trunc('day',now()) + interval '401 days 15 hours 30 minutes'));
+commit;

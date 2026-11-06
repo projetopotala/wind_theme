@@ -1,5 +1,5 @@
 import { appointmentFailureMessage, buildAppointmentRequest, createAppointmentRequestSender } from "../shared/appointment-requests.js";
-import { APPOINTMENT_REQUESTS_ENABLED, APPOINTMENT_TURNSTILE_SITE_KEY } from "./config.js";
+import { APPOINTMENT_PUBLIC_REQUESTS_ENABLED, APPOINTMENT_TURNSTILE_SITE_KEY } from "./config.js";
 import { createTurnstileTokenProvider } from "./turnstile.js";
 
 export const RECEIVED_MESSAGE = "Solicitação recebida. Nossa equipe entrará em contato para verificar a disponibilidade. O horário ainda não está confirmado.";
@@ -26,7 +26,7 @@ export function validateAppointmentForm(raw, now = new Date()) {
 }
 
 export function setupAppointmentForm(documentRef = document, {
-  enabled = APPOINTMENT_REQUESTS_ENABLED, send, now = () => new Date(),
+  enabled = APPOINTMENT_PUBLIC_REQUESTS_ENABLED, send, now = () => new Date(),
 } = {}) {
   const form = documentRef.querySelector("#bookForm");
   const button = documentRef.querySelector("#bookContinue");

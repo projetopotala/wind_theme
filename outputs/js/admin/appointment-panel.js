@@ -2,25 +2,44 @@ import { APPOINTMENT_ADMIN_ENABLED, APPOINTMENT_RESERVATIONS_ENABLED } from "../
 import { getAdminAccess } from "./admin-auth.js";
 import { loadAppointmentRequests, updateAppointmentRequestStatus, STATES } from "./appointment-requests.js";
 import { confirmAppointmentReservation } from "./appointment-reservations.js";
+import { createAppointmentSlot } from "./appointment-slots.js";
 import { esc } from "./operations/comum.js";
+import { caminhoDaSala } from "../sala/estado-sala.js";
 
 const LABELS = { recebida: "Recebida", em_contato: "Em contato", encerrada: "Encerrada", cancelada: "Cancelada" };
 const PERIODS = { manha: "Manhã", tarde: "Tarde", noite: "Noite" };
 const accessDenied = error => [error?.code, error?.status].some(value => ["401", "403", "42501", "PGRST301"].includes(String(value)));
 
-function suggestedTime(row) {
+const SAO_PAULO = new Intl.DateTimeFormat("sv-SE", {
+  timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+});
+
+function localDateTime(value) {
+  const instant = new Date(value);
+  if (!Number.isFinite(instant.valueOf())) return "";
+  const parts = Object.fromEntries(SAO_PAULO.formatToParts(instant).map(part => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+export function suggestedTime(row) {
+  const slot = row.appointment_slot;
+  if (row.appointment_slot_id && slot?.id === row.appointment_slot_id && slot.held_by_request_id === row.id) {
+    const start = localDateTime(slot.starts_at);
+    const end = localDateTime(slot.ends_at);
+    if (start && end) return { start, end, fromSlot: true };
+  }
   const hour = { manha: "09:00", tarde: "14:00", noite: "18:00" }[row.preferred_period] || "09:00";
   const start = `${row.preferred_date}T${hour}`;
   const end = new Date(`${start}:00-03:00`);
   end.setHours(end.getHours() + 1);
   const localEnd = new Date(end.valueOf() - 3 * 3600000).toISOString().slice(0, 16);
-  return { start, end: localEnd };
+  return { start, end: localEnd, fromSlot: false };
 }
 
 const option = (item, label, selected = false) => `<option value="${esc(item.id)}" ${selected ? "selected" : ""}>${esc(item[label] || item.title || item.display_name || item.name || item.id)}</option>`;
 
 function reservationForm(row, operational = {}) {
-  if (row.reservation_schedule_id) return `<p class="mp-status">Reserva vinculada à agenda.</p>`;
+  if (row.reservation_schedule_id) return roomLink(row) + `<p class="mp-status">Reserva vinculada à agenda.</p>`;
   const rooms = (operational.rooms || []).filter(item => item.status === "available" && item.capacity);
   const offerings = (operational.activity_offerings || []).filter(item => item.active !== false);
   const professionals = (operational.profiles || []).filter(item => item.active !== false && item.roles?.includes("professional"));
@@ -33,20 +52,36 @@ function reservationForm(row, operational = {}) {
     <label>Oferta<select data-reservation-offering required><option value="">Escolha a oferta</option>${offerings.map(item => option(item, "title", item.id === row.offering_id)).join("")}</select></label>
     <label>Profissional<select data-reservation-professional required><option value="">Escolha o profissional</option>${professionals.map(item => option(item, "display_name", item.id === row.professional_profile_id)).join("")}</select></label>
     <label>Cliente operacional<select data-reservation-client required><option value="">Escolha o cliente</option>${clients.map(item => option(item, "display_name")).join("")}</select></label>` : ""}
-    <label>Início<input data-reservation-start type="datetime-local" value="${esc(time.start)}" required></label>
-    <label>Fim<input data-reservation-end type="datetime-local" value="${esc(time.end)}" required></label>${room}
+    <label>Início<input data-reservation-start type="datetime-local" value="${esc(time.start)}" ${time.fromSlot ? "readonly" : ""} required></label>
+    <label>Fim<input data-reservation-end type="datetime-local" value="${esc(time.end)}" ${time.fromSlot ? "readonly" : ""} required></label>${room}
     <label class="appointment-reservation-wide">Observações<textarea data-reservation-notes maxlength="1000"></textarea></label>
     <label class="appointment-reservation-wide"><input data-reservation-confirm type="checkbox" required> Revisei horário, profissional, modalidade${row.modality === "presencial" ? " e sala" : ""} e confirmo esta reserva.</label>
     <button type="button" data-appointment-confirm="${esc(row.id)}">Confirmar reserva</button>
   </fieldset>`;
 }
 
+// Acesso à sala para o profissional da reserva. O banco confere quem entra.
+export function roomLink(row) {
+  if (row.modality !== "online" || !row.reservation_schedule_id || row.status !== "encerrada") return "";
+  try { return `<p><a class="mp-botao" href="${esc(caminhoDaSala(row.id))}">Abrir sala do atendimento</a></p>`; }
+  catch { return ""; }
+}
+
 export function renderAppointmentPanel({ rows, phase, message, busy, drafts, operationalState = {}, reservationsEnabled = false }) {
   const controls = !["disabled", "forbidden"].includes(phase);
-  return `<section class="op-card" style="min-width:0;overflow-wrap:anywhere" aria-label="Solicitações de atendimento" aria-busy="${busy}"><h3>Recebido pelo site — Atendimentos</h3>
+  const offerings = (operationalState.activity_offerings || []).filter(item => item.active !== false);
+  const professionals = (operationalState.profiles || []).filter(item => item.active !== false && item.published === true && item.roles?.includes("professional"));
+  const rooms = (operationalState.rooms || []).filter(item => item.status === "available" && item.capacity);
+  const slotForm = controls && reservationsEnabled ? `<fieldset data-appointment-slot><legend>Novo horário público</legend>
+    <label>Oferta<select data-slot-offering required><option value="">Escolha</option>${offerings.map(item => option(item,"title")).join("")}</select></label>
+    <label>Profissional<select data-slot-professional required><option value="">Escolha</option>${professionals.map(item => option(item,"display_name")).join("")}</select></label>
+    <label>Sala presencial<select data-slot-room><option value="">Sem sala (online)</option>${rooms.map(item => option(item,"name")).join("")}</select></label>
+    <label>Início<input data-slot-start type="datetime-local" required></label><label>Fim<input data-slot-end type="datetime-local" required></label>
+    <button type="button" data-appointment-slot-create ${busy ? "disabled" : ""}>Disponibilizar horário</button></fieldset>` : "";
+  return `<section class="op-card" id="appointment-triage" style="min-width:0;overflow-wrap:anywhere" aria-label="Solicitações de atendimento" aria-busy="${busy}"><h3>Recebido pelo site — Atendimentos</h3>
     <p class="op-muted">Solicitações não são reservas. Nenhum horário é confirmado por esta triagem.</p>
     <p role="status" aria-live="polite" tabindex="-1" data-appointment-feedback>${esc(message)}</p>
-    ${controls ? `<button type="button" data-appointment-reload ${busy ? "disabled" : ""}>Recarregar solicitações</button>` : ""}
+    ${controls ? `<button type="button" data-appointment-reload ${busy ? "disabled" : ""}>Recarregar solicitações</button>${slotForm}` : ""}
     ${rows.map(row => `<article class="op-card" data-appointment-row="${esc(row.id)}"><h4>${esc(row.service)}</h4>
       <dl><dt>Solicitante</dt><dd>${esc(row.requester_name)}</dd><dt>Modalidade</dt><dd>${esc(row.modality === "online" ? "Online" : row.modality === "presencial" ? "Presencial" : row.modality)}</dd>
       <dt>Preferências (sem reserva)</dt><dd>${esc(String(row.preferred_date).split("-").reverse().join("/"))} · ${esc(PERIODS[row.preferred_period] || row.preferred_period)}</dd>
@@ -60,7 +95,7 @@ export function renderAppointmentPanel({ rows, phase, message, busy, drafts, ope
 // Defesa de interface e sessão; a autorização efetiva continua nas políticas RLS.
 export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADMIN_ENABLED, access = getAdminAccess,
   reservationsEnabled = APPOINTMENT_RESERVATIONS_ENABLED, getOperationalState = () => null,
-  confirmReservation = confirmAppointmentReservation, id = () => globalThis.crypto.randomUUID() } = {}) {
+  confirmReservation = confirmAppointmentReservation, createSlot = createAppointmentSlot, id = () => globalThis.crypto.randomUUID() } = {}) {
   let epoch = 0;
   const state = { rows: [], drafts: {}, phase: enabled === true ? "idle" : "disabled", busy: false,
     message: enabled === true ? "Carregue as solicitações de atendimento." : "Acompanhamento de atendimentos temporariamente indisponível. Aguardando homologação." };
@@ -75,6 +110,28 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     Object.assign(state, { rows: [], drafts: {}, reservationKeys: {}, busy: false, phase: enabled === true ? "forbidden" : "disabled", message: enabled === true ? "Acesso administrativo necessário." : "Acompanhamento de atendimentos temporariamente indisponível. Aguardando homologação." });
     render();
   }
+  /*
+   * Cada falha pede uma acao diferente de quem opera: recarregar, revisar o
+   * cadastro, entrar de novo ou escolher outro horario. Mandar "recarregue"
+   * para tudo faz o administrador repetir uma tentativa que vai falhar igual.
+   * Nada vindo do banco e repassado: so estas frases aparecem na tela.
+   */
+  const MENSAGENS_DE_FALHA = Object.freeze({
+    APPOINTMENT_CONFLICT: "A solicitação mudou ou não está acessível. Recarregue e revise antes de salvar novamente.",
+    APPOINTMENT_CLIENT_LINK: "O solicitante ainda não possui um vínculo operacional válido. Revise o cadastro da pessoa antes de confirmar.",
+    APPOINTMENT_FORBIDDEN: "Seu acesso não permite confirmar reservas.",
+    APPOINTMENT_SESSION: "Sua sessão expirou. Entre novamente para continuar.",
+    APPOINTMENT_MISSING: "Esta solicitação não está mais acessível. Recarregue a lista.",
+    APPOINTMENT_UNAVAILABLE: "A sala escolhida não está disponível neste horário. Escolha outra sala ou horário.",
+    APPOINTMENT_LINK_LOCKED: "O vínculo desta reserva não pode ser alterado.",
+    APPOINTMENT_NOT_READY: "A operação do Instituto ainda não está inicializada.",
+    APPOINTMENT_INVALID: "Revise os dados da reserva: algum campo não confere com a solicitação.",
+  });
+  /* Qualquer falha descarta as linhas em memoria, entao o fallback precisa
+     mandar recarregar: sem isso o painel fica vazio sem dizer o que fazer. */
+  const mensagemDaFalha = (error) => MENSAGENS_DE_FALHA[error?.code]
+    || "Não foi possível concluir a operação. Recarregue as solicitações antes de tentar novamente.";
+
   async function execute(work, pending) {
     if (enabled !== true || state.busy) return;
     const ticket = ++epoch;
@@ -90,9 +147,7 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
       if (accessDenied(error)) { clear(); return; }
       // Não expor corpos HTTP/SQL nem conservar dados possivelmente obsoletos.
       state.rows = []; state.drafts = {}; state.phase = "error";
-      state.message = error.code === "APPOINTMENT_CONFLICT"
-        ? "A solicitação mudou ou não está acessível. Recarregue e revise antes de salvar novamente."
-        : "Não foi possível confirmar a operação. Recarregue as solicitações antes de tentar novamente.";
+      state.message = mensagemDaFalha(error);
     } finally {
       if (ticket === epoch) { state.busy = false; render(true); }
     }
@@ -121,6 +176,12 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     if (!reservationsEnabled) return;
     const row = state.rows.find(item => item.id === id);
     if (!row || row.reservation_schedule_id) return;
+    const expectedTime = suggestedTime(row);
+    if (row.appointment_slot_id && (!expectedTime.fromSlot || fields.start !== expectedTime.start || fields.end !== expectedTime.end)) {
+      state.message = "O horário deve corresponder exatamente ao slot solicitado. Recarregue antes de confirmar.";
+      render(true);
+      return;
+    }
     state.reservationKeys ||= {};
     state.reservationKeys[id] ||= idFactory();
     return execute(async ticket => {
@@ -135,6 +196,8 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
         offeringId: fields.offering,
         professionalProfileId: fields.professional,
         clientProfileId: fields.client,
+        slotStartsAt: expectedTime.fromSlot ? expectedTime.start : "",
+        slotEndsAt: expectedTime.fromSlot ? expectedTime.end : "",
       });
       if (ticket !== epoch) return;
       delete state.reservationKeys[id];
@@ -148,7 +211,18 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     const reloadButton = event.target.closest?.("[data-appointment-reload]");
     const saveButton = event.target.closest?.("[data-appointment-save]");
     const confirmButton = event.target.closest?.("[data-appointment-confirm]");
+    const slotButton = event.target.closest?.("[data-appointment-slot-create]");
     if (reloadButton && root.contains(reloadButton)) return reload();
+    if (slotButton && root.contains(slotButton)) {
+      const form = slotButton.closest("[data-appointment-slot]");
+      return execute(async () => {
+        await createSlot(client, { offeringId: form.querySelector("[data-slot-offering]")?.value,
+          professionalProfileId: form.querySelector("[data-slot-professional]")?.value,
+          startsAt: form.querySelector("[data-slot-start]")?.value, endsAt: form.querySelector("[data-slot-end]")?.value,
+          roomId: form.querySelector("[data-slot-room]")?.value || "" });
+        state.message = "Horário disponibilizado para solicitação no Meu Potala.";
+      }, "Disponibilizando horário…");
+    }
     if (saveButton && root.contains(saveButton)) {
       const id = saveButton.dataset.appointmentSave;
       return save(id, state.drafts[id] || state.rows.find(row => row.id === id)?.status);

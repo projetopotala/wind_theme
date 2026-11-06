@@ -15,3 +15,9 @@ test('valor monetário rejeita texto ambíguo em vez de cobrar errado',()=>{
   assert.equal(mod.moneyToCents('1.234,56'),123456);
   assert.throws(()=>mod.moneyToCents('12 reais'),/valor/i);
 });
+
+test('cadastro de pessoa mantém ativação e publicação explícitas',()=>{
+  assert.deepEqual(mod.payloadFromForm('person',{display_name:'Teste',email:'teste@example.com',roles:['professional'],active:'true',published:'false'}),{
+    display_name:'Teste',email:'teste@example.com',phone:'',roles:['professional'],active:true,published:false,
+  });
+});

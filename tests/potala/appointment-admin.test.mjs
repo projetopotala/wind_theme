@@ -8,41 +8,41 @@ import { APPOINTMENT_ADMIN_ENABLED } from "../../outputs/js/appointments/config.
 const row = { id: "10000000-0000-4000-8000-000000000001", service: "Reiki", modality: "online", requester_name: "Pessoa fictícia",
   contact_type: "email", contact: "pessoa@example.invalid", preferred_date: "2026-11-10", preferred_period: "tarde",
   status: "recebida", created_at: "2026-10-18T12:00:00Z", updated_at: "2026-10-18T12:00:00Z" };
-function fixture({ enabled = true, role = "admin", signedIn = true, active = true } = {}) {
+function fixture({ enabled = true, reservationsEnabled = false, role = "admin", signedIn = true, active = true } = {}) {
   const calls = [], handlers = {};
   const target = { innerHTML: "", querySelector: () => ({ focus() {} }) };
   const root = { querySelector: () => target, contains: () => true, addEventListener: (type, fn) => { handlers[type] = fn; }, removeEventListener() {} };
-  const response = { list: { data: [row], error: null }, update: { data: { ...row, status: "em_contato", updated_at: "2026-10-18T13:00:00Z" }, error: null } };
+  const response = { list: { data: [row], error: null }, slots: { data: [], error: null }, update: { data: { ...row, status: "em_contato", updated_at: "2026-10-18T13:00:00Z" }, error: null } };
   const client = { auth: { getSession: async () => ({ data: { session: signedIn ? { user: { id: "admin-test" } } : null } }) }, from(table) {
     calls.push(["from", table]);
     let mode = "list";
-    const query = { select(value) { calls.push(["select", table, value]); return query; }, order(key, options) { calls.push(["order", key, options]); return query; }, limit() { return response.list; },
+    const query = { select(value) { calls.push(["select", table, value]); return query; }, order(key, options) { calls.push(["order", key, options]); return query; }, limit() { return table === "appointment_slots" ? response.slots : response.list; },
       update(value) { mode = "update"; calls.push(["update", value]); return query; }, eq(key, value) { calls.push(["eq", key, value]); return query; },
       maybeSingle() { return table === "users" ? { data: { id: "admin-test", role, active } } : response[mode]; } };
     return query;
   } };
-  const panel = createAppointmentPanel({ root, client, enabled });
+  const panel = createAppointmentPanel({ root, client, enabled, reservationsEnabled });
   panel.render();
   return { panel, calls, response, target, handlers, client };
 }
 
 test("flag administrativa false: nenhuma consulta nem autenticação remota", async () => {
-  assert.equal(APPOINTMENT_ADMIN_ENABLED, false);
-  const f = fixture({ enabled: APPOINTMENT_ADMIN_ENABLED });
+  // Produção liga a Central (o backend continua decidindo quem é admin); o painel desligado segue inerte.
+  assert.equal(APPOINTMENT_ADMIN_ENABLED, true);
+  const f = fixture({ enabled: false });
   await f.panel.reload(); await f.panel.save(row.id, "em_contato");
   assert.deepEqual(f.calls, []);
   assert.match(f.target.innerHTML, /temporariamente indisponível/);
   assert.doesNotMatch(f.target.innerHTML, /example.invalid|data-appointment-save/);
 });
-
 test("visitante, usuário comum e administrador inativo não consultam contatos", async () => {
   for (const options of [{ signedIn: false }, { role: "visitor" }, { active: false }]) {
     const f = fixture(options); await f.panel.reload();
     assert.equal(f.calls.some(call => call[1] === "appointment_requests"), false);
+    assert.equal(f.calls.some(call => call[1] === "appointment_slots"), false);
     assert.match(f.target.innerHTML, /Acesso administrativo necessário/);
   }
 });
-
 test("admin e owner autorizados: lista separada, campos escapados e quatro estados", async () => {
   for (const role of ["admin", "owner"]) {
     const f = fixture({ role }); f.response.list.data = [{ ...row, service: '<img src=x onerror="alert(1)">' }];
@@ -56,6 +56,21 @@ test("admin e owner autorizados: lista separada, campos escapados e quatro estad
       ["order", "created_at", { ascending: false }], ["order", "id", { ascending: false }],
     ]);
   }
+});
+
+test("admin autenticado vincula o slot por held_by_request_id e mostra 19h readonly", async () => {
+  const f = fixture({ role: "admin", reservationsEnabled: true });
+  f.response.slots.data = [{
+    id: "30000000-0000-4000-8000-000000000003",
+    starts_at: "2026-11-12T22:00:00Z",
+    ends_at: "2026-11-12T23:00:00Z",
+    status: "held",
+    held_by_request_id: row.id,
+  }];
+  await f.panel.reload();
+  assert.match(f.target.innerHTML, /value="2026-11-12T19:00" readonly/);
+  assert.match(f.target.innerHTML, /value="2026-11-12T20:00" readonly/);
+  assert.ok(f.calls.some(call => call[0] === "select" && call[1] === "appointment_slots"));
 });
 
 test("mudança de estado pelo evento: somente status, revisão atômica e nenhum comando operacional", async () => {
@@ -144,8 +159,12 @@ test("adaptador rejeita revisão ausente e estados inválidos antes de escrever"
 
 test("integração preserva carregamento existente e não chama RPC operacional (estático)", () => {
   const read = path => readFileSync(new URL(`../../outputs/js/admin/${path}`, import.meta.url), "utf8");
+  const views = read("operations/views.js");
+  const dashboard = views.slice(views.indexOf("function dashboard"), views.indexOf("const DIA"));
+  const reports = views.slice(views.indexOf("function reports"), views.indexOf("export function renderView"));
   assert.match(read("admin-entry.js"), /carregarRecebidos\(client\)/);
-  assert.match(read("operations/views.js"), /recebidosDoSite\(o\)\+`<div data-appointment-admin>/);
+  assert.match(dashboard, /<div data-appointment-admin><\/div>/);
+  assert.doesNotMatch(reports, /data-appointment-admin/);
   assert.doesNotMatch(read("appointment-panel.js") + read("appointment-requests.js"), /op_apply|op_snapshot|service_role/);
 });
 

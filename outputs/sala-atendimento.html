@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#efe4d3">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Sala privada do seu atendimento online no Instituto Potala.">
+  <title>Sala de atendimento — Instituto Potala</title>
+  <link rel="stylesheet" href="/css/conta.css">
+  <link rel="stylesheet" href="/css/sala.css">
+  <script src="/vendor/supabase.js" defer></script>
+  <script src="/vendor/livekit-client.umd.js" defer></script>
+  <script type="module" src="/js/sala/pagina-sala.js"></script>
+</head>
+<body class="mp-body sala-body" data-section="sala-atendimento">
+  <a class="mp-pular" href="#conteudo">Ir para o conteúdo</a>
+  <header class="mp-topo">
+    <a class="mp-marca" href="/transcendido.html">
+      <img src="/media/potala-mark-transparent.png" alt="" width="86" height="70" decoding="async">
+      <span>Instituto Potala</span>
+    </a>
+    <a class="sala-voltar" href="/meu-potala/atendimentos">Voltar aos atendimentos</a>
+  </header>
+
+  <main class="mp-pagina sala-pagina" id="conteudo" tabindex="-1">
+    <h1 class="sala-titulo" data-sala-titulo>Abrindo a sala…</h1>
+    <p class="sala-texto" data-sala-texto role="status" aria-live="polite"></p>
+    <p class="sala-conexao" data-sala-conexao role="status" aria-live="polite" hidden>Conexão perdida. Tentando reconectar…</p>
+    <div class="sala-acoes">
+      <button type="button" class="mp-botao" data-sala-entrar hidden>Entrar na sala</button>
+      <button type="button" class="mp-botao mp-botao--secundario" data-sala-tentar hidden>Tentar de novo</button>
+    </div>
+
+    <section class="sala-palco" data-sala-palco hidden aria-label="Sala de atendimento">
+      <div class="sala-video" data-sala-video></div>
+      <aside class="sala-chat" aria-labelledby="sala-chat-titulo">
+        <h2 id="sala-chat-titulo">Conversa privada</h2>
+        <p class="sala-nota">Só você e a outra pessoa do atendimento veem estas mensagens. Elas são apagadas quando a sala é encerrada.</p>
+        <p class="sala-vazio" data-sala-vazio>Nenhuma mensagem ainda</p>
+        <ol class="sala-mensagens" data-sala-mensagens aria-live="polite" aria-relevant="additions" aria-label="Mensagens da conversa privada"></ol>
+        <form class="sala-form" data-sala-form novalidate>
+          <label class="sala-ocultar-visual" for="sala-campo">Mensagem</label>
+          <div class="sala-form-linha">
+            <textarea id="sala-campo" data-sala-campo rows="1" maxlength="1000" required placeholder="Digite sua mensagem..." enterkeyhint="send"></textarea>
+            <button type="submit" class="mp-botao sala-enviar" data-sala-enviar aria-label="Enviar mensagem">
+              <span class="sala-icone sala-icone--enviar" aria-hidden="true"></span>
+              <span data-sala-enviar-rotulo>Enviar</span>
+            </button>
+          </div>
+          <p class="sala-aviso" data-sala-aviso role="alert"></p>
+        </form>
+      </aside>
+      <div class="sala-controles">
+        <button type="button" class="mp-botao mp-botao--secundario" data-sala-sair>Sair da sala</button>
+        <button type="button" class="mp-botao sala-encerrar" data-sala-encerrar hidden>Encerrar para todos</button>
+      </div>
+      <div class="sala-confirmar" data-sala-confirmar role="alertdialog" aria-labelledby="sala-confirmar-texto" hidden>
+        <p id="sala-confirmar-texto"><strong>Encerrar o atendimento para todos?</strong> A outra pessoa será desconectada, a sala será fechada e a conversa privada será apagada. Para apenas sair e voltar depois, use “Sair da sala”.</p>
+        <div class="sala-acoes">
+          <button type="button" class="mp-botao sala-encerrar" data-sala-confirmar-sim>Sim, encerrar para todos</button>
+          <button type="button" class="mp-botao mp-botao--secundario" data-sala-confirmar-nao>Cancelar</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

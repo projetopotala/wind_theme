@@ -1,0 +1,111 @@
+/* Sala de atendimento: mobile primeiro; vídeo acima do chat, lado a lado a partir de 900px.
+   Paleta institucional (conta.css): papel bege, marrom, ouro. */
+.sala-pagina { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; padding-inline: 16px; max-width: 1280px; margin-inline: auto; }
+/* .mp-botao define display e anularia o atributo hidden: sem isto, botões ocultos apareceriam. */
+.sala-pagina [hidden] { display: none !important; }
+.sala-titulo { margin: 0; font-size: clamp(1.4rem, 4vw, 2rem); }
+.sala-texto, .sala-nota { margin: 0; line-height: 1.5; }
+.sala-conexao { margin: 0; padding: .6rem .8rem; border: 1px solid currentColor; border-radius: 8px; font-weight: 600; }
+.sala-acoes, .sala-controles { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.sala-voltar { display: inline-flex; align-items: center; min-height: 44px; font-size: .95rem; }
+.sala-pagina button { min-height: 44px; }
+.sala-palco { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+
+/* ---------- ícones (máscaras SVG: herdam a cor do texto) ---------- */
+.sala-icone { display: inline-block; flex: none; width: 22px; height: 22px; background-color: currentColor; -webkit-mask: var(--ic) center / contain no-repeat; mask: var(--ic) center / contain no-repeat; }
+.sala-icone--mic { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11z'/%3E%3C/svg%3E"); }
+.sala-icone--mic-desligado { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4.3 3 3 4.3l6 6V11a3 3 0 0 0 4.4 2.6l1.5 1.5A5 5 0 0 1 7 11H5a7 7 0 0 0 6 6.92V21h2v-3.08c1-.14 1.9-.5 2.7-1.03L19.7 21l1.3-1.3L4.3 3zM15 10.2V6a3 3 0 0 0-5.7-1.3L15 10.2zM19 11h-2c0 .6-.1 1.1-.3 1.6l1.5 1.5c.5-.9.8-2 .8-3.1z'/%3E%3C/svg%3E"); }
+.sala-icone--cam { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z'/%3E%3C/svg%3E"); }
+.sala-icone--cam-desligada { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.3 2 2 3.3 4.7 6H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12c.2 0 .4-.1.6-.2L20.7 22 22 20.7 3.3 2zM17 7a1 1 0 0 0-1-1H9.3L17 13.7V10.5l4 4v-8l-4 4V7z'/%3E%3C/svg%3E"); }
+.sala-icone--tela { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 4h6v2H6v4H4V4zm10 0h6v6h-2V6h-4V4zM4 14h2v4h4v2H4v-6zm14 0h2v6h-6v-2h4v-4z'/%3E%3C/svg%3E"); }
+.sala-icone--tela-sair { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 4v4H4v2h6V4H8zm8 0h-2v6h6V8h-4V4zM4 14v2h4v4h2v-6H4zm10 0v6h2v-4h4v-2h-6z'/%3E%3C/svg%3E"); }
+.sala-icone--enviar { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 20v-6l10-2-10-2V4l19 8-19 8z'/%3E%3C/svg%3E"); }
+
+/* ---------- área de vídeo ---------- */
+.sala-video { position: relative; width: 100%; min-width: 0; aspect-ratio: 16 / 10; min-height: 260px; background: #1d1a17; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 24px rgba(44, 33, 26, .18); }
+.sala-video-quadro { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.sala-video-grade { position: absolute; inset: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; color: #f8f1e6; }
+.sala-video-remoto { position: relative; grid-row: 1; grid-column: 1; min-height: 0; background: #1d1a17; }
+/* Proporção preservada: a imagem inteira aparece, sem esticar nem cortar rostos. */
+.sala-video-remoto video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.sala-video-remoto audio { display: none; }
+.sala-video-local { position: absolute; right: 10px; top: 10px; z-index: 3; width: min(30%, 168px); aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: #2c211a; border: 2px solid rgba(248, 241, 230, .85); box-shadow: 0 4px 14px rgba(0, 0, 0, .4); }
+.sala-video-local video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.sala-video-nome { position: absolute; left: 8px; top: 8px; z-index: 2; margin: 0; padding: .15rem .55rem; border-radius: 999px; background: rgba(44, 33, 26, .72); color: #f8f1e6; font-size: .78rem; font-weight: 600; line-height: 1.4; max-width: calc(100% - 16px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sala-video-nome--local { top: auto; bottom: 6px; left: 6px; font-size: .68rem; padding: .05rem .4rem; }
+.sala-video-selo { position: absolute; left: 8px; bottom: 8px; z-index: 2; margin: 0; display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .6rem; border-radius: 999px; background: #9a3b2a; color: #fff; font-size: .8rem; font-weight: 600; }
+.sala-video-selo .sala-icone { width: 16px; height: 16px; }
+.sala-video-local .sala-video-selo { left: 6px; bottom: auto; top: 6px; padding: .15rem .35rem; }
+.sala-video-local .sala-video-selo-texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.sala-video-semvideo { position: absolute; inset: 0; z-index: 1; margin: 0; display: grid; place-items: center; background: #2c211a; color: rgba(248, 241, 230, .85); font-size: .9rem; font-weight: 600; text-align: center; padding: .5rem; }
+.sala-video-semvideo--local { font-size: .7rem; }
+.sala-video-espera { grid-row: 1; grid-column: 1; z-index: 2; place-self: center; margin: 0; padding: .7rem 1.1rem; border-radius: 12px; background: rgba(44, 33, 26, .8); color: #f8f1e6; font-weight: 600; text-align: center; border: 1px solid rgba(215, 186, 120, .6); }
+.sala-video-aviso { position: absolute; left: 10px; right: 10px; bottom: 86px; z-index: 4; margin: 0; padding: .5rem .7rem; border-radius: 10px; background: rgba(154, 59, 42, .92); color: #fff; font-size: .9rem; text-align: center; }
+.sala-video-audio { position: absolute; left: 50%; top: 12px; z-index: 5; transform: translateX(-50%); background: #d7ba78; color: #2c211a; border: 0; border-radius: 999px; padding: 0 1.2rem; font-weight: 700; box-shadow: 0 4px 14px rgba(0, 0, 0, .4); }
+/* Quem está falando recebe um aro dourado. */
+.sala-video-remoto::after, .sala-video-local::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; border: 3px solid transparent; border-radius: inherit; transition: border-color .15s; }
+.sala-video-remoto[data-falando="true"]::after, .sala-video-local[data-falando="true"]::after { border-color: #d7ba78; }
+
+/* ---------- barra de controles ---------- */
+.sala-video-controles { grid-row: 2; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; padding: .6rem; background: #3f2a1e; border-top: 1px solid rgba(215, 186, 120, .35); }
+.sala-video-botao { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: 0 .9rem; border-radius: 999px; border: 1px solid rgba(215, 186, 120, .55); background: rgba(248, 241, 230, .08); color: #f8f1e6; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; transition: background .15s, border-color .15s; }
+.sala-video-botao:hover:not(:disabled) { background: rgba(248, 241, 230, .2); border-color: #d7ba78; }
+.sala-video-botao:disabled { opacity: .5; cursor: not-allowed; }
+.sala-video-botao[data-ativo="false"] { background: #9a3b2a; border-color: #9a3b2a; }
+.sala-video-botao[data-ativo="false"]:hover:not(:disabled) { background: #b24b38; }
+/* Expandir não é "desligado": mantém o estilo neutro. */
+.sala-video-botao[data-ativo="false"]:has(.sala-icone--tela) { background: rgba(248, 241, 230, .08); border-color: rgba(215, 186, 120, .55); }
+
+/* ---------- tela cheia (nativa ou, se o aparelho não tiver, dentro da página) ---------- */
+.sala-video--cheia { position: fixed; inset: 0; z-index: 1000; width: 100vw; height: 100vh; height: 100dvh; max-width: none; aspect-ratio: auto; min-height: 0; border-radius: 0; box-shadow: none; }
+.sala-video--cheia .sala-video-local { width: min(22%, 220px); }
+body:has(.sala-video--cheia) { overflow: hidden; }
+
+/* ---------- chat privado ---------- */
+.sala-chat { display: flex; flex-direction: column; gap: .6rem; min-width: 0; padding: 1rem; border: 1px solid var(--conta-linha, rgba(86, 59, 43, .16)); border-radius: 14px; background: var(--conta-papel, #f8f1e6); }
+.sala-chat h2 { margin: 0; font-size: 1.15rem; color: var(--conta-marrom, #563b2b); }
+.sala-nota { font-size: .85rem; color: var(--conta-tinta-suave, rgba(44, 33, 26, .68)); }
+.sala-mensagens { list-style: none; margin: 0; padding: .25rem; display: flex; flex-direction: column; gap: .5rem; min-height: 180px; max-height: 42vh; overflow-y: auto; overscroll-behavior: contain; }
+.sala-vazio { margin: 0; padding: 1rem; text-align: center; color: var(--conta-tinta-suave, rgba(44, 33, 26, .68)); font-style: italic; }
+.sala-msg { display: flex; flex-direction: column; gap: .15rem; max-width: 86%; padding: .5rem .75rem; border-radius: 16px; overflow-wrap: anywhere; }
+.sala-msg--outra { align-self: flex-start; background: #fff; border: 1px solid var(--conta-linha, rgba(86, 59, 43, .16)); border-bottom-left-radius: 4px; color: var(--conta-tinta, #2c211a); }
+.sala-msg--minha { align-self: flex-end; background: var(--conta-marrom, #563b2b); color: #f8f1e6; border-bottom-right-radius: 4px; }
+.sala-msg p { margin: 0; white-space: pre-wrap; line-height: 1.4; }
+.sala-msg-autor { font-size: .72rem; font-weight: 700; opacity: .8; }
+.sala-msg--minha .sala-msg-autor { color: var(--conta-ouro-claro, #d7ba78); opacity: 1; }
+.sala-msg-hora { align-self: flex-end; font-size: .68rem; opacity: .7; }
+.sala-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: .4rem; }
+.sala-form-linha { display: flex; align-items: flex-end; gap: .5rem; }
+.sala-form textarea { flex: 1; min-width: 0; box-sizing: border-box; font: inherit; padding: .65rem .9rem; border-radius: 22px; border: 1px solid rgba(86, 59, 43, .34); background: #fff; color: var(--conta-tinta, #2c211a); resize: none; max-height: 8rem; line-height: 1.35; }
+.sala-form .sala-enviar { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-width: 44px; padding: 0 1rem; border-radius: 22px; }
+.sala-form .sala-enviar[aria-busy="true"] { opacity: .7; cursor: progress; }
+.sala-aviso { margin: 0; min-height: 1.2em; font-size: .88rem; color: var(--conta-erro, #9a3b2a); }
+.sala-ocultar-visual { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- ações da sala ---------- */
+.sala-controles { grid-column: 1 / -1; padding-top: .25rem; }
+.sala-vazio:not([hidden]) + .sala-mensagens { min-height: 0; }
+.sala-pagina .sala-encerrar { background: var(--conta-erro, #9a3b2a); border-color: var(--conta-erro, #9a3b2a); color: #fff; }
+.sala-confirmar { grid-column: 1 / -1; display: grid; gap: .6rem; padding: .9rem 1rem; border: 1px solid var(--conta-erro, #9a3b2a); border-radius: 12px; background: #fff; }
+.sala-confirmar p { margin: 0; line-height: 1.45; }
+.sala-pagina button:focus-visible, .sala-form textarea:focus-visible, .sala-voltar:focus-visible { outline: 3px solid #d7ba78; outline-offset: 2px; box-shadow: 0 0 0 5px #3f2a1e; }
+
+@media (min-width: 900px) {
+  .sala-palco { grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); }
+  .sala-video { aspect-ratio: 16 / 9; }
+  .sala-mensagens { max-height: 46vh; }
+}
+@media (max-width: 600px) {
+  /* Telas estreitas: só ícones (o nome acessível com o estado continua no aria-label). */
+  .sala-video-botao { padding: 0; min-width: 48px; justify-content: center; }
+  .sala-video-botao-rotulo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+@media (max-width: 480px) {
+  .sala-video-botao { gap: .35rem; }
+  .sala-video-controles { gap: .4rem; padding: .5rem; }
+  .sala-video-local { width: min(34%, 120px); }
+  .sala-msg { max-width: 92%; }
+  .sala-form .sala-enviar { padding: 0; min-width: 48px; }
+  .sala-form .sala-enviar [data-sala-enviar-rotulo] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+@media (prefers-reduced-motion: reduce) { .sala-pagina * { scroll-behavior: auto; transition: none !important; animation: none !important; } }

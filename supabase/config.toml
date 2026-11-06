@@ -3,3 +3,18 @@ project_id = "potala_portal_local"
 [functions.submit-appointment-request]
 # Chaves publicáveis não são JWTs. O wrapper valida a chave em `apikey`.
 verify_jwt = false
+
+[functions.issue-appointment-room-token]
+# Funcao para usuario autenticado: a plataforma valida o JWT antes do handler
+# (recomendacao atual do Supabase) e o banco valida de novo ao chamar a RPC.
+verify_jwt = true
+
+[functions.close-appointment-room]
+  # Encerra a sala: banco autoriza com o JWT do usuario; provedor so e chamado depois.
+  verify_jwt = true
+
+[functions.sweep-appointment-rooms]
+# Chamada somente por agendador (pg_cron/pg_net). A plataforma nao valida JWT nesta rota;
+# o handler exige o segredo dedicado SWEEPER_SECRET no cabecalho x-sweeper-secret,
+# compara em tempo constante antes de qualquer acao e falha fechado se ele estiver ausente.
+verify_jwt = false

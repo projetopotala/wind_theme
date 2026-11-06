@@ -7,7 +7,7 @@ import { FABRICAS, criarPerfil, criarUsuario } from "../../outputs/js/conta/mode
 
 const pausa = () => new Promise((pronto) => setTimeout(pronto, 0));
 
-function autenticacaoFalsa({ usuarioInicial = null, aguardando = false } = {}) {
+function autenticacaoFalsa({ usuarioInicial = null, aguardando = false, papelPortal = null } = {}) {
   let ouvinte = null;
   const chamadas = { entrar: 0, criarConta: 0, sair: 0 };
   return {
@@ -28,6 +28,9 @@ function autenticacaoFalsa({ usuarioInicial = null, aguardando = false } = {}) {
     },
     async sair() {
       chamadas.sair += 1;
+    },
+    async papelPortal() {
+      return papelPortal;
     },
     async recuperarSenha() {},
     aoMudar(fn) {
@@ -86,6 +89,15 @@ test("entrar leva a autenticado, traz o perfil e avisa quem escuta", async () =>
   assert.equal(sessao.obter().usuario.email, "gustavo@exemplo.com");
   assert.equal(sessao.obter().perfil.nome, "Gustavo Ishibashi (perfil)");
   assert.ok(vistos.includes("autenticado"));
+});
+
+test("a sessão guarda apenas o papel administrativo confirmado pelo adaptador", async () => {
+  const sessao = criarSessao({ autenticacao: autenticacaoFalsa({ papelPortal: "owner" }), dados: dadosFalsos() });
+  await sessao.iniciar();
+  await sessao.entrar({ email: "owner@exemplo.com", senha: "segredo-longo" });
+  assert.equal(sessao.obter().papelPortal, "owner");
+  await sessao.sair();
+  assert.equal(sessao.obter().papelPortal, null);
 });
 
 test("a validacao acontece antes de gastar uma ida ao servidor", async () => {

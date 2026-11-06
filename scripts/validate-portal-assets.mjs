@@ -65,4 +65,8 @@ const supabaseBundle = await stat("outputs/vendor/supabase.js");
 assert.ok(supabaseBundle.size > 100_000, "outputs/vendor/supabase.js está vazio ou incompleto");
 assert.ok(supabaseBundle.size < 500_000, "outputs/vendor/supabase.js excede o orçamento de 500 kB");
 
+const livekitBundle = await stat("outputs/vendor/livekit-client.umd.js");
+assert.ok(livekitBundle.size > 100_000, "outputs/vendor/livekit-client.umd.js está vazio ou incompleto");
+assert.ok(livekitBundle.size < 900_000, "outputs/vendor/livekit-client.umd.js excede o orçamento de 900 kB");
+
 console.log("Assets essenciais da Travessia dentro do orçamento.");

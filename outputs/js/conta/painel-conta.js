@@ -70,6 +70,7 @@ export function renderizarPainel(estadoDoPainel, {
   perfil = null,
   naoLidas = 0,
   demonstracao = false,
+  papelPortal = null,
 } = {}) {
   switch (estadoDoPainel) {
     case "entrar":
@@ -131,6 +132,9 @@ export function renderizarPainel(estadoDoPainel, {
         : "";
       const item = (rota, rotulo, extra = "") => `<li><a href="${caminhoDa(rota)}" data-conta-navegar>${escaparHtml(rotulo)}${extra}</a></li>`;
       const contador = naoLidas ? ` <span class="conta-contador" aria-label="${naoLidas} ${naoLidas === 1 ? "novo" : "novos"}">${naoLidas}</span>` : "";
+      const central = ["owner", "admin", "blog_editor"].includes(papelPortal)
+        ? '<a class="conta-destaque" href="/admin/" data-conta-navegar>Central Operacional <span aria-hidden="true">→</span></a>'
+        : "";
       return `<div class="conta-quem">
           <span class="conta-avatar" aria-hidden="true">${avatar}</span>
           <div><h2 id="conta-painel-titulo" class="conta-titulo conta-titulo-menor">${escaparHtml(nome)}</h2><p class="conta-texto">Continue sua jornada.</p></div>
@@ -138,6 +142,7 @@ export function renderizarPainel(estadoDoPainel, {
         ${aviso}
         <nav aria-label="Seu espaço no Potala">
           <a class="conta-destaque" href="${caminhoDa("inicio")}" data-conta-navegar>Meu Potala <span aria-hidden="true">→</span></a>
+          ${central}
           <ul class="conta-menu">
             ${item("perfil", "Meu perfil")}
             ${item("cursos", "Meus cursos")}
@@ -217,6 +222,7 @@ export function montarPainelConta({ documento = document, sessao, janela = windo
       perfil: estado.perfil,
       naoLidas: obterNaoLidas(),
       demonstracao: estado.demonstracao || estado.dadosEmReserva,
+      papelPortal: estado.papelPortal,
     };
   }
 
@@ -355,8 +361,9 @@ export function montarPainelConta({ documento = document, sessao, janela = windo
 
     try {
       if (tipo === "entrar") {
-        await sessao.entrar(campos);
+        const estado = await sessao.entrar(campos);
         fechar();
+        if (["owner", "admin", "blog_editor"].includes(estado.papelPortal)) janela.location.assign?.("/admin/");
       } else if (tipo === "criar") {
         const estado = await sessao.criarConta(campos);
         if (estado.status === "aguardando-confirmacao") desenhar("confirmar-email");

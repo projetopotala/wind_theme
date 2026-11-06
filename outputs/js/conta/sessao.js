@@ -68,6 +68,7 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
     status: "carregando",
     usuario: null,
     perfil: null,
+    papelPortal: null,
     emailPendente: null,
     demonstracao: Boolean(autenticacao.demonstracao),
     dadosEmReserva: false,
@@ -93,14 +94,20 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
 
   async function aplicarUsuario(usuario) {
     if (!usuario) {
-      definir({ status: "visitante", usuario: null, perfil: null });
+      definir({ status: "visitante", usuario: null, perfil: null, papelPortal: null });
       return;
     }
     const mesmaPessoa = estado.usuario?.id === usuario.id;
     definir({ status: "autenticado", usuario, perfil: mesmaPessoa ? estado.perfil : null, emailPendente: null });
     const perfil = await carregarPerfil(usuario);
+    let papelPortal = null;
+    try {
+      papelPortal = await autenticacao.papelPortal?.(usuario) || null;
+    } catch (erro) {
+      aoFalhar(erro, "acesso.papel");
+    }
     if (estado.usuario?.id === usuario.id) {
-      definir({ perfil, dadosEmReserva: Boolean(dados?.emReserva) });
+      definir({ perfil, papelPortal, dadosEmReserva: Boolean(dados?.emReserva) });
     }
   }
 
@@ -173,7 +180,7 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
 
     async sair() {
       await autenticacao.sair();
-      definir({ status: "visitante", usuario: null, perfil: null, emailPendente: null });
+      definir({ status: "visitante", usuario: null, perfil: null, papelPortal: null, emailPendente: null });
     },
 
     async recuperarSenha(email) {
@@ -228,9 +235,29 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
       return aposUsarDados(await dados.opcoesAtendimento());
     },
 
+    async horariosAtendimento() {
+      exigirConta();
+      return aposUsarDados(await dados.horariosAtendimento());
+    },
+
+    async agendaProfissional() {
+      const usuarioId = exigirConta();
+      return aposUsarDados(await dados.agendaProfissional(usuarioId));
+    },
+
     async solicitarAtendimento(pedido) {
       const usuarioId = exigirConta();
       return aposUsarDados(await dados.solicitarAtendimento(pedido, usuarioId));
+    },
+
+    async solicitarHorarioAtendimento(pedido) {
+      exigirConta();
+      return aposUsarDados(await dados.solicitarHorarioAtendimento(pedido));
+    },
+
+    async cancelarAtendimento(id) {
+      exigirConta();
+      return aposUsarDados(await dados.cancelarAtendimento(id));
     },
 
     destroy() {

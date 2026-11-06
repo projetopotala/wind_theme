@@ -64,4 +64,5 @@ yarn-error.log*
 # Dados da Preview LAB: nunca versionar em outputs/ (veja docs/ambientes-supabase.md)
 outputs/js/supabase/ambiente-lab.js
 outputs/js/supabase/ambiente-local.js
+outputs/js/preview/ambiente-e2e.js
 ops/lab-preview/ambiente-lab.local.json

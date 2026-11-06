@@ -77,6 +77,8 @@ test("o menu de quem entrou tem todos os destinos, e o nome vem escapado", () =>
   assert.match(menu, /href="\/meu-potala\/salvos"/);
   assert.match(menu, /conta-contador[^>]*>2</);
   assert.doesNotMatch(menu, /meu-potala.jornada/, "a Jornada foi removida do Meu Potala");
+  assert.doesNotMatch(menu, /Central Operacional/, "cliente comum não recebe atalho administrativo");
+  assert.match(renderizarPainel("menu", { usuario, perfil, papelPortal: "owner" }), /href="\/admin\/"[^>]*>Central Operacional/);
 });
 
 test("todo estado do painel desenha sem sobras de dados ausentes", () => {

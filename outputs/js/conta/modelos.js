@@ -310,6 +310,10 @@ export function criarSolicitacaoAtendimento(dados = {}) {
     dataPreferida: data,
     periodoPreferido: umDe(dados.periodoPreferido, { manha: true, tarde: true, noite: true }, "O período"),
     status: umDe(dados.status, STATUS_DE_ATENDIMENTO, "O status da solicitação"),
+      horarioId: texto(dados.horarioId),
+      inicio: paraData(dados.inicio),
+      fim: paraData(dados.fim),
+      reservaId: texto(dados.reservaId),
     criadaEm: paraData(dados.criadaEm),
     atualizadaEm: paraData(dados.atualizadaEm),
   });

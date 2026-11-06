@@ -39,7 +39,7 @@ const CAMPOS = Object.freeze({
   inscricoes: { id: "id", cursoRef: "course_ref", curso: "course_title", professor: "teacher_name", modalidade: "modality", status: "status", proximaAula: "next_session_at", conteudoHref: "content_href", imagem: "image_url", inscritoEm: "enrolled_at" },
   progressos: { inscricaoId: "enrollment_id", total: "lessons_total", concluidas: "lessons_done", ultimaAulaRef: "last_lesson_ref", ultimoAcesso: "last_access_at" },
   agenda: { id: "id", tipo: "kind", titulo: "title", inicio: "starts_at", fim: "ends_at", local: "location", origem: "origin", fonteRef: "source_ref", fonteHref: "source_href" },
-  atendimentos: { id: "id", servico: "service", modalidade: "modality", dataPreferida: "preferred_date", periodoPreferido: "preferred_period", status: "status", criadaEm: "created_at", atualizadaEm: "updated_at" },
+  atendimentos: { id: "id", servico: "service", modalidade: "modality", dataPreferida: "preferred_date", periodoPreferido: "preferred_period", status: "status", horarioId: "slot_id", inicio: "starts_at", fim: "ends_at", reservaId: "reservation_schedule_id", criadaEm: "created_at", atualizadaEm: "updated_at" },
   notificacoes: { id: "id", tipo: "kind", titulo: "title", corpo: "body", href: "href", criadaEm: "created_at", lidaEm: "read_at" },
   preferencias: { tipo: "kind", ativa: "enabled" },
 });
@@ -69,6 +69,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const TABELA_AUSENTE = new Set(["PGRST205", "42P01"]);
 /* O mesmo formato que o envio público aceita como recibo (shared/appointment-requests.js). */
 const UUID_DO_RECIBO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/* Teto de consultas lidas na agenda de quem atende: cada uma custa uma checagem de papel no banco. */
+const LIMITE_AGENDA_PROFISSIONAL = 30;
 
 function tabelaDe(colecao) {
   const tabela = TABELAS[colecao];
@@ -144,6 +146,18 @@ export function criarAutenticacaoSupabase({
       const { data, error } = await client.auth.getSession();
       if (error) throw falhouAuth(error);
       return { usuario: usuarioDoSupabase(data?.session?.user) };
+    },
+
+    async papelPortal(usuario) {
+      if (!usuario?.id) return null;
+      const { data, error } = await client
+        .from("users")
+        .select("role, active")
+        .eq("id", usuario.id)
+        .maybeSingle();
+      if (error) throw falhouDados(error);
+      if (data?.active !== true) return null;
+      return ["owner", "admin", "blog_editor"].includes(data.role) ? data.role : null;
     },
 
     async entrar({ email, senha }) {
@@ -265,11 +279,13 @@ export function criarDadosSupabase({ client } = {}) {
     },
 
     async listar(colecao, usuarioId) {
+      if (colecao === "atendimentos") {
+        const { data, error } = await client.rpc("list_my_appointment_requests");
+        if (error) throw falhouDados(error);
+        return (Array.isArray(data) ? data : []).map((linha) => paraModelo(colecao, linha, usuarioId));
+      }
       const [coluna, ascendente] = ORDEM[colecao] || ["id", true];
-      const campos = colecao === "atendimentos"
-        ? "id,service,modality,preferred_date,preferred_period,status,created_at,updated_at"
-        : "*";
-      const { data, error } = await client.from(tabelaDe(colecao)).select(campos).order(coluna, { ascending: ascendente });
+      const { data, error } = await client.from(tabelaDe(colecao)).select("*").order(coluna, { ascending: ascendente });
       if (error) throw falhouDados(error);
       return (data || []).map((linha) => paraModelo(colecao, linha, usuarioId));
     },
@@ -313,6 +329,51 @@ export function criarDadosSupabase({ client } = {}) {
       return Array.isArray(data) ? data : [];
     },
 
+    async horariosAtendimento() {
+      const { data, error } = await client.rpc("list_available_appointment_slots", { p_offering_id: null });
+      if (error) throw falhouDados(error);
+      return Array.isArray(data) ? data : [];
+    },
+
+    /*
+     * Agenda de quem atende. `list_my_appointment_requests` só devolve o que a
+     * pessoa pediu como cliente; quem atende não pede, então aparecia sem nada.
+     *
+     * A leitura usa só as colunas já liberadas e a RLS já existente
+     * (appointment_requests_professional_read). Como a RLS também abre linhas a
+     * quem administra, cada linha passa por appointment_room_context, que diz o
+     * papel real de quem chama: fica só o que o banco chama de "professional".
+     * Nada aqui concede acesso — a sala continua perguntando ao banco e à função.
+     */
+    async agendaProfissional(usuarioId) {
+      const { data, error } = await client.from("appointment_requests")
+        .select("id,service,modality,requester_name,status,requester_user_id,reservation_confirmed_at")
+        .not("professional_profile_id", "is", null)
+        .not("reservation_schedule_id", "is", null)
+        .eq("status", "encerrada")
+        .order("reservation_confirmed_at", { ascending: false })
+        .limit(LIMITE_AGENDA_PROFISSIONAL);
+      if (error) throw falhouDados(error);
+      const candidatos = (Array.isArray(data) ? data : [])
+        .filter((linha) => linha.requester_user_id !== usuarioId && UUID_DO_RECIBO.test(String(linha.id || "")));
+      const consultas = await Promise.all(candidatos.map(async (linha) => {
+        const { data: contexto, error: erro } = await client.rpc("appointment_room_context", { p_request_id: linha.id });
+        if (erro || !contexto || contexto.role !== "professional") return null;
+        return {
+          id: String(linha.id).toLowerCase(),
+          servico: contexto.service || linha.service || "Atendimento",
+          modalidade: linha.modality === "online" ? "online" : "presencial",
+          cliente: contexto.requester_name || linha.requester_name || "",
+          estado: contexto.state,
+          inicio: contexto.starts_at || null,
+          fim: contexto.ends_at || null,
+          abre: contexto.opens_at || null,
+          fecha: contexto.closes_at || null,
+        };
+      }));
+      return consultas.filter(Boolean);
+    },
+
     async solicitarAtendimento({ idempotencia, ofertaId, modalidade, dataPreferida, periodoPreferido }) {
       const { data, error } = await client.rpc("submit_authenticated_appointment_request", {
         p_idempotency_key: idempotencia,
@@ -340,6 +401,28 @@ export function criarDadosSupabase({ client } = {}) {
         throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");
       }
       return { id: data.id, status: "recebida" };
+    },
+
+    async solicitarHorarioAtendimento({ idempotencia, horarioId }) {
+      const { data, error } = await client.rpc("submit_appointment_slot_request", {
+        p_idempotency_key: idempotencia, p_slot_id: horarioId,
+      });
+      if (error) {
+        if (error.code === "PT409") throw new ErroDeConta("ATENDIMENTO_ALTERADO", error);
+        if (error.code === "42501") throw new ErroDeConta("ATENDIMENTO_SEM_PERMISSAO", error);
+        throw falhouDados(error);
+      }
+      if (!data || !UUID_DO_RECIBO.test(String(data.id || "")) || data.status !== "recebida") {
+        throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");
+      }
+      return { id: data.id, status: data.status };
+    },
+
+    async cancelarAtendimento(id) {
+      const { data, error } = await client.rpc("cancel_my_appointment_request", { p_request_id: id });
+      if (error) throw falhouDados(error);
+      if (data?.id !== id || data?.status !== "cancelada") throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");
+      return data;
     },
   };
 }

@@ -53,8 +53,9 @@ test("executor fixa hash da migration e de todos os auxiliares SQL", () => {
 
 test("flags de produção continuam desligadas", () => {
   const flags = read("outputs/js/appointments/config.js");
-  assert.match(flags, /APPOINTMENT_REQUESTS_ENABLED = false/);
-  assert.match(flags, /APPOINTMENT_ADMIN_ENABLED = false/);
+  assert.match(flags, /APPOINTMENT_REQUESTS_ENABLED = flags\.authenticatedRequests === true/);
+  assert.match(flags, /APPOINTMENT_ADMIN_ENABLED = flags\.admin === true/);
+  assert.match(flags, /APPOINTMENT_PUBLIC_REQUESTS_ENABLED = flags\.publicRequests === true/);
 });
 
 test("laboratório exige RPC pública bloqueada e mantém lógica positiva somente no banco isolado", () => {

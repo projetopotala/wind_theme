@@ -14,6 +14,14 @@ function opcoes() {
   return {};
 }
 
-const montar = () => mountPortalMenu(opcoes());
+const montar = () => {
+  const menu = mountPortalMenu(opcoes());
+  if (!menu) return;
+  const sincronizar = (evento) => menu.setAdminAccess(
+    evento?.detail?.administrativo === true || document.documentElement.hasAttribute("data-portal-admin"),
+  );
+  document.addEventListener("potala:portal-access", sincronizar);
+  sincronizar();
+};
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", montar, { once: true });
 else montar();

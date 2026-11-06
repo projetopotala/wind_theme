@@ -1,0 +1,10 @@
+\set ON_ERROR_STOP on
+begin;
+set local request.jwt.claim.sub = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+select pg_advisory_xact_lock(hashtextextended('appointment-room:test-room-c',0));
+select pg_sleep(2);
+select public.create_appointment_slot(jsonb_build_object(
+  'offering_id','test-offer-d','professional_profile_id','test-prof-d','room_id','test-room-c',
+  'starts_at',date_trunc('day',now()) + interval '401 days 14 hours',
+  'ends_at',date_trunc('day',now()) + interval '401 days 15 hours'));
+commit;

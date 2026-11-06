@@ -11,7 +11,8 @@ import {
 } from "../../outputs/js/supabase/ambiente.js";
 import { criarAutenticacaoSupabase } from "../../outputs/js/conta/adaptadores/supabase.js";
 import {
-  ARQUIVO_LAB, ARQUIVO_LOCAL, PROJETOS_BLOQUEADOS_EM_PRODUCAO, conferirDecisao, lerDadosLab, modoAutomatico, prepararLab, varrerSaida, verificar,
+  ARQUIVO_LAB, ARQUIVO_LOCAL, ARQUIVO_PREVIEW_E2E, PROJETOS_BLOQUEADOS_EM_PRODUCAO, conferirDecisao, lerDadosLab,
+  modoAutomatico, prepararLab, prepararPreviewE2E, previewE2EAtiva, varrerSaida, verificar,
 } from "../../scripts/ambiente-supabase.mjs";
 
 const RAIZ = new URL("../../", import.meta.url);
@@ -23,6 +24,12 @@ const LOCAL = Object.freeze({ projectRef: REF_DEV, url: `https://${REF_DEV}.supa
 const OFICIAL = `https://${HOSTS_OFICIAIS[0]}`;
 const LAB_ALIAS = "https://wind-theme-m2-lab-preview.vercel.app";
 const LAB_DEPLOY = "https://wind-theme-m2-lab-preview-ab12cd-potala.vercel.app";
+const E2E_DEPLOY = "https://wind-theme-ab12cd34-potala.vercel.app";
+const E2E = Object.freeze({
+  origin: E2E_DEPLOY, projectRef: PROJETO_PRODUCAO, url: `https://${PROJETO_PRODUCAO}.supabase.co`,
+  publishableKey: "sb_publishable_chave_de_teste",
+  appointments: { authenticatedRequests: true, admin: true, reservations: true, publicRequests: false, turnstileSiteKey: "" },
+});
 const bloqueia = (origem, extra = {}) => assert.throws(() => escolherAmbiente({ origem, ...extra }), ErroDeAmbiente, origem);
 
 test("host oficial usa exclusivamente a produção, com retorno no próprio host", () => {
@@ -57,6 +64,19 @@ test("Preview desconhecida, outro domínio e origens parecidas NÃO recebem a pr
     bloqueia(origem, { overlayLab: LAB });
   }
   assert.throws(() => escolherAmbiente(), ErroDeAmbiente);
+});
+
+test("Preview E2E exige artefato exato e mantém o formulário público fechado", () => {
+  const c = escolherAmbiente({ origem: E2E_DEPLOY, overlayPreview: E2E });
+  assert.equal(c.ambiente, "preview-e2e");
+  assert.equal(c.projectRef, PROJETO_PRODUCAO);
+  assert.equal(c.siteUrl, E2E_DEPLOY);
+  assert.deepEqual(c.appointments, {
+    authenticatedRequests: true, admin: true, reservations: true, publicRequests: false, turnstileSiteKey: "",
+  });
+  bloqueia("https://wind-theme-outra-potala.vercel.app", { overlayPreview: E2E });
+  bloqueia(E2E_DEPLOY, { overlayPreview: { ...E2E, origin: "https://wind-theme-outra-potala.vercel.app" } });
+  assert.equal(escolherAmbiente({ origem: OFICIAL, overlayPreview: E2E }).ambiente, "producao");
 });
 
 test("localhost não usa produção automaticamente: exige configuração local explícita", () => {
@@ -144,9 +164,9 @@ test("config.js só busca arquivos de configuração no ambiente correspondente 
   assert.match(codigo, /tipo === "lab" \? await carregar\("\.\/ambiente-lab\.js"/);
   assert.match(codigo, /tipo === "local" \? await carregar\("\.\/ambiente-local\.js"/);
   assert.doesNotMatch(codigo, /producao|gotrum/i, "o config.js não decide produção por conta própria");
-  for (const arquivo of [ARQUIVO_LAB, ARQUIVO_LOCAL]) assert.equal(existsSync(new URL(`outputs/${arquivo}`, RAIZ)), false, arquivo);
+  for (const arquivo of [ARQUIVO_LAB, ARQUIVO_LOCAL, ARQUIVO_PREVIEW_E2E]) assert.equal(existsSync(new URL(`outputs/${arquivo}`, RAIZ)), false, arquivo);
   const ignorado = readFileSync(new URL(".gitignore", RAIZ), "utf8");
-  for (const linha of ["outputs/js/supabase/ambiente-lab.js", "outputs/js/supabase/ambiente-local.js", "ops/lab-preview/ambiente-lab.local.json"]) {
+  for (const linha of ["outputs/js/supabase/ambiente-lab.js", "outputs/js/supabase/ambiente-local.js", "outputs/js/preview/ambiente-e2e.js", "ops/lab-preview/ambiente-lab.local.json"]) {
     assert.ok(ignorado.split(/\r?\n/).includes(linha), linha);
   }
 });
@@ -171,6 +191,7 @@ test("o build de produção bloqueia referências ao LAB, arquivos de configura�
     "id do LAB em html": { "x.html": `<script>fetch("${PROJETOS_BLOQUEADOS_EM_PRODUCAO[0]}")</script>` },
     "arquivo do LAB": { [ARQUIVO_LAB]: "export const AMBIENTE_LAB = {};" },
     "arquivo local": { [ARQUIVO_LOCAL]: "export const AMBIENTE_LOCAL = {};" },
+    "arquivo Preview E2E": { [ARQUIVO_PREVIEW_E2E]: "export const AMBIENTE_E2E = {};" },
     "chave secreta": { "js/a.js": 'const k="sb_secret_abcdefghijkl";' },
     "jwt service_role": { "js/a.js": `const k="${jwtServico}";` },
   };
@@ -181,6 +202,32 @@ test("o build de produção bloqueia referências ao LAB, arquivos de configura�
   // O arquivo local é barrado até no pacote LAB.
   const raiz = pacote({ [ARQUIVO_LOCAL]: "x" });
   try { assert.notEqual(varrerSaida(join(raiz, "outputs"), { permitirLab: true }).length, 0); } finally { rmSync(raiz, { recursive: true, force: true }); }
+});
+
+test("artefato E2E só é gerado para a branch e deployment Preview autorizados", async () => {
+  const raiz = mkdtempSync(join(tmpdir(), "ambiente-e2e-"));
+  const env = {
+    POTALA_APPOINTMENT_E2E_PREVIEW: "true", VERCEL_ENV: "preview",
+    VERCEL_GIT_COMMIT_REF: "codex/appointments-livekit-production",
+    VERCEL_PROJECT_PRODUCTION_URL: "wind-theme.vercel.app", VERCEL_URL: "wind-theme-ab12cd34-potala.vercel.app",
+  };
+  try {
+    mkdirSync(join(raiz, "outputs"), { recursive: true });
+    writeFileSync(join(raiz, "package.json"), '{"type":"module"}\n');
+    assert.equal(previewE2EAtiva(env), true);
+    const destino = prepararPreviewE2E({ raiz, env });
+    const conteudo = readFileSync(destino, "utf8");
+    assert.match(conteudo, /wind-theme-ab12cd34-potala\.vercel\.app/);
+    assert.doesNotMatch(conteudo, /sb_secret_|service_role|TURNSTILE_SECRET/i);
+    assert.deepEqual(varrerSaida(join(raiz, "outputs"), { permitirPreviewE2E: true }), []);
+    assert.notEqual(varrerSaida(join(raiz, "outputs")).length, 0);
+    assert.deepEqual(await conferirDecisao(raiz, { modo: "producao", permitirPreviewE2E: true }), []);
+    assert.equal(prepararPreviewE2E({ raiz, env: { ...env, VERCEL_ENV: "production" } }), null);
+    assert.equal(existsSync(destino), false);
+    for (const patch of [{ VERCEL_GIT_COMMIT_REF: "main" }, { VERCEL_URL: "evil.example.com" }, { POTALA_APPOINTMENT_E2E_PREVIEW: "false" }]) {
+      assert.equal(previewE2EAtiva({ ...env, ...patch }), false);
+    }
+  } finally { rmSync(raiz, { recursive: true, force: true }); }
 });
 
 test("o pacote LAB só passa no modo lab e o projeto Vercel LAB não roda a verificação de produção", async () => {
