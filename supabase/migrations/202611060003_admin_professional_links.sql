@@ -15,7 +15,7 @@
 create table if not exists public.admin_access_events (
   id bigint generated always as identity primary key,
   actor_id uuid references auth.users(id) on delete set null,
-  action text not null check (action in ('link_professional', 'activate_professional_link', 'deactivate_professional_link')),
+  action text not null check (action in ('link_professional', 'activate_professional_link', 'deactivate_professional_link', 'professional_role_revoked')),
   target_user_id uuid references auth.users(id) on delete set null,
   target_profile_id text,
   before jsonb,
@@ -177,6 +177,47 @@ begin
   return jsonb_build_object('active', p_active, 'changed', atual.active is distinct from p_active, 'rooms_closed', fechadas);
 end;
 $$;
+
+-- Lacuna fechada: retirar o papel profissional (ou desativar o cadastro) em Pessoas grava
+-- op_records sem passar pelas RPCs acima. Este gatilho encerra as salas abertas daquele
+-- perfil no mesmo momento, pela mesma regra (closed_at; o varredor revoga no LiveKit).
+-- Não altera a consulta nem o cadastro; só reage à perda do acesso profissional.
+create or replace function public.close_rooms_on_professional_revoked()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  fechadas integer;
+begin
+  if old.collection = 'profiles'
+    and coalesce(old.document -> 'roles', '[]'::jsonb) ? 'professional'
+    and coalesce((old.document ->> 'active')::boolean, true)
+    and (tg_op = 'DELETE'
+      or not (coalesce(new.document -> 'roles', '[]'::jsonb) ? 'professional')
+      or not coalesce((new.document ->> 'active')::boolean, true)) then
+    update public.appointment_room_sessions s
+       set closed_at = clock_timestamp(), closed_by = (select auth.uid())
+      from public.appointment_requests r
+     where r.id = s.request_id and r.professional_profile_id = old.id
+       and s.closed_at is null and s.revoked_at is null;
+    get diagnostics fechadas = row_count;
+    if fechadas > 0 then
+      insert into public.admin_access_events (actor_id, action, target_user_id, target_profile_id, before, after)
+        values ((select auth.uid()), 'professional_role_revoked', null, old.id,
+          jsonb_build_object('professional', true), jsonb_build_object('rooms_closed', fechadas));
+    end if;
+  end if;
+  return coalesce(new, old);
+end;
+$$;
+revoke all on function public.close_rooms_on_professional_revoked() from public, anon, authenticated;
+
+drop trigger if exists op_records_close_rooms_on_professional_revoked on public.op_records;
+create trigger op_records_close_rooms_on_professional_revoked
+  after update of document or delete on public.op_records
+  for each row execute function public.close_rooms_on_professional_revoked();
 
 revoke all on function public.admin_list_professional_profiles() from public, anon;
 revoke all on function public.admin_link_professional(uuid, text) from public, anon;

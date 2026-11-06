@@ -50,6 +50,14 @@ test("migration recusa desativar vínculo de cadastro que também é de cliente 
   assert.match(codigo, /coalesce\(perfil -> 'roles', '\[\]'::jsonb\) \? 'client' then\s+raise exception 'Este cadastro também é de cliente/);
   assert.match(codigo, /Acrescente o papel profissional a esse cadastro em Pessoas/);
 });
+test("migration: retirar papel profissional em Pessoas encerra salas por gatilho, sem expor a função", () => {
+  assert.match(codigo, /create trigger op_records_close_rooms_on_professional_revoked\s+after update of document or delete on public\.op_records/);
+  assert.match(codigo, /revoke all on function public\.close_rooms_on_professional_revoked\(\) from public, anon, authenticated;/);
+  const fn = codigo.slice(codigo.indexOf("function public.close_rooms_on_professional_revoked"));
+  assert.match(fn, /old\.document -> 'roles'.*\? 'professional'/s);
+  assert.match(fn, /set closed_at = clock_timestamp\(\)/);
+  assert.match(fn, /return coalesce\(new, old\)/);
+});
 test("vínculo inativo só reativa se o perfil estiver ativo", () => {
   const inativo = [{ ...contas[0], links: [{ ...prof, link_active: false }] }];
   assert.match(renderizarAcessos({ contas: inativo, perfis }), /data-acao="reativar"/);
