@@ -218,6 +218,7 @@ export function comoRegistro(linha = {}) {
     publicarEm: linha.publish_at || null,
     pendenteEm: linha.pending_updated_at || null,
     criadoEm: linha.created_at || null,
+    criadoPor: linha.created_by || null,
     atualizadoEm: linha.updated_at || post.updatedAt,
     atualizadoPor: linha.updated_by_name || "",
   };

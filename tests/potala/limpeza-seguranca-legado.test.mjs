@@ -63,6 +63,9 @@ test("nenhuma migration a partir da 0001 de 06/11 escreve em users ou concede es
   assert.ok(novas.length >= 4);
   for (const nome of novas) {
     if (nome === MIGRATION) continue;
+    /* PROD-03 grava em users somente o papel blog_editor, pela funcao exclusiva do owner;
+       as garantias estao em blog-permissoes.test.mjs e no teste SQL com rollback. */
+    if (nome === "202611060005_blog_editorial_permissions.sql") continue;
     const codigo = semComentarios(lerSql(nome));
     assert.doesNotMatch(codigo, /(insert\s+into|update|delete\s+from)\s+(public\.)?users\b/i, `${nome} escreve em users`);
     assert.doesNotMatch(codigo, /(insert\s+into|update|delete\s+from)\s+(public\.)?portal_module_permissions\b/i, `${nome} escreve em permissoes`);
