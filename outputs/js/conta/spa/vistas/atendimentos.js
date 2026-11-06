@@ -13,6 +13,7 @@ export function ligacaoDaSala(pedido, tipo) {
   } catch { return ""; }
 }
 
+const TOLERANCIA_DA_SALA_MS = 30 * 60 * 1000;
 const PERIODOS = Object.freeze({ manha: "Manhã", tarde: "Tarde", noite: "Noite" });
 const MODALIDADES = Object.freeze({ presencial: "Presencial", online: "Online" });
 
@@ -167,9 +168,13 @@ const vista = {
       return `${agendaPropria}${vista.renderizar({ atendimentos, opcoesAtendimento, horariosAtendimento, atendimentoDisponivel, parametros, agora })}`;
     }
     const referencia = agora instanceof Date ? agora : new Date(agora);
+    // Continua "confirmada" enquanto a consulta não acabou: até o fim do horário e, se online,
+    // até a sala fechar (fim + 30 min, mesma regra de appointment_room_context). O banco decide o acesso.
     const futura = (pedido) => {
-      const inicio = pedido.inicio ? new Date(pedido.inicio) : null;
-      return inicio && Number.isFinite(inicio.valueOf()) && inicio > referencia;
+      const fim = new Date(pedido.fim || pedido.inicio || "");
+      if (!Number.isFinite(fim.valueOf())) return false;
+      const limite = fim.valueOf() + (pedido.modalidade === "online" ? TOLERANCIA_DA_SALA_MS : 0);
+      return limite > referencia.valueOf();
     };
     const pendentes = atendimentos.filter((pedido) => ["recebida", "em_contato"].includes(pedido.status));
     const confirmados = atendimentos.filter((pedido) => pedido.status === "encerrada" && pedido.reservaId && futura(pedido));
