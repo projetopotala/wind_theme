@@ -130,6 +130,7 @@ export function autenticacaoPreguicosa({ fabricar, haSessao }) {
     entrar: delegar("entrar"),
     criarConta: delegar("criarConta"),
     sair: delegar("sair"),
+    papelPortal: delegar("papelPortal"),
     recuperarSenha: delegar("recuperarSenha"),
     definirNovaSenha: delegar("definirNovaSenha"),
     provedores: delegar("provedores"),
@@ -293,6 +294,9 @@ export function montarConta({ documento = document, janela = window } = {}) {
         avatarUrl: estado.perfil?.avatarUrl,
         naoLidas: avisosNovos,
       });
+      const administrativo = ["owner", "admin", "blog_editor"].includes(estado.papelPortal);
+      documento.documentElement?.toggleAttribute?.("data-portal-admin", administrativo);
+      documento.dispatchEvent?.(new CustomEvent("potala:portal-access", { detail: { administrativo } }));
     };
 
     async function contarAvisos() {

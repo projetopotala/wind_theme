@@ -146,6 +146,18 @@ export function criarAutenticacaoSupabase({
       return { usuario: usuarioDoSupabase(data?.session?.user) };
     },
 
+    async papelPortal(usuario) {
+      if (!usuario?.id) return null;
+      const { data, error } = await client
+        .from("users")
+        .select("role, active")
+        .eq("id", usuario.id)
+        .maybeSingle();
+      if (error) throw falhouDados(error);
+      if (data?.active !== true) return null;
+      return ["owner", "admin", "blog_editor"].includes(data.role) ? data.role : null;
+    },
+
     async entrar({ email, senha }) {
       const { data, error } = await client.auth.signInWithPassword({ email, password: senha });
       if (error) throw falhouAuth(error);

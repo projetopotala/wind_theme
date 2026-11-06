@@ -124,5 +124,15 @@ export function mountPortalMenu({ documentRef = document, host = null, antes = n
 
   if (host) host.insertBefore(botao, antes || host.firstChild); else documentRef.body.appendChild(botao);
   documentRef.body.appendChild(dlg);
-  return { botao, dlg, abrir, fechar };
+  const setAdminAccess = (allowed) => {
+    dlg.querySelector("[data-potala-menu-admin]")?.remove();
+    if (!allowed) return;
+    const lista = dlg.querySelector(".potala-menu__list");
+    if (!lista) return;
+    const item = documentRef.createElement("li");
+    item.setAttribute("data-potala-menu-admin", "");
+    item.innerHTML = '<a class="potala-menu__link" href="/admin/"><span class="potala-menu__label">Central Operacional</span><span class="potala-menu__hint">Administração autorizada</span></a>';
+    lista.appendChild(item);
+  };
+  return { botao, dlg, abrir, fechar, setAdminAccess };
 }

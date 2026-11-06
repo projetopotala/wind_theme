@@ -63,6 +63,45 @@ test("sem documento completo o menu não monta e não quebra (cabeçalho em test
   assert.equal(mountPortalMenu({ documentRef: { querySelector: () => null, createElement: () => ({}), body: {} } }), null);
 });
 
+test("o menu só adiciona a Central Operacional depois da autorização confirmada", () => {
+  const filhos = [];
+  const lista = { appendChild(item) { filhos.push(item); } };
+  const dialogo = {
+    open: false,
+    innerHTML: "",
+    className: "",
+    setAttribute() {}, addEventListener() {},
+    querySelector(seletor) {
+      if (seletor === ".potala-menu__list") return lista;
+      if (seletor === "[data-potala-menu-admin]") return filhos.find((item) => !item.removido) || null;
+      return null;
+    },
+  };
+  const body = { appendChild() {} };
+  const documentRef = {
+    body,
+    head: { appendChild() {} },
+    documentElement: { classList: { add() {}, remove() {} } },
+    defaultView: { location: { pathname: "/transcendido.html" } },
+    querySelector() { return null; },
+    createElement(tag) {
+      if (tag === "dialog") return dialogo;
+      return {
+        type: "", className: "", innerHTML: "",
+        setAttribute() {}, addEventListener() {}, focus() {},
+        remove() { this.removido = true; },
+      };
+    },
+  };
+  const menu = mountPortalMenu({ documentRef });
+  assert.equal(filhos.length, 0);
+  menu.setAdminAccess(true);
+  assert.equal(filhos.length, 1);
+  assert.match(filhos[0].innerHTML, /href="\/admin\/"/);
+  menu.setAdminAccess(false);
+  assert.equal(filhos[0].removido, true);
+});
+
 test("as páginas da jornada carregam o menu e o cabeçalho das seções o monta", () => {
   for (const pagina of ["transcender.html", "travessia.html", "transcendido.html", "atendimentos-conceito.html"]) {
     const html = ler(pagina);

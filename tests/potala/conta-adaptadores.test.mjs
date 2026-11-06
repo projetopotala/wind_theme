@@ -193,6 +193,24 @@ test("o aviso de sessao sai da pilha do Supabase antes de chegar a quem escuta",
   assert.equal(cliente.chamadas.desinscritos, 1);
 });
 
+test("o papel do Portal vem da linha ativa do próprio UID, nunca dos metadados do Auth", async () => {
+  const usuario = { id: "u1", user_metadata: { role: "owner" } };
+  const autorizado = criarAutenticacaoSupabase({
+    client: clienteFalso({ resultado: { data: { role: "admin", active: true }, error: null } }),
+  });
+  assert.equal(await autorizado.papelPortal(usuario), "admin");
+
+  const inativo = criarAutenticacaoSupabase({
+    client: clienteFalso({ resultado: { data: { role: "owner", active: false }, error: null } }),
+  });
+  assert.equal(await inativo.papelPortal(usuario), null);
+
+  const clienteComMetadataForjada = criarAutenticacaoSupabase({
+    client: clienteFalso({ resultado: { data: null, error: null } }),
+  });
+  assert.equal(await clienteComMetadataForjada.papelPortal(usuario), null);
+});
+
 test("o botao do Google so existe se o provedor estiver ligado", async () => {
   const pedidos = [];
   const buscar = (ligado, ok = true) => async (url, opcoes) => {

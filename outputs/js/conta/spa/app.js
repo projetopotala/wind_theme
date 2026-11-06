@@ -441,7 +441,13 @@ export async function montarMeuPotala({ documento = document, janela = window } 
 
   const retrato = (estado) => ({ status: estado.status, usuarioId: estado.usuario?.id || null, perfil: estado.perfil });
   let anterior = retrato(sessao.obter());
+  let redirecionandoAdmin = false;
   const desligarSessao = sessao.assinar((estado) => {
+    if (!redirecionandoAdmin && ["owner", "admin", "blog_editor"].includes(estado.papelPortal)) {
+      redirecionandoAdmin = true;
+      janela.location.assign?.("/admin/");
+      return;
+    }
     const agora = retrato(estado);
     if (agora.usuarioId !== dono) {
       dados = null;
