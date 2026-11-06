@@ -36,8 +36,8 @@ test("busca por nome, e-mail e perfil; filtros por papel e status", () => {
   assert.deepEqual(filtrarContas(contas, { papel: "profissional" }).map((c) => c.id), ["2", "8"]);
   assert.deepEqual(filtrarContas(contas, { status: "pendente_confirmacao" }).map((c) => c.id), ["6"]);
 });
-test("tela escapa conteúdo e diferencia pendente, nunca entrou e ativa, sem botões de alteração", () => {
-  const out = renderizarAcessos({ contas: [{ ...contas[1], name: "<img src=x onerror=1>" }, contas[5]] });
+test("tela escapa conteúdo e diferencia pendente, nunca entrou e ativa, sem convite simulado", () => {
+  const out = renderizarAcessos({ contas: [{ ...contas[2], name: "<img src=x onerror=1>" }, { ...contas[1], links: [] }, contas[5]] });
   assert.doesNotMatch(out, /<img src=x/);
   assert.match(out, /Confirmada, nunca entrou/);
   assert.match(out, /Aguardando confirmação do e-mail/);
@@ -48,12 +48,13 @@ test("erros: função ausente, sem permissão e falha genérica", () => {
   assert.match(mensagemDeErro({ code: "42501" }), /não permite/);
   assert.match(mensagemDeErro({ code: "x" }), /Tente de novo/);
 });
-test("painel chama só admin_list_accounts, sem parâmetros", async () => {
+test("painel lê contas e perfis, sem parâmetros", async () => {
   const chamadas = [];
   const alvo = { innerHTML: "", addEventListener() {}, querySelector() { return null; } };
-  const painel = createAccessPanel({ root: { querySelector: () => alvo }, client: { rpc: async (n, a) => { chamadas.push([n, a]); return { data: contas, error: null }; } } });
+  const painel = createAccessPanel({ root: { querySelector: () => alvo }, client: { rpc: async (n, a) => { chamadas.push([n, a]); return { data: n === "admin_list_accounts" ? contas : [], error: null }; } } });
   assert.equal((await painel.reload()).length, contas.length);
-  assert.deepEqual(chamadas, [["admin_list_accounts", undefined]]);
+  assert.deepEqual(chamadas.map((c) => c[0]).sort(), ["admin_list_accounts", "admin_list_professional_profiles"]);
+  assert.ok(chamadas.every((c) => c[1] === undefined));
   assert.match(alvo.innerHTML, /8 de 8 conta/);
 });
 test("migration: só admin, sem anon, somente leitura e sem segredos", () => {
