@@ -62,10 +62,10 @@ function linha(conta) {
   const papeis = papeisDaConta(conta);
   const vinculos = (conta.links || []).map((v) => `<li>${e(v.display_name || v.profile_id)} · ${v.link_active ? "vínculo ativo" : "vínculo inativo"}${v.profile_active ? "" : " · perfil desativado"}</li>`).join("");
   return `<tr data-conta="${e(conta.id)}">
-    <td><strong>${e(conta.name || "—")}</strong><br><span class="admin-hint">${e(conta.email)}</span></td>
-    <td><span data-status="${e(conta.status)}">${e(STATUS[conta.status] || conta.status)}</span></td>
-    <td>${papeis.map((p) => `<span class="admin-chip" data-papel="${e(p)}">${e(ROTULO_PAPEL[p] || p)}</span>`).join(" ")}</td>
-    <td>${vinculos ? `<ul class="admin-lista-curta">${vinculos}</ul>` : "—"}</td>
+    <td><strong>${e(conta.name || "—")}</strong><small>${e(conta.email)}</small></td>
+    <td><span class="op-badge${conta.status === "ativa" ? "" : conta.status === "bloqueada" ? " is-cancelled" : " is-unconfirmed"}" data-status="${e(conta.status)}">${e(STATUS[conta.status] || conta.status)}</span></td>
+    <td>${papeis.map((p) => `<span class="op-badge" data-papel="${e(p)}">${e(ROTULO_PAPEL[p] || p)}</span>`).join(" ")}</td>
+    <td>${vinculos ? `<ul class="op-lista-curta">${vinculos}</ul>` : "—"}</td>
     <td>${e(data(conta.last_sign_in_at))}</td>
   </tr>`;
 }
@@ -73,19 +73,19 @@ function linha(conta) {
 export function renderizarAcessos({ contas = [], filtros = {}, erro = "" } = {}) {
   const lista = filtrarContas(contas, filtros);
   const opcoes = (mapa, atual) => Object.entries(mapa).map(([k, v]) => `<option value="${e(k)}"${k === atual ? " selected" : ""}>${e(v)}</option>`).join("");
-  return `<header class="admin-workspace-header">
+  return `<header class="op-header"><div><p class="op-eyebrow">Pessoas e patrimônio</p>
       <h2 id="acessos-titulo" tabindex="-1">Usuários e acessos</h2>
-      <p class="admin-hint">Contas do portal e seus vínculos. Somente consulta nesta versão: as permissões continuam sendo decididas pelo banco.</p>
+      <p>Contas do portal e seus vínculos. Somente consulta nesta versão: as permissões continuam sendo decididas pelo banco.</p></div>
     </header>
-    <form class="admin-filtros" data-access-filtros role="search">
+    <form class="op-toolbar" data-access-filtros role="search">
       <label>Buscar <input type="search" name="busca" value="${e(filtros.busca || "")}" placeholder="Nome, e-mail ou perfil"></label>
       <label>Papel <select name="papel"><option value="">Todos</option>${opcoes(ROTULO_PAPEL, filtros.papel)}</select></label>
       <label>Status <select name="status"><option value="">Todos</option>${opcoes(STATUS, filtros.status)}</select></label>
     </form>
-    ${erro ? `<p class="op-loading" role="alert">${e(erro)}</p>` : `<p class="admin-hint" role="status">${lista.length} de ${contas.length} conta(s).</p>
-    <div class="admin-tabela-rolagem"><table class="admin-tabela">
+    ${erro ? `<p class="op-loading" role="alert">${e(erro)}</p>` : `<p class="op-muted" role="status">${lista.length} de ${contas.length} conta(s).</p>
+    <div class="op-table-scroll"><table class="op-table">
       <thead><tr><th scope="col">Conta</th><th scope="col">Status</th><th scope="col">Papéis</th><th scope="col">Vínculos</th><th scope="col">Último acesso</th></tr></thead>
-      <tbody>${lista.map(linha).join("") || `<tr><td colspan="5">Nenhuma conta encontrada.</td></tr>`}</tbody>
+      <tbody>${lista.map(linha).join("") || `<tr><td colspan="5" class="op-empty">Nenhuma conta encontrada com esses filtros.</td></tr>`}</tbody>
     </table></div>`}`;
 }
 
