@@ -191,3 +191,34 @@ test("Mesa: permissoes do escritor limitam a textos proprios; owner/editor nao",
   assert.match(app, /if \(ctx\.permissoes\.somenteProprios\)/);
   assert.match(app, /existente\.criadoPor !== ctx\.permissoes\.usuarioId/);
 });
+
+/* ---------- revisao final: midia, publicado e rollback ---------- */
+test("midia: escritor so troca/apaga o que enviou; editor/owner qualquer arquivo; enviar exige edit", () => {
+  for (const [op, nome] of [["update", "mesa troca midia do blog"], ["delete", "mesa remove midia do blog"]]) {
+    const bloco = codigo.slice(codigo.indexOf(`create policy "${nome}" on storage.objects for ${op}`));
+    const politica = bloco.slice(0, bloco.indexOf(";"));
+    assert.match(politica, /bucket_id = 'blog-midia'/, op);
+    assert.match(politica, /has_portal_permission\('blog','publish'\)/, op);
+    assert.match(politica, /has_portal_permission\('blog','edit'\)\) and owner_id = \(select auth\.uid\(\)\)::text/, op);
+  }
+  assert.doesNotMatch(codigo, /create policy "mesa envia midia do blog"/, "enviar segue como esta (edit)");
+});
+
+test("publicado: escritor so grava pendencia; autoria vem de auth.uid(), nunca do pedido", () => {
+  const f = corpoDe("mesa_salvar_post");
+  const pendente = f.slice(f.indexOf("if p_acao = 'pendente' then"), f.indexOf("p_acao := 'rascunho';"));
+  assert.match(pendente, /update public\.blog_posts set pending_document=p_post/);
+  assert.doesNotMatch(pendente, /set [^;]*\b(document|status|featured)=/);
+  assert.match(f, /if p_acao = 'rascunho' and existe and atual\.status in \('published','scheduled'\) then\s+raise exception/);
+  assert.match(f, /v_uid uuid := \(select auth\.uid\(\)\)/);
+  assert.doesNotMatch(f, /p_post\s*->>?\s*'created_by'/);
+  assert.doesNotMatch(f, /created_by\s*=\s*excluded/);
+});
+
+test("rollback incremental preserva autoria, auditoria e concessoes", () => {
+  const rb = readFileSync(new URL("../../supabase/rollbacks/202611060005_rollback_comportamento.sql", import.meta.url), "utf8").replace(/--.*$/gm, "");
+  assert.match(rb, /create or replace function public\.mesa_salvar_post\(/);
+  assert.match(rb, /create or replace function public\.mesa_listar_posts\(/);
+  assert.doesNotMatch(rb, /drop column|drop table|drop function|delete from|truncate|admin_access_events|created_by/i);
+  assert.ok(existsSync(new URL("../../supabase/tests/prod-03-rollback.sql", import.meta.url)));
+});

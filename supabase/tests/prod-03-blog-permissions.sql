@@ -29,11 +29,16 @@ do $teste$
 declare
   v_owner uuid; v_w uuid := gen_random_uuid(); v_e uuid := gen_random_uuid(); v_x uuid := gen_random_uuid();
   v_adm uuid := gen_random_uuid(); v_legado text; r jsonb; n int; admins_antes int;
+  h0 text; c0 int; v_perm0 int;
 begin
   reset role;
   select id into v_owner from public.users where role = 'owner' and active;
   select id into v_legado from public.blog_posts where created_by is null limit 1;
   select count(*) into admins_antes from public.users where role in ('owner', 'admin') and active;
+  -- Fotografia dos textos existentes e das permissoes, para provar preservacao no fim.
+  select count(*), md5(coalesce(string_agg(id || status || document::text, '|' order by id), ''))
+    into c0, h0 from public.blog_posts;
+  select count(*) into v_perm0 from public.portal_module_permissions;
   insert into auth.users (id, email, aud, role, raw_user_meta_data) values
     (v_w, 'w-test@example.invalid', 'authenticated', 'authenticated', '{}'),
     (v_e, 'e-test@example.invalid', 'authenticated', 'authenticated', '{}'),
@@ -117,6 +122,65 @@ begin
   perform pg_temp.falha('select count(*) from public.op_records', '42501');
   perform pg_temp.falha('select public.admin_list_professional_profiles()', '42501');
 
+  -- A. Texto publicado: o escritor so deixa pendencia; o publico muda apenas quando um editor aprova.
+  perform pg_temp.como(v_w);
+  perform public.mesa_salvar_post('{"id":"zz-a1","slug":"zz-a1","title":"Original"}', 'rascunho');
+  perform pg_temp.como(v_e);
+  perform public.mesa_salvar_post('{"id":"zz-a1","slug":"zz-a1","title":"Original"}', 'publicar');
+  perform pg_temp.como(v_w);
+  r := public.mesa_salvar_post('{"id":"zz-a1","slug":"zz-a1","title":"Alterado","featured":true}', 'pendente');
+  perform pg_temp.exige('pendente nao toca o publico', r ->> 'status' = 'published'
+    and r -> 'document' ->> 'title' = 'Original' and r -> 'pending_document' ->> 'title' = 'Alterado'
+    and not (r ->> 'featured')::boolean);
+  perform pg_temp.falha($q$select public.mesa_salvar_post('{"id":"zz-a1","slug":"zz-a1","title":"Direto"}', 'rascunho')$q$, '22023');
+  perform pg_temp.falha($q$select public.mesa_salvar_post('{"id":"zz-a1","slug":"zz-a1","title":"Direto"}', 'revisao')$q$, '42501');
+  perform pg_temp.falha($q$select public.mesa_salvar_post('{"id":"zz-a1","slug":"zz-a1","title":"Direto"}', 'publicar')$q$, '42501');
+  perform pg_temp.falha($q$select public.mesa_salvar_post('{"id":"zz-a1","slug":"zz-a1","title":"Direto"}', 'despublicar')$q$, '42501');
+  perform pg_temp.falha($q$select public.save_blog_post('{"id":"zz-a1","slug":"zz-a1","title":"Legado","status":"published"}')$q$, '42501');
+  reset role;
+  perform pg_temp.exige('publico intacto no banco', (select document ->> 'title' = 'Original' and status = 'published' and not featured
+    from public.blog_posts where id = 'zz-a1'));
+  set local role anon;
+  perform pg_temp.exige('visitante le o texto original', (select document ->> 'title' from public.blog_posts where id = 'zz-a1') = 'Original');
+  perform pg_temp.falha('select pending_document from public.blog_posts', '42501');
+  perform pg_temp.falha('select created_by from public.blog_posts', '42501');
+  perform pg_temp.exige('visitante nao ve rascunhos', (select count(*) from public.blog_posts where status in ('draft', 'review')) = 0);
+  -- O editor aprova: so entao o publico muda.
+  perform pg_temp.como(v_e);
+  r := public.mesa_salvar_post('{"id":"zz-a1","slug":"zz-a1","title":"Alterado"}', 'publicar');
+  perform pg_temp.exige('editor aprova a pendencia', r -> 'document' ->> 'title' = 'Alterado' and r -> 'pending_document' is not distinct from 'null'::jsonb);
+
+  -- B. Autoria vem da identidade autenticada; nao ha parametro para define-la.
+  perform pg_temp.como(v_w);
+  r := public.mesa_salvar_post(jsonb_build_object('id', 'zz-b1', 'slug', 'zz-b1', 'title', 'x', 'created_by', v_e::text), 'rascunho');
+  perform pg_temp.exige('autoria forjada no documento e ignorada', r ->> 'created_by' = v_w::text);
+  perform pg_temp.falha($q$select public.mesa_salvar_post('{"id":"zz-e1","slug":"zz-e1","title":"roubo"}', 'rascunho')$q$, '42501');
+  perform pg_temp.falha($q$update public.blog_posts set created_by = gen_random_uuid() where id = 'zz-b1'$q$, '42501');
+  reset role;
+  perform pg_temp.exige('autoria do editor intacta', (select created_by = v_e from public.blog_posts where id = 'zz-e1'));
+  perform pg_temp.exige('autoria do escritor intacta', (select created_by = v_w from public.blog_posts where id = 'zz-b1'));
+  perform pg_temp.exige('textos antigos seguem sem autor', (select count(*) from public.blog_posts where created_by is null) = c0);
+  perform pg_temp.exige('blog_editor sem papel administrativo', not exists (
+    select 1 from public.users where id in (v_w, v_e) and role in ('owner', 'admin')));
+
+  -- C. Midia: escritor so troca o que enviou; editor/owner trocam qualquer arquivo.
+  insert into storage.objects (bucket_id, name, owner_id) values
+    ('blog-midia', 'zz-do-owner.png', v_owner::text), ('blog-midia', 'zz-do-escritor.png', v_w::text);
+  perform pg_temp.exige('politica de apagar midia exige autoria', (select count(*) from pg_policies
+    where schemaname = 'storage' and tablename = 'objects' and policyname = 'mesa remove midia do blog'
+      and cmd = 'DELETE' and qual like '%owner_id%') = 1);
+  perform pg_temp.como(v_w);
+  update storage.objects set metadata = '{"x":1}'::jsonb where bucket_id = 'blog-midia' and name = 'zz-do-owner.png';
+  get diagnostics n = row_count;
+  perform pg_temp.exige('escritor nao troca midia alheia', n = 0);
+  update storage.objects set metadata = '{"x":1}'::jsonb where bucket_id = 'blog-midia' and name = 'zz-do-escritor.png';
+  get diagnostics n = row_count;
+  perform pg_temp.exige('escritor troca a propria midia', n = 1);
+  perform pg_temp.como(v_e);
+  update storage.objects set metadata = '{"x":2}'::jsonb where bucket_id = 'blog-midia' and name like 'zz-do-%';
+  get diagnostics n = row_count;
+  perform pg_temp.exige('editor troca qualquer midia', n = 2);
+
   -- Sem permissao.
   perform pg_temp.como(v_x);
   perform pg_temp.falha($q$select public.mesa_salvar_post('{"id":"zz-x","slug":"zz-x","title":"x"}', 'rascunho')$q$, '42501');
@@ -141,6 +205,12 @@ begin
   perform pg_temp.exige('auditoria: grant, revoke, regrant = 3', n = 3);
   select count(*) into n from public.users where role in ('owner', 'admin') and active and id <> v_adm;
   perform pg_temp.exige('uma unica conta administrativa real', n = admins_antes);
+  select count(*) into n from public.blog_posts where id not like 'zz-%';
+  perform pg_temp.exige('os textos existentes seguem todos la', n = c0);
+  perform pg_temp.exige('os textos existentes seguem identicos', (select md5(coalesce(string_agg(id || status || document::text, '|' order by id), ''))
+    from public.blog_posts where id not like 'zz-%') = h0);
+  select count(*) into n from public.portal_module_permissions where user_id not in (v_w, v_e, v_x);
+  perform pg_temp.exige('permissoes existentes preservadas', n = v_perm0);
   perform pg_temp.exige('nenhum blog_editor virou admin', not exists (select 1 from public.users where id in (v_w, v_e, v_x) and role <> 'blog_editor'));
 end
 $teste$;

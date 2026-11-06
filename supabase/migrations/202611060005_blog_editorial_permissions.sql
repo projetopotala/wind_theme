@@ -18,7 +18,7 @@
 --   4. mesa_salvar_post: escritor só altera texto próprio, nunca publica, nem desarquiva.
 --   5. mesa_listar_posts: escritor vê só os próprios textos e os públicos (sem pendências alheias).
 --   6. Políticas: versões do texto só para quem publica ou para o próprio autor; categorias só
---      para quem publica.
+--      para quem publica; trocar/apagar mídia só para quem publica ou para quem enviou o arquivo.
 -- A revogação vale na próxima chamada: todas as checagens leem o banco a cada operação.
 --
 -- Rollback (manual): reaplicar mesa_salvar_post/mesa_listar_posts/mesa_post_json de
@@ -300,5 +300,21 @@ create policy "administracao altera categorias" on public.blog_categories for up
 drop policy if exists "administracao apaga categorias" on public.blog_categories;
 create policy "administracao apaga categorias" on public.blog_categories for delete to authenticated
   using ((select public.has_portal_permission('blog','publish')));
+
+-- Midia: enviar continua exigindo 'edit'. Trocar ou apagar: quem publica (editor/owner) em qualquer
+-- arquivo; o escritor apenas nos arquivos que ele mesmo enviou (owner_id gravado pelo Storage).
+drop policy if exists "mesa troca midia do blog" on storage.objects;
+create policy "mesa troca midia do blog" on storage.objects for update to authenticated
+  using (bucket_id = 'blog-midia' and (
+    (select public.has_portal_permission('blog','publish'))
+    or ((select public.has_portal_permission('blog','edit')) and owner_id = (select auth.uid())::text)))
+  with check (bucket_id = 'blog-midia' and (
+    (select public.has_portal_permission('blog','publish'))
+    or ((select public.has_portal_permission('blog','edit')) and owner_id = (select auth.uid())::text)));
+drop policy if exists "mesa remove midia do blog" on storage.objects;
+create policy "mesa remove midia do blog" on storage.objects for delete to authenticated
+  using (bucket_id = 'blog-midia' and (
+    (select public.has_portal_permission('blog','publish'))
+    or ((select public.has_portal_permission('blog','edit')) and owner_id = (select auth.uid())::text)));
 
 commit;
