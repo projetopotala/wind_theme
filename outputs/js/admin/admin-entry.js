@@ -9,6 +9,7 @@ import { createOperationsClient } from "./operations/client.js";
 import { createOperationsController } from "./operations/controller.js";
 import { carregarRecebidos } from "./recebidos.js";
 import { createAppointmentPanel } from "./appointment-panel.js";
+import { createAccessPanel } from "./access-panel.js";
 import { DEFAULT_HOME_BLOCKS } from "../home/journey-data.js";
 import { withRequiredDefaultSections } from "../home/default-section-bridge.js";
 import { createSupabaseContentRepository } from "../home/supabase-content-repository.js";
@@ -22,6 +23,7 @@ let operationsController = null;
 let passwordSetup = null;
 let operacaoAbrindo = null;
 let appointmentPanel = null;
+let accessPanel = null;
 const firstAccess = isAdminFirstAccess(window.location);
 
 const shell = panel ? createAdminShell({ root: panel }) : null;
@@ -73,7 +75,7 @@ try {
     client,
     root,
     onState(state) {
-      if (state !== "authorized") appointmentPanel?.clear();
+      if (state !== "authorized") { appointmentPanel?.clear(); accessPanel?.clear(); }
       else if (appointmentPanel) void appointmentPanel.reload();
     },
     async onAuthorized(access) {
@@ -88,6 +90,9 @@ try {
       /* Operação e editor da Jornada são independentes: um falhar não segura o outro. */
       if (access.role !== "blog_editor") {
         operacaoAbrindo ||= abrirOperacao(client, access).catch((error) => console.error("Falha ao abrir a operação.", error));
+        /* Usuários e acessos: só para owner/admin; o banco confere de novo (admin_list_accounts). */
+        accessPanel ||= createAccessPanel({ root: panel, client });
+        void accessPanel.reload().catch((error) => console.error("Falha ao carregar usuários e acessos.", error));
       }
       if (!controller) {
         controller = createAdminController({ root: panel, repository: remoteRepository });
