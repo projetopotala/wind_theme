@@ -90,7 +90,10 @@ try {
     onAuthorized(access) {
       usuario = comoUsuario(access?.user);
       permissoes = access?.role === "blog_editor"
-        ? { ler: access.permissions?.read === true, editar: access.permissions?.edit === true, publicar: access.permissions?.publish === true }
+        ? {
+          ler: access.permissions?.read === true, editar: access.permissions?.edit === true, publicar: access.permissions?.publish === true,
+          somenteProprios: access.permissions?.publish !== true, usuarioId: access.user?.id || access.session?.user?.id || null,
+        }
         : { ler: true, editar: true, publicar: true };
       /* Quem volta com a sessão aberta e um endereço da mesa (#/editar/…) entra direto. */
       if (root.dataset.blogGate === "entrar" || /^#\/./.test(window.location.hash)) abrirMesa();

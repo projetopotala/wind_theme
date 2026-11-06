@@ -110,6 +110,13 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
   }
 
   async function salvarRegistro(documento, acao, opcoes = {}) {
+    /* Conveniencia da tela: o banco recusa de qualquer forma (mesa_salvar_post). */
+    if (ctx.permissoes.somenteProprios) {
+      const existente = loja.registros.find((item) => item.id === documento?.id);
+      if (existente && existente.criadoPor !== ctx.permissoes.usuarioId) {
+        throw new Error("Você só pode alterar textos de sua autoria.");
+      }
+    }
     const registro = await repositorio.salvar(documento, acao, opcoes);
     const indice = loja.registros.findIndex((item) => item.id === registro.id);
     if (indice >= 0) loja.registros[indice] = registro;
