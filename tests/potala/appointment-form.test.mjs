@@ -29,7 +29,8 @@ async function withFormData(work) {
 }
 
 test("desativado por padrão: campos bloqueados e nenhum envio mesmo por submit programático", async () => {
-  assert.equal(APPOINTMENT_REQUESTS_ENABLED, false);
+  // Pedidos autenticados ligados em produção; o formulário público continua fechado até o Turnstile.
+  assert.equal(APPOINTMENT_REQUESTS_ENABLED, true);
   assert.equal(APPOINTMENT_PUBLIC_REQUESTS_ENABLED, false);
   let calls = 0;
   const f = fixture({ send: async () => { calls++; return receipt; } });

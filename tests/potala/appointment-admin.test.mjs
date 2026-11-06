@@ -27,8 +27,9 @@ function fixture({ enabled = true, reservationsEnabled = false, role = "admin", 
 }
 
 test("flag administrativa false: nenhuma consulta nem autenticação remota", async () => {
-  assert.equal(APPOINTMENT_ADMIN_ENABLED, false);
-  const f = fixture({ enabled: APPOINTMENT_ADMIN_ENABLED });
+  // Produção liga a Central (o backend continua decidindo quem é admin); o painel desligado segue inerte.
+  assert.equal(APPOINTMENT_ADMIN_ENABLED, true);
+  const f = fixture({ enabled: false });
   await f.panel.reload(); await f.panel.save(row.id, "em_contato");
   assert.deepEqual(f.calls, []);
   assert.match(f.target.innerHTML, /temporariamente indisponível/);

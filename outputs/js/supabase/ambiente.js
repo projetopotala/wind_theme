@@ -139,6 +139,9 @@ export function escolherAmbiente({ origem = "", overlayLab = null, overlayLocal 
       url: `https://${PROJETO_PRODUCAO}.supabase.co`,
       publishableKey: PUBLICAVEL_PRODUCAO,
       siteUrl: u.origin,
+      // Atendimentos autenticados ligados no domínio oficial. O formulário público
+      // segue fechado até o Turnstile; quem decide acesso é sempre o banco (RLS/RPCs).
+      appointments: { authenticatedRequests: true, admin: true, reservations: true, publicRequests: false },
     });
   }
   if (tipo === "lab") return perfilExterno("lab", overlayLab, u, "ambiente-lab.js");
