@@ -170,6 +170,7 @@ export function applyScheduleCommand(state,command,ctx){
     });
     case 'person.save':return upsert(state.profiles,p,ctx,row=>{
       row.display_name=required(row.display_name,'Nome');row.email=String(row.email || '').trim().toLowerCase();row.roles=[...new Set(row.roles || [])];
+      row.active=row.active!==false;row.published=row.published===true;
       if(row.roles.some(role=>!['client','student','participant','professional'].includes(role)))fail('Papel da pessoa inválido.');
       if(row.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email))fail('E-mail inválido.');
       if(row.email&&state.profiles.some(r=>r.id!==row.id&&r.email?.toLowerCase()===row.email))fail('E-mail já cadastrado para outra pessoa.');
