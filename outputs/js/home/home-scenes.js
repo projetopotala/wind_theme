@@ -290,9 +290,13 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
    * segunda fonte. Novidades e variantes de capa já têm a sua própria capa.
    */
   const thumbSource = !novidade && !capaFechada ? coverSource : "";
-  const thumb = thumbSource
-    ? `<span class="region-thumb" aria-hidden="true"><img src="${thumbSource}" alt="" loading="lazy" decoding="async"></span>`
-    : "";
+  /* Sem fotografia (hoje, o Blog), a faixa fica como moldura com um ornamento:
+     os doze cartões mantêm a mesma composição e a mesma altura. */
+  const thumb = novidade || capaFechada
+    ? ""
+    : thumbSource
+      ? `<span class="region-thumb" aria-hidden="true"><img src="${thumbSource}" alt="" loading="lazy" decoding="async"></span>`
+      : `<span class="region-thumb region-thumb--vazia" aria-hidden="true"></span>`;
   const newsMeta = novidade
     ? `<span class="region-news-meta" aria-hidden="true"><small>${escapeHtml(region.category || "Caderno")}</small><span>${escapeHtml(title)}</span></span>`
     : "";

@@ -96,13 +96,18 @@ test("cada área com imagem mostra a fotografia no cartão fechado, sem segunda 
   assert.match(comImagem, /region-title" id="cursos-title">Cursos</);
   assert.match(comImagem, /region-description">Cuidar também é aprender\./);
   const semImagem = renderRegion(bloco({ image: "" }), 3, null, new Map());
-  assert.doesNotMatch(semImagem, /region-thumb/);
+  /* Sem fotografia o cartão mantém a faixa como moldura, sem <img>: os doze cartões têm a mesma composição. */
+  assert.match(semImagem, /<span class="region-thumb region-thumb--vazia" aria-hidden="true"><\/span>/);
+  assert.doesNotMatch(semImagem, /region-thumb"[^>]*><img/);
   const fonteInsegura = renderRegion(bloco({ image: "javascript:alert(1)" }), 3, null, new Map());
-  assert.doesNotMatch(fonteInsegura, /region-thumb|javascript:/);
+  assert.doesNotMatch(fonteInsegura, /javascript:|<img/);
+  assert.match(fonteInsegura, /region-thumb--vazia/);
 });
 
 test("a faixa de imagem some no bloco aberto e no telefone baixo, onde o cartão já é justo", () => {
   const css = ler("css/home-journey.css");
   assert.match(css, /\.journey-region\.is-expanded \.region-thumb \{ display: none; \}/);
-  assert.match(css, /@media \(max-width: 720px\) and \(max-height: 720px\) \{\s*\.region-thumb \{ display: none; \}/);
+  assert.match(css, /@media \(max-width: 720px\) and \(max-height: 600px\) \{\s*\.region-thumb \{ display: none; \}/);
+  assert.match(css, /@media \(max-width: 720px\) and \(max-height: 720px\) \{/);
+  assert.match(css, /\.region-thumb--vazia/);
 });
