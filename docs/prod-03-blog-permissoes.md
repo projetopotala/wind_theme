@@ -44,3 +44,11 @@ Texto já publicado: o escritor só consegue gravar a *pendência* (`pending_doc
 - Mídia: a biblioteca é compartilhada para leitura. Arquivos enviados antes desta migration não têm dono do escritor: só editor/owner os trocam. Se o escritor tentar apagar mídia alheia, o armazenamento não remove e a tela pode não avisar.
 - Convite e recuperação de senha de novos escritores dependem do SMTP: por ora a concessão vale para contas que já existem.
 - Excluir texto continua exclusivo de owner/admin (política existente).
+
+## Preview de homologação (branch exata)
+- `scripts/ambiente-supabase.mjs`: `BRANCH_PREVIEW_E2E = "feat/prod-03-blog-permissoes"`, comparação exata (`===`). Substituiu a branch anterior; qualquer outra branch continua bloqueada.
+- Exige também `POTALA_APPOINTMENT_E2E_PREVIEW=true` (variável da Vercel só para Preview e só para essa branch), `VERCEL_ENV=preview` e o host do deployment `wind-theme-<id>-potala.vercel.app`. O alias da branch (`...-git-feat-...`) continua bloqueado; cada deployment é uma origem com sessão própria.
+- O arquivo gerado contém só URL, chave publicável e flags; formulários públicos de atendimento seguem desligados (`publicRequests: false`). Produção não é alterada.
+
+## Mídia
+A biblioteca do portal só lista e envia (`x-upsert: false`); não existe ação de excluir ou trocar. A negação de troca/exclusão por quem não é dono acontece só no Storage (políticas), então não há erro silencioso de interface a corrigir. Um teste impede que o front passe a chamar `remove/update/move/copy` sem tratamento.

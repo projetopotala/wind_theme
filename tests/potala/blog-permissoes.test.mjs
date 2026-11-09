@@ -222,3 +222,17 @@ test("rollback incremental preserva autoria, auditoria e concessoes", () => {
   assert.doesNotMatch(rb, /drop column|drop table|drop function|delete from|truncate|admin_access_events|created_by/i);
   assert.ok(existsSync(new URL("../../supabase/tests/prod-03-rollback.sql", import.meta.url)));
 });
+
+/* ---------- midia: a biblioteca nao tem excluir/trocar; a protecao fica no Storage ---------- */
+test("biblioteca de midia: so lista e envia (sem upsert); excluir/trocar so existem como politica do Storage", () => {
+  const remoto = readFileSync(new URL("../../outputs/js/blog/blog-remoto.js", import.meta.url), "utf8");
+  const midia = readFileSync(new URL("../../outputs/js/blog-admin/mesa-midia.js", import.meta.url), "utf8");
+  // Nenhuma chamada de exclusao ou substituicao de arquivo no Storage pelo front.
+  assert.doesNotMatch(remoto, /storage\.from\([^)]*\)\s*\.(remove|update|move|copy)\(/);
+  assert.doesNotMatch(midia, /storage\b|\.remove\(\s*\[/);
+  // O envio nunca sobrescreve arquivo existente.
+  assert.match(remoto, /"x-upsert",\s*"false"/);
+  // Quem manda de fato e o backend: politicas de troca e exclusao exigem publicar ou ser o dono do arquivo.
+  assert.match(codigo, /"mesa troca midia do blog"[\s\S]*?owner_id/);
+  assert.match(codigo, /"mesa remove midia do blog"[\s\S]*?owner_id/);
+});
