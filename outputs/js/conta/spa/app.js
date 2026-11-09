@@ -45,6 +45,9 @@ import { lerArtigosPublicados } from "../../blog/artigos-publicados.js";
  * antes de o SDK abrir, a URL é limpa e a tela diz o que aconteceu.
  */
 export function avisoDoLinkDeAcesso(href) {
+  if (new URL(href).searchParams.get("senha") === "atualizada") {
+    return `<p class="mp-aviso" role="status" data-aviso-link>Senha atualizada. Entre com a sua nova senha.</p>`;
+  }
   const falha = erroDaUrl(href);
   if (!falha) return "";
   const texto = falha.status === "expirado"

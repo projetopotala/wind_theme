@@ -272,7 +272,7 @@ test("outputs/vercel.json roda a guarda no build da Vercel e preserva os rewrite
   // Com Build Command definido a Vercel passa a exigir "public"; "." mantém a publicação estática de outputs/.
   assert.equal(v.outputDirectory, ".");
   assert.deepEqual(v.rewrites.map((r) => r.source), [
-    "/admin", "/admin/", "/blog", "/blog/", "/confirmar-conta", "/confirmar-conta/", "/meu-potala", "/meu-potala/:path*",
+    "/admin", "/admin/", "/blog", "/blog/", "/confirmar-conta", "/confirmar-conta/", "/redefinir-senha", "/redefinir-senha/", "/meu-potala", "/meu-potala/:path*",
   ]);
   assert.equal(v.rewrites.find((r) => r.source === "/meu-potala/:path*").destination, "/meu-potala.html");
   assert.equal(existsSync(new URL("scripts/ambiente-supabase.mjs", RAIZ)), true);

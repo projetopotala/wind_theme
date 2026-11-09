@@ -153,7 +153,7 @@ test("recuperacao de senha e Google tambem nunca voltam para o servidor local", 
   await autenticacao.recuperarSenha("ana@exemplo.com");
   await autenticacao.entrarComGoogle();
 
-  assert.equal(pedidos.reset[0].options.redirectTo, "https://portal.exemplo.com/meu-potala/configuracoes");
+  assert.equal(pedidos.reset[0].options.redirectTo, "https://portal.exemplo.com/redefinir-senha");
   assert.match(pedidos.oauth[0].options.redirectTo, /^https:\/\/portal\.exemplo\.com\//);
   assert.doesNotMatch(pedidos.oauth[0].options.redirectTo, /127\.0\.0\.1|localhost/);
 });

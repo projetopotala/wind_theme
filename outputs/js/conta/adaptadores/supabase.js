@@ -191,7 +191,7 @@ export function criarAutenticacaoSupabase({
 
     /* O Supabase não revela se a conta existe, e a tela também não deve revelar. */
     async recuperarSenha(email) {
-      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: retorno("meu-potala/configuracoes") });
+      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: retorno("redefinir-senha") });
       if (error) throw falhouAuth(error);
     },
 

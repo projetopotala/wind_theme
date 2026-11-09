@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#efe4d3">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Definição segura de uma nova senha do Portal Potala.">
+  <title>Nova senha — Instituto Potala</title>
+  <link rel="stylesheet" href="/css/confirmar-conta.css">
+  <link rel="stylesheet" href="/css/redefinir-senha.css">
+  <script src="/vendor/supabase.js"></script>
+  <script type="module" src="/js/conta/redefinir-senha.js"></script>
+</head>
+<body class="confirmacao-body">
+  <a class="confirmacao-pular" href="#conteudo">Ir para o conteúdo</a>
+  <header class="confirmacao-topo">
+    <a class="confirmacao-marca" href="/transcendido.html" aria-label="Instituto Potala — início">
+      <img src="/media/potala-mark-transparent.png" alt="" width="78" height="64">
+      <span>Instituto Potala</span>
+    </a>
+  </header>
+
+  <main id="conteudo" class="confirmacao-palco">
+    <section class="confirmacao-cartao" data-redefinicao data-status="carregando" aria-labelledby="redefinicao-titulo">
+      <div class="confirmacao-selo" aria-hidden="true">
+        <svg viewBox="0 0 64 64" focusable="false">
+          <circle cx="32" cy="32" r="29"></circle>
+          <path data-icone-sucesso d="m19 33 8 8 18-20"></path>
+          <path data-icone-erro d="M32 18v19m0 9h.01"></path>
+        </svg>
+      </div>
+      <p class="confirmacao-sobretitulo">Seu acesso ao Potala</p>
+      <h1 id="redefinicao-titulo" data-redefinicao-titulo>Validando seu link</h1>
+      <p class="confirmacao-texto" data-redefinicao-status role="status" aria-live="polite">Só um instante enquanto confirmamos o seu acesso.</p>
+
+      <form class="redefinicao-form" data-redefinicao-form novalidate hidden>
+        <div class="redefinicao-campo">
+          <label for="redefinicao-senha">Nova senha</label>
+          <input id="redefinicao-senha" name="senha" type="password" autocomplete="new-password" minlength="8" required aria-describedby="redefinicao-dica">
+          <small id="redefinicao-dica">Pelo menos 8 caracteres.</small>
+        </div>
+        <div class="redefinicao-campo">
+          <label for="redefinicao-confirmacao">Confirmar nova senha</label>
+          <input id="redefinicao-confirmacao" name="confirmacao" type="password" autocomplete="new-password" minlength="8" required>
+        </div>
+        <p class="redefinicao-erro" data-redefinicao-erro role="alert" aria-live="assertive"></p>
+        <button type="submit" class="confirmacao-botao redefinicao-enviar">Salvar nova senha</button>
+      </form>
+
+      <div class="confirmacao-acoes">
+        <a class="confirmacao-botao" href="/meu-potala" data-redefinicao-acao hidden>Ir para o Meu Potala</a>
+        <a class="confirmacao-link" href="/transcendido.html">Voltar ao portal</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="confirmacao-rodape">Instituto Cultural Potala · Indaiatuba, SP</footer>
+</body>
+</html>
