@@ -17,7 +17,7 @@ import {
 } from "./mesa-blocos.js";
 import {
   SECOES_DO_PORTAL, autoresDe, enderecoLivre, fraseDoAgendamento, fraseDoStatus, hojeNoInstituto, horaDe, instanteDe,
-  partesDoInstante, pendenciasParaPublicar, resumoDasMudancas, tagsDe, tempoRelativo, textoAtual,
+  partesDoInstante, pendenciasParaPublicar, podePublicar, resumoDasMudancas, tagsDe, tempoRelativo, textoAtual,
 } from "./mesa-modelo.js";
 import { esc, enderecoDoSite } from "./mesa-ui.js";
 import { chipDeStatus } from "./mesa-visoes.js";
@@ -217,8 +217,16 @@ export function createBlogEditor({ root, ctx } = {}) {
     return "rascunho";
   }
 
+  const publica = () => podePublicar(ctx.permissoes);
+
   function acaoPrincipal() {
     const status = registro?.status || "draft";
+    if (!publica()) {
+      /* Escritor: so envia para revisao. Quem publica e o Editor. */
+      if (status === "draft") return { acao: "revisao", rotulo: "Enviar para revisão", icone: "eye" };
+      if (status === "review") return { acao: "revisao", rotulo: "Em revisão", icone: "eye", desativado: true };
+      if (status !== "archived") return { acao: "revisao", rotulo: "Publicação com o Editor", icone: "send", desativado: true };
+    }
     if (status === "published") return { acao: "publicar", rotulo: "Atualizar", icone: "send", desativado: !registro.pendente && estado === "salvo" };
     if (status === "scheduled") return { acao: "agendar", rotulo: "Salvar agendamento", icone: "calendar-clock" };
     if (status === "archived") return { acao: "restaurar", rotulo: "Voltar a rascunho", icone: "rotate-ccw" };
@@ -734,7 +742,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     const status = registro?.status || "draft";
     const etapas = [["draft", "Rascunho"], ["review", "Revisão"], status === "published" ? ["published", "Publicado"] : ["scheduled", "Agendado"]];
     const atual = status === "archived" ? -1 : etapas.findIndex(([valor]) => valor === status);
-    const escolhaVisivel = ["draft", "review"].includes(status);
+    const escolhaVisivel = publica() && ["draft", "review"].includes(status);
     const mostraAgenda = status === "scheduled" || (escolhaVisivel && escolha === "agendar");
     const autores = autoresDe(ctx.loja.registros);
     return `<section class="mesa-painel__secao">
@@ -762,7 +770,7 @@ export function createBlogEditor({ root, ctx } = {}) {
       <section class="mesa-painel__secao mesa-painel__acoes">
         ${status === "draft" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="revisao">${i("eye")}Enviar para revisão</button>` : ""}
         ${status === "review" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="despublicar">${i("undo-2")}Voltar a rascunho</button>` : ""}
-        ${status === "scheduled" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="publicar">${i("send")}Publicar agora</button><button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Cancelar agendamento</button>` : ""}
+        ${status === "scheduled" ? `${publica() ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="publicar">${i("send")}Publicar agora</button>` : ""}<button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Cancelar agendamento</button>` : ""}
         ${status === "published" ? `<a class="mesa-botao mesa-botao--contorno" href="/artigo.html?post=${encodeURIComponent(registro.post.slug)}" target="_blank" rel="noopener">${i("external-link")}Ver no Blog</a><button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Despublicar</button>` : ""}
       </section>
       <section class="mesa-painel__secao">
@@ -854,7 +862,7 @@ export function createBlogEditor({ root, ctx } = {}) {
       ? `<button type="button" class="mesa-link is-perigo" data-editor-acao="excluir">${i("trash-2")}Excluir texto</button>`
       : nuncaPublicado() && status === "draft"
         ? `<button type="button" class="mesa-link is-perigo" data-editor-acao="excluir">${i("trash-2")}Excluir rascunho</button>`
-        : `<button type="button" class="mesa-link is-perigo" data-editor-acao="arquivar">${i("archive")}Arquivar post</button>`;
+        : publica() ? `<button type="button" class="mesa-link is-perigo" data-editor-acao="arquivar">${i("archive")}Arquivar post</button>` : "";
     rodapeDoPainel.innerHTML = `${secundaria}<button type="button" class="mesa-botao mesa-botao--principal" data-editor-principal></button>`;
     desenharBotoes();
   }

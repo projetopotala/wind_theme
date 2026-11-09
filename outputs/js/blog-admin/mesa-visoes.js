@@ -10,7 +10,7 @@ import { CAPA_PADRAO, capaDoCaderno } from "../blog/blog-settings.js";
 import { esc, enderecoDoSite } from "./mesa-ui.js";
 import {
   ORDEM_DOS_STATUS, ORDENACOES, PERIODOS, STATUS, autoresDe, contarPorStatus, dataDePublicacao,
-  filtrarPosts, horaDe, linhaDoTempo, resumoDaMesa, tempoRelativo, textoAtual,
+  filtrarPosts, horaDe, linhaDoTempo, podePublicar, resumoDaMesa, tempoRelativo, textoAtual,
 } from "./mesa-modelo.js";
 
 const numero = new Intl.NumberFormat("pt-BR");
@@ -28,17 +28,18 @@ const capinha = (post) => (post.cover
 const vazio = (icone_, texto, acao = "") => `<div class="mesa-vazio">${i(icone_)}<p>${texto}</p>${acao}</div>`;
 
 /* O que cada status permite no menu "⋯". */
-export function itensDoMenu(registro) {
+export function itensDoMenu(registro, permissoes) {
   const { status } = registro;
+  const publica = podePublicar(permissoes);
   const itens = [
     { id: "editar", rotulo: "Editar", icone: "pencil" },
     { id: "visualizar", rotulo: status === "published" ? "Ver no Blog" : "Pré-visualizar", icone: status === "published" ? "external-link" : "eye" },
     { id: "duplicar", rotulo: "Duplicar", icone: "copy" },
   ];
-  if (status !== "published" && status !== "archived") itens.push({ id: "agendar", rotulo: status === "scheduled" ? "Reagendar" : "Agendar", icone: "calendar-clock" });
+  if (publica && status !== "published" && status !== "archived") itens.push({ id: "agendar", rotulo: status === "scheduled" ? "Reagendar" : "Agendar", icone: "calendar-clock" });
   if (status === "published" || status === "scheduled") itens.push({ id: "despublicar", rotulo: status === "scheduled" ? "Cancelar agendamento" : "Despublicar", icone: "undo-2" });
   if (status === "archived") itens.push({ id: "restaurar", rotulo: "Voltar a rascunho", icone: "rotate-ccw" });
-  else itens.push({ id: "arquivar", rotulo: "Arquivar", icone: "archive" });
+  else if (publica) itens.push({ id: "arquivar", rotulo: "Arquivar", icone: "archive" });
   itens.push("separador", { id: "excluir", rotulo: "Excluir", icone: "trash-2", perigo: true });
   return itens;
 }
@@ -296,7 +297,7 @@ export function criarListaDePosts(el, ctx) {
     if (menu) {
       const registro = ctx.loja.registros.find((item) => item.id === menu.dataset.postMenu);
       if (!registro) return;
-      ctx.menu.abrir(menu, itensDoMenu(registro), (acao) => {
+      ctx.menu.abrir(menu, itensDoMenu(registro, ctx.permissoes), (acao) => {
         pendenteDeFoco = registro.id;
         ctx.executar(acao, registro);
       });
