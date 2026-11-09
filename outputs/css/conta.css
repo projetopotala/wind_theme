@@ -563,17 +563,24 @@
 
 /* O cabeçalho */
 
-.mp-cabecalho { padding-top: clamp(36px, 7vw, 88px); }
+.mp-cabecalho {
+  min-width: 0;
+  padding-top: clamp(36px, 7vw, 88px);
+}
 
 .mp-titulo {
   margin: 0;
   font: 400 clamp(2.6rem, 7vw, 5.6rem)/.98 var(--conta-serif);
   letter-spacing: -.04em;
   text-wrap: balance;
+  /* Nomes derivados do e-mail não têm espaço: quebram em vez de alargar a página. */
+  overflow-wrap: anywhere;
+  min-width: 0;
   outline: none;
 }
 
 .mp-lede {
+  overflow-wrap: anywhere;
   max-width: 36em;
   margin: 18px 0 0;
   color: var(--conta-tinta-suave);
