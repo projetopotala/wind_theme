@@ -35,6 +35,10 @@ test("o cartão do Blog do Escritor não promete publicar", async () => {
 test("os atalhos do Blog têm espaçamento próprio e quebram de linha", async () => {
   const html = await ler("admin.html");
   assert.match(html, /admin-workspace-toolbar admin-workspace-toolbar--links/);
+  assert.doesNotMatch(html, /\$1/);
+  const barra = html.match(/admin-workspace-toolbar--links">([\s\S]*?)<\/div>/)[1];
+  assert.equal((barra.match(/<a class="admin-workspace-link"/g) || []).length, 3);
+  assert.match(barra, /^\s*<a class="admin-workspace-link" href="\/blog#\/visao">Abrir a mesa do Blog<\/a>/);
   const css = await ler("css/admin.css");
   assert.match(css, /\.admin-workspace-toolbar--links\s*\{[^}]*flex-wrap:\s*wrap;[^}]*gap:/);
   assert.match(css, /\.admin-workspace-toolbar--links \.admin-workspace-link\s*\{[^}]*min-height:\s*44px/);
