@@ -27,6 +27,14 @@
       "destination": "/confirmar-conta.html"
     },
     {
+      "source": "/redefinir-senha",
+      "destination": "/redefinir-senha.html"
+    },
+    {
+      "source": "/redefinir-senha/",
+      "destination": "/redefinir-senha.html"
+    },
+    {
       "source": "/meu-potala",
       "destination": "/meu-potala.html"
     },

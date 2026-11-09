@@ -3,9 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="0; url=transcender.html">
+  <noscript><meta http-equiv="refresh" content="0; url=transcender.html"></noscript>
   <title>Instituto Potala</title>
-  <script>window.location.replace("transcender.html");</script>
+  <script type="module">
+    import { destinoDaRaiz } from "./js/conta/link-recuperacao.js";
+    window.location.replace(destinoDaRaiz(window.location.href));
+  </script>
+  <script nomodule>window.location.replace("transcender.html" + window.location.search + window.location.hash);</script>
 </head>
 <body>
   <p><a href="transcender.html">Entrar no Instituto Potala</a></p>

@@ -1,0 +1,42 @@
+/* Formulário da nova senha: herda o papel, a tinta e o ouro de confirmar-conta.css. */
+.redefinicao-form {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 26rem);
+  margin: 28px auto 0;
+  text-align: left;
+}
+
+.redefinicao-form[hidden] { display: none; }
+
+.redefinicao-campo { display: grid; gap: 6px; }
+
+.redefinicao-campo label { color: var(--marrom); font: 600 .78rem/1.2 var(--sans); letter-spacing: .06em; }
+
+.redefinicao-campo input {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--linha);
+  border-radius: 14px;
+  color: var(--tinta);
+  background: var(--papel-claro);
+  font: 400 1rem/1 var(--sans);
+}
+
+.redefinicao-campo input:focus-visible {
+  border-color: var(--ouro);
+  outline: 2px solid var(--ouro);
+  outline-offset: 2px;
+}
+
+.redefinicao-campo small { color: var(--tinta-suave); font-size: .78rem; }
+
+.redefinicao-erro { min-height: 1.2em; margin: 0; color: #8a3b2c; font-size: .9rem; }
+
+.redefinicao-enviar { width: 100%; border: 0; cursor: pointer; }
+.redefinicao-enviar:disabled { opacity: .6; cursor: progress; }
+
+/* Texto e ações ficam mais próximos do formulário e dos avisos de estado. */
+.confirmacao-cartao[data-status="pronto"] .confirmacao-selo { display: none; }
+.confirmacao-cartao[data-status="pronto"] h1 { font-size: clamp(2rem, 6vw, 3.2rem); }
+.confirmacao-cartao[data-status="pronto"] .confirmacao-acoes { margin-top: 22px; }

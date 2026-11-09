@@ -21,6 +21,7 @@ const aliases = {
   admin: "admin.html",
   blog: "blog-admin.html",
   "confirmar-conta": "confirmar-conta.html",
+  "redefinir-senha": "redefinir-senha.html",
 };
 
 export function resolveRequestPath(requestUrl) {
