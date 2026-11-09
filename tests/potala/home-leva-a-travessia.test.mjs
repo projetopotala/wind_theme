@@ -54,7 +54,9 @@ test("nenhum link 'Voltar à travessia' ou marca leva à matéria de Atendimento
 
 test("o atalho da Travessia nomeia o destino real e as páginas de seção voltam à Travessia", () => {
   const cena = ler("js/home/home-scenes.js");
-  assert.match(cena, /href="transcendido\.html"[^>]*>Ler a matéria de Atendimentos/);
+  /* A matéria não disputa mais a primeira tela da Home: o atalho mora no painel de descoberta. */
+  assert.doesNotMatch(cena, /journey-home-link/);
+  assert.match(ler("js/home/portal-discovery.js"), /<a href="transcendido\.html">Ler a matéria de Atendimentos/);
   assert.doesNotMatch(cena, /Ir direto para a Home/);
   const header = ler("js/shared/portal-header.js");
   assert.match(header, /travessiaHref = "travessia\.html"/);
@@ -73,4 +75,34 @@ test("a Chegada e o fluxo da raiz não mudam", () => {
 test("o Admin segue apontando para o site, sem alteração nesta mudança", () => {
   const admin = ler("admin.html");
   assert.match(admin, /src="\/transcendido\.html\?admin-preview=1"/);
+});
+
+test("a primeira tela da Home não leva à matéria e o prefixo do atalho mora no painel de descoberta", async () => {
+  const { renderPortalDiscovery } = await import("../../outputs/js/home/portal-discovery.js");
+  const painel = renderPortalDiscovery();
+  assert.match(painel, /class="discovery-matter"[^>]*>Prefere ler com calma sobre o cuidado\? <a href="transcendido\.html">Ler a matéria de Atendimentos/);
+  assert.ok(ler("css/portal-discovery.css").includes(".discovery-matter a:focus-visible"), "o atalho precisa de foco visível");
+});
+
+test("cada área com imagem mostra a fotografia no cartão fechado, sem segunda fonte", async () => {
+  const { renderRegion } = await import("../../outputs/js/home/home-scenes.js");
+  const bloco = (extra) => ({
+    id: "cursos", slug: "cursos", category: "O conhecimento", title: "Cursos",
+    summary: "Cuidar também é aprender.", body: "Texto longo do bloco.", tags: [], href: "cursos.html",
+    side: "left", editorialVariant: "standard", ...extra,
+  });
+  const comImagem = renderRegion(bloco({ image: "media/atendimentos-vidraca-1.webp" }), 3, null, new Map());
+  assert.match(comImagem, /<span class="region-thumb" aria-hidden="true"><img src="media\/atendimentos-vidraca-1\.webp" alt=""/);
+  assert.match(comImagem, /region-title" id="cursos-title">Cursos</);
+  assert.match(comImagem, /region-description">Cuidar também é aprender\./);
+  const semImagem = renderRegion(bloco({ image: "" }), 3, null, new Map());
+  assert.doesNotMatch(semImagem, /region-thumb/);
+  const fonteInsegura = renderRegion(bloco({ image: "javascript:alert(1)" }), 3, null, new Map());
+  assert.doesNotMatch(fonteInsegura, /region-thumb|javascript:/);
+});
+
+test("a faixa de imagem some no bloco aberto e no telefone baixo, onde o cartão já é justo", () => {
+  const css = ler("css/home-journey.css");
+  assert.match(css, /\.journey-region\.is-expanded \.region-thumb \{ display: none; \}/);
+  assert.match(css, /@media \(max-width: 720px\) and \(max-height: 720px\) \{\s*\.region-thumb \{ display: none; \}/);
 });

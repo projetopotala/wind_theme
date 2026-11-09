@@ -3717,3 +3717,50 @@ body:has(.journey-region.is-expanded) .journey-canto {
   background: none;
   cursor: pointer;
 }
+
+/*
+ * A IMAGEM DA ÁREA NO CARTÃO FECHADO.
+ *
+ * Faixa baixa acima da categoria: o título e o resumo continuam inteiros. A
+ * altura acompanha a tela (svh) para a faixa nunca ser o que empurra o cartão
+ * para além do espaço dele. Aberto, o bloco mostra a mesma imagem no painel.
+ */
+.region-thumb {
+  display: block;
+  width: 100%;
+  height: clamp(60px, 10svh, 120px);
+  margin-bottom: clamp(12px, 2svh, 20px);
+  overflow: hidden;
+  border: 1px solid rgba(231, 202, 143, .26);
+  border-radius: clamp(12px, 1.5vw, 18px);
+  background: #30251b;
+}
+
+.region-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: sepia(.14) saturate(.84) brightness(.88);
+}
+
+.journey-region.is-expanded .region-thumb { display: none; }
+
+/* A faixa toma o lugar do respiro: o cartão não cresce o quanto ela mede. */
+.region-summary:has(.region-thumb) .region-category { margin-bottom: clamp(14px, 2.6svh, 28px); }
+.region-summary:has(.region-thumb) .region-description { margin-top: clamp(12px, 2svh, 20px); }
+.region-summary:has(.region-thumb) .region-expand-label { margin-top: clamp(12px, 2svh, 20px); }
+
+@media (max-width: 720px) {
+  .region-thumb {
+    height: clamp(40px, 6svh, 64px);
+    margin-bottom: 10px;
+  }
+  .region-summary:has(.region-thumb) .region-category { margin-bottom: 12px; }
+}
+
+/* Telefone baixo (320×640, 375×667): o cartão já é justo só com texto, e a faixa
+   empurraria o resumo e o "Olhar de perto" para fora dele. Ali, só o texto. */
+@media (max-width: 720px) and (max-height: 720px) {
+  .region-thumb { display: none; }
+}
