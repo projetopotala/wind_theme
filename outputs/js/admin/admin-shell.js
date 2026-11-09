@@ -188,7 +188,7 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
 
   return {
     /** Preenche o rodapé com quem está usando o painel. */
-    setUser({ name = "Editor", role = "Administradora", accessRole = "admin" } = {}) {
+    setUser({ name = "Editor", role = "Administradora", accessRole = "admin", blogNivel = "total" } = {}) {
       const nome = root.querySelector("[data-admin-user-name]");
       const papel = root.querySelector("[data-admin-user-role]");
       const avatar = root.querySelector("[data-admin-avatar]");
@@ -209,6 +209,13 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
         const permitido = !somenteBlog || item.getAttribute("data-section") === "blog";
         item.hidden = !permitido;
         item.setAttribute("aria-hidden", permitido ? "false" : "true");
+      }
+      if (root.dataset) root.dataset.blogNivel = somenteBlog ? blogNivel : "total";
+      if (somenteBlog && (blogNivel === "escritor" || blogNivel === "leitor")) {
+        const titulo = root.querySelector?.("[data-blog-titulo]");
+        const texto = root.querySelector?.("[data-blog-texto]");
+        if (titulo) titulo.textContent = blogNivel === "leitor" ? "Acompanhar o Blog" : "Escrever e enviar textos para revis\u00e3o";
+        if (texto) texto.textContent = blogNivel === "leitor" ? "Voc\u00ea pode acompanhar os textos do Blog, sem editar nem publicar." : "Voc\u00ea escreve e salva rascunhos na mesa do Blog e envia para revis\u00e3o. A publica\u00e7\u00e3o \u00e9 feita por um Editor.";
       }
       if (somenteBlog) mostrar("blog");
     },

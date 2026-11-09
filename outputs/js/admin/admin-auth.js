@@ -274,3 +274,17 @@ export function createAdminAuth({ client, root, onAuthorized = () => {}, onState
     },
   };
 }
+
+/* Nivel efetivo no painel, so pelas permissoes reais: total (owner/admin), editor, escritor ou leitor. */
+export function nivelDoBlog({ role, permissions } = {}) {
+  if (role !== "blog_editor") return "total";
+  if (permissions?.publish === true) return "editor";
+  return permissions?.edit === true ? "escritor" : "leitor";
+}
+
+/* Rotulo exibido no rodape do painel: vem das permissoes reais, nunca so do papel global. */
+export function rotuloDoPapel(access = {}) {
+  if (access.role === "owner") return "Administra\u00e7\u00e3o";
+  if (access.role === "blog_editor") return { editor: "Editor do Blog", escritor: "Escritor do Blog", leitor: "Leitor do Blog" }[nivelDoBlog(access)];
+  return "Equipe administrativa";
+}

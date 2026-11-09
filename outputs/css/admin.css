@@ -812,6 +812,37 @@ button {
   font-size: .85rem;
 }
 
+/* Atalhos da secao Blog: botoes-link separados, que quebram de linha sem se colar. */
+.admin-workspace-toolbar--links {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 10px 12px;
+}
+
+.admin-workspace-toolbar--links .admin-workspace-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--admin-gold);
+  border-radius: 10px;
+  font-size: .9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-workspace-toolbar--links .admin-workspace-link:first-child {
+  background: var(--admin-gold);
+  color: #1a160f;
+}
+
+@media (max-width: 520px) {
+  .admin-workspace-toolbar--links .admin-workspace-link {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
 .admin-atalhos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
