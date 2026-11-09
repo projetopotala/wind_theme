@@ -274,3 +274,10 @@ export function createAdminAuth({ client, root, onAuthorized = () => {}, onState
     },
   };
 }
+
+/* Rotulo exibido no rodape do painel: vem das permissoes reais, nunca so do papel global. */
+export function rotuloDoPapel({ role, permissions } = {}) {
+  if (role === "owner") return "Administra\u00e7\u00e3o";
+  if (role === "blog_editor") return permissions?.publish === true ? "Editor do Blog" : "Escritor do Blog";
+  return "Equipe administrativa";
+}

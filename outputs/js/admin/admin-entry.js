@@ -2,6 +2,7 @@ import {
   createAdminAuth,
   createAdminPasswordSetup,
   isAdminFirstAccess,
+  rotuloDoPapel,
 } from "./admin-auth.js";
 import { createAdminController } from "./admin-controller.js";
 import { createAdminShell } from "./admin-shell.js";
@@ -81,7 +82,8 @@ try {
     async onAuthorized(access) {
       shell?.setUser({
         name: access.user?.name || access.session?.user?.email || "Administração Potala",
-        role: access.role === "owner" ? "Administração" : access.role === "blog_editor" ? "Editor do Blog" : "Equipe administrativa",
+        role: rotuloDoPapel(access),
+        blogNivel: access.role === "blog_editor" ? (access.permissions?.publish === true ? "editor" : "escritor") : "total",
         accessRole: access.role,
       });
       if (!passwordSetup) {
