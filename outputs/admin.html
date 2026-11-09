@@ -36,7 +36,7 @@
       <p class="admin-auth-status" data-admin-auth-status role="status" aria-live="polite">
         Verificando acesso…
       </p>
-      <p class="admin-entry-links"><a href="/transcendido.html">Ver a Home</a></p>
+      <p class="admin-entry-links"><a href="/travessia.html">Ver a Home</a></p>
     </section>
 
     <section class="admin-panel" id="admin-panel" data-admin-section="inicio" aria-label="Central operacional do Instituto Potala" hidden>
@@ -142,7 +142,7 @@
         </div>
         <input class="admin-search" type="search" data-admin-search
           placeholder="Buscar bloco" aria-label="Buscar bloco">
-        <a class="admin-link" href="/transcendido.html" target="_blank" rel="noopener">Visualizar site</a>
+        <a class="admin-link" href="/travessia.html" target="_blank" rel="noopener">Visualizar site</a>
         <!--
           As TRÊS saídas ficam juntas, e é o contraste entre elas que explica
           cada uma.
@@ -151,6 +151,10 @@
           perder o painel. "Voltar ao site" leva à Home na mesma aba, com a
           sessão aberta: reabrir o painel não pede senha. "Encerrar sessão"
           desconecta, e aí pede.
+
+          "Home" é a Travessia de 12 etapas (/travessia.html), a mesma página
+          que a prévia ao vivo carrega com ?admin-preview=1. A matéria de
+          Atendimentos (/transcendido.html) é outra página e não recebe a prévia.
 
           Nenhuma se chama "Sair". Chamava-se: o daqui era "Sair do painel" e o
           logout, lá no fim da navegação, era "Sair" — dois nomes quase iguais
@@ -161,7 +165,7 @@
           rolar a navegação inteira e passar por uma ação destrutiva que não tem
           nada a ver com sair.
         -->
-        <a class="admin-link admin-leave" data-admin-leave href="/transcendido.html">Voltar ao site</a>
+        <a class="admin-link admin-leave" data-admin-leave href="/travessia.html">Voltar ao site</a>
         <button class="admin-publish" type="button" data-admin-publish disabled>Publicar alterações</button>
         <p class="admin-saved-at" data-admin-saved-at role="status" aria-live="polite"></p>
       </header>
@@ -377,7 +381,7 @@
           <p class="admin-stage-hint">Clique no cartão para abrir como na página. Arraste para mudar o lado. Com o bloco aberto, o título, o resumo e o texto podem ser editados.</p>
 
           <div class="admin-preview-frame" data-admin-preview-frame>
-            <iframe data-admin-preview src="/transcendido.html?admin-preview=1"
+            <iframe data-admin-preview src="/travessia.html?admin-preview=1"
               title="Prévia ao vivo da Home do Portal Potala"></iframe>
             <p class="admin-preview-error" data-admin-preview-error hidden>
               A prévia não carregou.

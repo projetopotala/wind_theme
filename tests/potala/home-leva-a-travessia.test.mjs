@@ -70,7 +70,42 @@ test("a Chegada e o fluxo da raiz não mudam", () => {
   assert.match(readFileSync(new URL("js/chegada/transition-handoff.js", outputs), "utf8"), /destination = "travessia\.html"/);
 });
 
-test("o Admin segue apontando para o site, sem alteração nesta mudança", () => {
+test("o Admin leva a Home de verdade: links e previa apontam para a Travessia", () => {
   const admin = ler("admin.html");
-  assert.match(admin, /src="\/transcendido\.html\?admin-preview=1"/);
+  assert.match(admin, /<a href="\/travessia\.html">Ver a Home<\/a>/);
+  assert.match(admin, /href="\/travessia\.html" target="_blank" rel="noopener">Visualizar site/);
+  assert.match(admin, /data-admin-leave href="\/travessia\.html">Voltar ao site/);
+  assert.match(admin, /<iframe data-admin-preview src="\/travessia\.html\?admin-preview=1"/);
+  /* A materia de Atendimentos nao e a Home e nao recebe a previa. */
+  assert.doesNotMatch(admin, /(?:href|src)="\/transcendido\.html/);
+});
+
+test("a pagina da previa e a que sabe receber a previa", () => {
+  const travessia = ler("travessia.html");
+  assert.match(travessia, /<body data-story-page="true">/);
+  assert.match(travessia, /id="journey-root"/);
+  assert.match(travessia, /src="js\/secoes\.js"/);
+  const controlador = readFileSync(new URL("js/home/home-controller.js", outputs), "utf8");
+  assert.match(controlador, /get\("admin-preview"\) === "1"/);
+  assert.match(controlador, /createHomeAdminPreview/);
+  const materia = ler("transcendido.html");
+  assert.doesNotMatch(materia, /journey-root/);
+  assert.doesNotMatch(materia, /secoes\.js/);
+});
+
+test("o canal da previa so aceita o mesmo dominio e a janela que a abriu, e nao grava nada", () => {
+  const previa = readFileSync(new URL("js/home/admin-preview.js", outputs), "utf8");
+  assert.match(previa, /event\.source !== source \|\| event\.origin !== origin/);
+  assert.doesNotMatch(previa, /supabase|\.insert\(|\.update\(|\.upsert\(|\.rpc\(|fetch\(/i);
+  const controlador = readFileSync(new URL("js/admin/admin-controller.js", outputs), "utf8");
+  assert.match(controlador, /event\.source !== previewFrame\?\.contentWindow/);
+  assert.match(controlador, /previewOrigin === "null" \? "\*" : previewOrigin/);
+});
+
+test("nenhum cabecalho do site impede o iframe da previa", () => {
+  const config = JSON.parse(readFileSync(new URL("vercel.json", outputs), "utf8"));
+  assert.equal(config.headers, undefined);
+  for (const pagina of ["travessia.html", "admin.html"]) {
+    assert.doesNotMatch(ler(pagina), /Content-Security-Policy|frame-ancestors|X-Frame-Options/i);
+  }
 });

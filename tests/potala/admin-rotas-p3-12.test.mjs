@@ -23,8 +23,8 @@ test("a central operacional nao depende da barra final em /admin/", async () => 
   assert.match(html, /src="\/vendor\/supabase\.js"/);
   assert.match(html, /src="\/js\/admin\/admin-entry\.js"/);
   assert.match(html, /src="\/media\/potala-mark-transparent\.png"/);
-  assert.match(html, /href="\/transcendido\.html"/);
-  assert.match(html, /src="\/transcendido\.html\?admin-preview=1"/);
+  assert.match(html, /href="\/travessia\.html"/);
+  assert.match(html, /src="\/travessia\.html\?admin-preview=1"/);
   assert.doesNotMatch(html, /use href="media\//);
 });
 
