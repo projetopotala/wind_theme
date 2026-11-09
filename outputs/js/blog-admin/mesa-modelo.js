@@ -39,6 +39,9 @@ const normalizar = (texto) => String(texto ?? "").normalize("NFD").replace(/[̀-
 /* O texto que a mesa mostra e edita: as alterações pendentes, quando houver. */
 export const textoAtual = (registro) => registro?.pendente || registro?.post;
 
+/* Escritor (publicar === false) nao ve Publicar, Agendar nem Arquivar: o banco recusaria de qualquer forma. */
+export const podePublicar = (permissoes) => permissoes?.publicar !== false;
+
 /* A data que conta para "publicado em": a do banco, ou a escrita no texto. */
 export function dataDePublicacao(registro) {
   if (registro?.publicarEm) return new Date(registro.publicarEm);

@@ -42,6 +42,46 @@ export const ROTULO_PAPEL = Object.freeze({
   profissional_inativo: "Profissional (perfil desativado)", cliente: "Cliente", sem_vinculo: "Sem vínculo",
 });
 
+/*
+ * Blog: nivel efetivo da conta, derivado so de dados do banco. Owner/admin tem acesso total e nao
+ * sao geridos aqui. A concessao em si e feita (e conferida) por admin_set_blog_access, que so o
+ * owner ativo executa.
+ */
+export const NIVEIS_BLOG = Object.freeze({ none: "Sem acesso ao Blog", writer: "Escritor", editor: "Editor" });
+const EFEITO_NIVEL = Object.freeze({
+  none: "remove o acesso editorial desta conta, com efeito imediato.",
+  writer: "permite criar e editar os próprios textos, sem publicar.",
+  editor: "permite editar, revisar e publicar textos de qualquer autor.",
+});
+
+export function nivelBlog(conta) {
+  if (conta?.portal_active !== true || conta.portal_role !== "blog_editor") return "none";
+  const b = conta.blog;
+  if (!b?.active || b.read !== true || b.edit !== true) return "none";
+  return b.publish === true ? "editor" : "writer";
+}
+
+export const geridaNoBlog = (conta) => !["owner", "admin"].includes(conta?.portal_role);
+
+function controleDoBlog(conta, confirmando) {
+  if (!geridaNoBlog(conta)) return `<small>Acesso total ao Blog.</small>`;
+  const atual = nivelBlog(conta);
+  const [id, nivel] = String(confirmando || "").startsWith("blog|") ? String(confirmando).split("|").slice(1) : [];
+  if (id === conta.id && NIVEIS_BLOG[nivel]) {
+    return `<span role="alert"><small>${e(NIVEIS_BLOG[nivel])} ${e(EFEITO_NIVEL[nivel])}</small>
+      <button type="button" class="op-button" data-acao="blog-confirmar" data-conta-id="${e(conta.id)}" data-nivel="${e(nivel)}">Confirmar</button>
+      <button type="button" class="op-button" data-acao="cancelar">Cancelar</button></span>`;
+  }
+  return `<span data-blog-controle><label>Blog <select data-blog-nivel aria-label="Acesso ao Blog de ${e(conta.email)}">${Object.entries(NIVEIS_BLOG).map(([k, v]) => `<option value="${k}"${k === atual ? " selected" : ""}>${e(v)}</option>`).join("")}</select></label>
+      <button type="button" class="op-button" data-acao="blog" data-conta-id="${e(conta.id)}">Alterar</button></span>`;
+}
+
+function historicoDoBlog(eventos) {
+  if (!Array.isArray(eventos) || !eventos.length) return "";
+  const itens = eventos.slice(0, 20).map((ev) => `<li>${e(data(ev.at))} — ${e(ev.actor_name || "Owner")} alterou ${e(ev.target_name || "uma conta")}: ${e(NIVEIS_BLOG[ev.before] || "Sem acesso ao Blog")} → ${e(NIVEIS_BLOG[ev.after] || "Sem acesso ao Blog")}</li>`).join("");
+  return `<details class="op-muted" data-blog-historico><summary>Histórico de acessos ao Blog</summary><ul class="op-lista-curta">${itens}</ul></details>`;
+}
+
 export function filtrarContas(contas, { busca = "", papel = "", status = "" } = {}) {
   const termo = busca.trim().toLocaleLowerCase("pt-BR");
   return contas.filter((c) => {
@@ -86,7 +126,7 @@ function linha(conta, confirmando) {
   return `<tr data-conta="${e(conta.id)}">
     <td><strong>${e(conta.name || "—")}</strong><small>${e(conta.email)}</small></td>
     <td><span class="op-badge${conta.status === "ativa" ? "" : conta.status === "bloqueada" ? " is-cancelled" : " is-unconfirmed"}" data-status="${e(conta.status)}">${e(STATUS[conta.status] || conta.status)}</span></td>
-    <td>${papeis.map((p) => `<span class="op-badge" data-papel="${e(p)}">${e(ROTULO_PAPEL[p] || p)}</span>`).join(" ")}</td>
+    <td>${papeis.map((p) => `<span class="op-badge" data-papel="${e(p)}">${e(ROTULO_PAPEL[p] || p)}</span>`).join(" ")}<div>${controleDoBlog(conta, confirmando)}</div></td>
     <td>${vinculos ? `<ul class="op-lista-curta">${vinculos}</ul>` : "—"}</td>
     <td>${e(data(conta.last_sign_in_at))}</td>
   </tr>`;
@@ -110,7 +150,7 @@ function formularioDeVinculo(contas, perfis) {
   </form>`;
 }
 
-export function renderizarAcessos({ contas = [], perfis = [], filtros = {}, erro = "", aviso = "", confirmando = "", ocupado = false } = {}) {
+export function renderizarAcessos({ contas = [], perfis = [], eventos = [], filtros = {}, erro = "", aviso = "", confirmando = "", ocupado = false } = {}) {
   const lista = filtrarContas(contas, filtros);
   const opcoes = (mapa, atual) => Object.entries(mapa).map(([k, v]) => `<option value="${e(k)}"${k === atual ? " selected" : ""}>${e(v)}</option>`).join("");
   return `<header class="op-header"><div><p class="op-eyebrow">Pessoas e patrimônio</p>
@@ -128,7 +168,14 @@ export function renderizarAcessos({ contas = [], perfis = [], filtros = {}, erro
     <div class="op-table-scroll"${ocupado ? ' aria-busy="true"' : ""}><table class="op-table">
       <thead><tr><th scope="col">Conta</th><th scope="col">Status</th><th scope="col">Papéis</th><th scope="col">Vínculos</th><th scope="col">Último acesso</th></tr></thead>
       <tbody>${lista.map((c) => linha(c, confirmando)).join("") || `<tr><td colspan="5" class="op-empty">Nenhuma conta encontrada com esses filtros.</td></tr>`}</tbody>
-    </table></div>`}`;
+    </table></div>${historicoDoBlog(eventos)}`}`;
+}
+
+/* Erros de regra do Blog vem do banco em portugues e sao seguros para exibir. */
+export function mensagemDoBlog(error) {
+  if (["PGRST202", "42883"].includes(error?.code)) return "A operação fica disponível depois que a atualização do banco for aplicada.";
+  if (["42501", "22023"].includes(error?.code) && error?.message) return error.message;
+  return "Não foi possível concluir. Nada foi alterado; tente de novo em instantes.";
 }
 
 export function mensagemDeErro(error) {
@@ -149,28 +196,32 @@ export function createAccessPanel({ root, client }) {
   const alvo = root?.querySelector?.("[data-access-view]");
   let contas = [];
   let perfis = [];
+  let eventos = [];
   let erro = "";
   let aviso = "";
   let confirmando = "";
   let ocupado = false;
   const filtros = { busca: "", papel: "", status: "" };
-  const desenhar = () => { if (alvo) alvo.innerHTML = renderizarAcessos({ contas, perfis, filtros, erro, aviso, confirmando, ocupado }); };
+  const desenhar = () => { if (alvo) alvo.innerHTML = renderizarAcessos({ contas, perfis, eventos, filtros, erro, aviso, confirmando, ocupado }); };
 
   async function carregar() {
-    const [lista, profs] = await Promise.all([client.rpc("admin_list_accounts"), client.rpc("admin_list_professional_profiles")]);
+    const [lista, profs, hist] = await Promise.all([
+      client.rpc("admin_list_accounts"), client.rpc("admin_list_professional_profiles"), client.rpc("admin_list_blog_events", { p_limit: 20 }),
+    ]);
+    eventos = !hist?.error && Array.isArray(hist?.data) ? hist.data : [];
     if (lista.error) { contas = []; erro = mensagemDeErro(lista.error); } else { contas = Array.isArray(lista.data) ? lista.data : []; erro = ""; }
     perfis = !profs.error && Array.isArray(profs.data) ? profs.data : [];
     desenhar();
     return contas;
   }
 
-  async function operar(nome, args, sucesso) {
+  async function operar(nome, args, sucesso, mensagem = mensagemDaOperacao) {
     if (ocupado) return;
     ocupado = true; aviso = ""; desenhar();
     try {
       const { data: resposta, error } = await client.rpc(nome, args);
-      aviso = error ? mensagemDaOperacao(error) : sucesso(resposta || {});
-    } catch { aviso = mensagemDaOperacao(null); }
+      aviso = error ? mensagem(error) : sucesso(resposta || {});
+    } catch { aviso = mensagem(null); }
     ocupado = false; confirmando = "";
     await carregar();
   }
@@ -199,6 +250,19 @@ export function createAccessPanel({ root, client }) {
     const conta = botao.getAttribute("data-conta-id");
     const perfil = botao.getAttribute("data-perfil");
     if (acao === "cancelar") { confirmando = ""; desenhar(); return; }
+    if (acao === "blog") {
+      const nivel = botao.closest("tr")?.querySelector("[data-blog-nivel]")?.value;
+      const atual = nivelBlog(contas.find((c) => c.id === conta));
+      if (!NIVEIS_BLOG[nivel] || nivel === atual) { aviso = "Escolha um nivel diferente do atual."; desenhar(); return; }
+      confirmando = `blog|${conta}|${nivel}`; desenhar(); return;
+    }
+    if (acao === "blog-confirmar") {
+      const nivel = botao.getAttribute("data-nivel");
+      void operar("admin_set_blog_access", { p_user_id: conta, p_level: nivel },
+        (r) => (r.changed === false ? "Esse acesso ja estava assim." : nivel === "none" ? "Acesso ao Blog removido." : `Acesso de ${NIVEIS_BLOG[nivel]} concedido.`),
+        mensagemDoBlog);
+      return;
+    }
     if (acao === "desativar") { confirmando = `${conta}|${perfil}`; desenhar(); return; }
     if (acao === "desativar-confirmado") {
       void operar("admin_set_professional_link", { p_user_id: conta, p_profile_id: perfil, p_active: false },
@@ -210,6 +274,6 @@ export function createAccessPanel({ root, client }) {
   });
   return {
     reload: carregar,
-    clear() { contas = []; perfis = []; erro = ""; aviso = ""; confirmando = ""; if (alvo) alvo.innerHTML = ""; },
+    clear() { contas = []; perfis = []; eventos = []; erro = ""; aviso = ""; confirmando = ""; if (alvo) alvo.innerHTML = ""; },
   };
 }
