@@ -1040,6 +1040,7 @@
 /* Perfil */
 
 .mp-perfil { display: grid; gap: 0 clamp(32px, 6vw, 80px); }
+.mp-perfil > * { min-width: 0; }
 
 @media (min-width: 900px) {
   .mp-perfil { grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); }
@@ -1047,6 +1048,9 @@
 }
 
 .mp-perfil-resumo { display: flex; align-items: center; gap: 18px; }
+/* O texto ao lado do avatar pode encolher; nomes sem espaço (e-mail) quebram em vez de alargar a página. */
+.mp-perfil-resumo > :not(.mp-avatar) { min-width: 0; }
+.mp-perfil-resumo .mp-cartao-detalhe { overflow-wrap: anywhere; }
 
 .mp-avatar {
   display: grid;
@@ -1062,8 +1066,8 @@
   object-fit: cover;
 }
 
-.mp-perfil-nome { margin: 0 0 4px; font: 400 1.5rem/1.1 var(--conta-serif); }
-.mp-perfil-bio { margin: 18px 0 0; color: var(--conta-tinta-suave); font: italic 1.05rem/1.55 var(--conta-serif); }
+.mp-perfil-nome { margin: 0 0 4px; font: 400 1.5rem/1.1 var(--conta-serif); overflow-wrap: anywhere; }
+.mp-perfil-bio { margin: 18px 0 0; color: var(--conta-tinta-suave); font: italic 1.05rem/1.55 var(--conta-serif); overflow-wrap: anywhere; }
 
 .mp-dados { display: grid; gap: 12px; margin: 0 0 18px; }
 .mp-dados div { display: grid; gap: 4px; }
