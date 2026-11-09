@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { rotuloDoPapel } from "../../outputs/js/admin/admin-auth.js";
+import { nivelDoBlog, rotuloDoPapel } from "../../outputs/js/admin/admin-auth.js";
 
 const ler = (caminho) => readFile(new URL(`../../outputs/${caminho}`, import.meta.url), "utf8");
 
@@ -9,8 +9,9 @@ test("o rótulo do painel vem das permissões reais, não só do papel global", 
   assert.equal(rotuloDoPapel({ role: "owner", permissions: { publish: true } }), "Administração");
   assert.equal(rotuloDoPapel({ role: "blog_editor", permissions: { read: true, edit: true, publish: true } }), "Editor do Blog");
   assert.equal(rotuloDoPapel({ role: "blog_editor", permissions: { read: true, edit: true, publish: false } }), "Escritor do Blog");
-  assert.equal(rotuloDoPapel({ role: "blog_editor", permissions: { read: false, edit: false, publish: false } }), "Escritor do Blog");
-  assert.equal(rotuloDoPapel({ role: "blog_editor" }), "Escritor do Blog");
+  assert.equal(rotuloDoPapel({ role: "blog_editor", permissions: { read: true, edit: false, publish: false } }), "Leitor do Blog");
+  assert.equal(rotuloDoPapel({ role: "blog_editor" }), "Leitor do Blog");
+  assert.equal(nivelDoBlog({ role: "owner" }), "total");
   assert.equal(rotuloDoPapel({ role: "admin" }), "Equipe administrativa");
 });
 
@@ -24,6 +25,7 @@ test("a entrada usa o rótulo por permissão e informa o nível ao painel", asyn
 test("o cartão do Blog do Escritor não promete publicar", async () => {
   const shell = await ler("js/admin/admin-shell.js");
   assert.match(shell, /blogNivel === "escritor"/);
+  assert.match(shell, /blogNivel === "leitor"/);
   assert.match(shell, /enviar textos para revis/);
   const html = await ler("admin.html");
   assert.match(html, /data-blog-titulo/);

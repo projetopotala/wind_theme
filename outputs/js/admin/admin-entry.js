@@ -2,6 +2,7 @@ import {
   createAdminAuth,
   createAdminPasswordSetup,
   isAdminFirstAccess,
+  nivelDoBlog,
   rotuloDoPapel,
 } from "./admin-auth.js";
 import { createAdminController } from "./admin-controller.js";
@@ -83,7 +84,7 @@ try {
       shell?.setUser({
         name: access.user?.name || access.session?.user?.email || "Administração Potala",
         role: rotuloDoPapel(access),
-        blogNivel: access.role === "blog_editor" ? (access.permissions?.publish === true ? "editor" : "escritor") : "total",
+        blogNivel: nivelDoBlog(access),
         accessRole: access.role,
       });
       if (!passwordSetup) {
