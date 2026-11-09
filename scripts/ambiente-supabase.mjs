@@ -114,7 +114,8 @@ export async function conferirDecisao(raiz, { modo, permitirPreviewE2E = false }
 }
 
 // Única branch cuja Preview conecta ao Supabase oficial (homologação controlada).
-export const BRANCH_PREVIEW_E2E = "feat/identidades-permissoes";
+// Comparação exata (===): nenhum prefixo, sufixo ou padrão passa. Trocar a branch exige novo PR.
+export const BRANCH_PREVIEW_E2E = "feat/prod-03-blog-permissoes";
 
 export function previewE2EAtiva(env = process.env) {
   return env.POTALA_APPOINTMENT_E2E_PREVIEW === "true"
