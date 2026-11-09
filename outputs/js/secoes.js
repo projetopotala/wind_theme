@@ -52,7 +52,7 @@ import { mountPortalHeader } from "./shared/portal-header.js";
       const navigation = document.createElement("nav");
       navigation.className = "site-nav";
       navigation.setAttribute("aria-label", "Instituto Potala");
-      navigation.innerHTML = `<a class="site-nav-marca" href="transcendido.html">
+      navigation.innerHTML = `<a class="site-nav-marca" href="travessia.html">
           <img src="media/potala-mark-transparent.png" alt="" width="86" height="70" decoding="async">
           <span>Instituto Potala</span>
         </a>

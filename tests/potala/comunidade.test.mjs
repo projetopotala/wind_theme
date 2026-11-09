@@ -32,7 +32,7 @@ test("a barra do topo oferece os cinco destinos e o caminho de volta", async () 
   }
   /* A marca é a única saída da página de seção para o índice. Sem ela a barra
      oferece cinco portas novas e nenhuma de volta. */
-  assert.match(secoes, /site-nav-marca[\s\S]*?href="transcendido\.html"/);
+  assert.match(secoes, /site-nav-marca[\s\S]*?href="travessia\.html"/);
   assert.match(secoes, /potala-mark-transparent\.png/);
 });
 
@@ -75,8 +75,8 @@ test("toda pagina de secao mantem um caminho de volta", async () => {
   ];
   for (const secao of secoes) {
     const html = await ler(`${secao}.html`);
-    /* Atendimentos volta para a Travessia (travessia.html); as demais voltam para a Home. */
-    const volta = secao === "atendimentos" ? /href="travessia\.html"/ : /href="transcendido\.html"/;
+    /* Todas as seções voltam para a Travessia (travessia.html), a Home de exploração. */
+    const volta = /href="travessia\.html"/;
     assert.match(html, volta, `${secao}.html ficou sem caminho de volta`);
   }
 });

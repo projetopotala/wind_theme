@@ -188,7 +188,7 @@ export function renderizarVisitante(estado = {}) {
       <a class="mp-visita-botao" href="${caminhoDa("inicio")}?demo=visita" data-recarregar>Ver a página sem conta <span aria-hidden="true">→</span></a>
       <p class="mp-nota">Com dados de exemplo, só neste navegador: sem cadastro e sem entrar.</p>
     </div>
-    <a class="mp-link" href="/transcendido.html">Voltar à travessia <span aria-hidden="true">↗</span></a>
+    <a class="mp-link" href="/travessia.html">Voltar à travessia <span aria-hidden="true">↗</span></a>
   </div>`;
 }
 

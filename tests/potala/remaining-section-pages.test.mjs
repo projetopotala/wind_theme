@@ -20,7 +20,7 @@ for (const [family, files] of Object.entries(pages)) {
     test(`${file} usa a família ${family}`, async () => {
       const html = await readFile(new URL(file, outputs), "utf8");
       assert.match(html, new RegExp(`data-section-family="${family}"`));
-      assert.match(html, /href="transcendido\.html"/);
+      assert.match(html, /href="travessia\.html"/);
       assert.match(html, /<main[^>]+id="conteudo"/);
       assert.match(html, /<img[^>]+alt="[^"]+"/);
     });

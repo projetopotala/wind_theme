@@ -26,7 +26,7 @@ export default {
         id: "mp-historico",
         kicker: "Histórico",
         titulo: "Nada por aqui ainda",
-        corpo: vazio({ texto: "Os textos, cursos e páginas que você visitar com a conta aberta aparecem aqui, do mais recente ao mais antigo.", link: { href: "/transcendido.html", texto: "Voltar à travessia" } }),
+        corpo: vazio({ texto: "Os textos, cursos e páginas que você visitar com a conta aberta aparecem aqui, do mais recente ao mais antigo.", link: { href: "/travessia.html", texto: "Voltar à travessia" } }),
       });
     }
 
