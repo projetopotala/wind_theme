@@ -644,6 +644,8 @@ button {
 [data-blog-controle] label { display: grid; gap: 2px; }
 [data-blog-controle] select { min-width: 11.5rem; min-height: 44px; }
 [data-blog-controle] .op-button, [role="alert"] > .op-button { min-height: 44px; }
+/* .op-table .op-button (30px) é mais específico e vem depois: igualar a especificidade para o alvo de toque ficar com 44px. */
+.op-table [data-blog-controle] .op-button, .op-table [role="alert"] > .op-button { min-height: 44px; padding: 8px 12px; }
 .op-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
 .op-table th { color: var(--admin-muted); font-size: .67rem; letter-spacing: .08em; text-transform: uppercase; text-align: left; }
 .op-table th,.op-table td { min-width: 90px; padding: 11px 9px; border-bottom: 1px solid var(--admin-line); vertical-align: top; }
