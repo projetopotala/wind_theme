@@ -173,7 +173,7 @@ test("escolher o mesmo nivel nao abre confirmacao; erro do banco aparece claro",
 test("mensagens: regra do banco aparece; detalhe interno nao", () => {
   assert.equal(mensagemDoBlog({ code: "22023", message: "Conta não encontrada." }), "Conta não encontrada.");
   assert.match(mensagemDoBlog({ code: "XX000", message: "detalhe interno" }), /Nada foi alterado/);
-  assert.match(mensagemDoBlog({ code: "PGRST202" }), /atualizacao do banco/);
+  assert.match(mensagemDoBlog({ code: "PGRST202" }), /atualização do banco/);
   assert.deepEqual(Object.keys(NIVEIS_BLOG), ["none", "writer", "editor"]);
 });
 

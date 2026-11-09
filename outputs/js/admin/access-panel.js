@@ -50,7 +50,7 @@ export const ROTULO_PAPEL = Object.freeze({
 export const NIVEIS_BLOG = Object.freeze({ none: "Sem acesso ao Blog", writer: "Escritor", editor: "Editor" });
 const EFEITO_NIVEL = Object.freeze({
   none: "remove o acesso editorial desta conta, com efeito imediato.",
-  writer: "permite criar e editar os proprios textos, sem publicar.",
+  writer: "permite criar e editar os próprios textos, sem publicar.",
   editor: "permite editar, revisar e publicar textos de qualquer autor.",
 });
 
@@ -79,7 +79,7 @@ function controleDoBlog(conta, confirmando) {
 function historicoDoBlog(eventos) {
   if (!Array.isArray(eventos) || !eventos.length) return "";
   const itens = eventos.slice(0, 20).map((ev) => `<li>${e(data(ev.at))} — ${e(ev.actor_name || "Owner")} alterou ${e(ev.target_name || "uma conta")}: ${e(NIVEIS_BLOG[ev.before] || "Sem acesso ao Blog")} → ${e(NIVEIS_BLOG[ev.after] || "Sem acesso ao Blog")}</li>`).join("");
-  return `<details class="op-muted" data-blog-historico><summary>Historico de acessos ao Blog</summary><ul class="op-lista-curta">${itens}</ul></details>`;
+  return `<details class="op-muted" data-blog-historico><summary>Histórico de acessos ao Blog</summary><ul class="op-lista-curta">${itens}</ul></details>`;
 }
 
 export function filtrarContas(contas, { busca = "", papel = "", status = "" } = {}) {
@@ -173,9 +173,9 @@ export function renderizarAcessos({ contas = [], perfis = [], eventos = [], filt
 
 /* Erros de regra do Blog vem do banco em portugues e sao seguros para exibir. */
 export function mensagemDoBlog(error) {
-  if (["PGRST202", "42883"].includes(error?.code)) return "A operacao fica disponivel depois que a atualizacao do banco for aplicada.";
+  if (["PGRST202", "42883"].includes(error?.code)) return "A operação fica disponível depois que a atualização do banco for aplicada.";
   if (["42501", "22023"].includes(error?.code) && error?.message) return error.message;
-  return "Nao foi possivel concluir. Nada foi alterado; tente de novo em instantes.";
+  return "Não foi possível concluir. Nada foi alterado; tente de novo em instantes.";
 }
 
 export function mensagemDeErro(error) {
