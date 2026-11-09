@@ -535,7 +535,7 @@ export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
         <p>Ecossistema Digital Potala</p>
         <h1 id="journey-title">Bem-vindo.</h1>
         <span>O caminho continua.</span>
-        <a class="journey-home-link" href="transcendido.html" data-keeps-expansion>Ir direto para a Home <i aria-hidden="true">→</i></a>
+        <a class="journey-home-link" href="transcendido.html" data-keeps-expansion>Ler a matéria de Atendimentos <i aria-hidden="true">→</i></a>
         <p class="home-welcome-context">Cuidado, conhecimento, cultura e pessoas.<br>Encontre novas possibilidades para o seu momento.</p>
       </div>
     </section>

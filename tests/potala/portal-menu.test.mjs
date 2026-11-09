@@ -9,7 +9,7 @@ const { MENU_ITEMS, itemAtual, menuHtml, mountPortalMenu } = await import("../..
 test("o menu global oferece os nove caminhos essenciais mais o retorno a Chegada, com destinos reais", () => {
   assert.deepEqual(
     MENU_ITEMS.map((i) => i.href),
-    ["/transcender.html", "transcendido.html", "travessia.html", "atendimentos.html", "profissionais.html", "cursos.html", "blog.html", "marketplace.html", "recepcao.html", "/meu-potala"],
+    ["/transcender.html", "travessia.html", "atendimentos.html", "transcendido.html", "profissionais.html", "cursos.html", "blog.html", "marketplace.html", "recepcao.html", "/meu-potala"],
   );
   for (const item of MENU_ITEMS) {
     if (item.href === "/meu-potala") continue;
@@ -50,9 +50,9 @@ test("o HTML do menu é acessível: navegação nomeada, diálogo rotulado e des
 });
 
 test("itemAtual relaciona a página aberta ao item do menu", () => {
-  assert.equal(itemAtual("/travessia.html"), "travessia");
+  assert.equal(itemAtual("/travessia.html"), "home");
   assert.equal(itemAtual("/transcender.html"), "chegada");
-  assert.equal(itemAtual("/transcendido.html"), "home");
+  assert.equal(itemAtual("/transcendido.html"), "materia");
   assert.equal(itemAtual("/eventos.html"), "cursos");
   assert.equal(itemAtual("/revista.html"), "blog");
   assert.equal(itemAtual("/meu-potala/agenda"), "meu-potala");

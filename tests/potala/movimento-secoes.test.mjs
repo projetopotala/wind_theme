@@ -118,7 +118,7 @@ test("Quem somos mantém o conteúdo e ganha capítulos", () => {
     "Conhecer um lugar é importante.",
   ];
   for (const trecho of obrigatorios) assert.ok(quemSomos.includes(trecho), `sumiu do conteúdo: ${trecho}`);
-  for (const destino of ["transcendido.html", "institutopotala.com/quemsomos"]) {
+  for (const destino of ["travessia.html", "institutopotala.com/quemsomos"]) {
     assert.ok(quemSomos.includes(destino), `sumiu o destino: ${destino}`);
   }
 

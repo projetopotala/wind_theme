@@ -12,13 +12,13 @@ const links = [
   { key: "programacao", label: "Programação", href: "programacao.html" },
 ];
 
-export function mountPortalHeader({ documentRef = document, current = "", travessiaHref = "transcendido.html" } = {}) {
+export function mountPortalHeader({ documentRef = document, current = "", travessiaHref = "travessia.html" } = {}) {
   if (documentRef.querySelector(".portal-header")) return;
 
   const header = documentRef.createElement("header");
   header.className = "portal-header";
   header.innerHTML = `
-    <a class="portal-header__brand" href="transcendido.html" aria-label="Instituto Potala — voltar à Travessia">
+    <a class="portal-header__brand" href="travessia.html" aria-label="Instituto Potala — voltar à Travessia">
       <img src="media/potala-mark-transparent.png" alt="" width="72" height="58" decoding="async">
       <span><strong>Instituto</strong> Potala</span>
     </a>
