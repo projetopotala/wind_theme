@@ -11,7 +11,7 @@ import { definirCategorias, rotuloDaCategoria } from "../blog/article-renderer.j
 import { carregarDadosDaMesa } from "./blog-desk.js";
 import { createBlogEditor, mergeDraftPosts, postPreview } from "./blog-editor.js";
 import { criarBiblioteca } from "./mesa-midia.js";
-import { enderecoLivre, textoAtual } from "./mesa-modelo.js";
+import { enderecoLivre, permissoesDaMesa, textoAtual } from "./mesa-modelo.js";
 import { criarAvisos, criarConfirmacao, criarMenu, criarPaleta, esc } from "./mesa-ui.js";
 import { criarComentarios, criarConfiguracoes, criarListaDePosts, criarVisaoGeral } from "./mesa-visoes.js";
 
@@ -59,7 +59,7 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
     loja,
     repositorio,
     usuario: null,
-    permissoes: { ler: true, editar: true, publicar: true, ...permissoes },
+    permissoes: permissoesDaMesa(permissoes),
     avisos,
     confirmar,
     menu,
@@ -370,9 +370,11 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
 
   return {
     /* Entra (ou volta) na mesa: relê tudo do repositório atual. */
-    async entrar({ usuario = null } = {}) {
+    async entrar({ usuario = null, permissoes: sessao } = {}) {
       ativa = true;
       ctx.usuario = usuario;
+      /* Cada entrada vale pela sessao atual: troca de conta nao herda permissoes nem dados da anterior. */
+      if (sessao) ctx.permissoes = permissoesDaMesa(sessao);
       loja.carregado = false;
       rotaAtual = null;
       const perfil = $("[data-mesa-perfil]");
@@ -386,6 +388,8 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
     sair() {
       ativa = false;
       rotaAtual = null;
+      ctx.usuario = null;
+      Object.assign(loja, { registros: [], categorias: [], comentarios: [], leituras: {}, inscritos: 0, configuracao: null, falhas: [], falhaDosComentarios: "", carregado: false });
     },
   };
 }
