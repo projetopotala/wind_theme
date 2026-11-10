@@ -306,3 +306,53 @@ test("migration: preparada, transacional, sem apagar dados nem mexer em grants, 
   const doc = await ler("docs/blog-b1-editor-multimidia.md");
   for (const secao of ["Preflight", "Backup", "Impacto", "Rollback"]) assert.match(doc, new RegExp(`## ${secao}`), secao);
 });
+
+test("migration: as gravações exatas do mesa_salvar_post (insert/upsert, pendência, troca de status, destaque) convivem com o gatilho", async () => {
+  const db = new PGlite();
+  await db.exec(`
+    create role anon; create role authenticated;
+    create table public.blog_posts (id text primary key, slug text, status text not null default 'draft', featured boolean not null default false,
+      published_at text, publish_at timestamptz, document jsonb not null, pending_document jsonb, pending_updated_at timestamptz,
+      updated_at timestamptz, updated_by_name text, created_by text, views int not null default 0);
+  `);
+  await db.exec(await ler("supabase/migrations/202611100001_blog_validacao_de_conteudo.sql"));
+  // Mesmo comando do RPC (202611060005): insert ... on conflict do update.
+  const salvar = (documento, status) => db.query(
+    `insert into public.blog_posts(id,slug,status,featured,published_at,publish_at,document,pending_document,pending_updated_at,updated_at,updated_by_name,created_by)
+     values($1,$1,$2,false,'',null,$3::jsonb,null,null,now(),'t','u1')
+     on conflict(id) do update set slug=excluded.slug,status=excluded.status,featured=excluded.featured,published_at=excluded.published_at,publish_at=excluded.publish_at,document=excluded.document,pending_document=null,pending_updated_at=null,updated_at=excluded.updated_at,updated_by_name=excluded.updated_by_name
+     returning status`, [documento.id, status, JSON.stringify(documento)]);
+  const pendencia = (id, documento) => db.query("update public.blog_posts set pending_document=$2::jsonb,pending_updated_at=now(),updated_by_name='t' where id=$1", [id, JSON.stringify(documento)]);
+  const recusa = (promessa, trecho) => assert.rejects(promessa, (erro) => erro.message.includes(trecho), trecho);
+  const d = (id, ...blocos) => ({ id, slug: id, title: "t", content: blocos });
+  const videoOk = { id: "v", type: "video", url: `https://youtu.be/${ID}` };
+  const videoAinda = { id: "v", type: "video", url: "https://exemplo.org/video" };
+
+  // Rascunho incompleto (sem título, sem blocos, com vídeo ainda não reconhecido) salva.
+  await salvar({ id: "a" }, "draft");
+  await salvar({ id: "b", title: "", content: [] }, "draft");
+  await salvar(d("c", videoAinda), "draft");
+  await salvar(d("c", videoAinda), "review");
+  // Enviar para revisão e voltar a rascunho (upsert do mesmo id) continua funcionando.
+  await salvar(d("c", videoOk), "review");
+  await salvar(d("c", videoOk), "draft");
+  // Publicar e agendar: válido passa; vídeo desconhecido é barrado e nada muda.
+  await salvar(d("c", videoOk), "published");
+  await recusa(salvar(d("c", videoAinda), "published"), "YouTube ou do Vimeo");
+  await recusa(salvar(d("novo", videoAinda), "scheduled"), "YouTube ou do Vimeo");
+  assert.equal((await db.query("select count(*)::int n from public.blog_posts where id = 'novo'")).rows[0].n, 0);
+  assert.equal((await db.query("select status from public.blog_posts where id = 'c'")).rows[0].status, "published");
+  // Pendência de artigo no ar: aceita rascunho incompleto, recusa conteúdo executável.
+  await pendencia("c", d("c", videoAinda));
+  await recusa(pendencia("c", d("c", { id: "p", type: "paragraph", text: "[x](javascript:alert(1))" })), "link que não é");
+  // Despublicar (volta a rascunho) com texto ainda incompleto salva.
+  await salvar(d("c", videoAinda), "draft");
+  // Destaque: o RPC reescreve o document de OUTROS artigos; os do acervo atual seguem passando.
+  for (const post of normalizePosts(POSTS)) await db.query("insert into public.blog_posts(id,slug,status,document) values($1,$1,'published',$2::jsonb)", [post.id, JSON.stringify(post)]);
+  await db.query(`update public.blog_posts set featured=false,document=document||'{"featured":false}'::jsonb where featured and id<>'zzz'`);
+  await db.query(`update public.blog_posts set featured=false,document=document||'{"featured":false}'::jsonb`);
+  // Editar artigo existente (upsert com o mesmo conteúdo + um parágrafo) segue válido.
+  const legado = normalizePosts(POSTS)[0];
+  await salvar({ ...legado, content: [...legado.content, { id: "n", type: "paragraph", text: "novo **trecho**" }] }, "published");
+  await db.close();
+});

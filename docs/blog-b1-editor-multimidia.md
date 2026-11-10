@@ -77,3 +77,14 @@ O player (YouTube em modo `youtube-nocookie.com` ou Vimeo) só é criado depois 
 
 - **B2:** upload de imagens com a biblioteca de mídia mais completa (recorte, otimização, texto alternativo obrigatório), upload de vídeo, miniatura própria do vídeo sem requisição ao provedor, integração com o consentimento da PR #21.
 - **B3:** edição inline rica (barra de formatação flutuante estilo Ghost, colar do Word/Docs com limpeza), comentários de revisão entre Escritor e Editor, histórico visual de versões com comparação.
+
+## Homologação
+
+Feita (dados sintéticos, sem tocar em Production): `test:portal`, `lint`, `verificar:ambiente`, `build`; testes de segurança (XSS, provedores, imagens, iframe só após clique); paridade JS/SQL e gatilho em PGlite, incluindo as gravações exatas do `mesa_salvar_post` (upsert, pendência, troca de status, destaque, edição de artigo existente); texto sintético em 320, 375, 390, 768, 1366 e 1920 px sem overflow; editor da Mesa em modo de teste local com prévia em Computador e Celular.
+
+Pendente de homologação autenticada (Escritor, Editor e Owner, em ambiente autorizado, depois do merge da #43):
+- Escritor: criar rascunho com texto, imagem e vídeo, salvar, reabrir, enviar para revisão; confirmar que não publica nem agenda.
+- Editor: revisar e publicar; confirmar que o vídeo aparece no site público e que um provedor não permitido é barrado.
+- Owner: confirmar que nada muda nas permissões.
+- Envio de imagem pela biblioteca de mídia e gravação real pelo `mesa_salvar_post` com a migration aplicada (só depois de autorização).
+- A Preview da Vercel fica atrás da guarda de ambiente e da proteção de deploy; não foi contornada.
