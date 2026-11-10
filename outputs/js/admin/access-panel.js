@@ -6,6 +6,8 @@
  * Quem decide se a pessoa pode ver a lista é o banco (admin_list_accounts exige
  * is_portal_admin); esta tela só mostra. Nada aqui altera permissões.
  */
+import { renderizarSolicitacoes, mensagemDaSolicitacao, mensagemDaAprovacao } from "./professional-applications.js";
+
 const ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 const e = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ESC[c]);
 
@@ -150,7 +152,7 @@ function formularioDeVinculo(contas, perfis) {
   </form>`;
 }
 
-export function renderizarAcessos({ contas = [], perfis = [], eventos = [], filtros = {}, erro = "", aviso = "", confirmando = "", ocupado = false } = {}) {
+export function renderizarAcessos({ solicitacoes = null, confirmandoSolicitacao = "", contas = [], perfis = [], eventos = [], filtros = {}, erro = "", aviso = "", confirmando = "", ocupado = false } = {}) {
   const lista = filtrarContas(contas, filtros);
   const opcoes = (mapa, atual) => Object.entries(mapa).map(([k, v]) => `<option value="${e(k)}"${k === atual ? " selected" : ""}>${e(v)}</option>`).join("");
   return `<header class="op-header"><div><p class="op-eyebrow">Pessoas e patrimônio</p>
@@ -158,6 +160,7 @@ export function renderizarAcessos({ contas = [], perfis = [], eventos = [], filt
       <p>Contas do portal e seus vínculos. Cada operação é autorizada e registrada pelo banco.</p></div>
     </header>
     ${aviso ? `<p class="op-muted" role="status" data-access-aviso>${e(aviso)}</p>` : ""}
+    ${renderizarSolicitacoes({ solicitacoes, confirmando: confirmandoSolicitacao })}
     ${erro ? "" : formularioDeVinculo(contas, perfis)}
     <form class="op-toolbar" data-access-filtros role="search">
       <label>Buscar <input type="search" name="busca" value="${e(filtros.busca || "")}" placeholder="Nome, e-mail ou perfil"></label>
@@ -197,17 +200,22 @@ export function createAccessPanel({ root, client }) {
   let contas = [];
   let perfis = [];
   let eventos = [];
+  let solicitacoes = null;
+  let confirmandoSolicitacao = "";
   let erro = "";
   let aviso = "";
   let confirmando = "";
   let ocupado = false;
   const filtros = { busca: "", papel: "", status: "" };
-  const desenhar = () => { if (alvo) alvo.innerHTML = renderizarAcessos({ contas, perfis, eventos, filtros, erro, aviso, confirmando, ocupado }); };
+  const desenhar = () => { if (alvo) alvo.innerHTML = renderizarAcessos({ solicitacoes, confirmandoSolicitacao, contas, perfis, eventos, filtros, erro, aviso, confirmando, ocupado }); };
 
   async function carregar() {
-    const [lista, profs, hist] = await Promise.all([
+    const [lista, profs, hist, pedidos] = await Promise.all([
       client.rpc("admin_list_accounts"), client.rpc("admin_list_professional_profiles"), client.rpc("admin_list_blog_events", { p_limit: 20 }),
+      client.rpc("admin_list_professional_applications", { p_status: "pending" }),
     ]);
+    /* Sem a funcao no banco ou sem ser o Owner, a secao simplesmente nao aparece. */
+    solicitacoes = !pedidos?.error && Array.isArray(pedidos?.data) ? pedidos.data : null;
     eventos = !hist?.error && Array.isArray(hist?.data) ? hist.data : [];
     if (lista.error) { contas = []; erro = mensagemDeErro(lista.error); } else { contas = Array.isArray(lista.data) ? lista.data : []; erro = ""; }
     perfis = !profs.error && Array.isArray(profs.data) ? profs.data : [];
@@ -222,7 +230,7 @@ export function createAccessPanel({ root, client }) {
       const { data: resposta, error } = await client.rpc(nome, args);
       aviso = error ? mensagem(error) : sucesso(resposta || {});
     } catch { aviso = mensagem(null); }
-    ocupado = false; confirmando = "";
+    ocupado = false; confirmando = ""; confirmandoSolicitacao = "";
     await carregar();
   }
 
@@ -250,6 +258,23 @@ export function createAccessPanel({ root, client }) {
     const conta = botao.getAttribute("data-conta-id");
     const perfil = botao.getAttribute("data-perfil");
     if (acao === "cancelar") { confirmando = ""; desenhar(); return; }
+    if (acao?.startsWith("sol-")) {
+      const id = botao.getAttribute("data-solicitacao-id");
+      if (acao === "sol-cancelar") { confirmandoSolicitacao = ""; desenhar(); return; }
+      if (acao === "sol-aprovar") { confirmandoSolicitacao = `aprovar|${id}`; desenhar(); return; }
+      if (acao === "sol-recusar") { confirmandoSolicitacao = `recusar|${id}`; desenhar(); return; }
+      if (acao === "sol-aprovar-confirmado") {
+        void operar("admin_approve_professional_application", { p_application_id: id }, mensagemDaAprovacao, mensagemDaSolicitacao);
+        return;
+      }
+      if (acao === "sol-recusar-confirmado") {
+        const nota = botao.closest("tr")?.querySelector("[data-sol-nota]")?.value?.trim() || null;
+        void operar("admin_reject_professional_application", { p_application_id: id, p_note: nota },
+          (r) => (r.changed === false ? "Este pedido já estava recusado." : "Pedido recusado."), mensagemDaSolicitacao);
+        return;
+      }
+      return;
+    }
     if (acao === "blog") {
       const nivel = botao.closest("tr")?.querySelector("[data-blog-nivel]")?.value;
       const atual = nivelBlog(contas.find((c) => c.id === conta));
@@ -274,6 +299,6 @@ export function createAccessPanel({ root, client }) {
   });
   return {
     reload: carregar,
-    clear() { contas = []; perfis = []; eventos = []; erro = ""; aviso = ""; confirmando = ""; if (alvo) alvo.innerHTML = ""; },
+    clear() { contas = []; perfis = []; eventos = []; solicitacoes = null; confirmandoSolicitacao = ""; erro = ""; aviso = ""; confirmando = ""; if (alvo) alvo.innerHTML = ""; },
   };
 }

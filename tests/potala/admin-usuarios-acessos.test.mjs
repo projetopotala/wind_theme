@@ -55,8 +55,9 @@ test("painel lê contas e perfis, sem parâmetros", async () => {
   const alvo = { innerHTML: "", addEventListener() {}, querySelector() { return null; } };
   const painel = createAccessPanel({ root: { querySelector: () => alvo }, client: { rpc: async (n, a) => { chamadas.push([n, a]); return { data: n === "admin_list_accounts" ? contas : [], error: null }; } } });
   assert.equal((await painel.reload()).length, contas.length);
-  assert.deepEqual(chamadas.map((c) => c[0]).sort(), ["admin_list_accounts", "admin_list_blog_events", "admin_list_professional_profiles"]);
-  assert.ok(chamadas.filter((c) => c[0] !== "admin_list_blog_events").every((c) => c[1] === undefined));
+  assert.deepEqual(chamadas.map((c) => c[0]).sort(), ["admin_list_accounts", "admin_list_blog_events", "admin_list_professional_applications", "admin_list_professional_profiles"]);
+  assert.ok(chamadas.filter((c) => c[0] !== "admin_list_blog_events" && c[0] !== "admin_list_professional_applications").every((c) => c[1] === undefined));
+  assert.deepEqual(chamadas.find((c) => c[0] === "admin_list_professional_applications")[1], { p_status: "pending" });
   assert.match(alvo.innerHTML, /8 de 8 conta/);
 });
 test("migration: só admin, sem anon, somente leitura e sem segredos", () => {

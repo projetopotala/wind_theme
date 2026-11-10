@@ -236,6 +236,11 @@ export function criarDadosDemonstracao({
     /* Demonstração não tem profissional vinculado: agenda de quem atende sempre vazia. */
     async agendaProfissional() { return []; },
     async perfisProfissionais() { return []; },
+    /* Sem banco real não há pedido de profissional: a seção "Quero atender" não aparece. */
+    async solicitacaoProfissional() { return { disponivel: false, pedido: null }; },
+    async enviarSolicitacaoProfissional() {
+      throw new Error("Pedidos para atender exigem uma conta conectada ao ambiente homologado.");
+    },
 
     async solicitarHorarioAtendimento() {
       throw new Error("Agendamentos reais exigem uma conta conectada ao ambiente homologado.");

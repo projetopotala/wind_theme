@@ -1,5 +1,6 @@
 import { STATUS_DE_ATENDIMENTO } from "../../modelos.js";
 import { e, secao, vazio } from "./comum.js";
+import { secaoQueroAtender } from "./quero-atender.js";
 import { caminhoDaSala } from "../../../sala/estado-sala.js";
 
 /*
@@ -155,7 +156,7 @@ function formulario(opcoes, horarios, ofertaEscolhida = null) {
 }
 
 const vista = {
-  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], perfisProfissionais = [], atendimentoDisponivel = false, parametros = null, agora = new Date() }) {
+  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], perfisProfissionais = [], solicitacaoProfissional = null, estado = null, atendimentoDisponivel = false, parametros = null, agora = new Date() }) {
     /*
      * Profissional é quem o banco reconhece: vínculo ativo com perfil profissional
      * ativo (perfisProfissionais) ou consultas atribuídas. Com zero consultas a
@@ -168,6 +169,13 @@ const vista = {
       if (!atendimentos.length) return agendaPropria;
       return `${agendaPropria}${vista.renderizar({ atendimentos, opcoesAtendimento, horariosAtendimento, atendimentoDisponivel, parametros, agora })}`;
     }
+    /* "Quero atender": so para quem ainda nao atende; o banco decide se a secao existe e em que estado. */
+    const queroAtender = secaoQueroAtender({
+      pedido: solicitacaoProfissional?.pedido ?? null,
+      disponivel: solicitacaoProfissional?.disponivel === true,
+      emailVerificadoEm: estado?.usuario?.emailVerificadoEm ?? null,
+      nomeSugerido: estado?.usuario?.nome || "",
+    });
     const referencia = agora instanceof Date ? agora : new Date(agora);
     // Continua "confirmada" enquanto a consulta não acabou: até o fim do horário e, se online,
     // até a sala fechar (fim + 30 min, mesma regra de appointment_room_context). O banco decide o acesso.
@@ -201,10 +209,10 @@ const vista = {
       corpo: listaDePedidos(cancelados, "Nenhuma solicitação cancelada."),
     })}`;
     if (!atendimentoDisponivel) {
-      return `${resumo}<p class="mp-aviso" role="status">Novas solicitações continuam desativadas enquanto o fluxo completo é preparado.</p>${acompanhamento}`;
+      return `${resumo}<p class="mp-aviso" role="status">Novas solicitações continuam desativadas enquanto o fluxo completo é preparado.</p>${acompanhamento}${queroAtender}`;
     }
     const corpo = formulario(opcoesAtendimento, horariosAtendimento, escolhaDoEndereco(parametros));
-    return `${resumo}${secao({ id: "mp-atendimentos-novo", classe: "mp-atendimentos-acao", kicker: "Começar aqui", titulo: "Solicitar um atendimento", corpo })}${acompanhamento}`;
+    return `${resumo}${secao({ id: "mp-atendimentos-novo", classe: "mp-atendimentos-acao", kicker: "Começar aqui", titulo: "Solicitar um atendimento", corpo })}${acompanhamento}${queroAtender}`;
   },
 };
 

@@ -32,6 +32,7 @@ import acompanhando from "./vistas/acompanhando.js";
 import notificacoes from "./vistas/notificacoes.js";
 import configuracoes from "./vistas/configuracoes.js";
 import atendimentos from "./vistas/atendimentos.js";
+import { validarSolicitacao } from "./vistas/quero-atender.js";
 import { APPOINTMENT_REQUESTS_ENABLED } from "../../appointments/config.js";
 import { erroDaUrl } from "../confirmar-conta.js";
 import { lerArtigosPublicados } from "../../blog/artigos-publicados.js";
@@ -111,6 +112,10 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.perfisProfissionais()
       .then((lista) => ({ nome: "perfisProfissionais", lista }))
       .catch((erro) => ({ nome: "perfisProfissionais", lista: [], erro })));
+    /* "Quero atender": estado do proprio pedido (o banco decide); some se a funcao ainda nao existe. */
+    if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.solicitacaoProfissional()
+      .then((lista) => ({ nome: "solicitacaoProfissional", lista }))
+      .catch((erro) => ({ nome: "solicitacaoProfissional", lista: { disponivel: false, pedido: null }, erro })));
     /* "Para você" só recomenda texto do Blog confirmado no ar; sem confirmação, nenhum. */
     leituras.push(lerArtigosPublicados().then((lista) => ({ nome: "textosDoBlog", lista: lista || [] })));
     const promessa = Promise.all(leituras)
@@ -122,6 +127,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         dados.horariosAtendimento ||= [];
         dados.agendaProfissional ||= [];
         dados.perfisProfissionais ||= [];
+        dados.solicitacaoProfissional ||= { disponivel: false, pedido: null };
         dados.falhas = respostas.filter((resposta) => resposta.erro).map((resposta) => resposta.nome);
         dono = usuarioId;
         return dados;
@@ -416,6 +422,22 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         dados = null;
         dono = null;
       }, "Solicitação recebida. Ela ainda não é uma consulta confirmada.");
+      return;
+    }
+    const profissional = evento.target.closest?.("[data-form='profissional']");
+    if (profissional) {
+      evento.preventDefault();
+      const aviso = profissional.querySelector("[data-form-status]");
+      const { erro, campos } = validarSolicitacao(Object.fromEntries(new FormData(profissional)));
+      if (erro) {
+        aviso.textContent = erro;
+        return;
+      }
+      agir(profissional.querySelector("[type='submit']"), async () => {
+        await sessao.enviarSolicitacaoProfissional(campos);
+        dados = null;
+        dono = null;
+      }, "Pedido enviado. A equipe vai analisar e avisaremos quando houver uma decisão.");
       return;
     }
     const form = evento.target.closest?.("[data-form='compromisso']");

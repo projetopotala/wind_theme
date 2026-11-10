@@ -250,6 +250,16 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
       return aposUsarDados(await dados.perfisProfissionais());
     },
 
+    async solicitacaoProfissional() {
+      exigirConta();
+      return aposUsarDados(await dados.solicitacaoProfissional());
+    },
+
+    async enviarSolicitacaoProfissional(pedido) {
+      exigirConta();
+      return aposUsarDados(await dados.enviarSolicitacaoProfissional(pedido));
+    },
+
     async solicitarAtendimento(pedido) {
       const usuarioId = exigirConta();
       return aposUsarDados(await dados.solicitarAtendimento(pedido, usuarioId));

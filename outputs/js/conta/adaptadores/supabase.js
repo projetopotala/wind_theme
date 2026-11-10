@@ -435,6 +435,36 @@ export function criarDadosSupabase({ client } = {}) {
       return { id: data.id, status: data.status };
     },
 
+    /*
+     * "Quero atender": estado do PRÓPRIO pedido (auth.uid() decide no banco). Enquanto a
+     * função não existir (PGRST202/42883) a seção some: `disponivel` fica falso.
+     */
+    async solicitacaoProfissional() {
+      const { data, error } = await client.rpc("my_professional_application");
+      if (error) {
+        if (["PGRST202", "42883"].includes(error.code)) return { disponivel: false, pedido: null };
+        throw falhouDados(error);
+      }
+      return { disponivel: true, pedido: data && typeof data === "object" ? data : null };
+    },
+
+    async enviarSolicitacaoProfissional({ nome, especialidade, apresentacao, telefone }) {
+      const { data, error } = await client.rpc("submit_professional_application", {
+        p_display_name: nome, p_specialty: especialidade, p_presentation: apresentacao, p_phone: telefone || null,
+      });
+      if (error) {
+        if (error.code === "23505") throw new ErroDeConta("PROFISSIONAL_JA_SOLICITADO", error);
+        if (error.code === "22023") throw new ErroDeConta("PROFISSIONAL_CAMPOS", error);
+        if (error.code === "PT429") throw new ErroDeConta("PROFISSIONAL_LIMITE", error);
+        if (error.code === "42501") throw new ErroDeConta("PROFISSIONAL_SEM_PERMISSAO", error);
+        throw falhouDados(error);
+      }
+      if (!data || !UUID_DO_RECIBO.test(String(data.id || "")) || data.status !== "pending") {
+        throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");
+      }
+      return { id: data.id, status: "pending" };
+    },
+
     async cancelarAtendimento(id) {
       const { data, error } = await client.rpc("cancel_my_appointment_request", { p_request_id: id });
       if (error) throw falhouDados(error);
