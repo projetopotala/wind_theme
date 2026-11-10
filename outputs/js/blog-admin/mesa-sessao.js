@@ -60,6 +60,21 @@ export function criarGuardaDeSessao() {
   };
 }
 
+/*
+ * O repositorio que as telas enxergam: toda chamada passa pela guarda. Congelada, nem sai; se a conta mudar
+ * enquanto a resposta vem, a resposta e descartada (nenhuma resposta de sessao antiga chega a tela nova).
+ * Requisicoes ja enviadas seguem com o token com que foram montadas; so a resposta e ignorada aqui.
+ */
+export function protegerRepositorio(repositorio, guarda) {
+  const protegido = {};
+  for (const nome of Object.keys(repositorio)) {
+    const valor = repositorio[nome];
+    protegido[nome] = typeof valor === "function" ? (...args) => guarda.gravar(() => repositorio[nome](...args)) : valor;
+  }
+  Object.defineProperty(protegido, "demonstracao", { get: () => repositorio.demonstracao, enumerable: false });
+  return protegido;
+}
+
 /* Logout voluntario: sai direto se nao ha nada pendente ou se foi salvo; senao pede confirmacao. */
 export function decidirSaida({ temMudancas, salvou }) {
   if (!temMudancas) return "sair";

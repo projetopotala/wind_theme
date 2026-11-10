@@ -12,7 +12,7 @@ import { carregarDadosDaMesa } from "./blog-desk.js";
 import { createBlogEditor, mergeDraftPosts, postPreview } from "./blog-editor.js";
 import { criarBiblioteca } from "./mesa-midia.js";
 import { enderecoLivre, permissoesDaMesa, textoAtual } from "./mesa-modelo.js";
-import { criarGuardaDeSessao, decidirSaida, textoParaCopia } from "./mesa-sessao.js";
+import { ErroDeSessao, criarGuardaDeSessao, decidirSaida, protegerRepositorio, textoParaCopia } from "./mesa-sessao.js";
 import { criarAvisos, criarConfirmacao, criarMenu, criarPaleta, esc } from "./mesa-ui.js";
 import { criarComentarios, criarConfiguracoes, criarListaDePosts, criarVisaoGeral } from "./mesa-visoes.js";
 
@@ -39,7 +39,9 @@ export function atalhoDaMesa(evento, ativa = true) {
   return "";
 }
 
-export function criarMesa({ raiz, repositorio, permissoes = {} }) {
+export function criarMesa({ raiz, repositorio: repositorioBruto, permissoes = {} }) {
+  const guarda = criarGuardaDeSessao();
+  const repositorio = protegerRepositorio(repositorioBruto, guarda);
   const $ = (seletor) => raiz.querySelector(seletor);
   const tela = (nome) => raiz.querySelector(`[data-mesa-view="${nome}"]`);
   const conteudo = $("[data-mesa-conteudo]");
@@ -55,7 +57,6 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
   let rotaAtual = null;
   let previaPendente = null;
   let roteando = Promise.resolve();
-  const guarda = criarGuardaDeSessao();
 
   const ctx = {
     loja,
@@ -75,7 +76,7 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
     excluirRegistro,
     atualizarContadores,
     categoriasMudaram() { definirCategorias(loja.categorias); },
-    recarregar: () => carregar().then(() => mostrar(rotaAtual || lerRota(globalThis.location.hash))),
+    recarregar: () => carregar().then(() => mostrar(rotaAtual || lerRota(globalThis.location.hash))).catch((erro) => { if (!(erro instanceof ErroDeSessao)) throw erro; }),
     aoCriar(id) {
       globalThis.history.replaceState(null, "", `#/editar/${encodeURIComponent(id)}`);
       rotaAtual = lerRota(globalThis.location.hash);
@@ -101,13 +102,21 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
     guarda.congelar();
     editor.descartar();
     Object.assign(loja, { registros: [], categorias: [], comentarios: [], leituras: {}, inscritos: 0, configuracao: null, falhas: [], falhaDosComentarios: "", carregado: false });
+    /* Telas redesenham por inteiro a cada abertura: apagar agora tira da pagina os textos da conta anterior. */
+    for (const secao of raiz.querySelectorAll("[data-mesa-view]")) if (secao.dataset.mesaView !== "editor") secao.replaceChildren();
+    const perfil = $("[data-mesa-perfil]");
+    if (perfil) { perfil.textContent = ""; perfil.title = ""; }
+    menu.fechar();
     return havia;
   }
 
   async function carregar() {
     raiz.dataset.carregando = "true";
+    const minha = guarda.geracao;
     try {
       const dados = await carregarDadosDaMesa(repositorio);
+      /* Carga que comecou numa sessao anterior nunca preenche a tela da atual. */
+      if (minha !== guarda.geracao) throw new ErroDeSessao();
       Object.assign(loja, dados, {
         demonstracao: Boolean(repositorio.demonstracao),
         carregado: true,
@@ -280,6 +289,7 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
       try {
         await carregar();
       } catch (erro) {
+        if (erro instanceof ErroDeSessao) return;
         rotaAtual = rota;
         mostrarErroGeral(erro);
         return;

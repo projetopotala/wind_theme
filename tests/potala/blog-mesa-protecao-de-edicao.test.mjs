@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { itensDoMenu } from "../../outputs/js/blog-admin/mesa-visoes.js";
 import { permissoesDaMesa, permissoesDaSessao } from "../../outputs/js/blog-admin/mesa-modelo.js";
 import {
-  ErroDeSessao, criarGuardaDeSessao, decidirSaida, identidadeDaSessao, identidadeMudou, textoParaCopia,
+  ErroDeSessao, criarGuardaDeSessao, decidirSaida, identidadeDaSessao, identidadeMudou, protegerRepositorio, textoParaCopia,
 } from "../../outputs/js/blog-admin/mesa-sessao.js";
 
 const escritor = permissoesDaMesa(permissoesDaSessao({ role: "blog_editor", user: { id: "w" }, permissions: { read: true, edit: true, publish: false } }));
@@ -201,4 +201,58 @@ test("fiacao da entrada: logout grava antes, troca em outra aba isola, sessao re
 test("nada de autorizacao no banco foi tocado por esta correcao", () => {
   const src = ler("mesa-sessao.js");
   assert.doesNotMatch(src, /supabase|rpc\(|has_portal_permission/);
+});
+
+/* ---------------- 5. repositorio protegido e respostas de sessao antiga ---------------- */
+
+test("repositorio protegido: resposta de sessao antiga e descartada, nada chega a sessao nova", async () => {
+  const g = criarGuardaDeSessao();
+  g.adotar("escritor");
+  const espera = adiavel();
+  const bruto = { listar: () => espera.promessa, lerConfiguracao: async () => "cfg", reset() {} };
+  Object.defineProperty(bruto, "demonstracao", { get: () => false });
+  const repo = protegerRepositorio(bruto, g);
+  const carga = repo.listar(); /* carga iniciada pela conta do Escritor */
+  g.congelar();
+  g.adotar("editor"); /* troca de conta antes da resposta */
+  espera.liberar(["rascunho-privado-do-escritor"]);
+  await assert.rejects(carga, ErroDeSessao);
+  assert.equal(await repo.lerConfiguracao(), "cfg", "a conta nova usa o repositorio normalmente");
+  assert.equal(repo.demonstracao, false, "propriedades passam adiante");
+});
+
+test("repositorio protegido: sessao congelada nem chega a chamar o servidor", async () => {
+  const g = criarGuardaDeSessao();
+  g.adotar("a");
+  g.congelar();
+  let chamadas = 0;
+  const repo = protegerRepositorio({ salvar: async () => { chamadas += 1; }, remover: async () => { chamadas += 1; }, moderar: async () => { chamadas += 1; } }, g);
+  for (const metodo of ["salvar", "remover", "moderar"]) await assert.rejects(repo[metodo](), ErroDeSessao);
+  assert.equal(chamadas, 0);
+});
+
+test("repositorio protegido: mesma conta com sessao renovada segue normal", async () => {
+  const g = criarGuardaDeSessao();
+  g.adotar("editor");
+  const repo = protegerRepositorio({ listar: async () => [1] }, g);
+  const pendente = repo.listar();
+  g.adotar("editor");
+  assert.deepEqual(await pendente, [1]);
+});
+
+test("fiacao: a Mesa so enxerga o repositorio protegido; carga antiga nao preenche; telas e perfil sao limpos", () => {
+  const src = ler("mesa-app.js");
+  assert.match(src, /repositorio: repositorioBruto/);
+  assert.match(src, /const repositorio = protegerRepositorio\(repositorioBruto, guarda\)/);
+  const carregar = src.slice(src.indexOf("  async function carregar()"), src.indexOf("  async function salvarRegistro"));
+  assert.match(carregar, /const minha = guarda\.geracao/);
+  assert.match(carregar, /minha !== guarda\.geracao\) throw new ErroDeSessao\(\)/);
+  assert.match(src, /if \(erro instanceof ErroDeSessao\) return;/);
+  const isolar = src.slice(src.indexOf("  function isolar() {"), src.indexOf("  async function carregar()"));
+  assert.match(isolar, /secao\.replaceChildren\(\)/);
+  assert.match(isolar, /mesaView !== "editor"/);
+  assert.match(isolar, /data-mesa-perfil/);
+  assert.match(isolar, /menu\.fechar\(\)/);
+  assert.match(src, /guarda\.gravar\(\(\) => repositorio\.salvar\(/);
+  assert.match(src, /guarda\.gravar\(\(\) => repositorio\.remover\(/);
 });
