@@ -1,10 +1,11 @@
 import { createAdminAuth } from "../admin/admin-auth.js";
 import { getSupabaseClient } from "../supabase/client.js";
+import { AMBIENTE_SUPABASE } from "../supabase/config.js";
 import { criarBlogAdministrativo, criarBlogDeDemonstracao } from "../blog/blog-remoto.js";
 import { createBlogRepository } from "../blog/blog-repository.js";
 import { readBlogSettings, saveBlogSettings } from "../blog/blog-settings.js";
 import { criarMesa } from "./mesa-app.js";
-import { CHAVE_ANTIGA, CHAVE_DA_DEMONSTRACAO, TEXTOS_DE_DEMONSTRACAO } from "./demonstracao.js";
+import { CHAVE_ANTIGA, CHAVE_DA_DEMONSTRACAO, TEXTOS_DE_DEMONSTRACAO, demonstracaoPermitida } from "./demonstracao.js";
 
 const root = document.getElementById("blog-admin-app");
 const loginView = root?.querySelector("[data-admin-auth-view]");
@@ -28,7 +29,9 @@ const demonstracao = criarBlogDeDemonstracao({
 let remoto = null;
 let usuario = null;
 let permissoes = { ler: true, editar: true, publicar: true };
-const atual = () => (root.dataset.blogDemo === "true" || !remoto ? demonstracao : remoto);
+/* A demonstração é estado do módulo, não do DOM: mexer em atributos pelo navegador não a liga. */
+let emDemo = false;
+const atual = () => (emDemo || !remoto ? demonstracao : remoto);
 const METODOS = [
   "listar", "salvar", "remover", "versoes", "listarCategorias", "criarCategoria", "atualizarCategoria", "removerCategoria",
   "listarMidia", "enviarImagem", "lerConfiguracao", "salvarConfiguracao", "leituras", "comentarios", "moderar", "inscritos",
@@ -53,27 +56,40 @@ function comoUsuario(user) {
 
 function mostrarLogin() {
   root.dataset.blogGate = "login";
-  delete root.dataset.blogDemo;
+  emDemo = false;
   mesa?.sair();
   if (loginView) loginView.hidden = false;
   if (panel) panel.hidden = true;
   document.title = "Potala — Mesa do Caderno";
 }
 
+const demoPermitida = demonstracaoPermitida({ ambiente: AMBIENTE_SUPABASE, origem: globalThis.location?.origin });
+
 function abrirMesa({ demo = false } = {}) {
+  // A demonstração só abre onde a lista de permissão deixa, nem se o botão for reexibido à mão.
+  if (demo && !demoPermitida) return;
   root.dataset.blogGate = "mesa";
-  if (demo) root.dataset.blogDemo = "true";
-  else delete root.dataset.blogDemo;
+  emDemo = demo;
   if (loginView) loginView.hidden = true;
   if (panel) panel.hidden = false;
   mesa ||= criarMesa({ raiz: panel, repositorio, permissoes });
   mesa.entrar({ usuario: demo ? null : usuario });
 }
 
-root?.querySelector("[data-blog-teste]")?.addEventListener("click", () => abrirMesa({ demo: true }));
+/*
+ * O "acesso de teste" é uma demonstração que vive só no navegador (três textos
+ * inventados, nada vai ao banco). Em Production ele fica oculto: ao lado do
+ * login, parece um segundo acesso ao Blog real. Em LAB, Preview e uso local
+ * continua disponível. Em Production (domínio oficial, alias ou endereço do
+ * deployment) não há parâmetro de URL nem atributo que a reative: o botão fica
+ * oculto e abrirMesa recusa o modo demonstração.
+ */
+const botaoDeTeste = root?.querySelector("[data-blog-teste]");
+if (botaoDeTeste) botaoDeTeste.hidden = !demoPermitida;
+botaoDeTeste?.addEventListener("click", () => abrirMesa({ demo: true }));
 continueButton?.addEventListener("click", () => abrirMesa());
 panel?.querySelector("[data-admin-sign-out]")?.addEventListener("click", (event) => {
-  if (root.dataset.blogDemo !== "true") return;
+  if (!emDemo) return;
   event.stopImmediatePropagation();
   mostrarLogin();
 }, true);
@@ -100,7 +116,7 @@ try {
       else if (continueButton) continueButton.hidden = false;
     },
     onState(state) {
-      if (root.dataset.blogDemo === "true") return;
+      if (emDemo) return;
       if (state !== "authorized" && root.dataset.blogGate === "mesa") mostrarLogin();
     },
   });

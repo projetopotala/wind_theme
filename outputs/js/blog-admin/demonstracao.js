@@ -6,6 +6,24 @@
  * texto que a equipe tirou do ar não pode voltar por aqui. São três textos
  * inventados, marcados como demonstração, em três situações diferentes.
  */
+import { classificarOrigem } from "../supabase/ambiente.js";
+
+/*
+ * ONDE A DEMONSTRAÇÃO PODE ABRIR. É uma lista de permissão, não de bloqueio: só
+ * LAB, uso local e a Preview autorizada de testes. Qualquer outra coisa (a
+ * origem oficial, um alias ou o endereço direto de um deployment de Production,
+ * origem desconhecida ou ambiente ausente) recusa. Exige que o ambiente
+ * escolhido pela configuração e a origem da página concordem entre si, e a
+ * origem oficial nunca passa, qualquer que seja o ambiente informado.
+ */
+export const AMBIENTES_DA_DEMONSTRACAO = Object.freeze(["lab", "local", "preview-e2e"]);
+export function demonstracaoPermitida({ ambiente, origem } = {}) {
+  if (!AMBIENTES_DA_DEMONSTRACAO.includes(ambiente)) return false;
+  const tipo = classificarOrigem(origem);
+  if (tipo === "producao") return false;
+  return ambiente === "preview-e2e" ? tipo === "desconhecido" : ambiente === tipo;
+}
+
 export const CHAVE_DA_DEMONSTRACAO = "potala.blog.demonstracao.v2";
 /* A chave antiga guardava uma cópia do acervo empacotado; é apagada ao entrar. */
 export const CHAVE_ANTIGA = "potala.blog.frontend.v1";
