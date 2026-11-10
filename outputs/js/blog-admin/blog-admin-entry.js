@@ -5,6 +5,7 @@ import { criarBlogAdministrativo, criarBlogDeDemonstracao } from "../blog/blog-r
 import { createBlogRepository } from "../blog/blog-repository.js";
 import { readBlogSettings, saveBlogSettings } from "../blog/blog-settings.js";
 import { criarMesa } from "./mesa-app.js";
+import { assinaturaDaSessao, entradaAoAutorizar, permissoesDaSessao } from "./mesa-modelo.js";
 import { CHAVE_ANTIGA, CHAVE_DA_DEMONSTRACAO, TEXTOS_DE_DEMONSTRACAO, demonstracaoPermitida } from "./demonstracao.js";
 
 const root = document.getElementById("blog-admin-app");
@@ -29,6 +30,7 @@ const demonstracao = criarBlogDeDemonstracao({
 let remoto = null;
 let usuario = null;
 let permissoes = { ler: true, editar: true, publicar: true };
+let assinaturaDaConta = null;
 /* A demonstração é estado do módulo, não do DOM: mexer em atributos pelo navegador não a liga. */
 let emDemo = false;
 const atual = () => (emDemo || !remoto ? demonstracao : remoto);
@@ -73,7 +75,8 @@ function abrirMesa({ demo = false } = {}) {
   if (loginView) loginView.hidden = true;
   if (panel) panel.hidden = false;
   mesa ||= criarMesa({ raiz: panel, repositorio, permissoes });
-  mesa.entrar({ usuario: demo ? null : usuario });
+  /* As permissoes seguem a sessao atual a cada entrada: troca de conta nao exige F5. */
+  mesa.entrar({ usuario: demo ? null : usuario, permissoes: demo ? {} : permissoes });
 }
 
 /*
@@ -105,14 +108,15 @@ try {
     managePanel: false,
     onAuthorized(access) {
       usuario = comoUsuario(access?.user);
-      permissoes = access?.role === "blog_editor"
-        ? {
-          ler: access.permissions?.read === true, editar: access.permissions?.edit === true, publicar: access.permissions?.publish === true,
-          somenteProprios: access.permissions?.publish !== true, usuarioId: access.user?.id || access.session?.user?.id || null,
-        }
-        : { ler: true, editar: true, publicar: true };
+      permissoes = permissoesDaSessao(access);
+      const assinatura = assinaturaDaSessao(access);
+      const entrada = entradaAoAutorizar({
+        gate: root.dataset.blogGate, hash: window.location.hash, assinaturaAnterior: assinaturaDaConta, assinatura, emDemo,
+      });
+      assinaturaDaConta = assinatura;
       /* Quem volta com a sessão aberta e um endereço da mesa (#/editar/…) entra direto. */
-      if (root.dataset.blogGate === "entrar" || /^#\/./.test(window.location.hash)) abrirMesa();
+      /* "reabrir": Mesa ja aberta e a conta (ou o que ela pode) mudou; abre de novo com as permissoes novas. */
+      if (entrada !== "continuar") abrirMesa();
       else if (continueButton) continueButton.hidden = false;
     },
     onState(state) {
