@@ -1,5 +1,6 @@
 import { createAdminAuth } from "../admin/admin-auth.js";
 import { getSupabaseClient } from "../supabase/client.js";
+import { classificarOrigem } from "../supabase/ambiente.js";
 import { criarBlogAdministrativo, criarBlogDeDemonstracao } from "../blog/blog-remoto.js";
 import { createBlogRepository } from "../blog/blog-repository.js";
 import { readBlogSettings, saveBlogSettings } from "../blog/blog-settings.js";
@@ -70,7 +71,17 @@ function abrirMesa({ demo = false } = {}) {
   mesa.entrar({ usuario: demo ? null : usuario });
 }
 
-root?.querySelector("[data-blog-teste]")?.addEventListener("click", () => abrirMesa({ demo: true }));
+/*
+ * O "acesso de teste" é uma demonstração que vive só no navegador (três textos
+ * inventados, nada vai ao banco). Em Production ele fica oculto: ao lado do
+ * login, parece um segundo acesso ao Blog real. Em LAB, Preview e uso local
+ * continua visível; em Production a equipe o abre com ?acesso-de-teste=1.
+ */
+const botaoDeTeste = root?.querySelector("[data-blog-teste]");
+const emProducao = classificarOrigem(globalThis.location?.origin) === "producao";
+const pediuTeste = new URLSearchParams(globalThis.location?.search || "").get("acesso-de-teste") === "1";
+if (botaoDeTeste) botaoDeTeste.hidden = emProducao && !pediuTeste;
+botaoDeTeste?.addEventListener("click", () => abrirMesa({ demo: true }));
 continueButton?.addEventListener("click", () => abrirMesa());
 panel?.querySelector("[data-admin-sign-out]")?.addEventListener("click", (event) => {
   if (root.dataset.blogDemo !== "true") return;
