@@ -53,17 +53,19 @@ export function criarAvisos(raiz) {
  * ------------------------------------------------------------------ */
 
 export function criarConfirmacao(dialogo) {
-  return function confirmar({ titulo, texto, confirmar = "Confirmar", perigo = false }) {
+  return function confirmar({ titulo, texto, confirmar = "Confirmar", perigo = false, extra = null }) {
     if (!dialogo?.showModal) return Promise.resolve(globalThis.confirm?.(`${titulo}\n\n${texto}`) ?? false);
     dialogo.innerHTML = `<form method="dialog" class="mesa-confirmar">
         <h2>${esc(titulo)}</h2>
         <p>${esc(texto)}</p>
         <footer>
+          ${extra ? `<button type="button" data-confirmar-extra class="mesa-botao mesa-botao--contorno">${esc(extra.rotulo)}</button>` : ""}
           <button type="submit" value="nao" class="mesa-botao mesa-botao--contorno">Cancelar</button>
           <button type="submit" value="sim" class="mesa-botao ${perigo ? "mesa-botao--perigo" : "mesa-botao--principal"}">${esc(confirmar)}</button>
         </footer>
       </form>`;
     dialogo.returnValue = "";
+    dialogo.querySelector("[data-confirmar-extra]")?.addEventListener("click", () => extra?.executar?.());
     dialogo.showModal();
     dialogo.querySelector('[value="nao"]')?.focus();
     return new Promise((resolver) => {

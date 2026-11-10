@@ -133,6 +133,8 @@ export function createBlogEditor({ root, ctx } = {}) {
   let arrastando = "";
   let destino = null;
   let esperaDaPrevia = null;
+  /* Sobe quando a sessao muda: gravacoes que comecaram antes nao mexem mais no editor. */
+  let geracao = 0;
   let painelAberto = lerPreferencia("mesa.painel", "aberto") === "aberto" && !globalThis.matchMedia?.("(max-width: 1100px)").matches;
 
   root.innerHTML = `<div class="mesa-editor" data-painel="${painelAberto ? "aberto" : "fechado"}">
@@ -226,6 +228,7 @@ export function createBlogEditor({ root, ctx } = {}) {
       /* Escritor: so envia para revisao. Quem publica e o Editor. */
       if (status === "draft") return { acao: "revisao", rotulo: "Enviar para revisão", icone: "eye" };
       if (status === "review") return { acao: "revisao", rotulo: "Em revisão", icone: "eye", desativado: true };
+      if (status === "archived") return { acao: "revisao", rotulo: "Restauração com o Editor", icone: "rotate-ccw", desativado: true };
       if (status !== "archived") return { acao: "revisao", rotulo: "Publicação com o Editor", icone: "send", desativado: true };
     }
     if (status === "published") return { acao: "publicar", rotulo: "Atualizar", icone: "send", desativado: !registro.pendente && estado === "salvo" };
@@ -258,10 +261,13 @@ export function createBlogEditor({ root, ctx } = {}) {
   async function salvar({ automatico = false, registrar = !automatico, silencioso = automatico } = {}) {
     clearTimeout(espera);
     espera = null;
+    if (!post) return false;
+    const minha = geracao;
     if (emVoo) {
       repetir = true;
       await emVoo;
       if (automatico) return estado === "salvo";
+      if (minha !== geracao || !post) return false;
     }
     if (!registro && textoVazio()) return true;
     const agora = assinatura();
@@ -277,6 +283,7 @@ export function createBlogEditor({ root, ctx } = {}) {
       registrar: gravarVersao,
       resumo: gravarVersao ? resumoDasMudancas(base, documento) : "",
     }).then((novo) => {
+      if (minha !== geracao) return false;
       const primeiraVez = !registro;
       registro = novo;
       salvoComo = agora;
@@ -294,6 +301,7 @@ export function createBlogEditor({ root, ctx } = {}) {
       if (aba === "publicacao" || (aba === "detalhes" && gravarVersao)) desenharPainel({ manterFoco: true });
       return true;
     }).catch((erro) => {
+      if (minha !== geracao) return false;
       estado = "erro";
       if (!avisouErro || !silencioso) {
         avisouErro = true;
@@ -301,6 +309,7 @@ export function createBlogEditor({ root, ctx } = {}) {
       }
       return false;
     }).finally(() => {
+      if (minha !== geracao) return;
       emVoo = null;
       desenharSalvo();
       desenharBotoes();
@@ -330,7 +339,7 @@ export function createBlogEditor({ root, ctx } = {}) {
   }
 
   async function mudarStatus(acao) {
-    if (ocupado) return;
+    if (ocupado || !post) return;
     if ((acao === "publicar" || acao === "agendar") && ctx.permissoes?.publicar === false) {
       ctx.avisos.mostrar("Sua conta pode editar o Blog, mas não publicar ou agendar textos.", { tipo: "erro", duracao: 6000 });
       return;
@@ -777,9 +786,9 @@ export function createBlogEditor({ root, ctx } = {}) {
       </section>` : ""}
       <section class="mesa-painel__secao mesa-painel__acoes">
         ${status === "draft" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="revisao">${i("eye")}Enviar para revisão</button>` : ""}
-        ${status === "review" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="despublicar">${i("undo-2")}Voltar a rascunho</button>` : ""}
-        ${status === "scheduled" ? `${publica() ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="publicar">${i("send")}Publicar agora</button>` : ""}<button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Cancelar agendamento</button>` : ""}
-        ${status === "published" ? `<a class="mesa-botao mesa-botao--contorno" href="/artigo.html?post=${encodeURIComponent(registro.post.slug)}" target="_blank" rel="noopener">${i("external-link")}Ver no Blog</a><button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Despublicar</button>` : ""}
+        ${status === "review" && publica() ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="despublicar">${i("undo-2")}Voltar a rascunho</button>` : ""}
+        ${status === "scheduled" ? `${publica() ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="publicar">${i("send")}Publicar agora</button><button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Cancelar agendamento</button>` : ""}` : ""}
+        ${status === "published" ? `<a class="mesa-botao mesa-botao--contorno" href="/artigo.html?post=${encodeURIComponent(registro.post.slug)}" target="_blank" rel="noopener">${i("external-link")}Ver no Blog</a>${publica() ? `<button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Despublicar</button>` : ""}` : ""}
       </section>
       <section class="mesa-painel__secao">
         ${campoDoPainel("Endereço do texto", `<div class="mesa-endereco"><span>artigo.html?post=</span><input data-editor-campo="slug" value="${esc(post.slug)}" spellcheck="false" aria-label="Endereço do texto"></div>`,
@@ -1320,6 +1329,36 @@ export function createBlogEditor({ root, ctx } = {}) {
 
   return {
     get registro() { return registro; },
+    /*
+     * A sessao mudou: larga o que estava aberto SEM gravar (nada sai em nome de outra conta) e apaga da tela
+     * o conteudo do usuario anterior. Gravacoes em andamento deixam de afetar o editor.
+     */
+    descartar() {
+      geracao += 1;
+      clearTimeout(espera);
+      clearTimeout(esperaDaPrevia);
+      espera = null;
+      esperaDaPrevia = null;
+      repetir = false;
+      ocupado = false;
+      emVoo = null;
+      previa.hidden = true;
+      casca.classList.remove("tem-previa");
+      quadro.src = "about:blank";
+      registro = null;
+      post = null;
+      base = null;
+      salvoComo = versaoComo = "";
+      estado = "salvo";
+      historico = null;
+      selecionado = "";
+      /* A estrutura da folha e fixa (o editor so preenche); apaga o conteudo, nao os elementos. */
+      for (const campo of folha.querySelectorAll("textarea")) campo.value = "";
+      for (const alvo of root.querySelectorAll("[data-editor-blocos], [data-editor-capa], [data-editor-categoria], [data-editor-nome], [data-editor-status], [data-editor-salvo], [data-editor-palavras]")) alvo.replaceChildren();
+      corpoDoPainel.replaceChildren();
+      rodapeDoPainel.replaceChildren();
+    },
+    textoPendente: () => (post ? clone(post) : null),
     abrir(id, { agendar = false } = {}) {
       const encontrado = id ? ctx.loja.registros.find((item) => item.id === id) : null;
       if (id && !encontrado) return false;

@@ -6,6 +6,7 @@ import { createBlogRepository } from "../blog/blog-repository.js";
 import { readBlogSettings, saveBlogSettings } from "../blog/blog-settings.js";
 import { criarMesa } from "./mesa-app.js";
 import { assinaturaDaSessao, entradaAoAutorizar, permissoesDaSessao } from "./mesa-modelo.js";
+import { identidadeDaSessao, identidadeMudou } from "./mesa-sessao.js";
 import { CHAVE_ANTIGA, CHAVE_DA_DEMONSTRACAO, TEXTOS_DE_DEMONSTRACAO, demonstracaoPermitida } from "./demonstracao.js";
 
 const root = document.getElementById("blog-admin-app");
@@ -31,6 +32,8 @@ let remoto = null;
 let usuario = null;
 let permissoes = { ler: true, editar: true, publicar: true };
 let assinaturaDaConta = null;
+let identidadeAtual = null;
+let saidaLiberada = false;
 /* A demonstração é estado do módulo, não do DOM: mexer em atributos pelo navegador não a liga. */
 let emDemo = false;
 const atual = () => (emDemo || !remoto ? demonstracao : remoto);
@@ -56,10 +59,18 @@ function comoUsuario(user) {
   };
 }
 
-function mostrarLogin() {
+const AVISO_PERDA = "Havia alterações não salvas e elas não puderam ser recuperadas. Por segurança, nada é gravado em nome de outra conta.";
+
+function mostrarLogin(aviso = "") {
   root.dataset.blogGate = "login";
   emDemo = false;
-  mesa?.sair();
+  identidadeAtual = null;
+  assinaturaDaConta = null;
+  const perdeu = mesa?.sair();
+  if (perdeu || aviso) {
+    const status = root.querySelector("[data-admin-auth-status]");
+    if (status) status.textContent = aviso || AVISO_PERDA;
+  }
   if (loginView) loginView.hidden = false;
   if (panel) panel.hidden = true;
   document.title = "Potala — Mesa do Caderno";
@@ -76,7 +87,7 @@ function abrirMesa({ demo = false } = {}) {
   if (panel) panel.hidden = false;
   mesa ||= criarMesa({ raiz: panel, repositorio, permissoes });
   /* As permissoes seguem a sessao atual a cada entrada: troca de conta nao exige F5. */
-  mesa.entrar({ usuario: demo ? null : usuario, permissoes: demo ? {} : permissoes });
+  mesa.entrar({ usuario: demo ? null : usuario, permissoes: demo ? {} : permissoes, identidade: demo ? "demonstracao" : identidadeAtual });
 }
 
 /*
@@ -91,15 +102,39 @@ const botaoDeTeste = root?.querySelector("[data-blog-teste]");
 if (botaoDeTeste) botaoDeTeste.hidden = !demoPermitida;
 botaoDeTeste?.addEventListener("click", () => abrirMesa({ demo: true }));
 continueButton?.addEventListener("click", () => abrirMesa());
-panel?.querySelector("[data-admin-sign-out]")?.addEventListener("click", (event) => {
-  if (!emDemo) return;
+/*
+ * Sair: na demonstracao so fecha a Mesa. Com conta, grava antes o que estiver pendente (a sessao ainda e a
+ * mesma); se nao der, pergunta e deixa copiar o texto. Sem pendencias, segue o fluxo normal.
+ */
+panel?.addEventListener("click", async (event) => {
+  const botao = event.target.closest?.("[data-admin-sign-out]");
+  if (!botao) return;
+  if (saidaLiberada) { saidaLiberada = false; return; }
+  if (emDemo) {
+    event.stopImmediatePropagation();
+    mostrarLogin();
+    return;
+  }
+  if (!mesa?.temMudancas()) return;
   event.stopImmediatePropagation();
-  mostrarLogin();
+  event.preventDefault();
+  if (await mesa.prepararSaida()) {
+    saidaLiberada = true;
+    botao.click();
+  }
 }, true);
 
 try {
   const client = getSupabaseClient();
   remoto = criarBlogAdministrativo({ client });
+  /*
+   * Conta trocada em outra aba: antes de qualquer coisa corta gravacoes e apaga da tela o texto do usuario
+   * anterior. Assinado primeiro para rodar antes do login tratar a sessao nova.
+   */
+  client.auth.onAuthStateChange((_evento, sessao) => {
+    if (emDemo || root.dataset.blogGate !== "mesa") return;
+    if (identidadeMudou(identidadeAtual, sessao?.user?.id || null)) mostrarLogin("A conta mudou em outra aba. Confirme a conta para continuar.");
+  });
   const form = root?.querySelector("[data-admin-auth-form]");
   form?.addEventListener("submit", () => { root.dataset.blogGate = "entrar"; }, true);
   createAdminAuth({
@@ -109,6 +144,7 @@ try {
     onAuthorized(access) {
       usuario = comoUsuario(access?.user);
       permissoes = permissoesDaSessao(access);
+      identidadeAtual = identidadeDaSessao(access);
       const assinatura = assinaturaDaSessao(access);
       const entrada = entradaAoAutorizar({
         gate: root.dataset.blogGate, hash: window.location.hash, assinaturaAnterior: assinaturaDaConta, assinatura, emDemo,

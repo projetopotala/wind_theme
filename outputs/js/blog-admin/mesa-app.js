@@ -12,6 +12,7 @@ import { carregarDadosDaMesa } from "./blog-desk.js";
 import { createBlogEditor, mergeDraftPosts, postPreview } from "./blog-editor.js";
 import { criarBiblioteca } from "./mesa-midia.js";
 import { enderecoLivre, permissoesDaMesa, textoAtual } from "./mesa-modelo.js";
+import { criarGuardaDeSessao, decidirSaida, textoParaCopia } from "./mesa-sessao.js";
 import { criarAvisos, criarConfirmacao, criarMenu, criarPaleta, esc } from "./mesa-ui.js";
 import { criarComentarios, criarConfiguracoes, criarListaDePosts, criarVisaoGeral } from "./mesa-visoes.js";
 
@@ -54,6 +55,7 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
   let rotaAtual = null;
   let previaPendente = null;
   let roteando = Promise.resolve();
+  const guarda = criarGuardaDeSessao();
 
   const ctx = {
     loja,
@@ -93,6 +95,15 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
 
   /* ---------------- dados ---------------- */
 
+  /* Congela gravacoes, descarta o editor e limpa os dados carregados. Devolve se havia pendencias. */
+  function isolar() {
+    const havia = editor.temMudancas();
+    guarda.congelar();
+    editor.descartar();
+    Object.assign(loja, { registros: [], categorias: [], comentarios: [], leituras: {}, inscritos: 0, configuracao: null, falhas: [], falhaDosComentarios: "", carregado: false });
+    return havia;
+  }
+
   async function carregar() {
     raiz.dataset.carregando = "true";
     try {
@@ -117,21 +128,23 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
         throw new Error("Você só pode alterar textos de sua autoria.");
       }
     }
-    const registro = await repositorio.salvar(documento, acao, opcoes);
-    const indice = loja.registros.findIndex((item) => item.id === registro.id);
-    if (indice >= 0) loja.registros[indice] = registro;
-    else loja.registros.unshift(registro);
-    if (registro.post.featured && acao !== "pendente") {
-      for (const outro of loja.registros) {
-        if (outro.id !== registro.id && outro.post.featured) outro.post = { ...outro.post, featured: false };
+    /* A gravacao so vale se a conta ainda e a mesma; senao nada entra nos dados da tela. */
+    return guarda.gravar(() => repositorio.salvar(documento, acao, opcoes), (registro) => {
+      const indice = loja.registros.findIndex((item) => item.id === registro.id);
+      if (indice >= 0) loja.registros[indice] = registro;
+      else loja.registros.unshift(registro);
+      if (registro.post.featured && acao !== "pendente") {
+        for (const outro of loja.registros) {
+          if (outro.id !== registro.id && outro.post.featured) outro.post = { ...outro.post, featured: false };
+        }
       }
-    }
-    return registro;
+    });
   }
 
   async function excluirRegistro(id) {
-    await repositorio.remover(id);
-    loja.registros = loja.registros.filter((item) => item.id !== id);
+    await guarda.gravar(() => repositorio.remover(id), () => {
+      loja.registros = loja.registros.filter((item) => item.id !== id);
+    });
   }
 
   function atualizarContadores() {
@@ -370,7 +383,16 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
 
   return {
     /* Entra (ou volta) na mesa: relê tudo do repositório atual. */
-    async entrar({ usuario = null, permissoes: sessao } = {}) {
+    async entrar({ usuario = null, permissoes: sessao, identidade = null } = {}) {
+      if (identidade !== guarda.identidade) {
+        /* Outra conta: o que estava aberto e da conta anterior e nao e gravado nem mostrado. */
+        isolar();
+        guarda.adotar(identidade);
+      } else if (editor.temMudancas()) {
+        /* Mesma conta (permissoes mudaram, por exemplo): grava antes de reabrir. */
+        await editor.sair().catch(() => false);
+      }
+      guarda.adotar(identidade);
       ativa = true;
       ctx.usuario = usuario;
       /* Cada entrada vale pela sessao atual: troca de conta nao herda permissoes nem dados da anterior. */
@@ -385,11 +407,43 @@ export function criarMesa({ raiz, repositorio, permissoes = {} }) {
       raiz.dataset.demonstracao = String(Boolean(repositorio.demonstracao));
       await rotear();
     },
+    /* Tela de login: devolve true se havia alteracoes pendentes que foram descartadas. */
     sair() {
       ativa = false;
       rotaAtual = null;
       ctx.usuario = null;
-      Object.assign(loja, { registros: [], categorias: [], comentarios: [], leituras: {}, inscritos: 0, configuracao: null, falhas: [], falhaDosComentarios: "", carregado: false });
+      return isolar();
+    },
+    /* A conta mudou fora da Mesa (outra aba): corta gravacoes e apaga o conteudo do usuario anterior. */
+    isolar() {
+      ativa = false;
+      rotaAtual = null;
+      ctx.usuario = null;
+      return isolar();
+    },
+    temMudancas: () => editor.temMudancas(),
+    /* Logout voluntario: grava com a sessao ainda valida; se nao der, confirma e deixa copiar o texto. */
+    async prepararSaida() {
+      if (!editor.temMudancas()) return true;
+      const salvou = await editor.sair().catch(() => false);
+      if (decidirSaida({ temMudancas: true, salvou }) === "sair") return true;
+      return confirmar({
+        titulo: "Sair sem salvar?",
+        texto: "As últimas alterações não puderam ser salvas. Se sair agora, elas se perdem. Se quiser guardá-las, copie o texto antes.",
+        confirmar: "Sair sem salvar",
+        perigo: true,
+        extra: {
+          rotulo: "Copiar texto",
+          executar: async () => {
+            try {
+              await globalThis.navigator.clipboard.writeText(textoParaCopia(editor.textoPendente()));
+              avisos.mostrar("Texto copiado.");
+            } catch {
+              avisos.mostrar("Não foi possível copiar. Selecione o texto na tela e copie à mão.", { tipo: "erro" });
+            }
+          },
+        },
+      });
     },
   };
 }
