@@ -149,3 +149,63 @@ export function placeBlogPosts(posts = []) {
   for (const post of published) categories[post.category] = (categories[post.category] || 0) + 1;
   return { featured, grid, recent: published.slice(0, 4), categories };
 }
+
+/*
+ * A BUSCA DO CADERNO.
+ *
+ * "oraculo", "Oráculo" e "ORÁCULO" são a mesma palavra para quem digita:
+ * acento e caixa saem dos dois lados da comparação. Cada palavra digitada
+ * precisa aparecer em algum lugar do texto pesquisável (título, resumo,
+ * autor, categoria e etiquetas), em qualquer ordem. O subtítulo fica de fora de
+ * propósito: é genérico e casaria com tudo.
+ */
+export function semAcento(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR");
+}
+
+export function termosDaBusca(value) {
+  return semAcento(value).split(/\s+/).filter(Boolean);
+}
+
+export function textoPesquisavel(post = {}, rotuloDaCategoria = (id) => id) {
+  return semAcento([
+    post.title, post.excerpt, post.author, post.category, rotuloDaCategoria(post.category), ...(post.tags || []),
+  ].join(" "));
+}
+
+export function filtrarPostsDoCaderno(posts = [], { categoria = "todos", termo = "", rotuloDaCategoria } = {}) {
+  const termos = termosDaBusca(termo);
+  return posts.filter((post) => {
+    if (categoria !== "todos" && post.category !== categoria) return false;
+    if (!termos.length) return true;
+    const palheiro = textoPesquisavel(post, rotuloDaCategoria);
+    return termos.every((palavra) => palheiro.includes(palavra));
+  });
+}
+
+/*
+ * O QUE O CADERNO MOSTRA para uma categoria e uma busca.
+ *
+ * Sem filtro: o destaque do banco no painel do alto e o resto na grade.
+ * Com filtro ou busca: o painel do alto passa a mostrar o primeiro resultado
+ * (nunca um texto que o filtro excluiu) e a grade traz os demais. Sem
+ * resultado, o painel fica vazio e quem desenha mostra a mensagem de vazio.
+ */
+export function visaoDoCaderno(posts = [], { categoria = "todos", termo = "", rotuloDaCategoria } = {}) {
+  const buscando = termosDaBusca(termo).length > 0;
+  const filtrando = buscando || categoria !== "todos";
+  const publicados = normalizePosts(posts).filter((post) => post.status === "published");
+  const lista = filtrando ? filtrarPostsDoCaderno(publicados, { categoria, termo, rotuloDaCategoria }) : publicados;
+  const { featured, grid } = placeBlogPosts(lista);
+  return {
+    filtrando,
+    buscando,
+    destaque: featured,
+    grade: grid,
+    total: (featured ? 1 : 0) + grid.length,
+    etiquetaDoDestaque: buscando ? "Melhor resultado" : "Destaque",
+  };
+}

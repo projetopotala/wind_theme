@@ -2,6 +2,7 @@ import { normalizePosts } from "./blog-model.js";
 import { criarBlogPublico, quandoFoi } from "./blog-remoto.js";
 import { definirCatalogo, menuDasCategorias } from "./blog-controller.js";
 import { findPostBySlug, renderArticle, rotuloDaCategoria } from "./article-renderer.js";
+import { ativarVideos } from "./article-video.js";
 import { criarRestPublico } from "../supabase/rest.js";
 
 const escapeHtml = (value) => String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -153,6 +154,7 @@ function mount(root = document) {
     target.innerHTML = `<div class="article-content" role="alert"><h1>Não foi possível verificar este texto agora.</h1><p>${escapeHtml(erro?.message || "Tente de novo em instantes.")}</p><p><button type="button" class="cad-botao-contorno" data-artigo-tentar>Tentar de novo</button></p></div>`;
     root.querySelector("[data-article-related]").innerHTML = "";
   }
+  ativarVideos(target);
   target.addEventListener("click", (event) => {
     const botao = event.target.closest("[data-artigo-tentar]");
     if (!botao || botao.disabled) return;

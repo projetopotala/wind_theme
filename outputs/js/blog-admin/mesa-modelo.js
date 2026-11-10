@@ -42,6 +42,33 @@ export const textoAtual = (registro) => registro?.pendente || registro?.post;
 /* Escritor (publicar === false) nao ve Publicar, Agendar nem Arquivar: o banco recusaria de qualquer forma. */
 export const podePublicar = (permissoes) => permissoes?.publicar !== false;
 
+/* Permissoes da sessao atual. Sempre parte do padrao: nunca herda nada de uma sessao anterior. */
+export const permissoesDaMesa = (permissoes = {}) => ({ ler: true, editar: true, publicar: true, ...permissoes });
+
+/* Do acesso devolvido pelo login para as permissoes da Mesa (so leitura da concessao; o banco segue decidindo). */
+export function permissoesDaSessao(acesso) {
+  if (acesso?.role !== "blog_editor") return permissoesDaMesa();
+  const p = acesso.permissions || {};
+  return permissoesDaMesa({
+    ler: p.read === true,
+    editar: p.edit === true,
+    publicar: p.publish === true,
+    somenteProprios: p.publish !== true,
+    usuarioId: acesso.user?.id || acesso.session?.user?.id || null,
+  });
+}
+
+/* O que fazer quando o login (ou uma renovacao dele) autoriza a sessao. */
+export function entradaAoAutorizar({ gate, hash = "", assinaturaAnterior = null, assinatura, emDemo = false }) {
+  if (gate === "entrar" || /^#\/./.test(hash)) return "abrir";
+  if (assinaturaAnterior !== null && assinatura !== assinaturaAnterior && !emDemo && gate === "mesa") return "reabrir";
+  return "continuar";
+}
+
+/* Identifica conta + permissoes: so muda quando a conta troca ou quando muda o que ela pode. */
+export const assinaturaDaSessao = (acesso) =>
+  JSON.stringify([acesso?.user?.id || acesso?.session?.user?.id || null, permissoesDaSessao(acesso)]);
+
 /* A data que conta para "publicado em": a do banco, ou a escrita no texto. */
 export function dataDePublicacao(registro) {
   if (registro?.publicarEm) return new Date(registro.publicarEm);

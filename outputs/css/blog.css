@@ -322,3 +322,20 @@
 @media (prefers-reduced-motion: reduce) {
   .post-capa img, .blog-medalhao, .blog-medalhao img, .lateral-lista a { transition: none; }
 }
+
+/*
+ * CATEGORIAS NO CELULAR: todas à vista.
+ * Antes, a fileira de medalhões rolava para o lado sem nenhum sinal e Terapias,
+ * Cursos, Cultura e Práticas ficavam fora da tela. Agora quebram em grade.
+ */
+@media (max-width: 640px) {
+  .blog-categorias ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); justify-items: center; gap: 20px 8px; overflow: visible; padding: 4px 0; }
+  .blog-categorias li { flex: none; }
+  .blog-categorias button { min-width: 44px; min-height: 44px; }
+}
+
+/* Alvo de toque: o título do cartão é link de uma linha; em tela de toque a área sobe para 44px sem mexer no layout. */
+@media (pointer: coarse) {
+  .post-titulo a { display: inline-block; padding-block: 14px; margin-block: -14px; }
+  .post-link { display: inline-flex; align-items: center; min-height: 44px; }
+}

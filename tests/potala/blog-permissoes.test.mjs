@@ -185,8 +185,9 @@ test("registro remoto carrega a autoria para a Mesa", () => {
 });
 
 test("Mesa: permissoes do escritor limitam a textos proprios; owner/editor nao", () => {
-  const entry = readFileSync(new URL("../../outputs/js/blog-admin/blog-admin-entry.js", import.meta.url), "utf8");
-  assert.match(entry, /somenteProprios: access\.permissions\?\.publish !== true/);
+  const modelo = readFileSync(new URL("../../outputs/js/blog-admin/mesa-modelo.js", import.meta.url), "utf8");
+  assert.match(modelo, /somenteProprios: p\.publish !== true/);
+  assert.match(readFileSync(new URL("../../outputs/js/blog-admin/blog-admin-entry.js", import.meta.url), "utf8"), /permissoes = permissoesDaSessao\(access\)/);
   const app = readFileSync(new URL("../../outputs/js/blog-admin/mesa-app.js", import.meta.url), "utf8");
   assert.match(app, /if \(ctx\.permissoes\.somenteProprios\)/);
   assert.match(app, /existente\.criadoPor !== ctx\.permissoes\.usuarioId/);
