@@ -336,6 +336,6 @@
 
 /* Alvo de toque: o título do cartão é link de uma linha; em tela de toque a área sobe para 44px sem mexer no layout. */
 @media (pointer: coarse) {
-  .post-titulo a { display: inline-block; padding-block: 12px; margin-block: -12px; }
+  .post-titulo a { display: inline-block; padding-block: 14px; margin-block: -14px; }
   .post-link { display: inline-flex; align-items: center; min-height: 44px; }
 }

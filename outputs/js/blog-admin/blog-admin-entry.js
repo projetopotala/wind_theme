@@ -61,7 +61,11 @@ function mostrarLogin() {
   document.title = "Potala — Mesa do Caderno";
 }
 
+const emProducao = classificarOrigem(globalThis.location?.origin) === "producao";
+
 function abrirMesa({ demo = false } = {}) {
+  // A demonstração nunca abre em Production, nem se o botão for reexibido à mão.
+  if (demo && emProducao) return;
   root.dataset.blogGate = "mesa";
   if (demo) root.dataset.blogDemo = "true";
   else delete root.dataset.blogDemo;
@@ -75,12 +79,11 @@ function abrirMesa({ demo = false } = {}) {
  * O "acesso de teste" é uma demonstração que vive só no navegador (três textos
  * inventados, nada vai ao banco). Em Production ele fica oculto: ao lado do
  * login, parece um segundo acesso ao Blog real. Em LAB, Preview e uso local
- * continua visível; em Production a equipe o abre com ?acesso-de-teste=1.
+ * continua disponível. Em Production não há parâmetro de URL que o reative:
+ * o botão fica oculto e abrirMesa recusa o modo demonstração.
  */
 const botaoDeTeste = root?.querySelector("[data-blog-teste]");
-const emProducao = classificarOrigem(globalThis.location?.origin) === "producao";
-const pediuTeste = new URLSearchParams(globalThis.location?.search || "").get("acesso-de-teste") === "1";
-if (botaoDeTeste) botaoDeTeste.hidden = emProducao && !pediuTeste;
+if (botaoDeTeste) botaoDeTeste.hidden = emProducao;
 botaoDeTeste?.addEventListener("click", () => abrirMesa({ demo: true }));
 continueButton?.addEventListener("click", () => abrirMesa());
 panel?.querySelector("[data-admin-sign-out]")?.addEventListener("click", (event) => {

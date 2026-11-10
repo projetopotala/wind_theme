@@ -137,17 +137,26 @@ test("categorias no celular quebram em grade, sem rolagem lateral escondida", as
 
 test("títulos e links de leitura têm alvo de toque de 44px em tela de toque", async () => {
   const css = await ler("css/blog.css");
-  assert.match(css, /@media \(pointer: coarse\) \{\s*\.post-titulo a \{ display: inline-block; padding-block: 12px; margin-block: -12px; \}/);
+  assert.match(css, /@media \(pointer: coarse\) \{\s*\.post-titulo a \{ display: inline-block; padding-block: 14px; margin-block: -14px; \}/);
   assert.match(css, /\.post-link \{ display: inline-flex; align-items: center; min-height: 44px; \}/);
 });
 
-test("o acesso de teste da mesa nasce oculto e só aparece fora da Production ou com ?acesso-de-teste=1", async () => {
+test("o acesso de teste da mesa nasce oculto e some em Production, sem parâmetro que o reative", async () => {
   const html = await ler("blog-admin.html");
   assert.match(html, /<button type="button" class="mesa-link" data-blog-teste hidden>Ver o acesso de teste<\/button>/);
   const entrada = await ler("js/blog-admin/blog-admin-entry.js");
   assert.match(entrada, /import \{ classificarOrigem \} from "\.\.\/supabase\/ambiente\.js";/);
   assert.match(entrada, /classificarOrigem\(globalThis\.location\?\.origin\) === "producao"/);
-  assert.match(entrada, /get\("acesso-de-teste"\) === "1"/);
-  assert.match(entrada, /botaoDeTeste\.hidden = emProducao && !pediuTeste;/);
+  assert.doesNotMatch(entrada, /acesso-de-teste|URLSearchParams|pediuTeste/, "nenhum parâmetro de URL reativa a demonstração");
+  assert.match(entrada, /botaoDeTeste\.hidden = emProducao;/);
+  assert.match(entrada, /if \(demo && emProducao\) return;/, "abrirMesa recusa a demonstração em Production");
   assert.match(entrada, /abrirMesa\(\{ demo: true \}\)/, "a demonstração continua existindo");
+});
+
+test("em Production nenhum parametro de URL muda a origem classificada; LAB e local seguem liberados", async () => {
+  const { classificarOrigem } = await import("../../outputs/js/supabase/ambiente.js");
+  assert.equal(classificarOrigem("https://wind-theme.vercel.app"), "producao");
+  assert.equal(classificarOrigem("https://wind-theme.vercel.app/blog-admin.html?acesso-de-teste=1"), "producao");
+  assert.equal(classificarOrigem("http://127.0.0.1:4173"), "local");
+  assert.equal(classificarOrigem("https://wind-theme-m2-lab-preview.vercel.app"), "lab");
 });
