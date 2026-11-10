@@ -11,6 +11,7 @@
  * mudança de status também guardam uma versão no histórico.
  */
 import { icone } from "../admin/icones.js";
+import { validarDocumento } from "../blog/blog-conteudo.js";
 import { BLOG_BLOCK_TYPES, estimateReadingMinutes, normalizePost, normalizePosts } from "../blog/blog-model.js";
 import {
   TIPOS_DE_BLOCO, aplicarCampo, blocoHtml, blocoNovo, corpoHtml, duplicarBloco, formatarSelecao, insercaoHtml, menuDeBlocosHtml,
@@ -360,6 +361,13 @@ export function createBlogEditor({ root, ctx } = {}) {
     if (acao === "arquivar") {
       const ok = await ctx.confirmar({ titulo: "Arquivar este texto?", texto: noAr() ? "Ele sai do Blog e fica guardado no arquivo. Você pode trazê-lo de volta depois." : "Ele sai da lista principal e fica guardado no arquivo.", confirmar: "Arquivar" });
       if (!ok) return;
+    }
+    if (acao === "publicar" || acao === "agendar") {
+      const problemas = validarDocumento(documento, { publicacao: true });
+      if (problemas.length) {
+        ctx.avisos.mostrar(`Antes de ${VERBO[acao]}: ${problemas[0]}`, { tipo: "erro" });
+        return;
+      }
     }
     ocupado = true;
     desenharBotoes();

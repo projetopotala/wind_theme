@@ -1,6 +1,7 @@
 import { CATEGORIAS, dataLegivel } from "./blog-data.js";
 import { normalizePost, normalizePosts } from "./blog-model.js";
 import { marcarTextoEmLinha } from "../shared/markdown.js";
+import { enderecoSeguro, imagemSegura, normalizarVideo } from "./blog-conteudo.js";
 
 const escapeHtml = (value) => String(value ?? "")
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -11,18 +12,12 @@ export function findPostBySlug(posts, slug, { preview = false } = {}) {
 }
 
 /*
- * O endereço de vídeo vira player só para YouTube e Vimeo, montado aqui a
- * partir do identificador. Qualquer outro endereço vira um link comum: um
- * iframe com URL arbitrária carregaria qualquer página dentro do Caderno.
+ * O endereço de vídeo vira player só para YouTube e Vimeo, montado a partir do
+ * identificador (blog-conteudo.js). Qualquer outro endereço vira, no máximo, um
+ * link comum http(s): um iframe com URL arbitrária carregaria qualquer página
+ * dentro do Caderno.
  */
-export function enderecoDoVideo(url) {
-  const texto = String(url || "").trim();
-  const youtube = /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/.exec(texto);
-  if (youtube) return { tipo: "youtube", src: `https://www.youtube-nocookie.com/embed/${youtube[1]}` };
-  const vimeo = /vimeo\.com\/(?:video\/)?(\d{5,12})/.exec(texto);
-  if (vimeo) return { tipo: "vimeo", src: `https://player.vimeo.com/video/${vimeo[1]}` };
-  return null;
-}
+export const enderecoDoVideo = normalizarVideo;
 
 const legenda = (caption) => (caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : "");
 
@@ -41,16 +36,24 @@ export function renderArticleBlock(block = {}) {
   }
   if (block.type === "quote") return `<blockquote class="article-quote"><p>${inline}</p>${block.cite ? `<cite>${escapeHtml(block.cite)}</cite>` : ""}</blockquote>`;
   if (block.type === "callout") return `<aside class="article-destaque article-destaque--${escapeHtml(block.tone || "nota")}"><p>${inline}</p></aside>`;
-  if (block.type === "image" && !block.src) return "";
+  if (block.type === "image" && (!block.src || !imagemSegura(block.src))) return "";
   if (block.type === "image") return `<figure class="article-figure${block.width === "full" ? " article-figure--total" : ""}"><img src="${escapeHtml(block.src)}" alt="${escapeHtml(block.alt)}" loading="lazy" decoding="async">${legenda(block.caption)}</figure>`;
   if (block.type === "gallery") {
-    const imagens = (block.images || []).map((image) => `<img src="${escapeHtml(image.src)}" alt="${escapeHtml(image.alt)}" loading="lazy" decoding="async">`).join("");
+    const imagens = (block.images || []).filter((image) => imagemSegura(image.src)).map((image) => `<img src="${escapeHtml(image.src)}" alt="${escapeHtml(image.alt)}" loading="lazy" decoding="async">`).join("");
     return imagens ? `<figure class="article-galeria"><div class="article-galeria__grade">${imagens}</div>${legenda(block.caption)}</figure>` : "";
   }
   if (block.type === "video") {
-    const video = enderecoDoVideo(block.url);
-    if (!video) return block.url ? `<p class="article-paragraph"><a href="${escapeHtml(block.url)}" rel="noopener">Assistir ao vídeo</a></p>` : "";
-    return `<figure class="article-video"><div class="article-video__quadro"><iframe src="${video.src}" title="${escapeHtml(block.caption || "Vídeo")}" loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>${legenda(block.caption)}</figure>`;
+    const video = normalizarVideo(block.url);
+    if (!video) {
+      const href = /^https?:\/\//i.test(String(block.url || "")) && enderecoSeguro(block.url) ? block.url : "";
+      return href ? `<p class="article-paragraph"><a href="${escapeHtml(href)}" rel="noopener noreferrer">Assistir ao vídeo</a></p>` : "";
+    }
+    /*
+     * Nenhum pedido ao provedor até o leitor pedir: o botão só vira player ao
+     * clicar (article-video.js). Sem script, o link "Abrir no ..." continua.
+     */
+    const titulo = block.caption || "Vídeo";
+    return `<figure class="article-video" data-video-tipo="${video.tipo}"><div class="article-video__quadro" data-video-quadro><button type="button" class="article-video__abrir" data-video-src="${escapeHtml(video.src)}" data-video-titulo="${escapeHtml(titulo)}" aria-label="Assistir ao vídeo: ${escapeHtml(titulo)}. Carrega o player do ${video.rotulo}."><span class="article-video__play" aria-hidden="true"></span><span class="article-video__texto">Assistir ao vídeo</span><small>Carrega o player do ${video.rotulo}</small></button></div>${legenda(block.caption)}<p class="article-video__aviso">O player do ${video.rotulo} só é carregado quando você clica em assistir, e pode usar cookies. <a href="${escapeHtml(video.abrir)}" target="_blank" rel="noopener noreferrer">Abrir no ${video.rotulo}</a>. Se o vídeo não aparecer, ele pode estar privado ou não permitir incorporação.</p></figure>`;
   }
   if (block.type === "list") {
     const tag = block.ordered ? "ol" : "ul";
@@ -86,7 +89,7 @@ export function renderArticle(post) {
   const date = dataLegivel(item.publishedAt);
   const autor = item.author ? `<span>Por ${escapeHtml(item.author)}</span>` : "";
   return `<header class="article-hero">
-    <img src="${escapeHtml(item.cover)}" alt="${escapeHtml(item.coverAlt)}">
+    <img src="${escapeHtml(imagemSegura(item.cover) ? item.cover : "")}" alt="${escapeHtml(item.coverAlt)}">
     <div class="article-hero__veil" aria-hidden="true"></div>
     <div class="article-hero__copy">
       <p>${escapeHtml(rotuloDaCategoria(item.category))}</p>
