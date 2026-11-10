@@ -356,3 +356,51 @@ test("migration: as gravações exatas do mesa_salvar_post (insert/upsert, pend�
   await salvar({ ...legado, content: [...legado.content, { id: "n", type: "paragraph", text: "novo **trecho**" }] }, "published");
   await db.close();
 });
+
+test("migration: com o papel authenticated o gatilho funciona, as funções não ficam chamáveis, o desempenho é desprezível e reaplicar é seguro", async () => {
+  const db = new PGlite();
+  await db.exec(`
+    create role anon; create role authenticated;
+    create table public.blog_posts (id text primary key, slug text, status text not null default 'draft', document jsonb not null, pending_document jsonb, views int not null default 0);
+    grant select, insert, update on public.blog_posts to authenticated;
+  `);
+  const migration = await ler("supabase/migrations/202611100001_blog_validacao_de_conteudo.sql");
+  await db.exec(migration);
+  await db.exec(migration); // idempotente: reaplicar não falha nem duplica o gatilho
+  assert.equal((await db.query("select count(*)::int n from pg_trigger where tgname = 'blog_posts_valida_conteudo'")).rows[0].n, 1);
+
+  await db.exec("set role authenticated");
+  const doc = (...blocos) => JSON.stringify({ id: "p", content: blocos });
+  const video = { id: "v", type: "video", url: `https://youtu.be/${ID}` };
+  // Quem grava pelo papel authenticated passa pelo gatilho, mesmo sem poder chamar as funções.
+  await db.query("insert into public.blog_posts(id,slug,status,document) values('a','a','draft',$1::jsonb)", [doc(video)]);
+  await db.query("update public.blog_posts set status='published' where id='a'");
+  await assert.rejects(db.query("insert into public.blog_posts(id,slug,status,document) values('b','b','published',$1::jsonb)", [doc({ id: "v", type: "video", url: "https://exemplo.org/v" })]), /YouTube ou do Vimeo/);
+  for (const chamada of ["select public.blog_documento_problema('{}'::jsonb)", "select public.blog_url_segura('x')", "select public.blog_posts_valida_conteudo()"]) {
+    await assert.rejects(db.query(chamada), /permission denied/i, chamada);
+  }
+  // Não há grant novo: authenticated não ganhou nada além do que já tinha na tabela.
+  await db.exec("reset role");
+  const privilegios = (await db.query("select count(*)::int n from information_schema.routine_privileges where grantee in ('authenticated','anon','PUBLIC') and routine_name like 'blog\\_%'")).rows[0].n;
+  assert.equal(privilegios, 0);
+
+  // Desempenho: um texto no limite (300 blocos de 2000 caracteres) e 100 regravações.
+  const grande = JSON.stringify({ id: "g", content: Array.from({ length: 300 }, (_, i) => ({ id: `b${i}`, type: "paragraph", text: "texto **forte** [l](https://exemplo.org) ".repeat(50) })) });
+  await db.query("insert into public.blog_posts(id,slug,status,document) values('g','g','published',$1::jsonb)", [grande]);
+  const medir = async (json, id) => {
+    const inicio = performance.now();
+    for (let i = 0; i < 30; i++) await db.query("update public.blog_posts set status = 'published', document = $1::jsonb where id = $2", [json, id]);
+    return (performance.now() - inicio) / 30;
+  };
+  const tipico = JSON.stringify({ id: "t", content: Array.from({ length: 25 }, (_, i) => ({ id: `b${i}`, type: "paragraph", text: "Um parágrafo **comum** com [link](https://exemplo.org). ".repeat(8) })) });
+  await db.query("insert into public.blog_posts(id,slug,status,document) values('t','t','published',$1::jsonb)", [tipico]);
+  const comTipico = await medir(tipico, "t");
+  const comGrande = await medir(grande, "g");
+  await db.exec("alter table public.blog_posts disable trigger blog_posts_valida_conteudo");
+  const semTipico = await medir(tipico, "t");
+  const semGrande = await medir(grande, "g");
+  console.log(`# gatilho (PGlite/WASM, mais lento que o Postgres real): texto típico +${(comTipico - semTipico).toFixed(1)} ms (${comTipico.toFixed(1)} vs ${semTipico.toFixed(1)}); texto no limite de 300 blocos +${(comGrande - semGrande).toFixed(1)} ms`);
+  assert.ok(comTipico - semTipico < 25, "texto típico: custo do gatilho desprezível");
+  assert.ok(comGrande - semGrande < 400, "texto no limite: custo do gatilho limitado");
+  await db.close();
+});

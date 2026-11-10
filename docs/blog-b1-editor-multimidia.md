@@ -88,3 +88,34 @@ Pendente de homologação autenticada (Escritor, Editor e Owner, em ambiente aut
 - Owner: confirmar que nada muda nas permissões.
 - Envio de imagem pela biblioteca de mídia e gravação real pelo `mesa_salvar_post` com a migration aplicada (só depois de autorização).
 - A Preview da Vercel fica atrás da guarda de ambiente e da proteção de deploy; não foi contornada.
+
+## CI da PR empilhada
+
+O workflow `CI` (`.github/workflows/ci.yml`) roda em `pull_request` com `branches: [main]`. A PR #44 tem como base a branch da #43, então o GitHub não dispara o job "Lint, testes e verificação de ambiente". Não é falha nem desativação de check: é o filtro de branch. Não há proteção de branch nem ruleset configurados (a API devolve 404 e lista vazia), e o workflow não tem `workflow_dispatch`; por isso não há execução manual sem alterar o workflow, e nada foi alterado.
+
+Os mesmos comandos (`npm run lint`, `test:portal`, `verificar:ambiente`, `build`) rodam localmente e passam. Depois do merge da #43 a base da #44 passa a ser `main`; mudar a base não dispara o CI (o tipo `edited` não está nos gatilhos padrão), então é preciso um push (rebase) ou fechar e reabrir a PR para o workflow completo rodar. Só então a #44 fica pronta para merge.
+
+## Revisão final da migration
+
+- Privilégios: nenhum `grant`. As seis funções têm `revoke ... from public, anon, authenticated`; o teste com o papel `authenticated` confirma que elas não são chamáveis e que a gravação na tabela continua passando pelo gatilho. A função do gatilho é `security definer` com `search_path` vazio e não lê nem escreve em tabela; isso é necessário porque `authenticated` não pode executar as funções internas.
+- Idempotência: `create or replace` e `drop trigger if exists`; aplicar duas vezes deixa um único gatilho (testado). Tudo em `begin/commit`.
+- Rollback: `drop trigger` e `drop function` (seção Rollback). Não há dado a desfazer.
+- Mensagens: erro `22023` com texto em português ("Bloco 2: o vídeo precisa ser um link do YouTube ou do Vimeo."); a Mesa mostra `error.message` quando o código não é `42501`.
+- Desempenho (PGlite/WASM, mais lento que Postgres real): +3 ms por gravação de um texto típico (25 parágrafos); +120 ms no limite absoluto de 300 blocos x 2000 caracteres. O gatilho só dispara em `document`, `pending_document` ou `status`.
+
+## Roteiro de homologação autenticada
+
+Pré-requisitos: #43 mesclada e #44 rebaseada; ambiente autorizado (LAB ou Preview autorizada, nunca Production sem autorização escrita); contas existentes de Escritor, Editor e Owner (nenhuma conta nova, nenhuma permissão alterada); migration aplicada primeiro no LAB, se houver; dados sintéticos com prefixo `[TESTE B1]`.
+
+1. Escritor: criar `[TESTE B1] artigo`, com parágrafo, H2, lista, citação, imagem (com alt e legenda) e vídeo YouTube; salvar; recarregar e conferir que nada se perdeu; enviar para revisão. Esperado: botão Publicar ausente; tentar um vídeo de outro provedor é aceito como rascunho com aviso.
+2. Editor: abrir o texto em revisão; tentar publicar com vídeo de provedor não permitido (esperado: aviso no editor e recusa); trocar por um vídeo válido e publicar; abrir o Blog público, conferir o botão "Assistir ao vídeo" sem requisição ao provedor antes do clique, o player após o clique, o link "Abrir no YouTube"; despublicar e conferir que sai do Blog.
+3. Owner: conferir que a lista de acessos e as permissões estão iguais ao início; conferir que os 20 artigos e 3 rascunhos não mudaram (contagem e `updated_at`).
+4. Biblioteca de mídia: Escritor envia uma imagem sintética pequena e a usa no texto; confirmar que só apaga o que enviou; Editor/Owner enxergam e podem usar.
+5. Limpeza: arquivar ou despublicar os `[TESTE B1]` e registrar o que foi feito.
+
+## Sequência segura até a publicação
+
+1. Mesclar a #43 (autorização do responsável), depois atualizar a base da #44, rebase, CI completo verde, diff exclusivo.
+2. Aplicar a migration no LAB (ou banco de teste), rodar o roteiro acima.
+3. Em Production, com autorização específica: preflight somente leitura, backup, migration, repetir o preflight e verificar o gatilho.
+4. Mesclar a #44 e fazer o deploy; conferir os 20 artigos publicados.
