@@ -89,6 +89,26 @@
 .article-video { margin: 3em 0; }
 .article-video__quadro { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--cad-ouro-linha); border-radius: 6px; background: #000; }
 .article-video__quadro iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+/*
+ * Lista legível: a classe .article-list também existe nas seções claras do portal
+ * (secao-conteudo.css) e trazia de lá um marrom escuro para o item e para o negrito,
+ * quase invisível sobre o fundo do Caderno. Endereço comprido quebra em vez de ser cortado.
+ */
+.article-list li { padding-left: 0; color: inherit; font-size: inherit; line-height: inherit; }
+.article-list li::before { position: static; width: auto; height: auto; background: none; }
+.article-list strong { color: var(--cad-marfim); }
+.article-content { overflow-wrap: anywhere; }
+.article-video__abrir { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 44px; padding: 12px; border: 0; background: radial-gradient(circle at 50% 40%, #2a2218, #0d0b08 75%); color: #f4ead6; font: inherit; text-align: center; cursor: pointer; }
+.article-video__abrir:hover .article-video__play { transform: scale(1.06); }
+.article-video__abrir:focus-visible { outline: 3px solid var(--cad-ouro-linha, #c9a45c); outline-offset: -6px; }
+.article-video__play { width: 58px; height: 58px; border: 1px solid var(--cad-ouro-linha, #c9a45c); border-radius: 50%; background: rgba(201, 164, 92, .14); transition: transform .2s ease; position: relative; }
+.article-video__play::after { content: ""; position: absolute; left: 22px; top: 17px; border-style: solid; border-width: 12px 0 12px 19px; border-color: transparent transparent transparent #f4ead6; }
+.article-video__texto { font: 600 .8rem/1.3 var(--cad-sans); letter-spacing: .16em; text-transform: uppercase; }
+.article-video__abrir small { max-width: 90%; font: .72rem/1.4 var(--cad-sans); color: #cdbfa3; }
+.article-video__aviso { margin: 10px 0 0; color: var(--cad-fraco); font: .78rem/1.55 var(--cad-sans); overflow-wrap: anywhere; }
+.article-video__aviso a { display: inline-block; padding-block: 4px; }
+@media (pointer: coarse) { .article-video__aviso a { padding-block: 13px; margin-block: -13px; } }
+@media (prefers-reduced-motion: reduce) { .article-video__play { transition: none; } }
 .article-list--numerada { counter-reset: item; }
 .article-list--numerada li { counter-increment: item; }
 .article-list--numerada li::before { content: counter(item) "."; font: 400 .95em var(--cad-serifa); }

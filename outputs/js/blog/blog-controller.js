@@ -1,6 +1,6 @@
 import { arteDaCapa } from "./blog-arte.js";
 import { CATEGORIAS, contarPorCategoria, dataLegivel } from "./blog-data.js";
-import { normalizePost, normalizePosts, placeBlogPosts } from "./blog-model.js";
+import { normalizePost, normalizePosts, placeBlogPosts, visaoDoCaderno } from "./blog-model.js";
 import { criarBlogPublico, quandoFoi, validarEnvioDeComentario } from "./blog-remoto.js";
 import { applyBlogSettings } from "./blog-settings.js";
 import { definirCategorias } from "./article-renderer.js";
@@ -106,7 +106,7 @@ const FOTO_DA_CATEGORIA = Object.freeze({
  * foto, a categoria, o título e o convite — o resumo e o crédito ficam para a
  * página do artigo.
  */
-export function destaqueEmMoldura(post) {
+export function destaqueEmMoldura(post, { etiqueta = "Destaque" } = {}) {
   if (!post) return "";
   const item = cardValues(post);
   const href = `artigo.html?post=${encodeURIComponent(item.slug)}`;
@@ -116,7 +116,7 @@ export function destaqueEmMoldura(post) {
   return `<a class="post-moldura" href="${href}">
       <figure class="cad-polaroid">${foto}
         <figcaption class="post-moldura__texto">
-          <span class="post-moldura__etiqueta">Destaque · ${escapar(labelCategory(item.category))}</span>
+          <span class="post-moldura__etiqueta">${escapar(etiqueta)} · ${escapar(labelCategory(item.category))}</span>
           <span class="post-moldura__titulo">${escapar(item.title)}</span>
           <span class="post-moldura__ler">Ler artigo →</span>
         </figcaption>
@@ -231,29 +231,24 @@ export function montar(root = document) {
   let limite = POR_PAGINA;
   const mais = root.querySelector("[data-blog-mais]");
 
-  const visiblePosts = () => posts.filter((post) => {
-    const categoryMatches = activeCategory === "todos" || post.category === activeCategory;
-    const haystack = `${post.title} ${post.excerpt} ${post.author}`.toLocaleLowerCase("pt-BR");
-    return categoryMatches && haystack.includes(term);
-  });
-
   /*
-   * O destaque fica no hero só na abertura do Caderno. Filtrando ou buscando,
-   * todo resultado desce para a grade: um texto no alto da página que não
-   * responde à busca parece resultado dela.
+   * O painel do alto acompanha o filtro e a busca: na abertura mostra o
+   * destaque do banco; filtrando, o primeiro resultado (o texto que o filtro
+   * excluiu nunca fica ali). A regra mora em visaoDoCaderno, no modelo.
    */
   function draw() {
     if (falhaDaLeitura) { mostrarIndisponivel(falhaDaLeitura); return; }
-    const filtrando = activeCategory !== "todos" || Boolean(term);
-    const abertura = placeBlogPosts(posts);
-    const encontrados = placeBlogPosts(visiblePosts());
-    const naGrade = filtrando ? [encontrados.featured, ...encontrados.grid].filter(Boolean) : abertura.grid;
-    if (featuredTarget) featuredTarget.innerHTML = destaqueEmMoldura(abertura.featured);
+    const visao = visaoDoCaderno(posts, { categoria: activeCategory, termo: term, rotuloDaCategoria: labelCategory });
+    const naGrade = visao.grade;
+    if (featuredTarget) {
+      featuredTarget.innerHTML = destaqueEmMoldura(visao.destaque, { etiqueta: visao.etiquetaDoDestaque });
+      featuredTarget.hidden = !visao.destaque;
+    }
     gridTarget.innerHTML = gradeEditorial(naGrade.slice(0, limite));
     /* Banco sem nenhum texto publicado não é o mesmo que busca sem resultado. */
     empty.dataset.textoDoFiltro ||= empty.textContent;
     empty.textContent = posts.length ? empty.dataset.textoDoFiltro : "Ainda não há textos publicados no Caderno.";
-    empty.hidden = naGrade.length > 0;
+    empty.hidden = visao.total > 0;
     if (mais) {
       const faltam = naGrade.length - limite;
       mais.hidden = faltam <= 0;
@@ -302,7 +297,7 @@ export function montar(root = document) {
     event.preventDefault();
     escolherCategoria(link.dataset.categoriaLink, { rolar: link.dataset.categoriaLink !== "todos" });
   });
-  search?.addEventListener("input", () => { term = search.value.trim().toLocaleLowerCase("pt-BR"); limite = POR_PAGINA; draw(); });
+  search?.addEventListener("input", () => { term = search.value.trim(); limite = POR_PAGINA; draw(); });
 
   /* O foco vai para o primeiro texto novo: quem usa teclado continua de onde parou. */
   mais?.addEventListener("click", () => {
