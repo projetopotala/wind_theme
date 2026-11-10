@@ -86,14 +86,17 @@ test("entradaAoAutorizar: login novo abre, troca de conta com a Mesa aberta reab
 
 test("fiacao: entrar() troca as permissoes, sair() limpa dados, a entrada reabre e nada de autorizacao mudou", () => {
   const app = readFileSync(new URL("../../outputs/js/blog-admin/mesa-app.js", import.meta.url), "utf8");
-  assert.match(app, /async entrar\(\{ usuario = null, permissoes: sessao \} = \{\}\)/);
+  assert.match(app, /async entrar\(\{ usuario = null, permissoes: sessao, identidade = null \} = \{\}\)/);
   assert.match(app, /if \(sessao\) ctx\.permissoes = permissoesDaMesa\(sessao\)/);
-  const sair = app.slice(app.indexOf("    sair() {"));
+  const sair = app.slice(app.indexOf("    sair() {"), app.indexOf("    isolar() {"));
   assert.match(sair, /ctx\.usuario = null/);
-  assert.match(sair, /registros: \[\]/);
-  assert.match(sair, /comentarios: \[\]/);
+  assert.match(sair, /return isolar\(\)/);
+  /* isolar() limpa os dados carregados da sessao anterior */
+  const isolar = app.slice(app.indexOf("  function isolar() {"), app.indexOf("  async function carregar()"));
+  assert.match(isolar, /registros: \[\]/);
+  assert.match(isolar, /comentarios: \[\]/);
   const entry = readFileSync(new URL("../../outputs/js/blog-admin/blog-admin-entry.js", import.meta.url), "utf8");
   assert.match(entry, /permissoes = permissoesDaSessao\(access\)/);
   assert.match(entry, /entradaAoAutorizar\(/);
-  assert.match(entry, /mesa\.entrar\(\{ usuario: demo \? null : usuario, permissoes: demo \? \{\} : permissoes \}\)/);
+  assert.match(entry, /mesa\.entrar\(\{ usuario: demo \? null : usuario, permissoes: demo \? \{\} : permissoes, identidade: /);
 });

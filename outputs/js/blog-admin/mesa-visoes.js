@@ -37,8 +37,9 @@ export function itensDoMenu(registro, permissoes) {
     { id: "duplicar", rotulo: "Duplicar", icone: "copy" },
   ];
   if (publica && status !== "published" && status !== "archived") itens.push({ id: "agendar", rotulo: status === "scheduled" ? "Reagendar" : "Agendar", icone: "calendar-clock" });
-  if (status === "published" || status === "scheduled") itens.push({ id: "despublicar", rotulo: status === "scheduled" ? "Cancelar agendamento" : "Despublicar", icone: "undo-2" });
-  if (status === "archived") itens.push({ id: "restaurar", rotulo: "Voltar a rascunho", icone: "rotate-ccw" });
+  /* Despublicar, cancelar agendamento e voltar a rascunho sao acoes de publicacao: o banco recusa ao Escritor. */
+  if (publica && (status === "published" || status === "scheduled")) itens.push({ id: "despublicar", rotulo: status === "scheduled" ? "Cancelar agendamento" : "Despublicar", icone: "undo-2" });
+  if (status === "archived") { if (publica) itens.push({ id: "restaurar", rotulo: "Voltar a rascunho", icone: "rotate-ccw" }); }
   else if (publica) itens.push({ id: "arquivar", rotulo: "Arquivar", icone: "archive" });
   itens.push("separador", { id: "excluir", rotulo: "Excluir", icone: "trash-2", perigo: true });
   return itens;
