@@ -145,11 +145,13 @@ test("o acesso de teste da mesa nasce oculto e some em Production, sem parâmetr
   const html = await ler("blog-admin.html");
   assert.match(html, /<button type="button" class="mesa-link" data-blog-teste hidden>Ver o acesso de teste<\/button>/);
   const entrada = await ler("js/blog-admin/blog-admin-entry.js");
-  assert.match(entrada, /import \{ classificarOrigem \} from "\.\.\/supabase\/ambiente\.js";/);
-  assert.match(entrada, /classificarOrigem\(globalThis\.location\?\.origin\) === "producao"/);
+  assert.match(entrada, /import \{ AMBIENTE_SUPABASE \} from "\.\.\/supabase\/config\.js";/);
+  assert.match(entrada, /demonstracaoPermitida\(\{ ambiente: AMBIENTE_SUPABASE, origem: globalThis\.location\?\.origin \}\)/);
   assert.doesNotMatch(entrada, /acesso-de-teste|URLSearchParams|pediuTeste/, "nenhum parâmetro de URL reativa a demonstração");
-  assert.match(entrada, /botaoDeTeste\.hidden = emProducao;/);
-  assert.match(entrada, /if \(demo && emProducao\) return;/, "abrirMesa recusa a demonstração em Production");
+  assert.match(entrada, /botaoDeTeste\.hidden = !demoPermitida;/);
+  assert.match(entrada, /if \(demo && !demoPermitida\) return;/, "abrirMesa recusa a demonstração fora da lista de permissão");
+  assert.doesNotMatch(entrada, /dataset\.blogDemo/, "a demonstração não depende de atributo do DOM");
+  assert.match(entrada, /const atual = \(\) => \(emDemo \|\| !remoto \? demonstracao : remoto\);/);
   assert.match(entrada, /abrirMesa\(\{ demo: true \}\)/, "a demonstração continua existindo");
 });
 
@@ -159,4 +161,64 @@ test("em Production nenhum parametro de URL muda a origem classificada; LAB e lo
   assert.equal(classificarOrigem("https://wind-theme.vercel.app/blog-admin.html?acesso-de-teste=1"), "producao");
   assert.equal(classificarOrigem("http://127.0.0.1:4173"), "local");
   assert.equal(classificarOrigem("https://wind-theme-m2-lab-preview.vercel.app"), "lab");
+});
+
+test("a demonstração só abre em LAB, local e Preview autorizada; nunca em endereço que sirva a Production", async () => {
+  const { demonstracaoPermitida } = await import("../../outputs/js/blog-admin/demonstracao.js");
+  const oficiais = [
+    "https://wind-theme.vercel.app",
+    "https://wind-theme.vercel.app/blog-admin.html?acesso-de-teste=1",
+    "https://wind-theme-potala.vercel.app",
+    "https://wind-theme-git-main-potala.vercel.app",
+    "https://wind-theme-5k3n9x2ab-potala.vercel.app",
+    "https://wind-theme.vercel.app:443",
+    "https://wind-theme.vercel.app.exemplo.com",
+    "https://usuario@wind-theme.vercel.app",
+    "http://wind-theme.vercel.app",
+    "null",
+    "",
+    undefined,
+  ];
+  for (const origem of oficiais) {
+    // Sem a Preview autorizada (arquivo fora do repositório e do deploy), nenhum ambiente libera estes endereços.
+    for (const ambiente of ["producao", "lab", "local", "", undefined, "qualquer"]) {
+      assert.equal(demonstracaoPermitida({ ambiente, origem }), false, `${origem} / ${ambiente}`);
+    }
+  }
+  // O ambiente "producao" nunca libera, e a origem oficial nunca libera, qualquer ambiente informado.
+  for (const ambiente of ["producao", "lab", "local", "preview-e2e"]) {
+    assert.equal(demonstracaoPermitida({ ambiente, origem: "https://wind-theme.vercel.app" }), false);
+    assert.equal(demonstracaoPermitida({ ambiente, origem: "https://wind-theme.vercel.app/?acesso-de-teste=1" }), false);
+  }
+  assert.equal(demonstracaoPermitida({ ambiente: "producao", origem: "http://127.0.0.1:4173" }), false);
+  assert.equal(demonstracaoPermitida({ ambiente: "local", origem: "http://127.0.0.1:4173" }), true);
+  assert.equal(demonstracaoPermitida({ ambiente: "local", origem: "http://localhost:3000" }), true);
+  assert.equal(demonstracaoPermitida({ ambiente: "lab", origem: "https://wind-theme-m2-lab-preview.vercel.app" }), true);
+  assert.equal(demonstracaoPermitida({ ambiente: "lab", origem: "http://127.0.0.1:4173" }), false, "ambiente e origem precisam concordar");
+  assert.equal(demonstracaoPermitida({ ambiente: "local", origem: "https://wind-theme-m2-lab-preview.vercel.app" }), false);
+  assert.equal(demonstracaoPermitida({ ambiente: "preview-e2e", origem: "https://preview-autorizada.exemplo.com" }), true);
+  assert.equal(demonstracaoPermitida(), false);
+});
+
+test("nenhum alias ou deployment fora do domínio oficial é tratado como LAB ou local", async () => {
+  const { classificarOrigem } = await import("../../outputs/js/supabase/ambiente.js");
+  for (const origem of [
+    "https://wind-theme-potala.vercel.app",
+    "https://wind-theme-git-main-potala.vercel.app",
+    "https://wind-theme-5k3n9x2ab-potala.vercel.app",
+  ]) {
+    assert.equal(classificarOrigem(origem), "desconhecido", origem);
+  }
+});
+
+test("a configuração só conecta a origem oficial a Production; aliases e deployments são bloqueados, sem banco", async () => {
+  const { escolherAmbiente, PROJETO_PRODUCAO } = await import("../../outputs/js/supabase/ambiente.js");
+  assert.equal(escolherAmbiente({ origem: "https://wind-theme.vercel.app" }).projectRef, PROJETO_PRODUCAO);
+  for (const origem of [
+    "https://wind-theme-potala.vercel.app",
+    "https://wind-theme-git-main-potala.vercel.app",
+    "https://wind-theme-7cgx4026s-potala.vercel.app",
+  ]) {
+    assert.throws(() => escolherAmbiente({ origem }), (erro) => erro.codigo === "origem-desconhecida", origem);
+  }
 });
