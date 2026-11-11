@@ -1,10 +1,10 @@
 """Gera outputs/media/atendimentos-conceito/ambiente-viva-mascara.webp.
 
 Mascara (cinza, 512x288) das folhas da planta alta da cena de terapia da Home. Usada por
-outputs/js/home/cena-viva.js: valor 0 = nao se move; valor alto = folhagem livre. A amplitude cresce
+outputs/js/home/terapia-animada.js: valor 0 = nao se move; valor alto = folhagem livre. A amplitude cresce
 com a altura (base do vaso fica parada) e as bordas sao suaves, para o balanco nunca mover a planta em bloco.
 
-Uso:  python scripts/gerar-mascara-cena-viva.py            (precisa de Pillow, numpy e scipy)
+Uso:  python scripts/gerar-mascara-terapia-animada.py            (precisa de Pillow, numpy e scipy)
 A foto original (ambiente.webp) NAO e modificada.
 """
 import numpy as np

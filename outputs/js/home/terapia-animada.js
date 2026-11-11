@@ -15,6 +15,7 @@
 const CENA = "ensaio-atendimentos";
 const MASCARA = "media/atendimentos-conceito/ambiente-viva-mascara.webp";
 const INTERVALO_MS = 1000 / 30;
+const LIMITE_DT_MEDIO_MS = 100; // media acima disso (< 10 quadros/s) desliga o efeito
 
 // Posicao da chama na foto (fracao da largura/altura de 1600x900).
 const CHAMA = [0.6115, 0.3955];
@@ -119,6 +120,9 @@ function iniciar() {
   let ultimo = 0;
   let pronto = false;
   let iniciando = false;
+  let desativado = false;
+  let somaDt = 0;
+  let amostras = 0;
 
   const ajustarEncaixe = () => {
     if (!estado) return;
@@ -133,10 +137,31 @@ function iniciar() {
     rodando = false;
   };
 
+  // Remove o canvas e impede nova tentativa (falha de GPU, movimento reduzido, imagem trocada).
+  const desligar = (definitivo = false) => {
+    parar();
+    estado?.canvas.remove();
+    estado = null;
+    pronto = false;
+    if (definitivo) desativado = true;
+  };
+
   const quadro = (agora) => {
     if (!rodando || !estado) return;
     requestAnimationFrame(quadro);
-    if (agora - ultimo < INTERVALO_MS) return;
+    const dt = agora - ultimo;
+    if (dt < INTERVALO_MS) return;
+    // Vigia de desempenho: se, em media, a pagina nao consegue ~10 quadros/s (maquina sem GPU, por
+    // exemplo), o efeito se desliga e a foto estatica fica - melhor parada do que travada.
+    if (ultimo && dt < 1000) {
+      somaDt += dt;
+      amostras += 1;
+      if (amostras === 60) {
+        if (somaDt / amostras > LIMITE_DT_MEDIO_MS) return desligar(true);
+        somaDt = 0;
+        amostras = 0;
+      }
+    }
     ultimo = agora;
     const { gl, u } = estado;
     const t = agora / 1000;
@@ -155,7 +180,7 @@ function iniciar() {
   };
 
   const montar = async () => {
-    if (iniciando || estado) return;
+    if (iniciando || estado || desativado) return;
     iniciando = true;
     try {
       if (!base.complete || !base.naturalWidth) await base.decode().catch(() => {});
@@ -166,7 +191,17 @@ function iniciar() {
       canvas.width = imgFoto.naturalWidth;
       canvas.height = imgFoto.naturalHeight;
       const gl = canvas.getContext("webgl2", { alpha: false, antialias: false, powerPreference: "low-power" });
-      if (!gl) return;
+      if (!gl) {
+        desativado = true;
+        return;
+      }
+      // Sem aceleracao de GPU (renderizador por software) o efeito pesaria na CPU: mantem a foto estatica.
+      const infoGpu = gl.getExtension("WEBGL_debug_renderer_info");
+      const placa = infoGpu ? String(gl.getParameter(infoGpu.UNMASKED_RENDERER_WEBGL)) : "";
+      if (/swiftshader|llvmpipe|software|basic render/i.test(placa)) {
+        desativado = true;
+        return;
+      }
       const prog = gl.createProgram();
       gl.attachShader(prog, compilar(gl, gl.VERTEX_SHADER, VERTICE));
       gl.attachShader(prog, compilar(gl, gl.FRAGMENT_SHADER, FRAGMENTO));
@@ -201,6 +236,12 @@ function iniciar() {
       cs.display = "block";
       cs.pointerEvents = "none";
       estado = { canvas, gl, u };
+      // Perda de contexto (memoria da GPU, troca de placa, aba em segundo plano): desliga o efeito e a
+      // foto estatica, que ja esta embaixo, volta a ser a unica imagem. Nao tenta recriar.
+      canvas.addEventListener("webglcontextlost", (ev) => {
+        ev.preventDefault();
+        desligar(true);
+      });
       ajustarEncaixe();
       gl.uniform1f(u.t, 0);
       gl.uniform1f(u.oscila, 0);
@@ -210,8 +251,7 @@ function iniciar() {
       pronto = true;
       retomar();
     } catch {
-      estado?.canvas.remove();
-      estado = null;
+      desligar(true);
     } finally {
       iniciando = false;
     }
@@ -230,21 +270,18 @@ function iniciar() {
 
   document.addEventListener("visibilitychange", () => (document.hidden ? parar() : retomar()));
   reduzido.addEventListener?.("change", () => {
-    if (reduzido.matches) {
-      parar();
-      estado?.canvas.remove();
-      estado = null;
-      pronto = false;
-    }
+    if (reduzido.matches) desligar(true);
+  });
+  // Ao sair da pagina o laco para; se ela voltar do cache de navegacao, retoma se a cena estiver visivel.
+  window.addEventListener("pagehide", parar);
+  window.addEventListener("pageshow", (ev) => {
+    if (ev.persisted) retomar();
   });
   window.addEventListener("resize", ajustarEncaixe, { passive: true });
   // Se a imagem principal for trocada pelo editor, a foto estatica nova prevalece.
   new MutationObserver(() => {
     if (!/(^|\/)ambiente\.webp(\?|$)/.test(base.getAttribute("src") || "")) {
-      parar();
-      estado?.canvas.remove();
-      estado = null;
-      pronto = false;
+      desligar(true);
     }
   }).observe(base, { attributes: true, attributeFilter: ["src"] });
 }
