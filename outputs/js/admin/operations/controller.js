@@ -188,7 +188,7 @@ export function createOperationsController({root,client,onNavigate=()=>{},onRend
   }
 
   async function run(type,payload,message='Alteração salva.') {status.textContent='Salvando…';try{const result=await client.command(type,payload);status.textContent=message;render();return result;}catch(cause){status.textContent=cause.message;throw cause;}}
-  async function onSubmit(event){event.preventDefault();if(!currentKind)return;const submit=form.querySelector('[type="submit"]');submit.disabled=true;error.textContent='';try{await run(commandFor[currentKind],payloadFromForm(currentKind,new FormData(form)));close();}catch(cause){error.textContent=cause.message;}finally{submit.disabled=false;}}
+  async function onSubmit(event){event.preventDefault();if(!currentKind)return;const submit=form.querySelector('[type="submit"]');submit.disabled=true;error.textContent='';try{const payload=payloadFromForm(currentKind,new FormData(form));const link=String(payload.online_url||'').trim();const online=currentKind==='schedule'&&payload.mode==='online';const aviso=online&&!link?'Aula salva, mas sem o Link online. Edite a aula e cole o link da reunião para os alunos poderem entrar.':online&&!/^https:\/\//i.test(link)?'Aula salva, mas o Link online precisa começar com https:// para aparecer ao aluno.':undefined;await run(commandFor[currentKind],payload,aviso);close();}catch(cause){error.textContent=cause.message;}finally{submit.disabled=false;}}
 
   /* ------------------------------------------------------------ detalhes (painel lateral) */
 

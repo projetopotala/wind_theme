@@ -163,6 +163,20 @@ function hrefObrigatorio(valor, campo) {
 }
 
 const hrefOpcional = (valor) => (valor ? hrefSeguro(valor) : null);
+
+/*
+ * Link de reuniao externa (aula online). So https, com host, sem usuario/senha, sem espacos ou
+ * caracteres de marcacao. Qualquer outra coisa (http, javascript:, data:, caminho relativo) vira
+ * null: o botao simplesmente nao aparece.
+ */
+export function linkExterno(valor) {
+  const texto = String(valor ?? "").trim();
+  if (!/^https:\/\/[a-z0-9]/i.test(texto) || texto.length > 2000 || /[\s<>"'\\]/.test(texto) || [...texto].some((letra) => letra.charCodeAt(0) < 32)) return null;
+  let url;
+  try { url = new URL(texto); } catch { return null; }
+  if (url.protocol !== "https:" || !url.hostname || url.username || url.password) return null;
+  return url.href;
+}
 const usuarioOpcional = (valor) => texto(valor) || null;
 
 /* ------------------------------------------------------------------
@@ -260,6 +274,7 @@ export function criarInscricao(dados = {}) {
     modalidade: texto(dados.modalidade, 40),
     status: umDe(dados.status, STATUS_DE_INSCRICAO, "O status da inscrição"),
     proximaAula: paraData(dados.proximaAula),
+    linkAula: linkExterno(dados.linkAula),
     conteudoHref: hrefOpcional(dados.conteudoHref),
     imagem: hrefOpcional(dados.imagem),
     inscritoEm: paraData(dados.inscritoEm) || new Date().toISOString(),
