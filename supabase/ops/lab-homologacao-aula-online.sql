@@ -40,7 +40,8 @@ begin
     ('profiles','sint2-prof','{"id":"sint2-prof","display_name":"Profa. Sintetica","email":"sint2-prof@example.invalid","roles":["professional"],"active":true}'),
     ('profiles','sint2-a','{"id":"sint2-a","display_name":"Aluna Sintetica","email":"sint2-aluna@example.invalid","roles":["client"],"active":true}'),
     ('profiles','sint2-b','{"id":"sint2-b","display_name":"Outro Sintetico","email":"sint2-outro@example.invalid","roles":["client"],"active":true}'),
-    ('activity_definitions','sint2-def','{"id":"sint2-def","title":"Curso Sintetico","kind":"course"}');
+    ('activity_definitions','sint2-def','{"id":"sint2-def","title":"Curso Sintetico","kind":"course"}'),
+    ('rooms','sint2-sala','{"id":"sint2-sala","code":"SINT2","name":"Sala Sintetica","status":"available","capacity":10}');
 
   -- turmas: ok / espera / concluida / cancelada / presencial / sem link / sem aula / http / javascript / duas aulas
   insert into public.op_records(collection, id, document)
@@ -58,6 +59,7 @@ begin
   select 'schedule_items', 's-'||t.ref||'-'||t.n,
          jsonb_build_object('id','s-'||t.ref||'-'||t.n,'offering_id', t.ref,'status','booked','mode', t.modo,
                             'starts_at', (now() + t.inicio)::text, 'ends_at', (now() + t.inicio + interval '1 hour')::text, 'online_url', t.url)
+           || case when t.modo = 'presencial' then jsonb_build_object('room_id','sint2-sala') else '{}'::jsonb end
   from (values
     ('sint2-ok',1,'online', interval '2 days', 'https://meet.example.invalid/sint2-ok'),
     ('sint2-espera',1,'online', interval '2 days', 'https://meet.example.invalid/sint2-espera'),
