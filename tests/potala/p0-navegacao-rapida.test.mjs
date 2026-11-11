@@ -85,3 +85,36 @@ test("quem abre o agendamento sem conta entende o que fazer", () => {
   const geral = renderizarVisitante({ status: "visitante" });
   assert.match(geral, /Seu espaço no Potala/);
 });
+
+test("Atendimentos oferece 'Solicitar um atendimento' no topo e no fechamento, pela rota existente", () => {
+  const pagina = ler("atendimentos.html");
+  const hero = pagina.match(/<section class="care-hero"[\s\S]*?<\/section>/)?.[0] || "";
+  assert.match(hero, /<a class="care-hero-agendar" href="\/meu-potala\/atendimentos">Solicitar um atendimento/);
+  assert.match(hero, /entrar na sua conta/);
+  const fechamento = pagina.match(/<div class="care-closing-actions"[\s\S]*?<\/div>/)?.[0] || "";
+  assert.match(fechamento, /href="\/meu-potala\/atendimentos">Solicitar um atendimento/);
+  assert.match(fechamento, /href="recepcao\.html"/, "a Recepção continua");
+  assert.match(ler("css/atendimentos-redesign.css"), /\.care-hero-agendar \{[^}]*min-height: 44px/);
+});
+
+test("Cursos não apresenta disponibilidade real: o quadro de turma é marcado como exemplo", () => {
+  const pagina = ler("cursos.html");
+  const quadro = pagina.match(/<div class="cohort-board"[\s\S]*?<\/dl>/)?.[0] || "";
+  assert.ok(quadro, "o quadro ilustrativo continua na página");
+  assert.match(quadro, /Exemplo ilustrativo · não é uma turma aberta/);
+  assert.match(quadro, /aria-label="Exemplo ilustrativo de acompanhamento de turma; não é uma turma aberta"/);
+  assert.doesNotMatch(pagina, /<dd>Disponibilidade confirmada<\/dd>/);
+  assert.match(quadro, /Ex\.: 12 de 16 interessados/);
+});
+
+test("depois de entrar, o Meu Potala redesenha a mesma rota (volta ao agendamento, sem redirecionar)", () => {
+  const app = ler("js/conta/spa/app.js");
+  assert.match(app, /const \{ rota, encontrada \} = roteador\.atual\(\);/, "a tela sai da rota do endereço atual");
+  assert.match(app, /if \(mudouPessoa\) desenhar\("sessao"\);/, "entrar ou sair redesenha a rota atual");
+  const painel = ler("js/conta/painel-conta.js");
+  const entrar = painel.match(/if \(tipo === "entrar"\) \{[\s\S]*?\}/)?.[0] || "";
+  assert.ok(entrar, "fluxo de entrar encontrado");
+  assert.doesNotMatch(entrar.replace(/if \(\["owner", "admin", "blog_editor"\][^\n]*\n/, ""), /location\.(assign|href|replace)/, "conta comum não é redirecionada");
+  const sb = ler("js/conta/adaptadores/supabase.js");
+  assert.match(sb, /entrarComGoogle\(\) \{[\s\S]*?redirectTo: retorno\(caminhoAtual\)/, "Google volta para a página onde a pessoa estava");
+});
