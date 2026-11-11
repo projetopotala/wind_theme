@@ -20,16 +20,6 @@
     left: -34px;
     font-size: clamp(11rem, 22vw, 23rem);
   }
-  .home-scene__detail-image {
-    width: clamp(145px, 15vw, 270px);
-    height: clamp(200px, 29vh, 335px);
-  }
-  .home-scene--care .home-scene__detail-image,
-  .home-scene--knowledge .home-scene__detail-image,
-  .home-scene--together .home-scene__detail-image {
-    width: clamp(145px, 15vw, 270px);
-    height: clamp(200px, 29vh, 335px);
-  }
 }
 
 #ensaio-convivencia .home-scene__links {
