@@ -3717,3 +3717,91 @@ body:has(.journey-region.is-expanded) .journey-canto {
   background: none;
   cursor: pointer;
 }
+
+/*
+ * A IMAGEM DA ÁREA NO CARTÃO FECHADO.
+ *
+ * Faixa baixa acima da categoria: o título e o resumo continuam inteiros. A
+ * altura acompanha a tela (svh) para a faixa nunca ser o que empurra o cartão
+ * para além do espaço dele. Aberto, o bloco mostra a mesma imagem no painel.
+ */
+.region-thumb {
+  display: block;
+  width: 100%;
+  height: clamp(60px, 10svh, 120px);
+  margin-bottom: clamp(12px, 2svh, 20px);
+  overflow: hidden;
+  border: 1px solid rgba(231, 202, 143, .26);
+  border-radius: clamp(12px, 1.5vw, 18px);
+  background: #30251b;
+}
+
+.region-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: sepia(.14) saturate(.84) brightness(.88);
+}
+
+.journey-region.is-expanded .region-thumb { display: none; }
+
+/* Sem fotografia: moldura dourada discreta com um ornamento, no lugar da imagem. */
+.region-thumb--vazia {
+  position: relative;
+  background: linear-gradient(135deg, rgba(214, 163, 85, .26), rgba(48, 37, 27, .92) 72%);
+}
+
+.region-thumb--vazia::after {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(231, 202, 143, .62);
+  font-size: 1.05rem;
+  content: "\2727";
+}
+
+/* A faixa toma o lugar do respiro: o cartão não cresce o quanto ela mede. */
+.journey-region:not(.is-expanded) .region-summary:has(.region-thumb) .region-category { margin-bottom: clamp(14px, 2.6svh, 28px); }
+.journey-region:not(.is-expanded) .region-summary:has(.region-thumb) .region-description { margin-top: clamp(12px, 2svh, 20px); }
+.journey-region:not(.is-expanded) .region-summary:has(.region-thumb) .region-expand-label { margin-top: clamp(12px, 2svh, 20px); }
+
+@media (max-width: 720px) {
+  .region-thumb {
+    height: clamp(36px, 5svh, 56px);
+    margin-bottom: 8px;
+  }
+  .journey-region:not(.is-expanded) .region-summary:has(.region-thumb) { padding-bottom: 22px; }
+  .journey-region:not(.is-expanded) .region-summary:has(.region-thumb) .region-category { margin-bottom: 10px; }
+  .journey-region:not(.is-expanded) .region-summary:has(.region-thumb) .region-description { margin-top: 12px; }
+  .journey-region:not(.is-expanded) .region-summary:has(.region-thumb) .region-expand-label { margin-top: 12px; }
+}
+
+/*
+ * TELEFONE BAIXO (320×640, 375×667, 320×568).
+ *
+ * Aqui cada cartão fechado recebe metade de uma tela curta, e o texto já não
+ * cabia: com o respiro de uma tela alta, o "Olhar de perto" passava da borda
+ * (11 a 17px a 320×640) e era cortado. A correção é de composição — menos
+ * respiro e uma escala de título menor, proporcionais à altura — e nenhum
+ * texto é escondido: o cartão aberto, as telas altas e o desktop não mudam.
+ */
+@media (max-width: 720px) and (max-height: 720px) {
+  .journey-region:not(.is-expanded) .region-summary { padding: clamp(12px, 2.4svh, 18px) 18px; }
+  .journey-region:not(.is-expanded) .region-category { margin-bottom: clamp(8px, 1.8svh, 14px); }
+  .journey-region:not(.is-expanded) .region-title { font-size: clamp(1.7rem, 8.6vw, 2.3rem); line-height: .92; }
+  .journey-region[data-title-flow="single"]:not(.is-expanded) .region-title { font-size: clamp(1.5rem, 7.4vw, 2.1rem); }
+  .journey-region:not(.is-expanded) .region-description { margin-top: clamp(8px, 1.6svh, 12px); font-size: .86rem; line-height: 1.4; }
+  .journey-region:not(.is-expanded) .region-expand-label { margin-top: clamp(8px, 1.8svh, 14px); }
+  .journey-region:not(.is-expanded) .region-summary:has(.region-thumb) { padding-bottom: clamp(12px, 2.4svh, 18px); }
+  .journey-region:not(.is-expanded) .region-summary:has(.region-thumb) .region-category { margin-bottom: clamp(8px, 1.8svh, 14px); }
+  .journey-region:not(.is-expanded) .region-summary:has(.region-thumb) .region-description { margin-top: clamp(8px, 1.6svh, 12px); }
+  .journey-region:not(.is-expanded) .region-summary:has(.region-thumb) .region-expand-label { margin-top: clamp(8px, 1.8svh, 14px); }
+  .region-thumb { height: clamp(26px, 4.4svh, 40px); margin-bottom: 6px; }
+}
+
+/* Abaixo de 600px de altura não há espaço para a faixa sem tirar o texto do cartão. */
+@media (max-width: 720px) and (max-height: 600px) {
+  .region-thumb { display: none; }
+}

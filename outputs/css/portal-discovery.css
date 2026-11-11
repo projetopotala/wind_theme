@@ -26,6 +26,10 @@
 .discovery-links a > span:last-child { color: #d9c28e; font-size: 20px; }
 .discovery-footnote { border-top: 1px solid #d9caa526; margin: 28px 0 0; padding-top: 20px; font: italic 14px/1.5 Georgia, serif; color: #d8ceb8; }
 .discovery-footnote > span { margin-right: 12px; color: #d8bd83; }
+.discovery-matter { margin: 14px 0 0; font: 14px/1.5 Georgia, serif; color: #d8ceb8; }
+.discovery-matter a { color: #ecd9a8; text-underline-offset: 4px; }
+.discovery-matter a:hover { color: #fff3d2; }
+.discovery-matter a:focus-visible { outline: 2px solid #d8bd83; outline-offset: 4px; }
 .portal-discovery :focus-visible, .home-community :focus-visible { outline: 2px solid #e8c986; outline-offset: 5px; }
 .home-narrative-bridge { position: relative; z-index: 3; width: min(460px, calc(100% - 48px)); padding: 12px 22px; margin: 0 auto; text-align: center; color: #f5ebd4; background: #2c332ad9; border-radius: 12px; line-height: 1.5; }
 .journey-silence:has(.home-narrative-bridge) { display: grid; place-items: center; }

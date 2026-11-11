@@ -281,6 +281,22 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
         ? `<span class="region-capa" aria-hidden="true">${arteDaCapa(region.motivo)}</span>`
         : ""))
     : "";
+  /*
+   * A IMAGEM DA ÁREA APARECE COM O CARTÃO FECHADO.
+   *
+   * O cartão fechado só tinha texto: quem rolava a Home via doze títulos e
+   * nenhuma imagem até abrir cada bloco. A faixa traz a fotografia que o
+   * bloco já tem em `home_blocks` (mesmo campo da imagem do bloco aberto), sem
+   * segunda fonte. Novidades e variantes de capa já têm a sua própria capa.
+   */
+  const thumbSource = !novidade && !capaFechada ? coverSource : "";
+  /* Sem fotografia (hoje, o Blog), a faixa fica como moldura com um ornamento:
+     os doze cartões mantêm a mesma composição e a mesma altura. */
+  const thumb = novidade || capaFechada
+    ? ""
+    : thumbSource
+      ? `<span class="region-thumb" aria-hidden="true"><img src="${thumbSource}" alt="" loading="lazy" decoding="async"></span>`
+      : `<span class="region-thumb region-thumb--vazia" aria-hidden="true"></span>`;
   const newsMeta = novidade
     ? `<span class="region-news-meta" aria-hidden="true"><small>${escapeHtml(region.category || "Caderno")}</small><span>${escapeHtml(title)}</span></span>`
     : "";
@@ -309,6 +325,7 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
           <button class="region-close" type="button" data-region-close tabindex="-1"
             aria-label="Voltar para a jornada"><span aria-hidden="true">${resourceConfig ? sectionIcon("back") : "←"}</span>${resourceConfig ? '<span class="section-back-label">Voltar à jornada</span>' : ""}</button>
           <button class="region-summary" type="button" aria-expanded="false" aria-controls="${id}-details">
+            ${thumb}
             ${capaFechada}
             ${newsMeta}
             <span class="region-node" aria-hidden="true"></span>
@@ -535,7 +552,6 @@ export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
         <p>Ecossistema Digital Potala</p>
         <h1 id="journey-title">Bem-vindo.</h1>
         <span>O caminho continua.</span>
-        <a class="journey-home-link" href="transcendido.html" data-keeps-expansion>Ler a matéria de Atendimentos <i aria-hidden="true">→</i></a>
         <p class="home-welcome-context">Cuidado, conhecimento, cultura e pessoas.<br>Encontre novas possibilidades para o seu momento.</p>
       </div>
     </section>

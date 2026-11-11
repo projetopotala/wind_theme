@@ -248,26 +248,3 @@ html.cine-quieto .cine-title { opacity: 0; translate: 0 -14px; }
   from { translate: 0 34px; }
   to { translate: 0 -34px; }
 }
-/* Travessia: caminho claro e discreto para a Home, logo na primeira tela. */
-.journey-home-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: clamp(18px, 3.2svh, 30px);
-  padding: 12px 22px;
-  min-height: 44px;
-  border: 1px solid rgba(239, 228, 207, .6);
-  border-radius: 999px;
-  color: #fff8eb;
-  background: rgba(22, 27, 24, .38);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  font: 700 .72rem/1 Arial, Helvetica, sans-serif;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  text-decoration: none;
-  text-shadow: 0 1px 10px rgba(18, 14, 10, .6);
-}
-.journey-home-link i { font-style: normal; }
-.journey-home-link:hover { background: rgba(35, 40, 36, .6); border-color: rgba(246, 231, 203, .9); }
-.journey-home-link:focus-visible { outline: 2px solid rgba(243, 222, 181, .95); outline-offset: 4px; }
