@@ -5,6 +5,7 @@ import { confirmAppointmentReservation } from "./appointment-reservations.js";
 import { createAppointmentSlot } from "./appointment-slots.js";
 import { esc } from "./operations/comum.js";
 import { caminhoDaSala } from "../sala/estado-sala.js";
+import { renderAtendimentos, readSlotForm, syncSlotForm, computeEnd, slotErrorMessage } from "./atendimentos-view.js";
 
 const LABELS = { recebida: "Recebida", em_contato: "Em contato", encerrada: "Encerrada", cancelada: "Cancelada" };
 const PERIODS = { manha: "Manhã", tarde: "Tarde", noite: "Noite" };
@@ -38,7 +39,7 @@ export function suggestedTime(row) {
 
 const option = (item, label, selected = false) => `<option value="${esc(item.id)}" ${selected ? "selected" : ""}>${esc(item[label] || item.title || item.display_name || item.name || item.id)}</option>`;
 
-function reservationForm(row, operational = {}) {
+export function reservationForm(row, operational = {}, { simple = false } = {}) {
   if (row.reservation_schedule_id) return roomLink(row) + `<p class="mp-status">Reserva vinculada à agenda.</p>`;
   const rooms = (operational.rooms || []).filter(item => item.status === "available" && item.capacity);
   const offerings = (operational.activity_offerings || []).filter(item => item.active !== false);
@@ -55,8 +56,8 @@ function reservationForm(row, operational = {}) {
     <label>Início<input data-reservation-start type="datetime-local" value="${esc(time.start)}" ${time.fromSlot ? "readonly" : ""} required></label>
     <label>Fim<input data-reservation-end type="datetime-local" value="${esc(time.end)}" ${time.fromSlot ? "readonly" : ""} required></label>${room}
     <label class="appointment-reservation-wide">Observações<textarea data-reservation-notes maxlength="1000"></textarea></label>
-    <label class="appointment-reservation-wide"><input data-reservation-confirm type="checkbox" required> Revisei horário, profissional, modalidade${row.modality === "presencial" ? " e sala" : ""} e confirmo esta reserva.</label>
-    <button type="button" data-appointment-confirm="${esc(row.id)}">Confirmar reserva</button>
+    ${simple && !legacy ? "" : `<label class="appointment-reservation-wide"><input data-reservation-confirm type="checkbox" required> Revisei horário, profissional, modalidade${row.modality === "presencial" ? " e sala" : ""} e confirmo esta reserva.</label>`}
+    <button type="button" data-appointment-confirm="${esc(row.id)}">${simple ? "Confirmar atendimento" : "Confirmar reserva"}</button>
   </fieldset>`;
 }
 
@@ -94,15 +95,21 @@ export function renderAppointmentPanel({ rows, phase, message, busy, drafts, ope
 
 // Defesa de interface e sessão; a autorização efetiva continua nas políticas RLS.
 export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADMIN_ENABLED, access = getAdminAccess,
-  reservationsEnabled = APPOINTMENT_RESERVATIONS_ENABLED, getOperationalState = () => null,
+  reservationsEnabled = APPOINTMENT_RESERVATIONS_ENABLED, getOperationalState = () => null, selector = "[data-appointment-admin]", view = "legacy",
   confirmReservation = confirmAppointmentReservation, createSlot = createAppointmentSlot, id = () => globalThis.crypto.randomUUID() } = {}) {
   let epoch = 0;
-  const state = { rows: [], drafts: {}, phase: enabled === true ? "idle" : "disabled", busy: false,
+  const state = { slotDraft: {}, rows: [], drafts: {}, phase: enabled === true ? "idle" : "disabled", busy: false,
     message: enabled === true ? "Carregue as solicitações de atendimento." : "Acompanhamento de atendimentos temporariamente indisponível. Aguardando homologação." };
   function render(focus = false) {
-    const target = root.querySelector("[data-appointment-admin]");
+    const target = root.querySelector(selector);
     if (!target) return;
-    target.innerHTML = renderAppointmentPanel({ ...state, operationalState: getOperationalState() || {}, reservationsEnabled });
+    if (view === "atendimentos") {
+      target.innerHTML = renderAtendimentos({ ...state, operationalState: getOperationalState() || {}, reservationsEnabled,
+        helpers: { reservationForm, suggestedTime, roomLink } });
+      syncSlotForm(target.querySelector("[data-atendimentos-slot]"));
+    } else {
+      target.innerHTML = renderAppointmentPanel({ ...state, operationalState: getOperationalState() || {}, reservationsEnabled });
+    }
     if (focus) target.querySelector("[data-appointment-feedback]")?.focus();
   }
   function clear() {
@@ -208,12 +215,14 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     }, "Confirmando reserva…");
   }
   function click(event) {
+    if (view !== "atendimentos" && event.target.closest?.("[data-atendimentos-admin]")) return;
     const reloadButton = event.target.closest?.("[data-appointment-reload]");
     const saveButton = event.target.closest?.("[data-appointment-save]");
     const confirmButton = event.target.closest?.("[data-appointment-confirm]");
     const slotButton = event.target.closest?.("[data-appointment-slot-create]");
     if (reloadButton && root.contains(reloadButton)) return reload();
     if (slotButton && root.contains(slotButton)) {
+      if (view === "atendimentos") return createSlotFromForm(slotButton.closest("[data-atendimentos-slot]"));
       const form = slotButton.closest("[data-appointment-slot]");
       return execute(async () => {
         await createSlot(client, { offeringId: form.querySelector("[data-slot-offering]")?.value,
@@ -229,8 +238,8 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     }
     if (confirmButton && root.contains(confirmButton)) {
       const article = confirmButton.closest("[data-appointment-row]");
-      const approved = article?.querySelector("[data-reservation-confirm]")?.checked;
-      if (!approved) { state.message = "Confirme que revisou os dados da reserva."; render(true); return; }
+      const box = article?.querySelector("[data-reservation-confirm]");
+      if (view !== "atendimentos" ? !box?.checked : box && !box.checked) { state.message = "Confirme que revisou os dados da reserva."; render(true); return; }
       return confirm(confirmButton.dataset.appointmentConfirm, {
         start: article.querySelector("[data-reservation-start]")?.value,
         end: article.querySelector("[data-reservation-end]")?.value,
@@ -242,7 +251,39 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
       });
     }
   }
+  function createSlotFromForm(form) {
+    const draft = readSlotForm(form);
+    state.slotDraft = draft;
+    const endsAt = computeEnd(draft.date, draft.time, draft.duration);
+    const operational = getOperationalState() || {};
+    if (!draft.professional || !draft.offering || !draft.date || !draft.time || !endsAt) {
+      state.message = "Preencha profissional, serviço, data e horário para disponibilizar.";
+      render(true); return;
+    }
+    const offering = (operational.activity_offerings || []).find(item => item.id === draft.offering);
+    if (offering && offering.mode !== "online" && !draft.room) {
+      state.message = "Este serviço é presencial: escolha a sala.";
+      render(true); return;
+    }
+    const professional = (operational.profiles || []).find(item => item.id === draft.professional);
+    return execute(async () => {
+      try {
+        await createSlot(client, { offeringId: draft.offering, professionalProfileId: draft.professional,
+          startsAt: `${draft.date}T${draft.time}`, endsAt, roomId: offering && offering.mode === "online" ? "" : draft.room });
+      } catch (error) {
+        if (accessDenied(error) && String(error?.code) !== "42501") throw error;
+        state.message = slotErrorMessage(error);
+        return;
+      }
+      const dmy = draft.date.split("-").reverse().join("/");
+      state.slotDraft = { ...draft, time: "" };
+      state.message = `Horário disponibilizado: ${professional?.display_name || "profissional"} · ${offering?.title || "serviço"} · ${dmy} ${draft.time}–${endsAt.slice(11, 16)}. Já pode ser solicitado no Meu Potala.`;
+    }, "Disponibilizando horário…");
+  }
   function change(event) {
+    if (view !== "atendimentos" && event.target.closest?.("[data-atendimentos-admin]")) return;
+    const slotForm = event.target.closest?.("[data-atendimentos-slot]");
+    if (slotForm && view === "atendimentos") { state.slotDraft = readSlotForm(slotForm); syncSlotForm(slotForm); return; }
     const id = event.target.dataset?.appointmentState;
     if (!state.busy && state.rows.some(row => row.id === id) && STATES.includes(event.target.value)) state.drafts[id] = event.target.value;
   }

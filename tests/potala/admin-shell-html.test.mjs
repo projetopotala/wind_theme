@@ -42,7 +42,7 @@ test("a barra lateral tem grupos claros e uma biblioteca só de ícones", async 
 
   const nav = html.slice(html.indexOf("data-admin-nav aria-label"), html.indexOf("</nav>"));
   const botoes = [...nav.matchAll(/<button type="button"[^>]*data-section="([a-z]+)"[\s\S]*?<\/button>/g)];
-  assert.equal(botoes.length, 14);
+  assert.equal(botoes.length, 15);
   for (const [botao, secao] of botoes) {
     assert.match(botao, /<use href="\/media\/icones-admin\.svg#[a-z-]+"><\/use>/, `sem ícone: ${secao}`);
   }

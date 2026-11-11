@@ -25,6 +25,7 @@ let operationsController = null;
 let passwordSetup = null;
 let operacaoAbrindo = null;
 let appointmentPanel = null;
+let atendimentosPanel = null;
 let accessPanel = null;
 const firstAccess = isAdminFirstAccess(window.location);
 
@@ -53,10 +54,20 @@ async function abrirOperacao(client, access) {
     return;
   }
   appointmentPanel = createAppointmentPanel({ root: panel, client, getOperationalState: () => operations.snapshot });
+  /* Seção Atendimentos: mesmo motor do cartão da Visão geral (que segue como caminho alternativo), montado na sua própria área. */
+  const atendimentosRoot = panel.querySelector("[data-admin-workspace=\"atendimentos\"]");
+  atendimentosPanel = atendimentosRoot
+    ? createAppointmentPanel({ root: atendimentosRoot, client, getOperationalState: () => operations.snapshot,
+      selector: "[data-atendimentos-admin]", view: "atendimentos" })
+    : null;
+  atendimentosRoot?.addEventListener("click", (evento) => {
+    const destino = evento.target?.closest?.("[data-atendimentos-goto]")?.getAttribute("data-atendimentos-goto");
+    if (destino) panel.querySelector(`[data-admin-nav] [data-section="${destino}"]`)?.click();
+  });
   operationsController = createOperationsController({
     root: panel,
     client: operations,
-    onRendered: () => appointmentPanel?.render(),
+    onRendered: () => { appointmentPanel?.render(); atendimentosPanel?.render(); },
     onNavigate(section) {
       panel.querySelector(`[data-admin-nav] [data-section="${section}"]`)?.click();
     },
@@ -77,8 +88,8 @@ try {
     client,
     root,
     onState(state) {
-      if (state !== "authorized") { appointmentPanel?.clear(); accessPanel?.clear(); }
-      else if (appointmentPanel) void appointmentPanel.reload();
+      if (state !== "authorized") { appointmentPanel?.clear(); atendimentosPanel?.clear(); accessPanel?.clear(); }
+      else if (appointmentPanel) { void appointmentPanel.reload(); void atendimentosPanel?.reload(); }
     },
     async onAuthorized(access) {
       shell?.setUser({
@@ -98,6 +109,7 @@ try {
           accessPanel = createAccessPanel({ root: panel, client });
           /* Relê ao abrir a seção: mudanças feitas em Pessoas (papel, ativo) aparecem na hora. */
           panel.addEventListener("click", (evento) => {
+            if (evento.target?.closest?.('[data-admin-nav] [data-section="atendimentos"]')) void atendimentosPanel?.reload();
             if (evento.target?.closest?.('[data-admin-nav] [data-section="acessos"]')) {
               void accessPanel.reload().catch((error) => console.error("Falha ao carregar usuários e acessos.", error));
             }
@@ -110,7 +122,7 @@ try {
         await Promise.resolve(controller.pronto).catch((error) => console.error("Falha ao abrir o editor da Jornada.", error));
       }
       if (operacaoAbrindo) await operacaoAbrindo;
-      if (appointmentPanel) void appointmentPanel.reload();
+      if (appointmentPanel) { void appointmentPanel.reload(); void atendimentosPanel?.reload(); }
       panel?.querySelector("h2")?.focus();
     },
   });

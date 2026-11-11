@@ -75,7 +75,8 @@
         </ul>
         <p class="admin-nav-group">Operação</p>
         <ul>
-          <li><button type="button" data-section="agenda" data-dica="Agenda"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#calendar-days"></use></svg><span>Agenda</span></button></li>
+          <li><button type="button" data-section="atendimentos" data-dica="Atendimentos"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#calendar-clock"></use></svg><span>Atendimentos</span></button></li>
+<li><button type="button" data-section="agenda" data-dica="Agenda"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#calendar-days"></use></svg><span>Agenda</span></button></li>
           <li><button type="button" data-section="salas" data-dica="Salas"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#door-open"></use></svg><span>Salas</span></button></li>
           <li><button type="button" data-section="ofertas" data-dica="Cursos e atividades"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#book-open"></use></svg><span>Cursos e atividades</span></button></li>
         </ul>
@@ -415,6 +416,11 @@
         </article>
       </section>
 
+      <section class="admin-workspace" data-admin-workspace="atendimentos" hidden aria-labelledby="atendimentos-titulo">
+        <header class="admin-head"><h2 id="atendimentos-titulo" tabindex="-1">Atendimentos</h2>
+        <p class="op-muted">Disponibilize horários, confirme solicitações e acompanhe as consultas confirmadas.</p></header>
+        <div data-atendimentos-admin></div>
+      </section>
       <section class="admin-workspace" data-admin-workspace="agenda" data-op-view="agenda" hidden></section>
       <section class="admin-workspace" data-admin-workspace="salas" data-op-view="rooms" hidden></section>
       <section class="admin-workspace" data-admin-workspace="ofertas" data-op-view="offers" hidden></section>
