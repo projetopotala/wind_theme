@@ -72,6 +72,21 @@ const UUID_DO_RECIBO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 /* Teto de consultas lidas na agenda de quem atende: cada uma custa uma checagem de papel no banco. */
 const LIMITE_AGENDA_PROFISSIONAL = 30;
 
+/*
+ * Inscrições do Meu Potala. A fonte é a operação do Instituto (op_records), lida pela
+ * função my_course_enrollments(), que só devolve as inscrições da conta logada. A tabela
+ * antiga public.enrollments continua sendo lida (somente leitura) e seus registros são
+ * mantidos, sem duplicar quando a mesma turma já veio da operação. Se a função ainda não
+ * existir no banco, a leitura segue só com a tabela antiga: publicar o front antes da
+ * migration não quebra a tela.
+ */
+const FUNCAO_AUSENTE = new Set(["PGRST202", "42883"]);
+
+export function unirInscricoes(daOperacao = [], antigas = []) {
+  const vistos = new Set(daOperacao.map((inscricao) => inscricao.cursoRef));
+  return [...daOperacao, ...antigas.filter((inscricao) => !vistos.has(inscricao.cursoRef))];
+}
+
 function tabelaDe(colecao) {
   const tabela = TABELAS[colecao];
   if (!tabela) throw new TypeError(`Coleção desconhecida: ${colecao}`);
@@ -287,7 +302,12 @@ export function criarDadosSupabase({ client } = {}) {
       const [coluna, ascendente] = ORDEM[colecao] || ["id", true];
       const { data, error } = await client.from(tabelaDe(colecao)).select("*").order(coluna, { ascending: ascendente });
       if (error) throw falhouDados(error);
-      return (data || []).map((linha) => paraModelo(colecao, linha, usuarioId));
+      const modelos = (data || []).map((linha) => paraModelo(colecao, linha, usuarioId));
+      if (colecao !== "inscricoes") return modelos;
+      const { data: daOperacao, error: erroOperacao } = await client.rpc("my_course_enrollments");
+      if (erroOperacao && !FUNCAO_AUSENTE.has(String(erroOperacao.code))) throw falhouDados(erroOperacao);
+      const operacao = erroOperacao ? [] : (Array.isArray(daOperacao) ? daOperacao : []).map((linha) => paraModelo(colecao, linha, usuarioId));
+      return unirInscricoes(operacao, modelos);
     },
 
     async gravar(colecao, registro, usuarioId) {
