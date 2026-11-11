@@ -5,6 +5,10 @@
  * para que quem chega não precise atravessar as 12 etapas da Travessia só para
  * achar Atendimentos, o Blog ou a Loja.
  *
+ * Os caminhos vêm agrupados pelo que a pessoa quer fazer (Serviços, Aprendizado,
+ * Conteúdos, Instituto, Conta). O primeiro é a ação mais procurada: agendar um
+ * atendimento, que leva direto à tela de pedido de horário do Meu Potala.
+ *
  * Princípios:
  *  - HTML estático: nada aqui consulta o Supabase nem depende de carregamento
  *    dinâmico. O menu existe mesmo se a Travessia demorar ou falhar.
@@ -13,18 +17,27 @@
  *  - Reaproveita as páginas e rotas que já existem; não cria destinos novos.
  */
 
+export const MENU_GRUPOS = Object.freeze([
+  { key: "servicos", titulo: "Serviços" },
+  { key: "aprendizado", titulo: "Aprendizado" },
+  { key: "conteudos", titulo: "Conteúdos" },
+  { key: "instituto", titulo: "Instituto" },
+  { key: "conta", titulo: "Conta" },
+]);
+
 export const MENU_ITEMS = Object.freeze([
-  { key: "chegada", label: "Voltar à Chegada", hint: "A paisagem inicial", href: "/transcender.html" },
-  { key: "home", label: "Explorar o Potala", hint: "A Travessia: a jornada em 12 etapas", href: "travessia.html" },
-  { key: "institucional", label: "Home do Instituto", hint: "Todos os caminhos: cuidado, cursos, blog, loja e cultura", href: "atendimentos-conceito.html" },
-  { key: "atendimentos", label: "Atendimentos", hint: "Caminhos de cuidado", href: "atendimentos.html" },
-  { key: "materia", label: "Atendimentos em matéria", hint: "A leitura editorial do cuidado", href: "transcendido.html" },
-  { key: "profissionais", label: "Profissionais", hint: "Quem cuida e ensina", href: "profissionais.html" },
-  { key: "cursos", label: "Cursos e Eventos", hint: "Aprender e conviver", href: "cursos.html", extra: { label: "Eventos", href: "eventos.html" } },
-  { key: "blog", label: "Blog e Revista", hint: "Artigos e reflexões", href: "blog.html", extra: { label: "Revista", href: "revista.html" } },
-  { key: "loja", label: "Loja", hint: "O Marketplace do Instituto", href: "marketplace.html" },
-  { key: "recepcao", label: "Recepção", hint: "Fale com o Instituto", href: "recepcao.html" },
-  { key: "meu-potala", label: "Meu Potala", hint: "Seu espaço no Portal", href: "/meu-potala" },
+  { key: "agendar", grupo: "servicos", label: "Agendar atendimento", hint: "Escolher profissional e horário · pede para entrar na conta", href: "/meu-potala/atendimentos" },
+  { key: "atendimentos", grupo: "servicos", label: "Atendimentos", hint: "Caminhos de cuidado", href: "atendimentos.html" },
+  { key: "profissionais", grupo: "servicos", label: "Profissionais", hint: "Quem cuida e ensina", href: "profissionais.html" },
+  { key: "loja", grupo: "servicos", label: "Loja", hint: "O Marketplace do Instituto", href: "marketplace.html" },
+  { key: "cursos", grupo: "aprendizado", label: "Cursos e Eventos", hint: "Aprender e conviver", href: "cursos.html", extra: { label: "Eventos", href: "eventos.html" } },
+  { key: "blog", grupo: "conteudos", label: "Blog e Revista", hint: "Artigos e reflexões", href: "blog.html", extra: { label: "Revista", href: "revista.html" } },
+  { key: "materia", grupo: "conteudos", label: "Atendimentos em matéria", hint: "A leitura editorial do cuidado", href: "transcendido.html" },
+  { key: "institucional", grupo: "instituto", label: "Home do Instituto", hint: "Todos os caminhos: cuidado, cursos, blog, loja e cultura", href: "atendimentos-conceito.html" },
+  { key: "home", grupo: "instituto", label: "Explorar o Potala", hint: "A Travessia: a jornada em 12 etapas", href: "travessia.html" },
+  { key: "chegada", grupo: "instituto", label: "Voltar à Chegada", hint: "A paisagem inicial", href: "/transcender.html" },
+  { key: "recepcao", grupo: "instituto", label: "Recepção", hint: "Fale com o Instituto", href: "recepcao.html" },
+  { key: "meu-potala", grupo: "conta", label: "Meu Potala", hint: "Seu espaço: cursos, agenda e atendimentos", href: "/meu-potala" },
 ]);
 
 const ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
@@ -35,7 +48,9 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 /* Qual item corresponde à página atual (para aria-current). */
 export function itemAtual(pathname = "") {
   const nome = String(pathname).split("/").pop().replace(/\.html$/, "") || "";
-  if (/^meu-potala/.test(String(pathname).replace(/^\//, ""))) return "meu-potala";
+  const limpo = String(pathname).replace(/^\/+/, "").replace(/\/+$/, "");
+  if (limpo === "meu-potala/atendimentos") return "agendar";
+  if (/^meu-potala/.test(limpo)) return "meu-potala";
   const mapa = { transcender: "chegada", "atendimentos-conceito": "institucional", transcendido: "materia", travessia: "home", atendimentos: "atendimentos", profissionais: "profissionais", cursos: "cursos", eventos: "cursos", blog: "blog", revista: "blog", artigo: "blog", marketplace: "loja", recepcao: "recepcao" };
   return mapa[nome] || "";
 }
@@ -43,18 +58,24 @@ export function itemAtual(pathname = "") {
 /* `base` ("/" nas rotas com subcaminhos, como /meu-potala/salvos) torna absolutos os destinos relativos. */
 const destino = (href, base) => (base && !/^([a-z]+:|\/)/i.test(href) ? base + href : href);
 
+function itemHtml(i, atual, base) {
+  const cur = i.key === atual ? ' aria-current="page"' : "";
+  const extra = i.extra ? `<a class="potala-menu__extra" href="${esc(destino(i.extra.href, base))}">${esc(i.extra.label)}</a>` : "";
+  return `<li><a class="potala-menu__link" href="${esc(destino(i.href, base))}"${cur}><span class="potala-menu__label">${esc(i.label)}</span><span class="potala-menu__hint">${esc(i.hint)}</span></a>${extra}</li>`;
+}
+
 export function menuHtml(atual = "", base = "") {
-  const itens = MENU_ITEMS.map((i) => {
-    const cur = i.key === atual ? ' aria-current="page"' : "";
-    const extra = i.extra ? `<a class="potala-menu__extra" href="${esc(destino(i.extra.href, base))}">${esc(i.extra.label)}</a>` : "";
-    return `<li><a class="potala-menu__link" href="${esc(destino(i.href, base))}"${cur}><span class="potala-menu__label">${esc(i.label)}</span><span class="potala-menu__hint">${esc(i.hint)}</span></a>${extra}</li>`;
+  const grupos = MENU_GRUPOS.map((g) => {
+    const itens = MENU_ITEMS.filter((i) => i.grupo === g.key).map((i) => itemHtml(i, atual, base)).join("");
+    const id = `potala-menu-grupo-${g.key}`;
+    return `<section class="potala-menu__grupo" aria-labelledby="${id}"><h2 class="potala-menu__grupo-titulo" id="${id}">${esc(g.titulo)}</h2><ul class="potala-menu__list" data-potala-menu-grupo="${g.key}">${itens}</ul></section>`;
   }).join("");
   return `<div class="potala-menu__sheet">
     <header class="potala-menu__head">
       <p class="potala-menu__eyebrow" id="potala-menu-titulo">Instituto Potala</p>
       <button class="potala-menu__close" type="button" data-potala-menu-fechar aria-label="Fechar menu">${CLOSE}</button>
     </header>
-    <nav aria-label="Caminhos do Portal"><ul class="potala-menu__list">${itens}</ul></nav>
+    <nav aria-label="Caminhos do Portal">${grupos}</nav>
   </div>`;
 }
 
@@ -128,7 +149,8 @@ export function mountPortalMenu({ documentRef = document, host = null, antes = n
   const setAdminAccess = (allowed) => {
     dlg.querySelector("[data-potala-menu-admin]")?.remove();
     if (!allowed) return;
-    const lista = dlg.querySelector(".potala-menu__list");
+    /* A Central Operacional entra no grupo Conta (ou na primeira lista, se o grupo não existir). */
+    const lista = dlg.querySelector('[data-potala-menu-grupo="conta"]') || dlg.querySelector(".potala-menu__list");
     if (!lista) return;
     const item = documentRef.createElement("li");
     item.setAttribute("data-potala-menu-admin", "");

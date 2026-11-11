@@ -129,6 +129,34 @@ body[data-section="atendimentos"] .portal-header__account.conta-gatilho {
   font: 400 clamp(1.65rem, 2.1vw, 2.4rem)/1.06 Georgia, "Times New Roman", serif;
   letter-spacing: -.035em;
 }
+/* Entrada direta para o pedido de horário (Meu Potala), sem sair da composição do hero. */
+.care-hero-acao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 24px 0 0;
+}
+.care-hero-agendar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--care-ivory, #f5eddf);
+  color: #1f2a24;
+  font: 700 .72rem/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background .25s ease;
+}
+.care-hero-agendar:hover { background: var(--care-brass, #c9a46a); }
+.care-hero-agendar:focus-visible { outline: 2px solid var(--care-brass, #c9a46a); outline-offset: 3px; }
+.care-hero-acao__nota { max-width: 36ch; color: rgba(245, 237, 223, .62); font-size: .78rem; line-height: 1.45; }
+@media (prefers-reduced-motion: reduce) { .care-hero-agendar { transition: none; } }
+
 .care-lead {
   max-width: 48ch;
   margin-top: 18px;

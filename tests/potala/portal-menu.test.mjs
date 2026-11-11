@@ -6,13 +6,13 @@ const raiz = new URL("../../outputs/", import.meta.url);
 const ler = (nome) => readFileSync(new URL(nome, raiz), "utf8");
 const { MENU_ITEMS, itemAtual, menuHtml, mountPortalMenu } = await import("../../outputs/js/shared/portal-menu.js");
 
-test("o menu global oferece os nove caminhos essenciais mais o retorno a Chegada, com destinos reais", () => {
+test("o menu global oferece os caminhos essenciais, agrupados, com destinos reais", () => {
   assert.deepEqual(
     MENU_ITEMS.map((i) => i.href),
-    ["/transcender.html", "travessia.html", "atendimentos-conceito.html", "atendimentos.html", "transcendido.html", "profissionais.html", "cursos.html", "blog.html", "marketplace.html", "recepcao.html", "/meu-potala"],
+    ["/meu-potala/atendimentos", "atendimentos.html", "profissionais.html", "marketplace.html", "cursos.html", "blog.html", "transcendido.html", "atendimentos-conceito.html", "travessia.html", "/transcender.html", "recepcao.html", "/meu-potala"],
   );
   for (const item of MENU_ITEMS) {
-    if (item.href === "/meu-potala") continue;
+    if (item.href.startsWith("/meu-potala")) continue;
     if (item.href.startsWith("/")) { assert.ok(existsSync(new URL(item.href.slice(1), raiz)), `destino inexistente: ${item.href}`); continue; } // rota reescrita pelo vercel.json (veja o teste abaixo)
     assert.ok(existsSync(new URL(item.href, raiz)), `destino inexistente: ${item.href}`);
     if (item.extra) assert.ok(existsSync(new URL(item.extra.href, raiz)), `destino inexistente: ${item.extra.href}`);
@@ -41,7 +41,7 @@ test("o menu não depende de Supabase nem de dados remotos", () => {
 
 test("o HTML do menu é acessível: navegação nomeada, diálogo rotulado e destino atual marcado", () => {
   const html = menuHtml("atendimentos");
-  assert.equal((html.match(/class="potala-menu__link"/g) || []).length, 11);
+  assert.equal((html.match(/class="potala-menu__link"/g) || []).length, 12);
   assert.match(html, /<nav aria-label="Caminhos do Portal">/);
   assert.match(html, /id="potala-menu-titulo"/);
   assert.match(html, /aria-label="Fechar menu"/);
@@ -57,6 +57,7 @@ test("itemAtual relaciona a página aberta ao item do menu", () => {
   assert.equal(itemAtual("/eventos.html"), "cursos");
   assert.equal(itemAtual("/revista.html"), "blog");
   assert.equal(itemAtual("/meu-potala/agenda"), "meu-potala");
+  assert.equal(itemAtual("/meu-potala/atendimentos"), "agendar");
   assert.equal(itemAtual("/qualquer.html"), "");
 });
 
@@ -73,7 +74,7 @@ test("o menu só adiciona a Central Operacional depois da autorização confirma
     className: "",
     setAttribute() {}, addEventListener() {},
     querySelector(seletor) {
-      if (seletor === ".potala-menu__list") return lista;
+      if (seletor === ".potala-menu__list" || seletor === '[data-potala-menu-grupo="conta"]') return lista;
       if (seletor === "[data-potala-menu-admin]") return filhos.find((item) => !item.removido) || null;
       return null;
     },

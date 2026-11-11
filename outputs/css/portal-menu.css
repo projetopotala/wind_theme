@@ -149,3 +149,13 @@ body[data-story-page]:has(#erro-ambiente) .potala-menu__trigger { left: calc(max
   backdrop-filter: blur(10px);
 }
 .mp-topo > .potala-menu__trigger { margin-left: auto; color: var(--conta-marrom, #3b2a1d); }
+/* ---------- Grupos do menu (Serviços, Aprendizado, Conteúdos, Instituto, Conta) ---------- */
+.potala-menu__grupo + .potala-menu__grupo { margin-top: clamp(14px, 2.4vh, 22px); }
+.potala-menu__grupo-titulo {
+  margin: 0 0 6px;
+  font: 700 .68rem/1.2 Manrope, Arial, Helvetica, sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #8a6532;
+}
+.potala-menu__grupo .potala-menu__label { font-size: clamp(1.3rem, 4vw, 1.6rem); }

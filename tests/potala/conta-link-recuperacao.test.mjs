@@ -42,5 +42,5 @@ test("app.js limpa a URL antes de abrir a conta e mostra o aviso na tela de visi
   const limpar = fonte.indexOf('if (avisoDoLink) janela.history?.replaceState?.(null, "", janela.location.pathname);');
   const abrirConta = fonte.indexOf("const conta = await montarConta({ documento, janela });");
   assert.ok(lerAviso > 0 && limpar > lerAviso && abrirConta > limpar, "a falha precisa ser lida e a URL limpa antes de o SDK abrir");
-  assert.match(fonte, /return trocar\(`\$\{avisoDoLink\}\$\{renderizarVisitante\(estado\)\}`, \{ origem \}\);/);
+  assert.match(fonte, /return trocar\(`\$\{avisoDoLink\}\$\{renderizarVisitante\(estado(, rota\.nome)?\)\}`, \{ origem \}\);/);
 });
