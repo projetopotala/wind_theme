@@ -946,6 +946,8 @@
 .mp-botao-secundario { border-color: rgba(86, 59, 43, .34); color: var(--conta-marrom); background: transparent; }
 .mp-botao-secundario:hover { border-color: var(--conta-marrom); background: rgba(86, 59, 43, .06); }
 .mp-botao-pequeno { min-height: 36px; padding: 0 16px; font-size: .6rem; }
+.mp-botao-aula { justify-self: start; margin-top: 6px; min-height: 44px; }
+.mp-aviso-aula { font-style: italic; }
 
 .mp-link {
   display: inline-flex;

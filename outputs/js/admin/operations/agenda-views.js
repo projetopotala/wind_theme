@@ -493,7 +493,7 @@ export function renderEscolhaDeTipo() {
 export const CAMPOS_POR_FAMILIA = Object.freeze({
   atendimento: ["title", "room_id", "professional_id", "client_id", "starts_at", "ends_at", "price_reais", "notes", "recorrencia"],
   online: ["title", "professional_id", "client_id", "starts_at", "ends_at", "online_url", "price_reais", "notes", "recorrencia"],
-  curso: ["title", "offering_id", "room_id", "professional_id", "starts_at", "ends_at", "participants", "price_reais", "recursos", "recorrencia", "notes"],
+  curso: ["title", "offering_id", "mode", "room_id", "online_url", "professional_id", "starts_at", "ends_at", "participants", "price_reais", "recursos", "recorrencia", "notes"],
   atividade: ["title", "offering_id", "room_id", "professional_id", "starts_at", "ends_at", "participants", "price_reais", "recursos", "recorrencia", "notes"],
   evento: ["title", "kind", "room_id", "professional_id", "starts_at", "ends_at", "participants", "price_reais", "setup_minutes", "teardown_minutes", "recursos", "extras", "notes"],
   locacao: ["title", "room_id", "client_id", "starts_at", "ends_at", "participants", "price_reais", "setup_minutes", "teardown_minutes", "recursos", "extras", "notes"],

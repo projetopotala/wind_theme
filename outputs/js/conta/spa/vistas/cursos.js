@@ -14,6 +14,20 @@ import { fracaoDoProgresso, quandoLegivel, textoDoProgresso } from "../../leitur
 import { STATUS_DE_INSCRICAO } from "../../modelos.js";
 import { barraDeProgresso, capa, e, secao, vazio } from "./comum.js";
 
+/*
+ * Entrada na aula online. O botao so existe quando o backend entregou um link https valido para
+ * esta inscricao (ativa, turma online, proxima aula online). Sem link, mas com aula marcada,
+ * avisa em vez de esconder o problema. Presencial, espera e concluido nao mostram nada.
+ */
+function acessoAAula(inscricao) {
+  if (String(inscricao.modalidade).toLowerCase() !== "online") return "";
+  if (inscricao.status === "concluido" || inscricao.status === "aguardando_turma") return "";
+  if (inscricao.linkAula) {
+    return `<a class="mp-botao mp-botao-pequeno mp-botao-aula" href="${e(inscricao.linkAula)}" target="_blank" rel="noopener noreferrer">Entrar na aula online<span class="mp-sr"> de ${e(inscricao.curso)} (abre em nova aba)</span></a>`;
+  }
+  return inscricao.proximaAula ? `<p class="mp-cartao-detalhe mp-aviso-aula">Link da aula ainda não disponível.</p>` : "";
+}
+
 function cartaoDoCurso(inscricao, progresso, agora) {
   const detalhes = [inscricao.professor, inscricao.modalidade].filter(Boolean).join(" · ");
   return `<li class="mp-cartao mp-cartao-curso">
@@ -23,6 +37,7 @@ function cartaoDoCurso(inscricao, progresso, agora) {
       <h3 class="mp-cartao-titulo">${e(inscricao.curso)}</h3>
       ${detalhes ? `<p class="mp-cartao-detalhe">${e(detalhes)}</p>` : ""}
       ${inscricao.proximaAula ? `<p class="mp-cartao-detalhe">Próxima aula: <strong>${e(quandoLegivel(inscricao.proximaAula, agora))}</strong></p>` : ""}
+      ${acessoAAula(inscricao)}
       ${progresso?.total ? `${barraDeProgresso(fracaoDoProgresso(progresso), textoDoProgresso(progresso))}<p class="mp-cartao-detalhe">${e(textoDoProgresso(progresso))}</p>` : ""}
     </div>
     ${inscricao.conteudoHref ? `<a class="mp-botao mp-botao-pequeno mp-botao-secundario" href="${e(inscricao.conteudoHref)}">Acessar conteúdo<span class="mp-sr"> de ${e(inscricao.curso)}</span></a>` : ""}
