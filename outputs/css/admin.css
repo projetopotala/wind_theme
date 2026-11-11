@@ -624,6 +624,10 @@ button {
 [data-appointment-reservation] [type="checkbox"] { margin-right: 6px; }
 [data-appointment-reservation] button { justify-self: start; }
 .atend-atalhos { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 12px; }
+.atend-atalhos a { color: var(--admin-gold); }
+.atend :is([data-slot-modality],[data-slot-end]):empty { display: none; }
+.atend-slot p { margin: 0; }
+.atend article > p { text-align: left; }
 .atend-slot { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 12px; margin: 0; padding: 14px; border: 1px solid var(--admin-line); border-radius: 12px; }
 .atend-slot legend { padding: 0 6px; color: var(--admin-gold); font-weight: 700; }
 .atend-slot :is(input,select) { width: 100%; color: var(--admin-ivory); background: var(--admin-ground); }

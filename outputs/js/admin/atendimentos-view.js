@@ -61,7 +61,7 @@ function slotForm({ controls, busy, reservationsEnabled, operational, draft }) {
   const offerings = (operational.activity_offerings || []).filter((o) => o.active !== false);
   const rooms = (operational.rooms || []).filter((r) => r.status === "available" && r.capacity);
   const sel = (value, wanted) => (String(value) === String(wanted) ? "selected" : "");
-  return `<fieldset data-atendimentos-slot class="atend-slot"><legend>Disponibilizar horário</legend>
+  return `<fieldset data-atendimentos-slot class="atend-slot"><legend>Dados do horário</legend>
     <label>Profissional<select data-slot-professional required><option value="">Escolha o profissional</option>${professionals.map((p) =>
       `<option value="${esc(p.id)}" data-published="${p.published === true}" ${sel(p.id, draft.professional)}>${esc(p.display_name || p.id)}${p.published === true ? "" : " — não publicado"}</option>`).join("")}</select></label>
     <p class="atend-aviso appointment-reservation-wide" data-slot-unpublished role="status" hidden>Este profissional ainda não está publicado, então o banco vai recusar o horário. Publique o perfil em Pessoas antes. Nada é publicado automaticamente.</p>
