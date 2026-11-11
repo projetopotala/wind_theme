@@ -15,7 +15,8 @@
 
 export const MENU_ITEMS = Object.freeze([
   { key: "chegada", label: "Voltar à Chegada", hint: "A paisagem inicial", href: "/transcender.html" },
-  { key: "home", label: "Explorar o Potala", hint: "A Home: a jornada em 12 etapas", href: "travessia.html" },
+  { key: "home", label: "Explorar o Potala", hint: "A Travessia: a jornada em 12 etapas", href: "travessia.html" },
+  { key: "institucional", label: "Home do Instituto", hint: "Todos os caminhos: cuidado, cursos, blog, loja e cultura", href: "atendimentos-conceito.html" },
   { key: "atendimentos", label: "Atendimentos", hint: "Caminhos de cuidado", href: "atendimentos.html" },
   { key: "materia", label: "Atendimentos em matéria", hint: "A leitura editorial do cuidado", href: "transcendido.html" },
   { key: "profissionais", label: "Profissionais", hint: "Quem cuida e ensina", href: "profissionais.html" },
@@ -35,7 +36,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 export function itemAtual(pathname = "") {
   const nome = String(pathname).split("/").pop().replace(/\.html$/, "") || "";
   if (/^meu-potala/.test(String(pathname).replace(/^\//, ""))) return "meu-potala";
-  const mapa = { transcender: "chegada", transcendido: "materia", travessia: "home", atendimentos: "atendimentos", profissionais: "profissionais", cursos: "cursos", eventos: "cursos", blog: "blog", revista: "blog", artigo: "blog", marketplace: "loja", recepcao: "recepcao" };
+  const mapa = { transcender: "chegada", "atendimentos-conceito": "institucional", transcendido: "materia", travessia: "home", atendimentos: "atendimentos", profissionais: "profissionais", cursos: "cursos", eventos: "cursos", blog: "blog", revista: "blog", artigo: "blog", marketplace: "loja", recepcao: "recepcao" };
   return mapa[nome] || "";
 }
 

@@ -9,7 +9,7 @@ const { MENU_ITEMS, itemAtual, menuHtml, mountPortalMenu } = await import("../..
 test("o menu global oferece os nove caminhos essenciais mais o retorno a Chegada, com destinos reais", () => {
   assert.deepEqual(
     MENU_ITEMS.map((i) => i.href),
-    ["/transcender.html", "travessia.html", "atendimentos.html", "transcendido.html", "profissionais.html", "cursos.html", "blog.html", "marketplace.html", "recepcao.html", "/meu-potala"],
+    ["/transcender.html", "travessia.html", "atendimentos-conceito.html", "atendimentos.html", "transcendido.html", "profissionais.html", "cursos.html", "blog.html", "marketplace.html", "recepcao.html", "/meu-potala"],
   );
   for (const item of MENU_ITEMS) {
     if (item.href === "/meu-potala") continue;
@@ -41,7 +41,7 @@ test("o menu não depende de Supabase nem de dados remotos", () => {
 
 test("o HTML do menu é acessível: navegação nomeada, diálogo rotulado e destino atual marcado", () => {
   const html = menuHtml("atendimentos");
-  assert.equal((html.match(/class="potala-menu__link"/g) || []).length, 10);
+  assert.equal((html.match(/class="potala-menu__link"/g) || []).length, 11);
   assert.match(html, /<nav aria-label="Caminhos do Portal">/);
   assert.match(html, /id="potala-menu-titulo"/);
   assert.match(html, /aria-label="Fechar menu"/);
@@ -53,6 +53,7 @@ test("itemAtual relaciona a página aberta ao item do menu", () => {
   assert.equal(itemAtual("/travessia.html"), "home");
   assert.equal(itemAtual("/transcender.html"), "chegada");
   assert.equal(itemAtual("/transcendido.html"), "materia");
+  assert.equal(itemAtual("/atendimentos-conceito.html"), "institucional");
   assert.equal(itemAtual("/eventos.html"), "cursos");
   assert.equal(itemAtual("/revista.html"), "blog");
   assert.equal(itemAtual("/meu-potala/agenda"), "meu-potala");
