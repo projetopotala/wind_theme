@@ -217,7 +217,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
 
     if (estado.status === "carregando") return trocar(renderizarCarregando(), { origem: "carregamento" });
     if (!encontrada) return trocar(renderizarNaoEncontrada(), { origem });
-    if (estado.status !== "autenticado") return trocar(`${avisoDoLink}${renderizarVisitante(estado)}`, { origem });
+    if (estado.status !== "autenticado") return trocar(`${avisoDoLink}${renderizarVisitante(estado, rota.nome)}`, { origem });
 
     if (!dados || dono !== estado.usuario.id) {
       if (origem !== "atualizacao") trocar(renderizarCarregando(), { origem: "carregamento" });

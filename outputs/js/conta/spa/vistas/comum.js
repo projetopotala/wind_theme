@@ -164,7 +164,7 @@ export function renderizarCabecalho({ estado, rota, dados }) {
   </header>`;
 }
 
-export function renderizarVisitante(estado = {}) {
+export function renderizarVisitante(estado = {}, rota = "") {
   /* Quem acabou de criar a conta ainda não entrou: a tela diz o que falta, e não oferece cadastro de novo. */
   if (estado.status === "aguardando-confirmacao") {
     return `<div class="mp-visitante">
@@ -178,8 +178,10 @@ export function renderizarVisitante(estado = {}) {
   }
   return `<div class="mp-visitante">
     <p class="mp-kicker">Meu Potala</p>
-    <h1 class="mp-titulo" id="mp-vista-titulo" data-vista-titulo tabindex="-1">Seu espaço no Potala</h1>
-    <p class="mp-lede">Guarde aquilo que encontra pelo caminho e continue sua jornada quando quiser.</p>
+    <h1 class="mp-titulo" id="mp-vista-titulo" data-vista-titulo tabindex="-1">${rota === "atendimentos" ? "Agendar um atendimento" : "Seu espaço no Potala"}</h1>
+    <p class="mp-lede">${rota === "atendimentos"
+      ? "Para escolher profissional e horário, entre na sua conta ou crie uma. Depois de entrar, você continua aqui mesmo. O pedido só vira consulta quando o Instituto confirma."
+      : "Guarde aquilo que encontra pelo caminho e continue sua jornada quando quiser."}</p>
     <div class="mp-acoes">
       <button type="button" class="mp-botao" data-conta-abrir="entrar">Entrar</button>
       <button type="button" class="mp-botao mp-botao-secundario" data-conta-abrir="criar">Criar uma conta</button>
