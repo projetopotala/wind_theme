@@ -136,12 +136,21 @@ function linha(conta, confirmando) {
  * Vincular: só contas SEM vínculo operacional (o banco permite um por conta) e perfis
  * profissionais ATIVOS ainda sem conta. O banco confere tudo de novo.
  */
-function formularioDeVinculo(contas, perfis) {
+function formularioDeVinculo(contas, perfis, perfisComErro = false) {
   const livres = contas.filter((c) => !(c.links || []).length);
   const disponiveis = perfis.filter((p) => p.active && !p.linked_user_id);
-  if (!perfis.length) return "";
-  if (!livres.length || !disponiveis.length) {
-    return `<p class="op-muted" data-vinculo-indisponivel>Para vincular, é preciso uma conta já criada e sem vínculo e um perfil profissional ativo sem conta (cadastre o perfil em Pessoas).</p>`;
+  /* Nunca some em silêncio: o Owner precisa saber por que não há como vincular. */
+  if (perfisComErro) {
+    return `<p class="op-muted" role="alert" data-vinculo-erro>Não foi possível carregar os perfis profissionais, então o vínculo está indisponível. Recarregue a página; se continuar, avise a equipe técnica.</p>`;
+  }
+  if (!perfis.length) {
+    return `<p class="op-muted" data-vinculo-indisponivel>Nenhum perfil profissional disponível para vínculo. Cadastre um profissional em Pessoas, marcando o papel Profissional.</p>`;
+  }
+  if (!disponiveis.length) {
+    return `<p class="op-muted" data-vinculo-indisponivel>Nenhum perfil profissional ativo e sem conta para vincular. Cadastre um profissional em Pessoas ou reative um perfil desativado.</p>`;
+  }
+  if (!livres.length) {
+    return `<p class="op-muted" data-vinculo-indisponivel>Nenhuma conta sem vínculo para vincular: cada conta pode ter um único perfil profissional.</p>`;
   }
   return `<form class="op-toolbar" data-access-vincular>
     <label>Conta existente <select name="conta" required><option value="">Escolha</option>${livres.map((c) => `<option value="${e(c.id)}">${e(c.email)}${c.name ? ` — ${e(c.name)}` : ""}</option>`).join("")}</select></label>
@@ -150,7 +159,7 @@ function formularioDeVinculo(contas, perfis) {
   </form>`;
 }
 
-export function renderizarAcessos({ contas = [], perfis = [], eventos = [], filtros = {}, erro = "", aviso = "", confirmando = "", ocupado = false } = {}) {
+export function renderizarAcessos({ contas = [], perfis = [], perfisComErro = false, eventos = [], filtros = {}, erro = "", aviso = "", confirmando = "", ocupado = false } = {}) {
   const lista = filtrarContas(contas, filtros);
   const opcoes = (mapa, atual) => Object.entries(mapa).map(([k, v]) => `<option value="${e(k)}"${k === atual ? " selected" : ""}>${e(v)}</option>`).join("");
   return `<header class="op-header"><div><p class="op-eyebrow">Pessoas e patrimônio</p>
@@ -158,7 +167,7 @@ export function renderizarAcessos({ contas = [], perfis = [], eventos = [], filt
       <p>Contas do portal e seus vínculos. Cada operação é autorizada e registrada pelo banco.</p></div>
     </header>
     ${aviso ? `<p class="op-muted" role="status" data-access-aviso>${e(aviso)}</p>` : ""}
-    ${erro ? "" : formularioDeVinculo(contas, perfis)}
+    ${erro ? "" : formularioDeVinculo(contas, perfis, perfisComErro)}
     <form class="op-toolbar" data-access-filtros role="search">
       <label>Buscar <input type="search" name="busca" value="${e(filtros.busca || "")}" placeholder="Nome, e-mail ou perfil"></label>
       <label>Papel <select name="papel"><option value="">Todos</option>${opcoes(ROTULO_PAPEL, filtros.papel)}</select></label>
@@ -199,10 +208,11 @@ export function createAccessPanel({ root, client }) {
   let eventos = [];
   let erro = "";
   let aviso = "";
+  let perfisComErro = false;
   let confirmando = "";
   let ocupado = false;
   const filtros = { busca: "", papel: "", status: "" };
-  const desenhar = () => { if (alvo) alvo.innerHTML = renderizarAcessos({ contas, perfis, eventos, filtros, erro, aviso, confirmando, ocupado }); };
+  const desenhar = () => { if (alvo) alvo.innerHTML = renderizarAcessos({ contas, perfis, perfisComErro, eventos, filtros, erro, aviso, confirmando, ocupado }); };
 
   async function carregar() {
     const [lista, profs, hist] = await Promise.all([
@@ -210,7 +220,8 @@ export function createAccessPanel({ root, client }) {
     ]);
     eventos = !hist?.error && Array.isArray(hist?.data) ? hist.data : [];
     if (lista.error) { contas = []; erro = mensagemDeErro(lista.error); } else { contas = Array.isArray(lista.data) ? lista.data : []; erro = ""; }
-    perfis = !profs.error && Array.isArray(profs.data) ? profs.data : [];
+    perfisComErro = Boolean(profs.error) || !Array.isArray(profs.data);
+    perfis = perfisComErro ? [] : profs.data;
     desenhar();
     return contas;
   }
