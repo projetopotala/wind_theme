@@ -42,7 +42,7 @@ test('a travessia editorial oferece uma cena para cada seção do portal, em ord
 
 test('cada fotografia e destino da abertura editorial existe no projeto', () => {
   const imageSources = [...essay.matchAll(/<img[^>]+src="([^"]+)"/g)].map((match) => match[1]);
-  assert.equal(imageSources.length, 26, 'duas fotografias por cena');
+  assert.equal(imageSources.length, 13, 'uma fotografia por cena (sem imagem secundária sobreposta)');
   /* Nenhuma foto principal se repete entre as cenas das seções. */
   const principais = [...essay.matchAll(/class="home-scene__main-image"[^>]*? src="([^"]+)"/g)].map((match) => match[1]);
   assert.equal(principais.length, 13);

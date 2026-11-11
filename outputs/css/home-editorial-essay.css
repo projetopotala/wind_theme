@@ -349,20 +349,6 @@ html.has-essay-motion .home-scene__frame {
     var(--furo-x) var(--furo-y));
 }
 
-.home-scene__detail-image {
-  position: absolute;
-  z-index: 2;
-  right: 44%;
-  bottom: 8%;
-  width: 16%;
-  height: 28%;
-  object-fit: cover;
-  object-position: center;
-  border: 7px solid var(--scene-surface);
-  box-shadow: 0 20px 40px -32px rgba(31, 28, 22, .65);
-  pointer-events: none;
-}
-
 .home-scene__copy {
   position: relative;
   z-index: 3;
@@ -522,13 +508,6 @@ html.cenas-escritas .cena-blocos-ilha:not([data-escrito]) li { opacity: 0; trans
 
 .home-scene--care .home-scene__copy,
 .home-scene--knowledge .home-scene__copy { grid-column: 1; }
-.home-scene--care .home-scene__detail-image {
-  right: 7%;
-  bottom: 8%;
-  width: 15%;
-  height: 29%;
-  object-position: center 28%;
-}
 .home-scene--knowledge .home-scene__copy {
   padding: 46px 0;
 }
@@ -537,12 +516,6 @@ html.cenas-escritas .cena-blocos-ilha:not([data-escrito]) li { opacity: 0; trans
     margin-left: clamp(16px, 2vw, 30px);
     font-size: clamp(4rem, 6.3vw, 5.4rem);
   }
-}
-.home-scene--knowledge .home-scene__detail-image {
-  right: 7%;
-  bottom: 8%;
-  width: 15%;
-  height: 26%;
 }
 .home-scene--movement .home-scene__stage {
   display: block;
@@ -562,19 +535,6 @@ html.cenas-escritas .cena-blocos-ilha:not([data-escrito]) li { opacity: 0; trans
   padding: clamp(24px, 3vw, 44px) 0;
 }
 .home-scene--movement .home-scene__copy h2 { font-size: clamp(3.3rem, 5.3vw, 6.4rem); }
-.home-scene--movement .home-scene__detail-image {
-  right: 7%;
-  bottom: 8%;
-  width: 18%;
-  height: 30%;
-}
-.home-scene--together .home-scene__detail-image {
-  right: 40%;
-  bottom: 7%;
-  width: 17%;
-  height: 30%;
-  object-position: center 30%;
-}
 
 html:not(.has-essay-motion) .home-scene__stage::after { display: none; }
 html:not(.has-essay-motion) .home-scene__media {
@@ -598,17 +558,12 @@ html:not(.has-essay-motion) .home-scene__frame {
   width: auto;
   height: auto;
 }
-html.has-essay-motion .home-scene__detail-image {
-  opacity: var(--essay-detail-opacity, 1);
-  transform: translate3d(var(--essay-detail-x, 0px), var(--essay-detail-y, 0px), 0);
-}
 html.has-essay-motion .home-scene__copy {
   opacity: var(--essay-copy-opacity, 1);
   transform: translate3d(0, var(--essay-copy-y, 0px), 0);
 }
 
 html.has-essay-motion .is-near .hero-visual > img { will-change: transform; }
-html.has-essay-motion .is-near .home-scene__detail-image,
 html.has-essay-motion .is-near .home-scene__copy,
 html.has-essay-motion .is-near .home-scene__frame,
 html.has-essay-motion .is-near .hero-visual__frame { will-change: transform, opacity; }
@@ -678,19 +633,6 @@ html.has-essay-motion .is-near .hero-visual__frame { will-change: transform, opa
     margin-right: 12px;
   }
   html:not(.has-essay-motion) .home-scene__frame { inset: -11px 11px 11px -11px; }
-  .home-scene__detail-image,
-  .home-scene--care .home-scene__detail-image,
-  .home-scene--knowledge .home-scene__detail-image,
-  .home-scene--movement .home-scene__detail-image,
-  .home-scene--together .home-scene__detail-image {
-    /* No canto de baixo da foto, em retrato; o JS a sobe se encostar no texto. */
-    right: 36px;
-    left: auto;
-    bottom: 5%;
-    width: 30%;
-    height: 36%;
-    border-width: 4px;
-  }
   .home-scene__copy,
   .home-scene--knowledge .home-scene__copy,
   .home-scene--movement .home-scene__copy {
@@ -720,12 +662,10 @@ html.has-essay-motion .is-near .hero-visual__frame { will-change: transform, opa
   .home-scene__links { grid-template-columns: 1fr; }
   .home-scene__copy h2,
   .home-scene--movement .home-scene__copy h2 { font-size: 3.8rem; }
-  .home-scene__detail-image { width: 31%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .home-scene__main-image,
-  .home-scene__detail-image,
   .home-scene__frame,
   .home-scene__copy {
     clip-path: none !important;

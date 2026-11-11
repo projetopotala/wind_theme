@@ -97,7 +97,6 @@ export function editorSections(documentRef) {
         ["description", "Descrição", ".home-scene__copy > p:not(.home-scene__eyebrow)", "text"],
         ["action", "Texto do link", ".home-scene__copy > a, .home-scene__links a", "text"],
         ["main-media", "Imagem ou vídeo principal", ".home-scene__main-image", "media"],
-        ["detail-media", "Imagem ou vídeo de detalhe", ".home-scene__detail-image", "media"],
       ],
     });
   });
