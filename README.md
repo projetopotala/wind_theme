@@ -22,7 +22,9 @@ Abre em http://127.0.0.1:4173/. A raiz cai na Chegada.
 Os endereços das páginas não mudam. O que mudou foi só onde o casco vive.
 
 - `transcender.html` — Chegada. O casco dela está em `css/respiracao.css` e `js/chegada/respiracao.js`.
-- `transcendido.html` — Home, a travessia. O casco compartilhado das páginas está em `css/secoes.css` e `js/secoes.js`.
+- `atendimentos-conceito.html` — Home do Instituto ("Bem-vindo"): reúne Atendimentos, Cursos, Eventos, Blog, Profissionais, Loja e Arte e cultura (Cine Potala). No menu Explorar: "Home do Instituto".
+- `travessia.html` — A Travessia, a jornada em 12 etapas. No menu Explorar: "Explorar o Potala".
+- `transcendido.html` — a matéria editorial de Atendimentos (desde 23/09). No menu Explorar: "Atendimentos em matéria". O casco compartilhado das páginas está em `css/secoes.css` e `js/secoes.js`.
 - `/admin` — central operacional e editor da jornada. A senha fica no Auth; o cadastro que libera o painel é `public.users` (`owner` ou `admin`, `active`).
 - `/blog` — mesa do blogueiro. A entrada é o login; o acesso de teste fica no próprio formulário.
 

@@ -15,6 +15,22 @@ test("a Home de exploração leva à Travessia e a matéria de Atendimentos tem 
   assert.equal(porChave.travessia, undefined, "a Travessia não pode aparecer duas vezes no menu");
 });
 
+test("a Home do Instituto (Bem-vindo, com todas as áreas) tem item próprio, separado da Travessia e da matéria de Atendimentos", () => {
+  const porChave = Object.fromEntries(MENU_ITEMS.map((i) => [i.key, i]));
+  assert.equal(porChave.institucional.href, "atendimentos-conceito.html");
+  assert.match(porChave.institucional.label, /Home do Instituto/);
+  assert.notEqual(porChave.institucional.href, porChave.home.href);
+  assert.notEqual(porChave.institucional.href, porChave.materia.href);
+  assert.equal(porChave.home.href, "travessia.html", "a Travessia continua no mesmo item");
+  const home = ler("atendimentos-conceito.html");
+  const gaveta = /<nav class="drawer-grid drawer-portal"[\s\S]*?<\/nav>/.exec(home)?.[0] || "";
+  for (const pagina of ["atendimentos.html", "cursos.html", "profissionais.html", "blog.html", "marketplace.html", "cultura.html", "travessia.html"]) {
+    assert.ok(gaveta.includes(`href="${pagina}"`), `a Home do Instituto não leva a ${pagina}`);
+  }
+  assert.match(home, /eventos\.html/, "a Home do Instituto leva a Eventos");
+  assert.match(home, /js\/shared\/portal-menu-boot\.js/, "a Home do Instituto tem o menu para sair dela");
+});
+
 test("o menu não repete destinos nem cria laço: cada destino aparece uma única vez", () => {
   const destinos = MENU_ITEMS.map((i) => i.href);
   assert.equal(new Set(destinos).size, destinos.length);
