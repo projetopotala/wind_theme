@@ -30,8 +30,10 @@
 -- Concorrência: a verificação de capacidade trava a turma (pg_advisory_xact_lock
 -- pela turma) antes de contar; a trava só é liberada no fim da transação, e a
 -- contagem seguinte (READ COMMITTED) enxerga o que a anterior gravou. Inscrição
--- e mudança de capacidade da mesma turma usam a mesma trava. Isto vale mesmo
--- fora de op_apply, que além disso já põe as gravações em fila (op_meta).
+-- e mudança de capacidade da mesma turma usam a mesma trava. A inscrição também
+-- trava a linha da pessoa (FOR KEY SHARE), para que a exclusão simultânea da
+-- pessoa não deixe inscrição órfã. Isto vale mesmo fora de op_apply, que além
+-- disso já põe as gravações em fila (op_meta).
 --
 -- Dados existentes: nada é alterado. A migration recusa a aplicação se algum
 -- registro atual violar as regras (as contagens saem na mensagem).
@@ -60,11 +62,16 @@ begin
     group by document ->> 'profile_id', document ->> 'offering_id' having count(*) > 1) x;
   select count(*) into situacao from public.op_records
    where collection = 'enrollments'
-     and coalesce(document ->> 'status', '') not in ('active', 'waitlist', 'completed', 'cancelled');
+     and (jsonb_typeof(document -> 'status') is distinct from 'string'
+       or document ->> 'status' not in ('active', 'waitlist', 'completed', 'cancelled'));
   select count(*) into referencias from public.op_records
    where collection = 'enrollments'
-     and (jsonb_typeof(document -> 'profile_id') is distinct from 'string' or btrim(document ->> 'profile_id') = ''
-       or jsonb_typeof(document -> 'offering_id') is distinct from 'string' or btrim(document ->> 'offering_id') = '');
+     and (jsonb_typeof(document -> 'profile_id') is distinct from 'string'
+       or jsonb_typeof(document -> 'offering_id') is distinct from 'string'
+       or btrim(document ->> 'profile_id') = '' or btrim(document ->> 'offering_id') = ''
+       or char_length(document ->> 'profile_id') > 160 or char_length(document ->> 'offering_id') > 160
+       or document ->> 'profile_id' <> btrim(document ->> 'profile_id')
+       or document ->> 'offering_id' <> btrim(document ->> 'offering_id'));
   select count(*) into orfas from public.op_records e
    where e.collection = 'enrollments'
      and (not exists (select 1 from public.op_records p where p.collection = 'profiles' and p.id = e.document ->> 'profile_id')
@@ -188,7 +195,11 @@ begin
      or pessoa <> new.document ->> 'profile_id' or turma <> new.document ->> 'offering_id' then
     raise exception 'Identificador de pessoa ou turma inválido.' using errcode = '22023';
   end if;
-  if not exists (select 1 from public.op_records p where p.collection = 'profiles' and p.id = pessoa) then
+  -- Trava a linha da pessoa (FOR KEY SHARE): uma exclusão simultânea espera esta transação
+  -- terminar e então encontra a inscrição; se a exclusão veio antes, esta espera e não a encontra.
+  -- Edições comuns do cadastro (sem mudar a chave) não conflitam com esta trava.
+  perform 1 from public.op_records p where p.collection = 'profiles' and p.id = pessoa for key share;
+  if not found then
     raise exception 'Pessoa não encontrada.' using errcode = '23503';
   end if;
 
@@ -203,7 +214,8 @@ begin
   end if;
 
   select o.document into documento_turma
-    from public.op_records o where o.collection = 'activity_offerings' and o.id = turma;
+    from public.op_records o where o.collection = 'activity_offerings' and o.id = turma
+    for key share;
   if not found then
     raise exception 'Turma não encontrada.' using errcode = '23503';
   end if;

@@ -274,6 +274,19 @@ test("migration: recusa dados incompatíveis sem alterar nada; reaplicar é segu
   assert.equal((await ruim.db.query("select to_regclass('public.op_records_enrollment_pessoa_turma') is null as ok")).rows[0].ok, true);
   assert.equal((await ruim.db.query("select count(*)::int n from public.op_records where collection='enrollments'")).rows[0].n, 3, "nenhum registro alterado");
   await ruim.db.close();
+  /* Identificadores e situação: as pré-condições usam exatamente as regras do gatilho, e o preflight acusa o mesmo. */
+  for (const [nome, documento, contador] of [
+    ["espaço nas pontas", { profile_id: " al-1", offering_id: "turma", status: "active" }, "identificadores inválidos=1"],
+    ["identificador longo", { profile_id: "al-1", offering_id: "t".repeat(161), status: "active" }, "identificadores inválidos=1"],
+    ["situação não textual", { profile_id: "al-1", offering_id: "turma", status: ["active"] }, "situação inválida=1"],
+  ]) {
+    const caso = await montar({ comP1D: false, antes: async (db, doc) => { await doc("enrollments", "q1", documento); } });
+    await assert.rejects(caso.db.exec(mig(P1D)), (erro) => erro.message.includes(contador), nome);
+    await caso.db.exec("rollback");
+    const pre = (await caso.db.query(readFileSync(new URL("../../supabase/ops/p1d-preflight-inscricoes.sql", import.meta.url), "utf8"))).rows[0].p1d.bloqueia_aplicacao;
+    assert.equal(nome === "situação não textual" ? Number(pre.situacao_invalida) : Number(pre.identificador_invalido), 1, `o preflight acusa: ${nome}`);
+    await caso.db.close();
+  }
   /* Turma acima da capacidade também bloqueia. */
   const lotada = await montar({ comP1D: false, antes: async (db, doc) => {
     for (const k of [1, 2, 3]) await doc("enrollments", `x${k}`, { profile_id: `al-${k}`, offering_id: "turma", status: "active" });

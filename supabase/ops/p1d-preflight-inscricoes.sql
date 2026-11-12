@@ -16,8 +16,12 @@ select jsonb_build_object(
   ),
   'bloqueia_aplicacao', jsonb_build_object(
     'inscricoes_repetidas', (select count(*) from (select 1 from e group by d ->> 'profile_id', d ->> 'offering_id' having count(*) > 1) x),
-    'situacao_invalida', (select count(*) from e where coalesce(d ->> 'status', '') not in ('active', 'waitlist', 'completed', 'cancelled')),
-    'identificador_invalido', (select count(*) from e where jsonb_typeof(d -> 'profile_id') is distinct from 'string' or btrim(d ->> 'profile_id') = '' or jsonb_typeof(d -> 'offering_id') is distinct from 'string' or btrim(d ->> 'offering_id') = ''),
+    -- Mesmas regras do gatilho validate_op_enrollment e das pré-condições da migration.
+    'situacao_invalida', (select count(*) from e where jsonb_typeof(d -> 'status') is distinct from 'string' or d ->> 'status' not in ('active', 'waitlist', 'completed', 'cancelled')),
+    'identificador_invalido', (select count(*) from e where jsonb_typeof(d -> 'profile_id') is distinct from 'string' or jsonb_typeof(d -> 'offering_id') is distinct from 'string'
+      or btrim(d ->> 'profile_id') = '' or btrim(d ->> 'offering_id') = ''
+      or char_length(d ->> 'profile_id') > 160 or char_length(d ->> 'offering_id') > 160
+      or d ->> 'profile_id' <> btrim(d ->> 'profile_id') or d ->> 'offering_id' <> btrim(d ->> 'offering_id')),
     'pessoa_inexistente', (select count(*) from e where not exists (select 1 from p where p.id = e.d ->> 'profile_id')),
     'turma_inexistente', (select count(*) from e where not exists (select 1 from o where o.id = e.d ->> 'offering_id')),
     'capacidade_invalida', (select count(*) from o where coalesce(jsonb_typeof(d -> 'capacity'), 'null') <> 'null' and not (jsonb_typeof(d -> 'capacity') = 'number' and (d ->> 'capacity') ~ '^[1-9][0-9]{0,8}$')),

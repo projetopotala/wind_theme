@@ -33,14 +33,16 @@ Testes que registram a linha de base: `tests/potala/op-apply-inscricoes-banco.te
 4. **Remoção** — pessoa ou turma com inscrição, e inscrição ligada a participante de aula, não podem ser apagadas.
 5. **Escopo** — o evento de auditoria que `op_apply` grava na mesma transação diz a ação e as coleções alteradas: inscrições só por `enrollment.save` (que só altera inscrições); turmas só por `offering.save` (que só altera turmas). A recusa desfaz a operação inteira.
 
-**Concorrência:** a verificação de capacidade trava a turma (`pg_advisory_xact_lock` por turma, liberado no fim da transação) antes de contar; inscrição e mudança de capacidade usam a mesma trava; troca de turma trava as duas em ordem fixa. A unicidade é do índice. Nada depende só do `PT409`.
+**Concorrência:** a verificação de capacidade trava a turma (`pg_advisory_xact_lock` por turma, liberado no fim da transação) antes de contar; inscrição e mudança de capacidade usam a mesma trava; troca de turma trava as duas em ordem fixa. A inscrição também trava a linha da pessoa e a da turma com `FOR KEY SHARE`: uma exclusão simultânea da pessoa espera a inscrição terminar (e então é recusada), ou a inscrição espera a exclusão (e então é recusada por pessoa inexistente). Edições comuns do cadastro não conflitam com essa trava. A unicidade é do índice. Nada depende só do `PT409`.
+
+**Correção após a auditoria de 12/11:** a primeira versão verificava a pessoa só com `EXISTS`; com exclusão e inscrição simultâneas, nas duas ordens, ficavam inscrições órfãs (reproduzido em PostgreSQL real, cenários J1/J2). A trava `FOR KEY SHARE` fechou o caso. As pré-condições e o preflight passaram a usar exatamente as regras do gatilho para identificadores (texto, não vazio, até 160 caracteres, sem espaços nas pontas) e situação (texto JSON entre as quatro).
 
 **O que não muda:** `op_apply`, `op_snapshot`, `my_course_enrollments`, grants, RLS, papéis, formato dos documentos e registros existentes.
 
 Códigos: `23505` duplicata · `23514` capacidade · `23503` referência/remoção · `22023` situação, identificador, capacidade inválida ou escopo · `42501` sem administração (já existia).
 
 ## 4. Provas
-- Rollback, múltiplos registros, atomicidade da auditoria e o script de homologação do LAB também são validados por `scripts/p1d-concorrencia-postgres.mjs` (23 cenários) numa instância descartável.
+- Rollback, múltiplos registros, atomicidade da auditoria, exclusão x inscrição simultâneas e o script de homologação do LAB (com 5 contas Owner e 3 Editor, como o LAB) também são validados por `scripts/p1d-concorrencia-postgres.mjs` (28 cenários) numa instância descartável.
 - `tests/potala/p1d-integridade-inscricoes-banco.test.mjs` (PGlite, migrations reais, chamadas diretas a `op_apply`).
 - `scripts/p1d-concorrencia-postgres.mjs` — PostgreSQL 17 temporário e isolado, várias sessões simultâneas (última vaga, mesmo aluno, promoção simultânea, cancelamento confirmado e desfeito, redução de capacidade, 12 sessões para 3 vagas, op_apply concorrente, repetição de chave). Uso: `node scripts/p1d-concorrencia-postgres.mjs`.
 
@@ -50,6 +52,39 @@ Códigos: `23505` duplicata · `23514` capacidade · `23503` referência/remoç�
 3. **Production (`gotrumwuimpoeggwamut`)**: aplicar **somente** `202611120001_integridade_inscricoes.sql` pelo procedimento controlado, registrando só esta versão no histórico. **Não** usar `db push` em lote nem `migration repair` em versões antigas (issue #52).
 4. Rodar de novo a pré-checagem (`instalado`: 3 gatilhos, índice, 3 funções; `gatilhos_todos` mantém os 4 anteriores).
 5. Publicar o frontend da PR (mensagem em português para duplicata) — pode ir antes ou depois da migration; sem a migration a mensagem nova simplesmente não aparece.
+
+### 5.1 Versionamento: registrar exatamente `202611120001`
+O histórico (`supabase_migrations.schema_migrations`) precisa terminar com a versão `202611120001`, sem versão nova e sem tocar nas antigas.
+
+**Não usar:**
+- `apply_migration` do plugin/MCP do Supabase: grava o histórico com uma versão própria (data/hora da execução), não `202611120001`.
+- `supabase db push` / `supabase migration up`: aplicam todas as versões locais ausentes no banco remoto (lote) e, com o histórico divergente (issue #52), pedem `migration repair` em versões antigas.
+- `supabase migration repair` em qualquer versão antiga.
+
+**Procedimento (LAB agora; Production só com autorização própria):**
+1. Pré-checagem somente leitura: `supabase/ops/p1d-preflight-inscricoes.sql` (todos os contadores de `bloqueia_aplicacao` = 0) e:
+   ```sql
+   select version, name from supabase_migrations.schema_migrations where version = '202611120001';  -- deve vir vazio
+   select column_name, is_nullable from information_schema.columns
+    where table_schema = 'supabase_migrations' and table_name = 'schema_migrations' order by ordinal_position;
+   ```
+2. Executar **o arquivo `202611120001_integridade_inscricoes.sql` sem alteração**, numa única execução (SQL Editor, `psql -f` ou execução de SQL do plugin — não `apply_migration`). Ele tem `begin`/`commit` próprios: ou instala tudo, ou nada.
+3. Conferir a instalação: bloco `instalado` do preflight (3 gatilhos, índice, 3 funções; os 4 gatilhos antigos continuam).
+4. Registrar **somente esta versão**, com guarda (não sobrescreve, não toca nas outras linhas, e só registra se a P1D estiver de fato instalada):
+   ```sql
+   insert into supabase_migrations.schema_migrations (version, name)
+   select '202611120001', 'integridade_inscricoes'
+   where not exists (select 1 from supabase_migrations.schema_migrations where version = '202611120001')
+     and to_regclass('public.op_records_enrollment_pessoa_turma') is not null
+     and (select count(*) from pg_trigger where tgrelid = 'public.op_records'::regclass
+          and tgname in ('op_records_validate_enrollment', 'op_records_protect_enrollment_refs', 'op_records_validate_scope')) = 3
+   returning version, name;
+   ```
+   Se a tabela tiver outras colunas obrigatórias sem valor padrão (passo 1), parar e revisar antes de registrar. A coluna `statements` fica vazia; o CLI compara só a versão.
+5. Confirmar: `select version, name from supabase_migrations.schema_migrations order by version desc limit 5;` — `202611120001` presente uma vez, versões antigas inalteradas.
+6. Só então rodar `supabase/ops/p1d-homologacao-lab.sql`.
+
+Os passos 2 e 4 são duas execuções: se o 2 terminar e o 4 falhar, a P1D está instalada sem registro; basta repetir o 4 (é idempotente). O contrário não acontece, porque o 4 exige os objetos instalados.
 
 ## 6. Homologação (sem dados reais; LAB ou turma de demonstração)
 1. Inscrever alguém em turma com vaga → grava.

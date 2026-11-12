@@ -155,6 +155,29 @@ try {
     registrar("H. repetição do mesmo identificador", "ok, ativas=1", `${repete.ok ? "ok" : repete.erro}, ativas=${contar("document->>'offering_id'='G'")}`);
   }
 
+  /* J. Exclusão x inscrição ao mesmo tempo (pessoa e turma), nas duas ordens. Nenhuma inscrição pode ficar órfã. */
+  sql(turma("J", "null"));
+  sql("insert into public.op_records(collection, id, document) select 'profiles', 'jp-' || n, jsonb_build_object('id', 'jp-' || n, 'display_name', 'TESTE INTERNO J' || n, 'roles', '[]'::jsonb, 'active', true) from generate_series(1, 2) n");
+  const orfas = () => Number(sql("select count(*) from public.op_records e where e.collection = 'enrollments' and (not exists (select 1 from public.op_records p where p.collection = 'profiles' and p.id = e.document ->> 'profile_id') or not exists (select 1 from public.op_records o where o.collection = 'activity_offerings' and o.id = e.document ->> 'offering_id'))"));
+  const apagaPessoa = (id) => `delete from public.op_records where collection = 'profiles' and id = '${id}'`;
+  {
+    const [s1, s2] = await Promise.all([sessao(`begin; ${apagaPessoa("jp-1")}; select pg_sleep(2); commit;`), sessao(`begin; ${insc("j1", "jp-1", "J")}; commit;`, 400)]);
+    registrar("J1. exclui pessoa enquanto outra transação a inscreve", "órfãs=0", `órfãs=${orfas()}`, `exclusão ${s1.ok ? "ok" : s1.erro}; inscrição ${s2.ok ? "gravou" : s2.erro}`);
+  }
+  {
+    const [s1, s2] = await Promise.all([sessao(`begin; ${insc("j2", "jp-2", "J")}; select pg_sleep(2); commit;`), sessao(`begin; ${apagaPessoa("jp-2")}; commit;`, 400)]);
+    registrar("J2. inscreve pessoa enquanto outra transação a exclui", "órfãs=0", `órfãs=${orfas()}`, `inscrição ${s1.ok ? "ok" : s1.erro}; exclusão ${s2.ok ? "apagou" : s2.erro}`);
+  }
+  sql(turma("J3", "null")); sql(turma("J4", "null"));
+  {
+    const [s1, s2] = await Promise.all([sessao("begin; delete from public.op_records where collection = 'activity_offerings' and id = 'J3'; select pg_sleep(2); commit;"), sessao(`begin; ${insc("j3", "al-1", "J3")}; commit;`, 400)]);
+    registrar("J3. exclui turma enquanto outra transação inscreve nela", "órfãs=0", `órfãs=${orfas()}`, `exclusão ${s1.ok ? "ok" : s1.erro}; inscrição ${s2.ok ? "gravou" : s2.erro}`);
+  }
+  {
+    const [s1, s2] = await Promise.all([sessao(`begin; ${insc("j4", "al-2", "J4")}; select pg_sleep(2); commit;`), sessao("begin; delete from public.op_records where collection = 'activity_offerings' and id = 'J4'; commit;", 400)]);
+    registrar("J4. inscreve em turma enquanto outra transação a exclui", "órfãs=0", `órfãs=${orfas()}`, `inscrição ${s1.ok ? "ok" : s1.erro}; exclusão ${s2.ok ? "apagou" : s2.erro}`);
+  }
+
   /* I. Múltiplos registros e auditoria pela via normal (op_apply como Owner). */
   sql(turma("I", 3));
   {
@@ -199,7 +222,15 @@ try {
   {
     arquivo(`create or replace function auth.uid() returns uuid language sql stable as $f$
       select coalesce(nullif(current_setting('request.jwt.claim.sub', true), ''), (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'))::uuid $f$;
-      insert into public.users(id, role, name) values ('00000000-0000-0000-0000-0000000000e1', 'blog_editor', 'editor');`);
+      insert into public.users(id, role, name) values ('00000000-0000-0000-0000-0000000000e1', 'blog_editor', 'editor'),
+        ('00000000-0000-0000-0000-0000000000e2', 'blog_editor', 'editor 2'), ('00000000-0000-0000-0000-0000000000e3', 'blog_editor', 'editor 3'),
+        ('00000000-0000-0000-0000-0000000000a2', 'owner', 'owner 2'), ('00000000-0000-0000-0000-0000000000a3', 'owner', 'owner 3'),
+        ('00000000-0000-0000-0000-0000000000a4', 'owner', 'owner 4'), ('00000000-0000-0000-0000-0000000000a5', 'owner', 'owner 5'),
+        ('00000000-0000-0000-0000-0000000000a0', 'owner', 'owner inativo');
+      update public.users set active = false where id = '00000000-0000-0000-0000-0000000000a0';`);
+    const contas = sql("select count(*) filter (where role = 'owner' and active) || '/' || count(*) filter (where role = 'blog_editor' and active) from public.users");
+    console.log(`banco descartável com ${contas} contas Owner/Editor ativas (como o LAB: 5/3)`);
+    const usuariosAntes = sql("select md5(string_agg(id || role || active, '|' order by id)) from public.users");
     const marca = () => sql("select md5(string_agg(collection || id || document::text, '|' order by collection, id)) || (select revision from public.op_meta where id = 1) from public.op_records");
     const antes = marca();
     /* -f com o arquivo do repositório: no Windows, passar o SQL pela linha de comando corromperia os acentos. */
@@ -207,6 +238,7 @@ try {
     console.log(saida.replace(/^psql:[^E]*/m, "").trim());
     registrar("S1. homologação do LAB: todos os casos conforme o esperado", "Falhas: 0", (/Falhas: \d+/.exec(saida) || ["sem resumo"])[0]);
     registrar("S2. homologação do LAB não deixa nada gravado", "iguais", marca() === antes ? "iguais" : "diferentes");
+    registrar("S3. homologação não altera contas (5 Owners e 3 Editores)", "iguais", sql("select md5(string_agg(id || role || active, '|' order by id)) from public.users") === usuariosAntes ? "iguais" : "diferentes");
   }
 
   const falhas = resultados.filter((r) => !r.ok);

@@ -6,7 +6,8 @@
 -- sintético permanece; nada do que existia é alterado.
 --
 -- As chamadas vão a public.op_apply pela via normal (is_portal_admin via auth.uid()), com a
--- sessão simulando a conta Owner do LAB lida de public.users. Sem service_role, sem nova conta.
+-- sessão simulando uma conta Owner ativa já existente (a de menor id em public.users). Sem
+-- service_role, sem nova conta, sem alterar contas. Funciona com uma ou várias contas Owner.
 -- Concorrência entre conexões: ver scripts/p1d-concorrencia-postgres.mjs (PostgreSQL real local).
 
 do $homologacao$
@@ -21,16 +22,18 @@ declare
   antes text;
   depois text;
 begin
-  if (select count(*) from public.users where role = 'owner' and active) <> 1 then
-    raise exception 'Homologação: o LAB deve ter exatamente uma conta Owner ativa.';
+  -- O LAB pode ter várias contas Owner de teste (Production tem uma só). O teste usa uma delas,
+  -- sempre a mesma (menor id), sem criar, desativar ou alterar nenhuma conta.
+  if not exists (select 1 from public.users where role = 'owner' and active) then
+    raise exception 'Homologação: não há conta Owner ativa neste banco.';
   end if;
   if to_regclass('public.op_records_enrollment_pessoa_turma') is null
      or (select count(*) from pg_trigger where tgrelid = 'public.op_records'::regclass
           and tgname in ('op_records_validate_enrollment', 'op_records_protect_enrollment_refs', 'op_records_validate_scope')) <> 3 then
     raise exception 'Homologação: a P1D não está instalada neste banco.';
   end if;
-  select id into dono from public.users where role = 'owner' and active;
-  select id into editor from public.users where role = 'blog_editor' and active limit 1;
+  select id into dono from public.users where role = 'owner' and active order by id limit 1;
+  select id into editor from public.users where role = 'blog_editor' and active order by id limit 1;
 
   -- Sessão como Owner (a mesma leitura de auth.uid() que o painel usa).
   perform set_config('request.jwt.claim.sub', dono::text, true);
