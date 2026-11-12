@@ -8,6 +8,7 @@ import {
 import { createAdminController } from "./admin-controller.js";
 import { createAdminShell } from "./admin-shell.js";
 import { ligarTarefas } from "./admin-tarefas.js";
+import { createCadastroGuiado } from "./cadastro-profissional.js";
 import { createOperationsClient } from "./operations/client.js";
 import { createOperationsController } from "./operations/controller.js";
 import { carregarRecebidos } from "./recebidos.js";
@@ -73,6 +74,14 @@ async function abrirOperacao(client, access) {
     onNavigate(section) {
       panel.querySelector(`[data-admin-nav] [data-section="${section}"]`)?.click();
     },
+  });
+  /* P1B: cadastro guiado de profissional, sobre os mesmos comandos de Pessoas e as funções de Usuários e acessos. */
+  createCadastroGuiado({
+    root: panel,
+    operations,
+    client,
+    onSalvo() { operationsController?.render(); void accessPanel?.reload().catch(() => {}); },
+    onNavegar(section) { panel.querySelector(`[data-admin-nav] [data-section="${section}"]`)?.click(); },
   });
   carregarRecebidos(client)
     .then((dados) => operationsController?.definirRecebidos(dados))

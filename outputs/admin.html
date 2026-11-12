@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/css/admin.css">
   <link rel="stylesheet" href="/css/admin-agenda.css">
 <link rel="stylesheet" href="/css/admin-tarefas.css">
+<link rel="stylesheet" href="/css/cadastro-profissional.css">
   <script src="/vendor/supabase.js"></script>
   <script type="module" src="/js/admin/admin-entry.js"></script>
 </head>
@@ -141,7 +142,7 @@
             <p>Escolha a tarefa: o painel abre direto no lugar certo e diz o próximo passo.</p>
           </header>
           <ul class="admin-tarefas__lista">
-            <li><button type="button" class="admin-tarefa" data-admin-tarefa="profissional"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#user"></use></svg><span class="admin-tarefa__titulo">Cadastrar profissional</span><span class="admin-tarefa__texto">Abre o cadastro de pessoa com o papel Profissional marcado.</span><span class="admin-tarefa__passo">Depois: publicar o perfil e, se precisar, vincular a conta em Usuários e acessos.</span></button></li>
+            <li><button type="button" class="admin-tarefa" data-admin-tarefa="profissional"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#user"></use></svg><span class="admin-tarefa__titulo">Cadastrar profissional</span><span class="admin-tarefa__texto">Abre o cadastro guiado: confere duplicidade, conta de acesso e publicação.</span><span class="admin-tarefa__passo">Nada é gravado até a revisão final.</span></button></li>
             <li><button type="button" class="admin-tarefa" data-admin-tarefa="horario"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#calendar-clock"></use></svg><span class="admin-tarefa__titulo">Disponibilizar horário</span><span class="admin-tarefa__texto">Abre Atendimentos em “Disponibilizar horário”.</span><span class="admin-tarefa__passo">Escolha profissional, serviço, data e hora.</span></button></li>
             <li><button type="button" class="admin-tarefa" data-admin-tarefa="solicitacoes"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#message-circle"></use></svg><span class="admin-tarefa__titulo">Ver solicitações</span><span class="admin-tarefa__texto">Abre Atendimentos nas solicitações recebidas.</span><span class="admin-tarefa__passo">Confirme com uma reserva ou registre o acompanhamento.</span></button></li>
             <li><button type="button" class="admin-tarefa" data-admin-tarefa="curso"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#graduation-cap"></use></svg><span class="admin-tarefa__titulo">Cadastrar curso</span><span class="admin-tarefa__texto">Abre o cadastro de tipo de atividade já como Curso.</span><span class="admin-tarefa__passo">Depois: criar a turma desse curso.</span></button></li>
