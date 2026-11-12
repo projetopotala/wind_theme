@@ -8,6 +8,7 @@
 import { icone } from "../admin/icones.js";
 import { CAPA_PADRAO, capaDoCaderno } from "../blog/blog-settings.js";
 import { esc, enderecoDoSite } from "./mesa-ui.js";
+import { criarPerfisDosEscritores } from "./mesa-perfis.js";
 import {
   ORDEM_DOS_STATUS, ORDENACOES, PERIODOS, STATUS, autoresDe, contarPorStatus, dataDePublicacao,
   filtrarPosts, horaDe, linhaDoTempo, podePublicar, resumoDaMesa, tempoRelativo, textoAtual,
@@ -379,6 +380,8 @@ export function criarComentarios(el, ctx) {
 export function criarConfiguracoes(el, ctx) {
   let capa = "";
   let salvando = false;
+  const perfis = criarPerfisDosEscritores(ctx, () => el.querySelector("[data-config-escritores]"));
+  perfis.ligar(el);
 
   function categoriasHtml() {
     const { loja } = ctx;
@@ -427,11 +430,13 @@ export function criarConfiguracoes(el, ctx) {
           <button type="submit" class="mesa-botao mesa-botao--contorno">${i("plus")}Adicionar</button>
         </form>
       </section>
+      <section class="mesa-secao mesa-quadro" aria-labelledby="config-escritores" data-config-escritores></section>
       ${loja.demonstracao ? `<section class="mesa-secao mesa-quadro" aria-labelledby="config-teste">
         <h2 id="config-teste" class="mesa-subtitulo">Acesso de teste</h2>
         <p class="mesa-dica">Desfaz tudo o que foi feito nesta demonstração e volta aos textos de exemplo.</p>
         <button type="button" class="mesa-botao mesa-botao--contorno" data-config-restaurar>${i("rotate-ccw")}Restaurar demonstração</button>
       </section>` : ""}`;
+    perfis.desenhar();
   }
 
   const redesenharCategorias = () => { el.querySelector("[data-config-categorias]").innerHTML = categoriasHtml(); };

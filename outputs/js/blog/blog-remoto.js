@@ -16,6 +16,7 @@
  */
 import { CATEGORIAS } from "./blog-data.js";
 import { normalizePost, normalizePosts, slugifyBlogTitle } from "./blog-model.js";
+import { comoPerfil, slugValido } from "./escritores.js";
 import { SUPABASE_CONFIG } from "../supabase/config.js";
 
 export const BLOG_PADRAO = Object.freeze({ name: "Caderno de Travessia", cover: "media/blog-hero-caminhante.webp" });
@@ -106,6 +107,19 @@ export function criarBlogPublico({ rest, aoFalhar = () => {} } = {}) {
       } catch (erro) {
         aoFalhar(erro, "blog.posts");
         throw new BlogIndisponivelError(erro);
+      }
+    },
+    /*
+     * Perfis visíveis dos escritores (P2B). Complemento da página: se a leitura falhar
+     * (ou o banco ainda não tiver a tabela), a página segue com a apresentação neutra.
+     */
+    async listarPerfis() {
+      try {
+        const linhas = await rest.ler("blog_writer_profiles", { select: "slug,name,bio,image,image_alt", visible: "eq.true" });
+        return (linhas || []).map(comoPerfil).filter(Boolean);
+      } catch (erro) {
+        aoFalhar(erro, "blog.perfis");
+        return [];
       }
     },
     async listarCategorias() {
@@ -308,6 +322,29 @@ export function criarBlogAdministrativo({ client, config = SUPABASE_CONFIG, xhr 
       exigirLinha("apagar a categoria", await client.from("blog_categories").delete().eq("id", id).select("id"));
     },
 
+    /* Perfis dos escritores (P2B). Quem publica vê também os ocultos; o banco decide quem altera. */
+    async listarPerfis() {
+      const { data, error } = await client.from("blog_writer_profiles")
+        .select("slug,name,bio,image,image_alt,visible,updated_at").order("name");
+      exigir("ler os perfis dos escritores", error);
+      return (data || []).map(comoPerfil).filter(Boolean);
+    },
+    async salvarPerfil(dados, { existe = false } = {}) {
+      const perfil = comoPerfil({ ...dados, slug: slugValido(dados?.slug) });
+      if (!perfil) throw new BlogRemotoError("salvar o perfil", { message: "Dê um nome público ao perfil." });
+      const campos = { name: perfil.nome, bio: perfil.bio, image: perfil.imagem, image_alt: perfil.imagemAlt, visible: perfil.visivel !== false };
+      const colunas = "slug,name,bio,image,image_alt,visible,updated_at";
+      // O endereço (slug) é a identidade do perfil: só entra na criação, nunca é trocado.
+      const resposta = existe
+        ? await client.from("blog_writer_profiles").update(campos).eq("slug", perfil.slug).select(colunas)
+        : await client.from("blog_writer_profiles").insert({ slug: perfil.slug, ...campos }).select(colunas);
+      // 42501 (sem permissão) já sai traduzido por BlogRemotoError, como no resto da Mesa.
+      const traducao = { 23505: "Este perfil já foi criado em outra janela. Recarregue a mesa e edite o existente.", 23514: "Algum campo passou do limite ou a imagem não é da biblioteca do Blog." }[resposta.error?.code];
+      if (traducao) throw new BlogRemotoError("salvar o perfil", { code: resposta.error.code, message: traducao });
+      exigirLinha("salvar o perfil", resposta);
+      return comoPerfil(resposta.data[0]);
+    },
+
     async listarMidia() {
       const { data, error } = await client.storage.from(MIDIA_BUCKET).list("", { limit: 500, sortBy: { column: "created_at", order: "desc" } });
       exigir("ler a biblioteca de imagens", error);
@@ -411,6 +448,7 @@ export function criarBlogDeDemonstracao({
   const persistirMeta = () => storage?.setItem?.(metadataKey, JSON.stringify(Object.fromEntries(meta)));
   const versoes = new Map();
   let categorias = [...CATEGORIAS_PADRAO];
+  const perfisDaDemo = new Map();
 
   const registroDe = (post) => {
     const extra = meta.get(post.id) || {};
@@ -479,6 +517,14 @@ export function criarBlogDeDemonstracao({
       }
       categorias = categorias.filter((item) => item.id !== id);
     },
+    /* Perfis só na memória da demonstração: nada vai ao banco. */
+    async listarPerfis() { return [...perfisDaDemo.values()]; },
+    async salvarPerfil(dados) {
+      const perfil = comoPerfil({ ...dados, slug: slugValido(dados?.slug), atualizadoEm: relogio().toISOString() });
+      if (!perfil) throw new BlogRemotoError("salvar o perfil", { message: "Dê um nome público ao perfil." });
+      perfisDaDemo.set(perfil.slug, perfil);
+      return perfil;
+    },
     async listarMidia() { return []; },
     async enviarImagem() { throw new BlogRemotoError("enviar a imagem", { message: "Na demonstração o envio de imagens fica desligado. Escolha uma foto do site." }); },
     lerConfiguracao: async () => lerConfiguracao(),
@@ -487,6 +533,6 @@ export function criarBlogDeDemonstracao({
     comentarios: async () => [],
     moderar: async () => {},
     inscritos: async () => 0,
-    reset: async () => { meta.clear(); versoes.clear(); storage?.removeItem?.(metadataKey); return local.reset(); },
+    reset: async () => { meta.clear(); versoes.clear(); perfisDaDemo.clear(); storage?.removeItem?.(metadataKey); return local.reset(); },
   };
 }

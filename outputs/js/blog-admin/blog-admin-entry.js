@@ -40,6 +40,7 @@ const atual = () => (emDemo || !remoto ? demonstracao : remoto);
 const METODOS = [
   "listar", "salvar", "remover", "versoes", "listarCategorias", "criarCategoria", "atualizarCategoria", "removerCategoria",
   "listarMidia", "enviarImagem", "lerConfiguracao", "salvarConfiguracao", "leituras", "comentarios", "moderar", "inscritos",
+  "listarPerfis", "salvarPerfil",
 ];
 const repositorio = Object.fromEntries(METODOS.map((nome) => [nome, (...args) => atual()[nome](...args)]));
 Object.defineProperty(repositorio, "demonstracao", { get: () => atual() === demonstracao });

@@ -86,3 +86,58 @@ export function apresentacaoDoEscritor({ nome = "", textos = [] } = {}) {
     ? `Textos assinados pelo Instituto Potala no Caderno de Travessia · ${quantos}.`
     : `Textos assinados por ${nome} no Caderno de Travessia · ${quantos}.`;
 }
+
+/*
+ * PERFIS EDITORIAIS (P2B) - o que a Mesa cadastra para cada endereço de escritor.
+ *
+ * O perfil é só apresentação pública (nome, texto, imagem). Ele é ligado ao endereço
+ * (slug), não a uma conta: não prova identidade nem concede nada. Quem altera é decidido
+ * pelo banco (só quem publica). As regras abaixo repetem as do banco, para que o
+ * navegador nunca mostre algo que o banco recusaria.
+ */
+export const LIMITES_DO_PERFIL = Object.freeze({ nome: 120, bio: 1500, alt: 200 });
+
+const IMAGEM_DO_SITE = /^media\/[A-Za-z0-9][A-Za-z0-9._/-]*$/;
+const IMAGEM_DA_BIBLIOTECA = /^https:\/\/[a-z0-9]{20}\.supabase\.co\/storage\/v1\/object\/public\/blog-midia\/[A-Za-z0-9._%-]+$/;
+
+/* Endereço de imagem aceito no perfil: do próprio site ou da biblioteca do Blog. */
+export function imagemDePerfilSegura(valor) {
+  const url = String(valor ?? "").trim();
+  if (!url || url.length > 500 || url.includes("..")) return "";
+  return IMAGEM_DO_SITE.test(url) || IMAGEM_DA_BIBLIOTECA.test(url) ? url : "";
+}
+
+/* Uma linha do banco (ou do formulário) no formato da página. Linha inválida vira null. */
+export function comoPerfil(linha = {}) {
+  const slug = slugValido(linha.slug);
+  const nome = String(linha.name ?? linha.nome ?? "").trim().slice(0, LIMITES_DO_PERFIL.nome);
+  if (!slug || !nome) return null;
+  return {
+    slug,
+    nome,
+    bio: String(linha.bio ?? "").trim().slice(0, LIMITES_DO_PERFIL.bio),
+    imagem: imagemDePerfilSegura(linha.image ?? linha.imagem),
+    imagemAlt: String(linha.image_alt ?? linha.imagemAlt ?? "").trim().slice(0, LIMITES_DO_PERFIL.alt),
+    visivel: linha.visible ?? linha.visivel ?? true,
+    atualizadoEm: linha.updated_at ?? linha.atualizadoEm ?? null,
+  };
+}
+
+/* Perfis públicos indexados pelo endereço. Os ocultos nunca entram na página. */
+export function perfisPorSlug(linhas = []) {
+  const mapa = new Map();
+  for (const linha of linhas || []) {
+    const perfil = comoPerfil(linha);
+    if (perfil && perfil.visivel !== false && !mapa.has(perfil.slug)) mapa.set(perfil.slug, perfil);
+  }
+  return mapa;
+}
+
+/* A apresentação em parágrafos (linha em branco separa). Sem HTML: quem desenha escapa. */
+export const paragrafosDaBio = (bio = "") => String(bio).split(/\n\s*\n/).map((p) => p.replace(/\s+/g, " ").trim()).filter(Boolean);
+
+/* Iniciais para quando não há imagem: "Núcleo de Oráculos" -> "NO". */
+export function iniciaisDoEscritor(nome = "") {
+  const palavras = String(nome).split(/\s+/).filter((p) => p && !/^(d[aeo]s?|e)$/i.test(p));
+  return (palavras.length ? palavras : [String(nome)]).slice(0, 2).map((p) => [...p][0]?.toLocaleUpperCase("pt-BR") || "").join("") || "IP";
+}
