@@ -2,6 +2,7 @@ import { CATEGORIAS, dataLegivel } from "./blog-data.js";
 import { normalizePost, normalizePosts } from "./blog-model.js";
 import { marcarTextoEmLinha } from "../shared/markdown.js";
 import { enderecoSeguro, imagemSegura, normalizarVideo } from "./blog-conteudo.js";
+import { hrefDoEscritor } from "./escritores.js";
 
 const escapeHtml = (value) => String(value ?? "")
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -87,7 +88,8 @@ export function renderArticle(post) {
   if (!post) return "";
   const item = normalizePost(post);
   const date = dataLegivel(item.publishedAt);
-  const autor = item.author ? `<span>Por ${escapeHtml(item.author)}</span>` : "";
+  /* A assinatura leva à página pública do escritor (P2A). */
+  const autor = item.author ? `<span>Por <a class="article-autor" href="${escapeHtml(hrefDoEscritor(item.author))}">${escapeHtml(item.author)}</a></span>` : "";
   return `<header class="article-hero">
     <img src="${escapeHtml(imagemSegura(item.cover) ? item.cover : "")}" alt="${escapeHtml(item.coverAlt)}">
     <div class="article-hero__veil" aria-hidden="true"></div>
