@@ -43,10 +43,14 @@ const OCUPA = ["active", "completed"];
 const PALAVRAS_VAZIAS = new Set(["de", "da", "do", "das", "dos", "e", "em", "para", "a", "o", "as", "os", "com", "curso", "turma"]);
 const palavras = (t) => normalizarNome(t).split(" ").filter((p) => p.length > 1 && !PALAVRAS_VAZIAS.has(p));
 
-/* Mesmo nome sem acentos/maiúsculas = repetido. Palavras em comum = parecido: só AVISA. */
+/*
+ * Mesmo nome (sem acentos/maiúsculas) em outro CURSO = repetido: bloqueia.
+ * Mesmo nome em outro tipo (oficina, evento…) = legítimo, mas avisa: é preciso confirmar.
+ * Palavras em comum = parecido: só AVISA.
+ */
 export function semelhancaDeCurso(definicoes = [], titulo = "") {
   const alvo = normalizarNome(titulo);
-  if (!alvo) return { iguais: [], parecidos: [] };
+  if (!alvo) return { iguais: [], parecidos: [], cursosIguais: [], outrosTipos: [] };
   const iguais = definicoes.filter((d) => normalizarNome(d.title) === alvo);
   const a = new Set(palavras(titulo));
   const parecidos = definicoes.filter((d) => {
@@ -58,7 +62,7 @@ export function semelhancaDeCurso(definicoes = [], titulo = "") {
     const comum = [...a].filter((p) => b.has(p)).length;
     return comum / new Set([...a, ...b]).size >= 0.5;
   });
-  return { iguais, parecidos };
+  return { iguais, parecidos, cursosIguais: iguais.filter((d) => d.kind === "course"), outrosTipos: iguais.filter((d) => d.kind !== "course") };
 }
 
 export const cursosDisponiveis = (s) => (s?.activity_definitions || []).filter((d) => d.kind === "course");
@@ -279,7 +283,7 @@ export function idsPorColecao(s) {
 
 /* Cadastro novo cujo nome apareceu no banco depois da etapa (outra janela): não cria repetido. */
 export function repetidoNoBanco(estado, s) {
-  if (estado.curso.modo === "novo" && semelhancaDeCurso(s?.activity_definitions, estado.curso.titulo).iguais.length) return "Outro cadastro com o mesmo nome de curso apareceu no banco. Volte à etapa Curso e escolha o existente.";
+  if (estado.curso.modo === "novo" && semelhancaDeCurso(s?.activity_definitions, estado.curso.titulo).cursosIguais.length) return "Outro cadastro com o mesmo nome de curso apareceu no banco. Volte à etapa Curso e escolha o existente.";
   if (estado.turma.modo === "nova" && estado.curso.modo === "existente" && turmasDoCurso(s, estado.curso.id).some((t) => normalizarNome(t.title) === normalizarNome(estado.turma.titulo))) return "Já existe uma turma com este nome neste curso. Volte à etapa Turma e escolha a existente.";
   return "";
 }
@@ -288,8 +292,9 @@ export function validarEtapa(etapa, estado, s) {
   if (etapa === 1) {
     if (estado.curso.modo === "existente") return estado.curso.id && (s?.activity_definitions || []).some((d) => d.id === estado.curso.id) ? "" : "Escolha um curso da lista ou cadastre um novo.";
     if (!String(estado.curso.titulo || "").trim()) return "Informe o nome do curso.";
-    const { iguais, parecidos } = semelhancaDeCurso(s?.activity_definitions, estado.curso.titulo);
-    if (iguais.length) return `Já existe “${iguais[0].title}” (${TIPOS[iguais[0].kind] || iguais[0].kind}). Use o cadastro existente em vez de criar outro.`;
+    const { cursosIguais, outrosTipos, parecidos } = semelhancaDeCurso(s?.activity_definitions, estado.curso.titulo);
+    if (cursosIguais.length) return `Já existe o curso “${cursosIguais[0].title}”. Use o cadastro existente em vez de criar outro.`;
+    if (outrosTipos.length && !estado.curso.confirmaSemelhante) return `Já existe “${outrosTipos[0].title}” como ${(TIPOS[outrosTipos[0].kind] || outrosTipos[0].kind).toLowerCase()}. Confirme que o curso é um cadastro separado.`;
     if (parecidos.length && !estado.curso.confirmaSemelhante) return "Há cadastro com nome parecido. Use um deles ou confirme que é outro curso.";
     return "";
   }
@@ -348,11 +353,11 @@ function etapaCurso(estado, s) {
       return `<li class="cg-candidato"><strong>${e(c.title)}</strong><small>${n === 1 ? "1 turma" : `${n} turmas`}</small>${usando ? `<span class="op-badge" data-oc-usando>Escolhido</span>` : `<button type="button" class="op-button" data-oc-curso="${e(c.id)}">Escolher</button>`}</li>`;
     }).join("")}</ul>`;
   }
-  const { iguais, parecidos } = semelhancaDeCurso(s?.activity_definitions, estado.curso.titulo);
+  const { iguais, parecidos, cursosIguais } = semelhancaDeCurso(s?.activity_definitions, estado.curso.titulo);
   const cartao = (d) => `<li class="cg-candidato"><strong>${e(d.title)}</strong><small>${e(TIPOS[d.kind] || d.kind)}</small>${d.kind === "course" ? `<button type="button" class="op-button" data-oc-curso="${e(d.id)}">Usar este curso</button>` : `<span class="op-badge">Outro tipo</span>`}</li>`;
   let semelhantes = "";
   if (String(estado.curso.titulo || "").trim() && (iguais.length || parecidos.length)) {
-    semelhantes = `<div class="op-span" role="status" data-oc-semelhantes><p class="cg-explica">${iguais.length ? "Já existe um cadastro com este nome:" : "Há cadastros com nome parecido. Se for o mesmo curso, use o existente:"}</p><ul class="cg-lista">${[...iguais, ...parecidos].map(cartao).join("")}</ul>${!iguais.length ? `<label class="op-check"><input type="checkbox" name="confirmaSemelhante" ${estado.curso.confirmaSemelhante ? "checked" : ""}> Confirmo que é outro curso e quero cadastrá-lo</label>` : ""}</div>`;
+    semelhantes = `<div class="op-span" role="status" data-oc-semelhantes><p class="cg-explica">${cursosIguais.length ? "Já existe um curso com este nome:" : iguais.length ? "Este nome já é usado em outro tipo de atividade. Pode ser um cadastro separado; se for o mesmo curso, use o existente:" : "Há cadastros com nome parecido. Se for o mesmo curso, use o existente:"}</p><ul class="cg-lista">${[...iguais, ...parecidos].map(cartao).join("")}</ul>${!cursosIguais.length ? `<label class="op-check"><input type="checkbox" name="confirmaSemelhante" ${estado.curso.confirmaSemelhante ? "checked" : ""}> Confirmo que é outro curso e quero cadastrá-lo</label>` : ""}</div>`;
   }
   return intro + aviso + escolha + `<label class="op-span">Nome do curso<input name="cursoTitulo" type="text" autocomplete="off" value="${e(estado.curso.titulo)}" required data-oc-verificar></label>
     <p class="cg-nota op-span">Será cadastrado como tipo Curso. Descrição, preço e página pública ainda não fazem parte deste cadastro.</p>${semelhantes}`;

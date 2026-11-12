@@ -82,9 +82,18 @@ test("curso: mesmo nome é repetido (qualquer tipo); nome parecido só avisa e e
   const s = base();
   assert.deepEqual(semelhancaDeCurso(s.activity_definitions, "teste interno MEDITACAO para Iniciantes").iguais.map((d) => d.id), ["def-med"]);
   assert.deepEqual(semelhancaDeCurso(s.activity_definitions, "TESTE INTERNO Meditação avançada").parecidos.map((d) => d.id), ["def-med"]);
-  assert.deepEqual(semelhancaDeCurso(s.activity_definitions, "Cerâmica japonesa"), { iguais: [], parecidos: [] });
-  const dup = plano((e) => { e.curso = { modo: "novo", titulo: "TESTE INTERNO Yoga Restaurativa", confirmaSemelhante: true }; });
-  assert.match(validarEtapa(1, dup, s), /Já existe .*Workshop.*Use o cadastro existente/, "atividade equivalente de outro tipo também bloqueia");
+  assert.deepEqual(semelhancaDeCurso(s.activity_definitions, "Cerâmica japonesa"), { iguais: [], parecidos: [], cursosIguais: [], outrosTipos: [] });
+  /* Mesmo nome em OUTRO tipo (oficina/evento) é legítimo: só pede confirmação. Mesmo nome em outro CURSO bloqueia. */
+  const outroTipo = plano((e) => { e.curso = { modo: "novo", titulo: "TESTE INTERNO Yoga Restaurativa" }; });
+  assert.match(validarEtapa(1, outroTipo, s), /como workshop\. Confirme que o curso é um cadastro separado/);
+  outroTipo.curso.confirmaSemelhante = true;
+  assert.equal(validarEtapa(1, outroTipo, s), "", "curso com o nome de uma oficina pode ser cadastrado após confirmação");
+  assert.equal(repetidoNoBanco({ ...outroTipo, turma: { modo: "nova" } }, s), "");
+  const dup = plano((e) => { e.curso = { modo: "novo", titulo: "teste interno MEDITAÇÃO para iniciantes", confirmaSemelhante: true }; });
+  assert.match(validarEtapa(1, dup, s), /Já existe o curso .*Use o cadastro existente/, "curso repetido bloqueia mesmo com confirmação");
+  const tres = [{ id: "c", title: "Meditação", kind: "course" }, { id: "w", title: "Meditação", kind: "workshop" }, { id: "v", title: "Meditação", kind: "event" }];
+  assert.deepEqual(semelhancaDeCurso(tres.slice(1), "Meditação").cursosIguais, [], "oficina e evento com o mesmo nome não contam como curso repetido");
+  assert.deepEqual(semelhancaDeCurso(tres, "meditacao").cursosIguais.map((d) => d.id), ["c"]);
   const parecido = plano((e) => { e.curso = { modo: "novo", titulo: "TESTE INTERNO Meditação avançada" }; });
   assert.match(validarEtapa(1, parecido, s), /nome parecido/);
   parecido.curso.confirmaSemelhante = true;
@@ -453,4 +462,16 @@ test("P1A: Cadastrar curso, Criar turma e Inscrever aluno abrem o fluxo guiado c
   assert.equal(executarTarefa(root, "turma"), true);
   assert.equal(clicado, "turma");
   assert.equal(atributos.size, 0, "o atributo temporário é retirado");
+});
+
+test("gravação só na revisão: uma única chamada a command(), dentro de executarPlano, disparada só pela etapa 6", () => {
+  const js = ler("js/admin/organizar-curso.js").replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.equal((js.match(/operations\.command\(/g) || []).length, 1);
+  const inicio = js.indexOf("export async function executarPlano");
+  const fim = js.indexOf("export function idsPorColecao");
+  assert.ok(js.indexOf("operations.command(") > inicio && js.indexOf("operations.command(") < fim, "command() só dentro de executarPlano");
+  assert.equal((js.match(/await executarPlano\(\{/g) || []).length, 1, "executarPlano só é chamado em gravar()");
+  assert.equal((js.match(/void gravar\(\)/g) || []).length, 1);
+  assert.match(js, /if \(estado\.etapa === 6\) \{\s*if \(!montarPlanoCurso\(estado, s\(\)\)\.length\) \{ estado\.etapa = 7; desenhar\(\); return; \}\s*void gravar\(\); return;/);
+  assert.doesNotMatch(js, /localStorage|sessionStorage|indexedDB/, "rascunho só em memória");
 });
