@@ -119,10 +119,24 @@ export function validarConversa(corpo: unknown): Mensagem[] | null {
   return saida;
 }
 
+/*
+ * De onde vem o IP do visitante. O cliente controla o começo de X-Forwarded-For (pode
+ * mandar qualquer valor), mas não o fim: cada proxy confiável ACRESCENTA à direita.
+ * Por isso o padrão é o último valor. IA_FONTE_IP permite usar um cabeçalho que a
+ * plataforma sobrescreve (cf-connecting-ip, x-real-ip) depois de confirmado no LAB.
+ * Sem cabeçalho: todos no mesmo balde "sem-ip" (mais restrito, nunca mais solto).
+ */
+export const FONTES_DE_IP = ["x-forwarded-for-ultimo", "cf-connecting-ip", "x-real-ip"] as const;
+export function ipDoVisitante(request: Request, fonte: string = "x-forwarded-for-ultimo"): string {
+  const valor = fonte === "cf-connecting-ip" || fonte === "x-real-ip"
+    ? (request.headers.get(fonte) || "").trim()
+    : ((request.headers.get("x-forwarded-for") || "").split(",").map((v) => v.trim()).filter(Boolean).pop() || "");
+  return /^[0-9a-fA-F:.]{3,45}$/.test(valor) ? valor : "sem-ip";
+}
+
 /* Hash diário do visitante: IP + segredo + dia. O IP nunca sai daqui. */
-export async function hashDoVisitante(request: Request, segredo: string, agora: Date): Promise<string> {
-  const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim()
-    || request.headers.get("cf-connecting-ip") || request.headers.get("x-real-ip") || "sem-ip";
+export async function hashDoVisitante(request: Request, segredo: string, agora: Date, fonte: string = "x-forwarded-for-ultimo"): Promise<string> {
+  const ip = ipDoVisitante(request, fonte);
   const dia = agora.toISOString().slice(0, 10);
   const dados = new TextEncoder().encode(`${segredo}|${dia}|${ip}`);
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", dados));
@@ -193,6 +207,7 @@ export function lerConfiguracao(env: Env) {
     limiteGlobalDia: inteiro(env("IA_LIMITE_GLOBAL_DIA"), 800, 1, 100000),
     limiteTokensDia: inteiro(env("IA_LIMITE_TOKENS_DIA"), 1_500_000, 1000, 100_000_000),
     segredoHash: env("IA_SEGREDO_HASH") || "",
+    fonteIp: (FONTES_DE_IP as readonly string[]).includes(env("IA_FONTE_IP") || "") ? env("IA_FONTE_IP") as string : "x-forwarded-for-ultimo",
     origens: (env("IA_ORIGENS_PERMITIDAS") || "").split(",").map((v) => v.trim()).filter(Boolean),
   };
 }
@@ -222,7 +237,7 @@ export function createAssistantHandler({ env, reservarUso, registrarTokens, carr
     const conversa = validarConversa(corpo);
     if (!conversa) return json(400, { erro: "invalido", mensagem: ERRO.invalido }, headers);
 
-    const visitante = await hashDoVisitante(request, cfg.segredoHash, agora());
+    const visitante = await hashDoVisitante(request, cfg.segredoHash, agora(), cfg.fonteIp);
     try {
       const { error } = await reservarUso({ p_cliente: visitante, p_limite_minuto: cfg.limiteMinuto, p_limite_dia: cfg.limiteDia, p_limite_global: cfg.limiteGlobalDia, p_limite_tokens: cfg.limiteTokensDia });
       if (error) {

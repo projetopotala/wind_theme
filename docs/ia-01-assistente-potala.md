@@ -71,3 +71,10 @@ node scripts/prepare-ia-conhecimento.mjs
 ```
 
 Esse comando regenera `outputs/ia/conhecimento.json` a partir das páginas públicas. Um teste falha se o arquivo estiver desatualizado. Artigos e perfis do Blog são lidos ao vivo, com cache de 10 minutos.
+
+## Identificação do visitante e custo (revisão de homologação)
+
+- `IA_FONTE_IP` (opcional): `x-forwarded-for-ultimo` (padrão; usa o último valor, que é o acrescentado pelo proxy, e não o primeiro, que o cliente pode forjar), `cf-connecting-ip` ou `x-real-ip`. Valor inválido ou ausente vira o balde comum `sem-ip` (mais restritivo; o teto global continua valendo). Confirmar no LAB qual cabeçalho a plataforma preenche.
+- O IP nunca é gravado: só um hash SHA-256 de `IA_SEGREDO_HASH | dia | ip` (32 caracteres), apagado após 1 dia.
+- Custo é **estimativa** (`gpt-6-luna`: US$ 0,10 por milhão de tokens de entrada e US$ 0,50 de saída, conforme a página de preços na data da revisão). O teto de tokens é conferido antes de cada pedido e somado depois; com pedidos simultâneos ele pode ser ultrapassado em, no máximo, (pedidos em andamento × ~3.000 tokens).
+- **Recomendação ao proprietário:** usar uma chave de **projeto dedicado** na OpenAI, com limite mensal de gasto (*budget*) e alertas de uso configurados no painel da OpenAI. Esse limite é a última barreira, independente do código.

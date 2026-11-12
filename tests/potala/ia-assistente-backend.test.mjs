@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
-  ESQUEMA_RESPOSTA, INSTRUCOES, chamarOpenAI, createAssistantHandler, filtrarLinks, hashDoVisitante, lerConfiguracao, textoSemLinks, validarConversa,
+  ESQUEMA_RESPOSTA, INSTRUCOES, chamarOpenAI, ipDoVisitante, createAssistantHandler, filtrarLinks, hashDoVisitante, lerConfiguracao, textoSemLinks, validarConversa,
 } from "../../supabase/functions/assistente-potala/handler.ts";
 import { criarFonteDeConhecimento, montarContexto } from "../../supabase/functions/assistente-potala/conhecimento.ts";
 
@@ -110,7 +110,21 @@ test("visitante identificado só por hash diário: o IP não sai da função", a
   assert.notEqual(a, c);
   const ok = montar();
   await ok.handle(pedido(conversa()));
-  assert.doesNotMatch(JSON.stringify(ok.registro), /203\.0\.113\.9/);
+  assert.doesNotMatch(JSON.stringify(ok.registro), /203\.0\.113\.9|10\.0\.0\.1/);
+});
+
+test("IP do visitante: o cliente não escolhe o próprio balde trocando X-Forwarded-For", async () => {
+  const com = (xff, extra = {}) => new Request("https://x/", { headers: { "x-forwarded-for": xff, ...extra } });
+  // O proxy confiável acrescenta o IP real à DIREITA; o que o cliente forja fica à esquerda.
+  assert.equal(ipDoVisitante(com("1.1.1.1, 198.51.100.7")), "198.51.100.7");
+  assert.equal(ipDoVisitante(com("9.9.9.9, 198.51.100.7")), "198.51.100.7");
+  const dia = new Date("2026-11-12T10:00:00Z");
+  assert.equal(await hashDoVisitante(com("1.1.1.1, 198.51.100.7"), "s", dia), await hashDoVisitante(com("2.2.2.2, 3.3.3.3, 198.51.100.7"), "s", dia), "forjar à esquerda não muda o balde");
+  assert.equal(ipDoVisitante(com("1.1.1.1", { "cf-connecting-ip": "203.0.113.5" }), "cf-connecting-ip"), "203.0.113.5");
+  assert.equal(ipDoVisitante(com("1.1.1.1"), "x-real-ip"), "sem-ip", "fonte configurada ausente: balde comum (fail-closed)");
+  assert.equal(ipDoVisitante(com("lixo<script>, ")), "sem-ip");
+  assert.equal(ipDoVisitante(new Request("https://x/")), "sem-ip");
+  assert.equal(lerConfiguracao((n) => ({ IA_FONTE_IP: "x-forwarded-for-primeiro" })[n]).fonteIp, "x-forwarded-for-ultimo", "fonte não reconhecida volta ao padrão seguro");
 });
 
 test("pedido à OpenAI: Responses API, store:false, saída estruturada, limites e modelo configurável", async () => {

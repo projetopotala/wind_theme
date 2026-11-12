@@ -8,7 +8,7 @@ import { criarFonteDeConhecimento } from "./conhecimento.ts";
  *
  * Segredos (painel do Supabase > Edge Functions > Secrets; nunca no Git):
  *   OPENAI_API_KEY, IA_SEGREDO_HASH.
- * Configuração: IA_ATIVO ("true" liga), IA_ORIGENS_PERMITIDAS, IA_SITE_URL, IA_MODELO,
+ * Configuração: IA_ATIVO ("true" liga), IA_ORIGENS_PERMITIDAS, IA_SITE_URL, IA_FONTE_IP, IA_MODELO,
  *   IA_ESFORCO, IA_MAX_TOKENS_SAIDA, IA_TIMEOUT_MS, IA_LIMITE_MINUTO, IA_LIMITE_DIA,
  *   IA_LIMITE_GLOBAL_DIA, IA_LIMITE_TOKENS_DIA.
  * A chave secreta do Supabase (contexto `supabaseAdmin`) é usada só para as duas RPCs de
