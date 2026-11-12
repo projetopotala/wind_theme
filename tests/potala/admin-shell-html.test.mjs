@@ -26,7 +26,8 @@ test("cada área de operação tem a própria tela, fora do editor", () => {
 test("a abertura é a visão geral operacional, não o editor", () => {
   assert.match(html, /data-admin-section="inicio"/);
   assert.match(html, /data-section="inicio" aria-current="page"/);
-  assert.match(html, /data-admin-workspace="inicio"[^>]*data-op-view="dashboard"/);
+  /* A Visão geral reúne os atalhos de tarefa (P1A) e, logo abaixo, o painel operacional. */
+  assert.match(html, /data-admin-workspace="inicio"[^>]*>[\s\S]*?data-admin-tarefas[\s\S]*?<div data-op-view="dashboard">[\s\S]*?<\/div>\s*<\/section>/);
   assert.match(html, /data-admin-workspace="jornada"[^>]*hidden/);
   for (const secao of ["agenda", "salas", "ofertas", "pessoas", "inventario", "financeiro", "jornada", "blog"]) {
     assert.match(html, new RegExp(`data-section="${secao}"`));
