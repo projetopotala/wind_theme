@@ -107,3 +107,47 @@ test("o painel liga o fluxo e o atalho da Visão geral abre o cadastro guiado", 
   assert.match(ler("js/admin/admin-tarefas.js"), /guiado: "\[data-cadastro-guiado\]"/);
   assert.match(ler("admin.html"), /<link rel="stylesheet" href="\/css\/cadastro-profissional\.css">/);
 });
+
+test("confirmação de gravação: só afirma o que foi conferido; cadastro existente sem mudança não é regravado", async () => {
+  const { confirmarGravacao, nadaMuda } = await import("../../outputs/js/admin/cadastro-profissional.js");
+  const plano = { perfil: { display_name: "Carla Dias", email: "carla@e.test", roles: ["professional"], active: true, published: false } };
+  const antes = new Set(["p1", "p2"]);
+  assert.equal(confirmarGravacao(perfis, { plano, idsAntes: antes }), null, "nada novo: não gravou");
+  const depois = [...perfis, { id: "n1", display_name: "Carla Dias", email: "carla@e.test", roles: ["professional"] }];
+  assert.equal(confirmarGravacao(depois, { plano, idsAntes: antes })?.id, "n1");
+  assert.equal(confirmarGravacao(depois, { plano, idsAntes: new Set(["p1", "p2", "n1"]) }), null, "o que já existia antes não conta como gravação nova");
+  const semEmail = { perfil: { display_name: "Davi Rocha", email: "", roles: ["professional"], active: true, published: false } };
+  assert.equal(confirmarGravacao([...perfis, { id: "n2", display_name: "DAVI rocha" }], { plano: semEmail, idsAntes: antes })?.id, "n2");
+  const ex = perfis[0];
+  const planoEx = { perfil: { id: "p1", roles: ["client", "professional"], active: true, published: false } };
+  assert.equal(confirmarGravacao(perfis, { plano: planoEx, existente: ex }), null, "papel ainda não aplicado");
+  assert.ok(confirmarGravacao([{ ...ex, roles: ["client", "professional"] }], { plano: planoEx, existente: ex }));
+  assert.equal(nadaMuda({ ...ex, roles: ["professional", "client"] }, planoEx.perfil), true);
+  assert.equal(nadaMuda(ex, planoEx.perfil), false);
+  assert.equal(nadaMuda(ex, { ...planoEx.perfil, roles: ["client"], phone: "1" }), false);
+});
+
+test("vínculo desativado com este perfil é tratado à parte (o banco exige reativar)", () => {
+  const contas = [{ id: "u1", email: "ana@exemplo.test", links: [{ profile_id: "p1", link_active: false }] }];
+  assert.equal(analisarConta({ contas, perfisProf: [] }, { email: "ana@exemplo.test", perfilId: "p1" }).situacao, "vinculo-inativo");
+});
+
+test("mensagens honestas: sem afirmar 'nada foi gravado' sem conferir; nova tentativa de vínculo disponível", () => {
+  const js = ler("js/admin/cadastro-profissional.js");
+  assert.doesNotMatch(js, /`Nada foi gravado\./, "a frase antiga, sem conferência, saiu");
+  assert.match(js, /Não foi gravado \(conferido no banco\)/);
+  assert.match(js, /Não foi possível confirmar se o cadastro foi gravado/);
+  assert.match(js, /await operations\.refresh\?\.\(\)/, "confere relendo o banco");
+  const t7 = renderizarCadastro({ etapa: 7, resultado: { nome: "Carla", ativo: true, publicado: false, vinculado: false, erroVinculo: "vínculo pendente", contaId: "u1" } }, perfis);
+  assert.match(t7, /data-cg-revincular/);
+  assert.match(t7, /O perfil|Perfil profissional: Carla/);
+});
+
+test("rascunho: só em memória e descartado ao sair ou trocar de conta", () => {
+  const js = ler("js/admin/cadastro-profissional.js");
+  assert.doesNotMatch(js, /localStorage|sessionStorage|indexedDB|document\.cookie/);
+  assert.match(js, /function limpar\(\) \{\s*estado = ESTADO_INICIAL\(\);/);
+  const entrada = ler("js/admin/admin-entry.js");
+  assert.match(entrada, /if \(state !== "authorized"\) \{[^}]*cadastroGuiado\?\.limpar\(\);/);
+  assert.match(entrada, /if \(usuarioAtual && quem !== usuarioAtual\) cadastroGuiado\?\.limpar\(\);/);
+});

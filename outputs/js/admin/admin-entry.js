@@ -29,6 +29,8 @@ let operacaoAbrindo = null;
 let appointmentPanel = null;
 let atendimentosPanel = null;
 let accessPanel = null;
+let cadastroGuiado = null;
+let usuarioAtual = null;
 const firstAccess = isAdminFirstAccess(window.location);
 
 const shell = panel ? createAdminShell({ root: panel }) : null;
@@ -76,7 +78,7 @@ async function abrirOperacao(client, access) {
     },
   });
   /* P1B: cadastro guiado de profissional, sobre os mesmos comandos de Pessoas e as funções de Usuários e acessos. */
-  createCadastroGuiado({
+  cadastroGuiado = createCadastroGuiado({
     root: panel,
     operations,
     client,
@@ -99,10 +101,14 @@ try {
     client,
     root,
     onState(state) {
-      if (state !== "authorized") { appointmentPanel?.clear(); atendimentosPanel?.clear(); accessPanel?.clear(); }
+      if (state !== "authorized") { appointmentPanel?.clear(); atendimentosPanel?.clear(); accessPanel?.clear(); cadastroGuiado?.limpar(); }
       else if (appointmentPanel) { void appointmentPanel.reload(); void atendimentosPanel?.reload(); }
     },
     async onAuthorized(access) {
+      /* Troca de conta na mesma aba: nada do rascunho anterior fica disponível. */
+      const quem = access.session?.user?.id || access.user?.id || null;
+      if (usuarioAtual && quem !== usuarioAtual) cadastroGuiado?.limpar();
+      usuarioAtual = quem;
       shell?.setUser({
         name: access.user?.name || access.session?.user?.email || "Administração Potala",
         role: rotuloDoPapel(access),

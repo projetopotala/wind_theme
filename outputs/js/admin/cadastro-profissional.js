@@ -68,7 +68,8 @@ export function analisarConta({ contas = null, perfisProf = null, erro = "" } = 
   if (perfil?.linked_user_id && (!conta || perfil.linked_user_id !== conta.id)) return { situacao: "perfil-ja-tem-conta", conta };
   if (!conta) return { situacao: "nenhuma" };
   const vinculos = conta.links || [];
-  if (vinculos.some((v) => perfilId && v.profile_id === perfilId)) return { situacao: "ja-vinculada", conta };
+  const deste = vinculos.find((v) => perfilId && v.profile_id === perfilId);
+  if (deste) return { situacao: deste.link_active === false ? "vinculo-inativo" : "ja-vinculada", conta };
   if (vinculos.length) return { situacao: "vinculada-a-outro", conta, outro: vinculos[0] };
   return { situacao: "livre", conta };
 }
@@ -88,6 +89,32 @@ export function montarPlano(estado, existente = null) {
     perfil = { display_name: String(estado.nome || "").trim(), email: normalizarEmail(estado.email), phone: String(estado.telefone || "").trim(), roles, active: ativo, published: publicado };
   }
   return { perfil, vincular: estado.vincular === true && Boolean(estado.contaId), contaId: estado.contaId || "" };
+}
+
+/*
+ * Depois de uma falha, o estado só é afirmado se for CONFERIDO de novo no banco (snapshot relido).
+ * Novo: um perfil que não existia antes, com o mesmo e-mail (ou o mesmo nome, se não houver e-mail).
+ * Existente: o mesmo id já com Profissional e com ativo/publicado iguais ao plano.
+ */
+export function confirmarGravacao(perfisDepois = [], { plano, idsAntes = new Set(), existente = null } = {}) {
+  const p = plano?.perfil || {};
+  if (existente) {
+    const atual = perfisDepois.find((x) => x.id === existente.id);
+    if (!atual) return null;
+    const ok = (atual.roles || []).includes("professional") && (atual.active !== false) === (p.active !== false) && (atual.published === true) === (p.published === true);
+    return ok ? atual : null;
+  }
+  const novos = perfisDepois.filter((x) => !idsAntes.has(x.id));
+  if (p.email) return novos.find((x) => normalizarEmail(x.email) === p.email) || null;
+  return novos.find((x) => normalizarNome(x.display_name) === normalizarNome(p.display_name)) || null;
+}
+
+/* Cadastro existente sem nenhuma diferença: não há o que gravar (evita escrita desnecessária). */
+export function nadaMuda(existente, perfil) {
+  if (!existente || !perfil?.id) return false;
+  const mesmos = (a = [], b = []) => a.length === b.length && a.every((r) => b.includes(r));
+  return mesmos(existente.roles || [], perfil.roles || []) && (existente.active !== false) === (perfil.active !== false)
+    && (existente.published === true) === (perfil.published === true) && !("phone" in perfil);
 }
 
 export function validarEtapa(etapa, estado) {
@@ -148,7 +175,12 @@ function corpo(estado, perfis) {
         "ja-vinculada": "A conta com este e-mail já está vinculada a este perfil. Nada a fazer.",
         "vinculada-a-outro": `A conta com este e-mail já está vinculada a outro perfil (${e(a.outro?.display_name || "outro cadastro")}). Cada conta tem um único perfil; nada será vinculado. Resolva em Usuários e acessos.`,
         "perfil-ja-tem-conta": "Este perfil já está vinculado a outra conta de acesso. Nada será vinculado aqui; confira em Usuários e acessos.",
+        "vinculo-inativo": "A conta com este e-mail já tem vínculo com este perfil, mas desativado. Para reativar, use Usuários e acessos (Reativar vínculo).",
       };
+      if (a.situacao === "vinculada-a-outro" && a.outro?.profile_id && perfis.some((p) => p.id === a.outro.profile_id) && estado.existenteId !== a.outro.profile_id) {
+        return intro + `<p class="op-span" role="status" data-cg-conta="vinculada-a-outro">A conta com este e-mail já está ligada ao cadastro <strong>${e(a.outro.display_name || "existente")}</strong>. Cada conta tem um único cadastro: em vez de criar outro, acrescente o papel Profissional a esse cadastro.</p>
+          <button type="button" class="op-button op-span" data-cg-usar="${e(a.outro.profile_id)}">Usar o cadastro ligado a esta conta</button>`;
+      }
       if (a.situacao === "livre") {
         const pendente = a.conta.status && a.conta.status !== "ativa" ? ` <small>(${e(a.conta.status === "pendente_confirmacao" ? "aguardando confirmação do e-mail" : a.conta.status === "bloqueada" ? "bloqueada" : "confirmada, nunca entrou")})</small>` : "";
         return intro + `<p class="op-span" role="status">Conta encontrada: <strong>${e(a.conta.email)}</strong>${pendente}. Ela ainda não tem perfil vinculado.</p>
@@ -183,6 +215,7 @@ function corpo(estado, perfis) {
           ${item(r.ativo, "Cadastro ativo", "inativo: não aparece nas escolhas da operação")}
           ${item(r.publicado, "Disponível publicamente", "não publicado (pode publicar depois em Pessoas)")}
           ${item(r.vinculado, "Conta de acesso vinculada", r.erroVinculo || "sem vínculo (faça em Usuários e acessos quando houver conta)")}
+          ${r.erroVinculo && r.contaId ? `<li><button type="button" class="op-button" data-cg-revincular ${estado.salvando ? "disabled" : ""}>Tentar vincular de novo</button></li>` : ""}
           ${item(false, "Horários de atendimento", "a configurar em Atendimentos")}
           ${item(false, "Turma ou curso", "a configurar em Criar turma")}
         </ul>
@@ -276,36 +309,81 @@ export function createCadastroGuiado({ root, operations, client, onSalvo = () =>
     if (etapa === 4 && !estado.contasCarregadas) void carregarContas();
   }
 
+  async function conferir(plano, idsAntes, existente) {
+    try { await operations.refresh?.(); } catch { return { conferido: false, perfil: null }; }
+    return { conferido: true, perfil: confirmarGravacao(perfis(), { plano, idsAntes, existente }) };
+  }
+
   async function salvar() {
     const existente = existenteDe(estado, perfis());
     const plano = montarPlano(estado, existente);
     estado.salvando = true; estado.erro = ""; desenhar({ focar: false });
-    let perfilSalvo;
-    try {
-      perfilSalvo = await operations.command("person.save", plano.perfil);
-    } catch (causa) {
-      estado.salvando = false;
-      estado.erro = `Nada foi gravado. ${causa?.message || "Falha de conexão."}`;
-      desenhar({ focar: false });
-      form.querySelector("[data-cg-erro]")?.focus?.();
-      return;
+    let perfilSalvo = null;
+    /* Uma tentativa anterior ficou sem resposta: confere antes de reenviar. */
+    if (estado.gravacaoIncerta) {
+      const c = await conferir(plano, estado.idsAntes || new Set(), existente);
+      if (c.perfil) perfilSalvo = c.perfil;
+    }
+    const idsAntes = estado.gravacaoIncerta && estado.idsAntes ? estado.idsAntes : new Set(perfis().map((p) => p.id));
+    if (!perfilSalvo && nadaMuda(existente, plano.perfil)) perfilSalvo = existente;
+    if (!perfilSalvo) {
+      try {
+        /* Mesmo comando e mesmos dados reaproveitam o identificador da operação: o banco não grava duas vezes. */
+        perfilSalvo = await operations.command("person.save", plano.perfil);
+      } catch (causa) {
+        const motivo = String(causa?.message || "falha de conexão").replace(/[.\s]+$/, "");
+        const c = await conferir(plano, idsAntes, existente);
+        if (c.perfil) perfilSalvo = c.perfil;
+        else {
+          estado.salvando = false;
+          estado.gravacaoIncerta = !c.conferido;
+          estado.idsAntes = idsAntes;
+          estado.erro = c.conferido
+            ? `Não foi gravado (conferido no banco): ${motivo}. Corrija, se for o caso, e tente de novo.`
+            : `Não foi possível confirmar se o cadastro foi gravado (${motivo}). Ao tentar de novo, o sistema confere primeiro e não cria cadastro duplicado. Se preferir, confira em Pessoas.`;
+          desenhar({ focar: false });
+          form.querySelector("[data-cg-erro]")?.focus?.();
+          return;
+        }
+      }
     }
     const id = perfilSalvo?.id || existente?.id || (perfis().find((p) => normalizarEmail(p.email) && normalizarEmail(p.email) === plano.perfil.email)?.id) || "";
-    const resultado = { nome: perfilSalvo?.display_name || existente?.display_name || plano.perfil.display_name, ativo: plano.perfil.active, publicado: plano.perfil.published, vinculado: false, erroVinculo: "" };
+    const resultado = { nome: perfilSalvo?.display_name || existente?.display_name || plano.perfil.display_name, ativo: plano.perfil.active, publicado: plano.perfil.published, vinculado: false, erroVinculo: "", contaId: plano.vincular ? plano.contaId : "" };
     const jaVinculada = analisarConta(estado.contasCarregadas || {}, { email: existente?.email || estado.email, perfilId: existente?.id || "" }).situacao === "ja-vinculada";
     resultado.vinculado = jaVinculada;
-    if (plano.vincular && id) {
-      try {
-        const { error } = await client.rpc("admin_link_professional", { p_user_id: plano.contaId, p_profile_id: id });
-        if (error) resultado.erroVinculo = `vínculo não feito: ${error.code === "42501" ? "seu acesso não permite vincular contas" : error.message || "erro do banco"}`;
-        else resultado.vinculado = true;
-      } catch { resultado.erroVinculo = "vínculo não feito: falha de conexão"; }
-    }
+    if (plano.vincular && id) Object.assign(resultado, await vincularConta(plano.contaId, id));
     resultado.mensagem = existente ? "Cadastro existente atualizado." : "Cadastro criado.";
     if (resultado.erroVinculo) resultado.mensagem += " O perfil foi salvo, mas a conta não foi vinculada.";
     estado = { ...ESTADO_INICIAL(), etapa: 7, resultado, perfilId: id };
     onSalvo({ id, resultado });
     desenhar();
+  }
+
+  /* admin_link_professional é idempotente para o mesmo par: repetir não duplica. */
+  async function vincularConta(contaId, perfilId) {
+    try {
+      const { error } = await client.rpc("admin_link_professional", { p_user_id: contaId, p_profile_id: perfilId });
+      if (!error) return { vinculado: true, erroVinculo: "" };
+      return { vinculado: false, erroVinculo: `vínculo não feito: ${error.code === "42501" ? "seu acesso não permite vincular contas" : error.message || "erro do banco"}` };
+    } catch { return { vinculado: false, erroVinculo: "vínculo pendente: sem resposta do banco (tentar de novo é seguro)" }; }
+  }
+
+  async function revincular() {
+    const r = estado.resultado;
+    if (!r?.contaId || !estado.perfilId) return;
+    estado.salvando = true; desenhar({ focar: false });
+    Object.assign(r, await vincularConta(r.contaId, estado.perfilId));
+    r.mensagem = r.vinculado ? "Cadastro salvo e conta vinculada." : "O perfil está salvo; a conta continua sem vínculo.";
+    estado.salvando = false;
+    if (r.vinculado) onSalvo({ id: estado.perfilId, resultado: r });
+    desenhar();
+  }
+
+  /* Ao sair da conta ou trocar de usuário, o rascunho (só em memória) é descartado. */
+  function limpar() {
+    estado = ESTADO_INICIAL();
+    if (dialog.open) dialog.close();
+    form.innerHTML = "";
   }
 
   function abrir() {
@@ -339,7 +417,16 @@ export function createCadastroGuiado({ root, operations, client, onSalvo = () =>
     if (alvo.hasAttribute("data-cg-fechar")) { lerCampos(); fechar(); return; }
     if (alvo.hasAttribute("data-cg-voltar")) { lerCampos(); irPara(estado.etapa - 1); return; }
     if (alvo.hasAttribute("data-cg-recomecar")) { estado = ESTADO_INICIAL(); desenhar(); return; }
-    if (alvo.dataset.cgUsar) { estado.existenteId = alvo.dataset.cgUsar; estado.confirmaOutraPessoa = false; estado.contasCarregadas = null; estado.situacaoAjustada = false; desenhar(); return; }
+    if (alvo.dataset.cgUsar) {
+      estado.existenteId = alvo.dataset.cgUsar; estado.confirmaOutraPessoa = false; estado.situacaoAjustada = false; estado.vincular = false;
+      if (estado.etapa === 4 && estado.contasCarregadas) {
+        const ex = existenteDe(estado, perfis());
+        const a = analisarConta(estado.contasCarregadas, { email: ex?.email || estado.email, perfilId: ex?.id || "" });
+        estado.contaId = a.situacao === "livre" ? a.conta.id : "";
+      } else estado.contasCarregadas = null;
+      desenhar(); return;
+    }
+    if (alvo.hasAttribute("data-cg-revincular")) { void revincular(); return; }
     if (alvo.hasAttribute("data-cg-novo")) { estado.existenteId = ""; estado.contasCarregadas = null; estado.situacaoAjustada = false; desenhar(); return; }
     if (alvo.dataset.cgIr) { const destino = alvo.dataset.cgIr; fechar(); onNavegar(destino); }
   });
@@ -352,5 +439,5 @@ export function createCadastroGuiado({ root, operations, client, onSalvo = () =>
   };
   root.addEventListener("click", onRootClick);
 
-  return { abrir, fechar, get estado() { return estado; }, destroy() { root.removeEventListener("click", onRootClick); dialog.remove(); } };
+  return { abrir, fechar, limpar, get estado() { return estado; }, destroy() { root.removeEventListener("click", onRootClick); dialog.remove(); } };
 }
