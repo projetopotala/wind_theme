@@ -32,6 +32,28 @@ test("endereço do escritor: estável, sem acentos, sem dados internos; texto se
   for (const ruim of ["../x", "<script>", "a b", "", "x".repeat(141)]) assert.equal(slugValido(ruim), "", ruim);
 });
 
+test("identidade: grafias equivalentes agrupam; assinaturas distintas nunca colidem; edição move o vínculo", () => {
+  for (const variante of ["Marina  Alves", "marina alves", "MARÍNA ALVES", " Marina Alves "]) assert.equal(slugDoEscritor(variante), "marina-alves", variante);
+  // Assinaturas sem letras latinas não podem cair todas no "novo-texto" genérico.
+  const [a, b] = [slugDoEscritor("李明"), slugDoEscritor("王芳")];
+  assert.notEqual(a, b);
+  assert.match(a, /^assinatura-[a-z0-9]+$/);
+  assert.equal(slugValido(a), a, "o endereço gerado é aceito pela página");
+  assert.equal(slugDoEscritor("李明"), a, "estável");
+  assert.equal(slugDoEscritor("Novo Texto"), "novo-texto");
+  assert.notEqual(slugDoEscritor("✦✦"), slugDoEscritor("Novo Texto"));
+  // Assinatura muito longa: o link continua abrindo a página certa.
+  const longa = "Coletivo ".repeat(30).trim();
+  assert.ok(slugDoEscritor(longa).length <= 120);
+  assert.equal(slugValido(slugDoEscritor(longa)), slugDoEscritor(longa));
+  assert.equal(textosDoEscritor([post("l1", longa, "2026-01-01")], slugDoEscritor(longa)).textos.length, 1);
+  // A assinatura é por texto: editar a de um texto muda só o vínculo dele.
+  const antes = [post("e1", "Ana Lima", "2026-01-01"), post("e2", "Ana Lima", "2026-02-01")];
+  const depois = [post("e1", "Ana Lima Prado", "2026-01-01"), antes[1]];
+  assert.deepEqual(textosDoEscritor(depois, "ana-lima").textos.map((p) => p.id), ["e2"]);
+  assert.deepEqual(textosDoEscritor(depois, "ana-lima-prado").textos.map((p) => p.id), ["e1"]);
+});
+
 test("escritores: só textos publicados, agrupados pela assinatura, contagem, grafia principal e ordem alfabética", () => {
   const lista = escritoresDoCaderno(publicados);
   assert.deepEqual(lista.map((x) => [x.slug, x.nome, x.total]), [
@@ -124,6 +146,8 @@ test("montagem: lê só os publicados pela via pública, aplica metadados e tent
   const pagina = montarEscritor(doc, { blog, local: { search: "?nome=marina-alves", origin: "https://wind-theme.vercel.app" } });
   await pagina.pronto;
   assert.match(raiz.innerHTML, /Sem conexão\.[\s\S]*data-escritor-tentar/);
+  assert.equal(head.querySelector('meta[name="robots"]'), null, "falha passageira não marca a página como noindex");
+  assert.equal(doc.title, "", "nem troca o título");
   falhar = false;
   raiz.ouvintes.click({ target: { closest: (s) => (s === "[data-escritor-tentar]" ? {} : null) } });
   await new Promise((r) => setTimeout(r, 0));

@@ -80,7 +80,9 @@ export function montarEscritor(doc = document, { blog = null, local = globalThis
   const trilha = doc.querySelector("[data-escritor-trilha]");
   const desenhar = (estado, extra = {}) => {
     raiz.innerHTML = renderizarPagina({ estado, slug, ...extra });
-    if (estado === "carregando") return;
+    // Carregando ou falha passageira do banco: não mexe em título, canônico nem robots
+    // (um "noindex" por instabilidade tiraria a página dos buscadores sem motivo).
+    if (estado === "carregando" || estado === "indisponivel") return;
     const final = estado === "escritor" && !textosDoEscritor(extra.publicados, slug).textos.length ? "vazio" : estado;
     aplicarMetadados(doc, metadados({ estado: final, slug, publicados: extra.publicados || [], origem: local?.origin || "" }));
     if (trilha) trilha.textContent = final === "escritor" ? textosDoEscritor(extra.publicados, slug).nome : "Escritores";

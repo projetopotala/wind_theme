@@ -17,8 +17,21 @@ export const ASSINATURA_INSTITUCIONAL = "Instituto Potala";
 
 /* Endereço estável do escritor: a assinatura sem acentos, minúscula, com hífens. */
 export function slugDoEscritor(nome) {
-  const limpo = String(nome ?? "").trim();
-  return limpo ? slugifyBlogTitle(limpo) : slugifyBlogTitle(ASSINATURA_INSTITUCIONAL);
+  const limpo = String(nome ?? "").trim().replace(/\s+/g, " ");
+  if (!limpo) return slugifyBlogTitle(ASSINATURA_INSTITUCIONAL);
+  const base = slugifyBlogTitle(limpo);
+  // slugifyBlogTitle devolve "novo-texto" quando nada sobra (assinatura só com letras
+  // não latinas ou símbolos): sem isso, assinaturas diferentes cairiam no mesmo endereço.
+  const semLetrasLatinas = !/[a-z0-9]/i.test(limpo.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+  const slug = semLetrasLatinas ? `assinatura-${impressao(limpo.toLowerCase())}` : base;
+  return slug.slice(0, 120).replace(/-+$/, "");
+}
+
+/* Impressão curta e estável do texto (FNV-1a, 32 bits), só para compor o endereço. */
+function impressao(texto) {
+  let h = 0x811c9dc5;
+  for (const c of texto.normalize("NFC")) { h ^= c.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(36);
 }
 
 export const hrefDoEscritor = (nome) => `escritor.html?nome=${encodeURIComponent(slugDoEscritor(nome))}`;
