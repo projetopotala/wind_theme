@@ -42,6 +42,8 @@ export function traduzirErro(error = {}) {
   if (error.code === "PT409") return new OperationsError("Os dados foram atualizados em outra janela. Confira e tente novamente.", error);
   if (error.code === "23505" && /room_code/.test(texto)) return new OperationsError("Já existe uma sala com este código.", error);
   if (error.code === "23505" && /asset_code/.test(texto)) return new OperationsError("Já existe um patrimônio com este código.", error);
+  /* P1D: o banco recusa a segunda inscrição da mesma pessoa na mesma turma (índice único). */
+  if (error.code === "23505" && /op_records_enrollment_pessoa_turma/.test(texto)) return new OperationsError("Esta pessoa já tem inscrição nesta turma; edite a inscrição existente.", error);
   if (/Failed to fetch|NetworkError|Load failed/i.test(texto)) return new OperationsError("Sem conexão com o banco do Portal. Verifique a internet e tente de novo.", error);
   return new OperationsError(error.message || "Não foi possível salvar.", error);
 }

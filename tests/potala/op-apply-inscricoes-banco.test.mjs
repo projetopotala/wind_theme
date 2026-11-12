@@ -6,7 +6,9 @@ import { PGlite } from "@electric-sql/pglite";
 import { createOperationsClient } from "../../outputs/js/admin/operations/client.js";
 
 /*
- * GARANTIAS REAIS DO BANCO PARA INSCRIÇÕES (op_apply chamado diretamente, sem o assistente).
+ * GARANTIAS DO BANCO PARA INSCRIÇÕES **SEM A MIGRATION P1D** (estado de Production antes de
+ * 202611120001). Não aplica a P1D de propósito: registra a linha de base. Com a P1D, os mesmos
+ * casos são recusados — ver p1d-integridade-inscricoes-banco.test.mjs.
  *
  * Este arquivo DOCUMENTA o comportamento atual, inclusive o que o banco ACEITA:
  *   - motor (navegador): inscrição repetida, capacidade, lista de espera → recusa antes de enviar;
