@@ -10,7 +10,7 @@ import { criarFonteDeConhecimento, montarContexto } from "../../supabase/functio
 /* IA-01 | Backend do Assistente Potala — tudo com respostas SIMULADAS (nenhuma chamada real à OpenAI). */
 const ORIGEM = "https://wind-theme.vercel.app";
 const CHAVE_FALSA = "sk-teste-NUNCA-REAL-0000";
-const AMBIENTE = { IA_ATIVO: "true", OPENAI_API_KEY: CHAVE_FALSA, IA_SEGREDO_HASH: "segredo-de-teste", IA_ORIGENS_PERMITIDAS: ORIGEM };
+const AMBIENTE = { IA_ATIVO: "true", OPENAI_API_KEY: CHAVE_FALSA, IA_SEGREDO_HASH: "segredo-de-teste", IA_ORIGENS_PERMITIDAS: ORIGEM, IA_FONTE_IP: "x-forwarded-for-ultimo" };
 const DOCS = [
   { tipo: "pagina", url: "cursos.html", titulo: "Cursos", descricao: "Cursos, formações e experiências de aprendizagem.", texto: "Cursos de meditação, desenho e filosofia." },
   { tipo: "pagina", url: "atendimentos.html", titulo: "Atendimentos", descricao: "Conheça os atendimentos do Instituto Potala.", texto: "Acupuntura, reiki e reflexologia. Agende pela Recepção." },
@@ -42,7 +42,7 @@ const pedido = (corpo, { metodo = "POST", origem = ORIGEM, cabecalhos = {} } = {
 const conversa = (texto = "Quais cursos vocês têm?") => ({ mensagens: [{ papel: "usuario", texto }] });
 
 test("desligado ou sem configuração: fail-closed, sem reservar uso e sem chamar a OpenAI", async () => {
-  for (const amb of [{ IA_ATIVO: "false" }, { IA_ATIVO: "" }, { OPENAI_API_KEY: "" }, { IA_SEGREDO_HASH: "" }, { IA_ORIGENS_PERMITIDAS: "" }]) {
+  for (const amb of [{ IA_ATIVO: "false" }, { IA_ATIVO: "" }, { OPENAI_API_KEY: "" }, { IA_SEGREDO_HASH: "" }, { IA_ORIGENS_PERMITIDAS: "" }, { IA_FONTE_IP: "" }, { IA_FONTE_IP: "x-forwarded-for-primeiro" }]) {
     const { handle, registro } = montar({ ambiente: amb });
     const r = await handle(pedido(conversa(), { origem: amb.IA_ORIGENS_PERMITIDAS === "" ? null : ORIGEM }));
     assert.equal(r.status, 503, JSON.stringify(amb));
@@ -116,15 +116,35 @@ test("visitante identificado só por hash diário: o IP não sai da função", a
 test("IP do visitante: o cliente não escolhe o próprio balde trocando X-Forwarded-For", async () => {
   const com = (xff, extra = {}) => new Request("https://x/", { headers: { "x-forwarded-for": xff, ...extra } });
   // O proxy confiável acrescenta o IP real à DIREITA; o que o cliente forja fica à esquerda.
-  assert.equal(ipDoVisitante(com("1.1.1.1, 198.51.100.7")), "198.51.100.7");
-  assert.equal(ipDoVisitante(com("9.9.9.9, 198.51.100.7")), "198.51.100.7");
+  assert.equal(ipDoVisitante(com("1.1.1.1, 198.51.100.7"), "x-forwarded-for-ultimo"), "198.51.100.7");
+  assert.equal(ipDoVisitante(com("9.9.9.9, 198.51.100.7"), "x-forwarded-for-ultimo"), "198.51.100.7");
   const dia = new Date("2026-11-12T10:00:00Z");
-  assert.equal(await hashDoVisitante(com("1.1.1.1, 198.51.100.7"), "s", dia), await hashDoVisitante(com("2.2.2.2, 3.3.3.3, 198.51.100.7"), "s", dia), "forjar à esquerda não muda o balde");
+  assert.equal(await hashDoVisitante(com("1.1.1.1, 198.51.100.7"), "s", dia, "x-forwarded-for-ultimo"), await hashDoVisitante(com("2.2.2.2, 3.3.3.3, 198.51.100.7"), "s", dia, "x-forwarded-for-ultimo"), "forjar à esquerda não muda o balde");
   assert.equal(ipDoVisitante(com("1.1.1.1", { "cf-connecting-ip": "203.0.113.5" }), "cf-connecting-ip"), "203.0.113.5");
   assert.equal(ipDoVisitante(com("1.1.1.1"), "x-real-ip"), "sem-ip", "fonte configurada ausente: balde comum (fail-closed)");
-  assert.equal(ipDoVisitante(com("lixo<script>, ")), "sem-ip");
-  assert.equal(ipDoVisitante(new Request("https://x/")), "sem-ip");
-  assert.equal(lerConfiguracao((n) => ({ IA_FONTE_IP: "x-forwarded-for-primeiro" })[n]).fonteIp, "x-forwarded-for-ultimo", "fonte não reconhecida volta ao padrão seguro");
+  assert.equal(ipDoVisitante(com("lixo<script>, "), "x-forwarded-for-ultimo"), "sem-ip");
+  assert.equal(ipDoVisitante(new Request("https://x/"), "cf-connecting-ip"), "sem-ip");
+  assert.equal(lerConfiguracao((n) => ({ IA_FONTE_IP: "x-forwarded-for-primeiro" })[n]).fonteIp, "", "fonte não reconhecida não é aceita (assistente fica desligado)");
+});
+
+test("ensaio (IA_ATIVO=false + IA_ENSAIO=true): cotas e identidade no banco, NUNCA OpenAI, nunca IP bruto", async () => {
+  const amb = { IA_ATIVO: "false", IA_ENSAIO: "true", OPENAI_API_KEY: "" };
+  const { handle, registro } = montar({ ambiente: amb });
+  const r = await handle(pedido(conversa(), { cabecalhos: { "x-forwarded-for": "6.6.6.6, 203.0.113.9", "cf-connecting-ip": "198.51.100.1" } }));
+  assert.equal(r.status, 200);
+  const corpo = await r.json();
+  assert.equal(corpo.ensaio, true);
+  assert.equal(registro.reservas.length, 1, "a cota é reservada de verdade");
+  assert.equal(registro.chamadas.length + registro.tokens.length, 0, "nenhuma chamada ao modelo");
+  assert.doesNotMatch(JSON.stringify(corpo) + registro.eventos.join(""), /6\.6\.6\.6|203\.0\.113\.9|198\.51\.100\.1/);
+  assert.match(corpo.visitante, /^[0-9a-f]{8}$/);
+  assert.equal(corpo.xff_qtd, 2);
+  assert.deepEqual((await (await handle(pedido(null, { metodo: "GET" }))).json()), { ativo: false });
+  const negado = montar({ ambiente: amb, reserva: { error: { code: "PT429" } } });
+  assert.equal((await negado.handle(pedido(conversa()))).status, 429, "limites valem no ensaio");
+  const ligado = montar({ ambiente: { IA_ENSAIO: "true" } });
+  await ligado.handle(pedido(conversa()));
+  assert.equal(ligado.registro.chamadas.length, 1, "ensaio é ignorado quando IA_ATIVO=true");
 });
 
 test("pedido à OpenAI: Responses API, store:false, saída estruturada, limites e modelo configurável", async () => {

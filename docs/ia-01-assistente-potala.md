@@ -78,3 +78,10 @@ Esse comando regenera `outputs/ia/conhecimento.json` a partir das páginas públ
 - O IP nunca é gravado: só um hash SHA-256 de `IA_SEGREDO_HASH | dia | ip` (32 caracteres), apagado após 1 dia.
 - Custo é **estimativa** (`gpt-6-luna`: US$ 0,10 por milhão de tokens de entrada e US$ 0,50 de saída, conforme a página de preços na data da revisão). O teto de tokens é conferido antes de cada pedido e somado depois; com pedidos simultâneos ele pode ser ultrapassado em, no máximo, (pedidos em andamento × ~3.000 tokens).
 - **Recomendação ao proprietário:** usar uma chave de **projeto dedicado** na OpenAI, com limite mensal de gasto (*budget*) e alertas de uso configurados no painel da OpenAI. Esse limite é a última barreira, independente do código.
+
+### Escolha da fonte de IP (obrigatória) e modo ensaio
+
+- Nenhum cabeçalho é presumido confiável. `IA_FONTE_IP` passou a ser **obrigatório**: sem ele (ou com valor fora da lista), o assistente fica desligado.
+- `IA_ENSAIO=true` só tem efeito com `IA_ATIVO=false`: o POST valida o pedido, calcula a identidade e **reserva a cota real no banco**, mas nunca chama a OpenAI e não precisa de `OPENAI_API_KEY`. A resposta traz só marcas de 8 caracteres (hash com segredo e dia) de cada fonte candidata, a quantidade de valores em X-Forwarded-For e a marca do balde `sem-ip` — nunca o IP.
+- A fonte escolhida no LAB é a que (a) não muda quando o cliente forja o cabeçalho, (b) é igual em chamadas seguidas do mesmo visitante e (c) é diferente para redes diferentes. Se nenhuma cumprir (c), o limite por visitante vira um balde comum; a proteção financeira continua no teto global do banco.
+- Depois da escolha: `IA_ENSAIO` removido ou `false`.
