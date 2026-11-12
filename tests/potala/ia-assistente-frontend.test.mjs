@@ -24,6 +24,7 @@ test("base contém só páginas públicas; nada de admin, Mesa, conta, sala ou r
   assert.equal(BASE.paginas.find((p) => p.url === "meu-potala.html").texto, "", "Meu Potala só como destino, sem conteúdo pessoal");
   assert.ok(BASE.paginas.every((p) => p.texto.length <= 9000));
   assert.doesNotMatch(JSON.stringify(BASE), /sb_secret|service_role|sk-[A-Za-z0-9]{10}|exemplo\.invalid/i);
+  assert.equal(new Set(BASE.paginas.map((p) => p.titulo)).size, BASE.paginas.length, "cada página com título próprio nos links");
   for (const essencial of ["cursos.html", "atendimentos.html", "recepcao.html", "blog.html", "atividades.html", "quem-somos.html"]) assert.ok(urls.includes(essencial), essencial);
 });
 

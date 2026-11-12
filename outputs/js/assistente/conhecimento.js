@@ -49,6 +49,11 @@ export const DESTINOS_SEM_CONTEUDO = Object.freeze({
 });
 
 /* Mesmo teto do índice de busca: páginas longas (Atividades) têm conteúdo importante no fim. */
+/* Títulos de link quando o <title> da página repete o de outra (o visitante precisa distinguir). */
+export const TITULOS_DO_ASSISTENTE = Object.freeze({
+  "atendimentos-conceito.html": "Matérias sobre saúde e cuidado",
+});
+
 export const LIMITE_TEXTO_PAGINA = 9000;
 
 const entidade = (texto) => String(texto ?? "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, "\"").replace(/&#39;/g, "'").replace(/&[a-z]+;/gi, " ").replace(/\s+/g, " ").trim();
@@ -56,7 +61,7 @@ const entidade = (texto) => String(texto ?? "").replace(/&nbsp;/g, " ").replace(
 /* Título, descrição e texto visível de uma página pública. */
 export function extrairPagina(url, html) {
   const fonte = String(html ?? "");
-  const titulo = entidade((fonte.match(/<title>([\s\S]*?)<\/title>/i) || [])[1] || url).replace(/\s+[—-]\s+Instituto Potala$/i, "");
+  const titulo = TITULOS_DO_ASSISTENTE[url] || entidade((fonte.match(/<title>([\s\S]*?)<\/title>/i) || [])[1] || url).replace(/\s+[—-]\s+Instituto Potala$/i, "");
   const descricao = entidade((fonte.match(/<meta\s+name="description"\s+content="([^"]*)"/i) || [])[1] || "");
   const corpo = (fonte.match(/<body[\s\S]*<\/body>/i) || [fonte])[0];
   const texto = extrairTextoDaPagina(corpo).slice(0, LIMITE_TEXTO_PAGINA);
