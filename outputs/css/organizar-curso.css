@@ -1,0 +1,25 @@
+/* Organizar um curso (js/admin/organizar-curso.js). Reaproveita .op-dialog e as classes cg-* do cadastro guiado. */
+/* Uma única rolagem: só o corpo rola; cabeçalho, etapas e botões ficam sempre visíveis. */
+.oc-dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
+.oc-dialog form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; max-height: min(88svh, 850px); }
+.oc-dialog form > :not([data-oc-corpo]) { flex: none; }
+.oc-dialog .op-form-body { flex: 1 1 auto; min-height: 0; max-height: none; align-content: start; }
+.oc-aulas { display: grid; gap: 6px; margin: 4px 0 0; padding: 0; list-style: none; font-size: .86rem; }
+.oc-aulas li { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; justify-content: space-between; padding: 8px 12px; border: 1px solid var(--admin-line); border-radius: 10px; }
+.oc-aulas small { display: block; color: var(--admin-muted); }
+.op-form-body .oc-aula-nova { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; padding: 14px; border: 1px solid var(--admin-line); border-radius: 12px; }
+.oc-aula-nova legend { padding: 0 6px; }
+.oc-aula-nova .op-button { justify-self: start; min-height: 44px; }
+.oc-plano { display: grid; gap: 6px; margin: 0; padding-left: 22px; }
+.oc-recusado { color: var(--admin-danger, #e2a19b); font-weight: 600; }
+.oc-falha { padding: 12px 14px; border: 1px solid var(--admin-danger, #e2a19b); border-radius: 10px; background: rgba(226, 161, 155, .08); }
+.oc-falha:focus { outline: 2px solid var(--admin-gold); outline-offset: 2px; }
+.oc-falha p { margin: 4px 0 0; }
+.oc-dialog .cg-link { min-height: 32px; }
+.oc-dialog .op-check { display: flex; gap: 8px; align-items: center; min-height: 32px; }
+@media (max-width: 560px) {
+  .op-form-body .oc-aula-nova { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-dialog, .oc-dialog * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}

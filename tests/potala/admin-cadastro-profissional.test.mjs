@@ -158,5 +158,5 @@ test("rascunho: só em memória e descartado ao sair ou trocar de conta", () => 
   assert.match(js, /function limpar\(\) \{\s*estado = ESTADO_INICIAL\(\);/);
   const entrada = ler("js/admin/admin-entry.js");
   assert.match(entrada, /if \(state !== "authorized"\) \{[^}]*cadastroGuiado\?\.limpar\(\);/);
-  assert.match(entrada, /if \(usuarioAtual && quem !== usuarioAtual\) cadastroGuiado\?\.limpar\(\);/);
+  assert.match(entrada, /if \(usuarioAtual && quem !== usuarioAtual\) (\{ )?cadastroGuiado\?\.limpar\(\);/);
 });
