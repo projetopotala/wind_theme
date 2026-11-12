@@ -9,6 +9,7 @@
   <title>Potala — Central operacional</title>
   <link rel="stylesheet" href="/css/admin.css">
   <link rel="stylesheet" href="/css/admin-agenda.css">
+<link rel="stylesheet" href="/css/admin-tarefas.css">
   <script src="/vendor/supabase.js"></script>
   <script type="module" src="/js/admin/admin-entry.js"></script>
 </head>
@@ -132,8 +133,27 @@
       </nav>
       <button type="button" class="admin-nav-veu" data-admin-nav-fechar aria-label="Fechar menu" tabindex="-1" hidden></button>
 
-      <section class="admin-workspace admin-home" data-admin-workspace="inicio" data-op-view="dashboard" aria-label="Visão geral operacional">
-        <p class="op-loading" role="status">Abrindo a operação…</p>
+      <section class="admin-workspace admin-home" data-admin-workspace="inicio" aria-label="Visão geral operacional">
+        <div class="admin-tarefas" data-admin-tarefas role="region" aria-labelledby="admin-tarefas-titulo">
+          <header class="admin-tarefas__cabeca">
+            <p class="admin-kicker">Atalhos</p>
+            <h2 id="admin-tarefas-titulo" tabindex="-1">O que deseja fazer?</h2>
+            <p>Escolha a tarefa: o painel abre direto no lugar certo e diz o próximo passo.</p>
+          </header>
+          <ul class="admin-tarefas__lista">
+            <li><button type="button" class="admin-tarefa" data-admin-tarefa="profissional"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#user"></use></svg><span class="admin-tarefa__titulo">Cadastrar profissional</span><span class="admin-tarefa__texto">Abre o cadastro de pessoa com o papel Profissional marcado.</span><span class="admin-tarefa__passo">Depois: publicar o perfil e, se precisar, vincular a conta em Usuários e acessos.</span></button></li>
+            <li><button type="button" class="admin-tarefa" data-admin-tarefa="horario"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#calendar-clock"></use></svg><span class="admin-tarefa__titulo">Disponibilizar horário</span><span class="admin-tarefa__texto">Abre Atendimentos em “Disponibilizar horário”.</span><span class="admin-tarefa__passo">Escolha profissional, serviço, data e hora.</span></button></li>
+            <li><button type="button" class="admin-tarefa" data-admin-tarefa="solicitacoes"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#message-circle"></use></svg><span class="admin-tarefa__titulo">Ver solicitações</span><span class="admin-tarefa__texto">Abre Atendimentos nas solicitações recebidas.</span><span class="admin-tarefa__passo">Confirme com uma reserva ou registre o acompanhamento.</span></button></li>
+            <li><button type="button" class="admin-tarefa" data-admin-tarefa="curso"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#graduation-cap"></use></svg><span class="admin-tarefa__titulo">Cadastrar curso</span><span class="admin-tarefa__texto">Abre o cadastro de tipo de atividade já como Curso.</span><span class="admin-tarefa__passo">Depois: criar a turma desse curso.</span></button></li>
+            <li><button type="button" class="admin-tarefa" data-admin-tarefa="turma"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#users"></use></svg><span class="admin-tarefa__titulo">Criar turma</span><span class="admin-tarefa__texto">Abre o cadastro de turma / oferta.</span><span class="admin-tarefa__passo">Escolha curso, professor e modalidade; as aulas entram na Agenda.</span></button></li>
+            <li><button type="button" class="admin-tarefa" data-admin-tarefa="inscrever"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#ticket"></use></svg><span class="admin-tarefa__titulo">Inscrever aluno</span><span class="admin-tarefa__texto">Abre a lista de turmas em Cursos e atividades.</span><span class="admin-tarefa__passo">Na turma desejada, clique em Inscrever. O aluno precisa estar em Pessoas.</span></button></li>
+            <li><a class="admin-tarefa" href="/blog#/novo" data-admin-tarefa="artigo" data-admin-tarefa-secao="blog"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#pen-line"></use></svg><span class="admin-tarefa__titulo">Escrever artigo</span><span class="admin-tarefa__texto">Abre a mesa do Blog com um texto novo.</span><span class="admin-tarefa__passo">Salve o rascunho; publique ou envie para revisão.</span></a></li>
+            <li class="admin-tarefa-dupla"><button type="button" class="admin-tarefa" data-admin-tarefa="site"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#pencil"></use></svg><span class="admin-tarefa__titulo">Editar conteúdo do site</span><span class="admin-tarefa__texto">Abre o Editor da jornada (blocos da Travessia).</span><span class="admin-tarefa__passo">Edite, confira a prévia e publique.</span></button><a class="admin-tarefa__extra" href="/atendimentos-conceito.html"><span>Editar a Home do Instituto <svg class="admin-icone admin-tarefa__extra-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#external-link"></use></svg></span><span class="admin-tarefa__extra-dica">abre a página; use o botão Editar no topo</span></a></li>
+          </ul>
+        </div>
+        <div data-op-view="dashboard">
+          <p class="op-loading" role="status">Abrindo a operação…</p>
+        </div>
       </section>
 
       <header class="admin-head" data-admin-workspace="jornada" hidden>

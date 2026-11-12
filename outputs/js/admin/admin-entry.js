@@ -7,6 +7,7 @@ import {
 } from "./admin-auth.js";
 import { createAdminController } from "./admin-controller.js";
 import { createAdminShell } from "./admin-shell.js";
+import { ligarTarefas } from "./admin-tarefas.js";
 import { createOperationsClient } from "./operations/client.js";
 import { createOperationsController } from "./operations/controller.js";
 import { carregarRecebidos } from "./recebidos.js";
@@ -30,6 +31,7 @@ let accessPanel = null;
 const firstAccess = isAdminFirstAccess(window.location);
 
 const shell = panel ? createAdminShell({ root: panel }) : null;
+const tarefas = panel ? ligarTarefas({ root: panel }) : null;
 const operationsStatus = panel?.querySelector("[data-op-status]");
 
 /*
@@ -98,6 +100,8 @@ try {
         blogNivel: nivelDoBlog(access),
         accessRole: access.role,
       });
+      /* Os atalhos seguem o menu: só aparecem os das seções que esta conta pode abrir. */
+      tarefas?.atualizar();
       if (!passwordSetup) {
         passwordSetup = createAdminPasswordSetup({ client, root: panel, firstAccess });
       }

@@ -1,0 +1,73 @@
+/* Central Operacional | "O que deseja fazer?" — atalhos por tarefa (js/admin/admin-tarefas.js).
+   Usa só os tokens do painel (marfim, dourado, superfícies escuras). */
+.admin-tarefas { margin: 0 0 28px; padding-bottom: 24px; border-bottom: 1px solid var(--admin-hairline); }
+.admin-tarefas__cabeca { margin: 0 0 14px; }
+.admin-tarefas__cabeca h2 { margin: 4px 0 6px; color: var(--admin-ivory); font-size: clamp(1.4rem, 2.2vw, 1.85rem); font-weight: 500; }
+.admin-tarefas__cabeca h2:focus { outline: none; }
+.admin-tarefas__cabeca p:last-child { margin: 0; color: var(--admin-muted); font-size: .9rem; }
+.admin-tarefas__lista {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-tarefas__lista > li { display: grid; min-width: 0; }
+.admin-tarefas__lista > li[hidden] { display: none; }
+.admin-tarefa {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "icone titulo" "texto texto" "passo passo";
+  align-content: start;
+  gap: 6px 10px;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px solid var(--admin-line);
+  border-radius: var(--admin-radius, 14px);
+  background: var(--admin-panel);
+  color: var(--admin-ivory);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color .2s ease, background .2s ease;
+}
+.admin-tarefa:hover { border-color: var(--admin-gold); background: var(--admin-panel-soft); }
+.admin-tarefa:focus-visible { outline: 2px solid var(--admin-gold); outline-offset: 2px; }
+.admin-tarefa .admin-icone { grid-area: icone; width: 20px; height: 20px; color: var(--admin-gold); }
+.admin-tarefa__titulo { grid-area: titulo; align-self: center; font-weight: 600; font-size: .98rem; }
+.admin-tarefa__texto { grid-area: texto; color: var(--admin-muted); font-size: .82rem; line-height: 1.4; }
+.admin-tarefa__passo { grid-area: passo; color: var(--admin-gold); font-size: .78rem; line-height: 1.4; }
+.admin-tarefa-dupla { grid-template-rows: 1fr auto; gap: 6px; }
+.admin-tarefa__extra {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  align-content: center;
+  padding: 8px 16px;
+  border: 1px dashed var(--admin-line);
+  border-radius: 12px;
+  color: var(--admin-ivory);
+  font-size: .82rem;
+  text-decoration: none;
+}
+.admin-tarefa__extra:hover { border-color: var(--admin-gold); }
+.admin-tarefa__extra:focus-visible { outline: 2px solid var(--admin-gold); outline-offset: 2px; }
+.admin-tarefa__extra-icone { display: inline-block; width: 14px; height: 14px; margin-left: 4px; vertical-align: -2px; color: var(--admin-gold); }
+.admin-tarefa__extra-dica { color: var(--admin-muted); font-size: .74rem; }
+.admin-tarefa-guia {
+  margin: 0 0 4px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--admin-gold);
+  border-radius: 8px;
+  background: var(--admin-gold-soft);
+  color: var(--admin-ivory);
+  font-size: .84rem;
+  line-height: 1.45;
+}
+@media (max-width: 1180px) { .admin-tarefas__lista { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .admin-tarefas__lista { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .admin-tarefa { transition: none; } }
