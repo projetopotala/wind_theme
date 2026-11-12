@@ -5,6 +5,7 @@ import { criarBlogPublico, quandoFoi, validarEnvioDeComentario } from "./blog-re
 import { applyBlogSettings } from "./blog-settings.js";
 import { definirCategorias } from "./article-renderer.js";
 import { criarRestPublico } from "../supabase/rest.js";
+import { escritoresDoCaderno, hrefDoEscritor } from "./escritores.js";
 
 const escapar = (valor) => String(valor ?? "")
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -54,7 +55,7 @@ export function cartaoDoPost(post, { destaque = false } = {}) {
         <h3 class="post-titulo"><a href="${href}">${escapar(item.title)}</a></h3>
         <p class="post-resumo">${escapar(item.excerpt)}</p>
         <p class="post-credito">
-          <span>${escapar(item.author)}</span>
+          <a href="${escapar(hrefDoEscritor(item.author))}">${escapar(item.author)}</a>
           <time datetime="${escapar(iso)}">${escapar(texto)}</time>
           <span>${escapar(item.readingMinutes)} min de leitura</span>
         </p>
@@ -206,6 +207,7 @@ export function montar(root = document) {
   const gridTarget = root.querySelector("[data-blog-grade]");
   const categoriesTarget = root.querySelector("[data-blog-categorias]");
   const recentTarget = root.querySelector("[data-blog-recentes]");
+  const escritoresTarget = root.querySelector("[data-blog-escritores]");
   const empty = root.querySelector("[data-blog-vazio]");
   const search = root.querySelector("[data-blog-search]");
   if (!gridTarget) return { destroy() {} };
@@ -381,6 +383,12 @@ export function montar(root = document) {
       falhaDaLeitura = null;
       posts = publicados;
       draw();
+    }
+    /* Quem escreve: só a partir do que o banco confirmou como publicado (nunca da prévia do editor). */
+    if (escritoresTarget) {
+      const escritores = escritoresDoCaderno(publicados);
+      escritoresTarget.innerHTML = escritores.map((item) => `<li><a href="${escapar(hrefDoEscritor(item.nome))}">${escapar(item.nome)}</a></li>`).join("");
+      escritoresTarget.closest("section")?.toggleAttribute("hidden", !escritores.length);
     }
   }, (erro) => {
     if (!recebeuPrevia) mostrarIndisponivel(erro);

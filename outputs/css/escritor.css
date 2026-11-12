@@ -1,0 +1,27 @@
+/*
+ * Página do escritor e índice de escritores (escritor.html). Cores, cabeçalho,
+ * rodapé e cartões vêm de caderno.css e blog.css; aqui fica só a composição.
+ */
+.escritor-pagina { width: min(100% - 32px, var(--cad-largura)); margin: 0 auto; padding: clamp(28px, 5vw, 64px) 0 clamp(56px, 8vw, 96px); }
+.escritor-status { color: var(--cad-suave); font: italic 1rem var(--cad-serifa); }
+.escritor-voltar { margin: 0 0 clamp(20px, 3vw, 32px); }
+.escritor-voltar a { display: inline-block; padding: 10px 0; color: var(--cad-suave); text-decoration: none; text-transform: uppercase; letter-spacing: .18em; font: 700 .62rem/1 var(--cad-sans); }
+.escritor-voltar a:hover { color: var(--cad-ouro); }
+.escritor-voltar a:focus-visible, .escritores-lista a:focus-visible, .article-autor:focus-visible, .post-credito a:focus-visible { outline: 2px solid var(--cad-ouro); outline-offset: 4px; }
+.escritor-cabeca { display: grid; gap: 12px; max-width: 760px; margin-bottom: clamp(28px, 4vw, 48px); padding-bottom: clamp(20px, 3vw, 32px); border-bottom: 1px solid var(--cad-ouro-linha); }
+.escritor-cabeca h1 { margin: 0; color: var(--cad-marfim); font: 400 clamp(2rem, 5vw, 3.4rem)/1.1 var(--cad-serifa); overflow-wrap: anywhere; }
+.escritor-apresentacao { margin: 0; color: var(--cad-suave); font: 400 clamp(1rem, 1.6vw, 1.15rem)/1.6 var(--cad-serifa); }
+.escritor-grade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(24px, 3vw, 40px); }
+.escritor-outros { margin-top: clamp(48px, 6vw, 80px); padding-top: clamp(24px, 3vw, 40px); border-top: 1px solid var(--cad-ouro-linha); }
+.escritores-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 4px 32px; margin: 16px 0 0; padding: 0; list-style: none; }
+.escritores-lista a { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-height: 44px; padding: 10px 0; border-bottom: 1px solid var(--cad-ouro-linha); color: var(--cad-texto); text-decoration: none; font: 400 1.02rem/1.35 var(--cad-serifa); }
+.escritores-lista a:hover, .escritores-lista a[aria-current="page"] { color: var(--cad-ouro); }
+.escritores-lista small { flex: none; color: var(--cad-fraco); font: .7rem/1 var(--cad-sans); letter-spacing: .08em; }
+/* Assinatura como link, no artigo e nos cartões do Caderno. */
+.article-autor, .post-credito a { color: inherit; text-decoration: underline; text-decoration-color: var(--cad-ouro-linha); text-underline-offset: 3px; }
+.article-autor:hover, .post-credito a:hover { color: var(--cad-ouro); text-decoration-color: currentColor; }
+.blog-escritores ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px clamp(18px, 3vw, 36px); margin: 0; padding: 0; list-style: none; }
+.blog-escritores a { min-height: 44px; display: inline-flex; align-items: center; }
+@media (max-width: 1023px) { .escritor-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 639px) { .escritor-grade { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .escritores-lista a, .escritor-voltar a { transition: none; } }

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12100e">
+  <meta name="description" content="Quem assina os textos do Caderno de Travessia do Instituto Potala.">
+  <title>Escritores — Caderno de Travessia — Instituto Potala</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&amp;display=swap">
+  <link rel="stylesheet" href="css/secoes.css">
+  <link rel="stylesheet" href="css/caderno.css">
+  <link rel="stylesheet" href="css/blog.css">
+  <link rel="stylesheet" href="css/artigo.css">
+  <link rel="stylesheet" href="css/escritor.css">
+  <script type="module" src="js/secoes.js"></script>
+  <script type="module" src="js/blog/escritor-controller.js"></script>
+</head>
+<body class="article-body cad-body escritor-body" data-section="blog">
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+
+  <header class="cad-cabecalho">
+    <a class="blog-marca" href="travessia.html" aria-label="Voltar à Travessia">
+      <img src="media/potala-mark-transparent.png" alt="Instituto Potala" width="86" height="70">
+    </a>
+    <p class="cad-nome"><span>Caderno</span><span class="cad-script">de Travessia</span></p>
+    <nav class="cad-menu" aria-label="Caminhos do Caderno">
+      <ul>
+        <li><a href="blog.html">Início</a></li>
+        <li><a href="blog.html?categoria=artigos">Artigos</a></li>
+        <li><a href="blog.html?categoria=praticas">Práticas</a></li>
+        <li><a href="blog.html?categoria=cultura">Cultura</a></li>
+        <li><a href="escritor.html" aria-current="page">Escritores</a></li>
+      </ul>
+      <a class="cad-busca-abrir" href="blog.html#buscar" aria-label="Buscar no Caderno">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      </a>
+    </nav>
+    <nav class="artigo-trilha" aria-label="Você está em">
+      <a href="blog.html">Caderno</a><span aria-hidden="true">›</span><a href="escritor.html">Escritores</a><span aria-hidden="true">›</span><span data-escritor-trilha>…</span>
+    </nav>
+  </header>
+
+  <main class="escritor-pagina" id="conteudo" data-escritor-root aria-live="polite">
+    <p class="escritor-status" role="status">Carregando os textos publicados…</p>
+  </main>
+
+  <footer class="cad-rodape">
+    <img src="media/potala-mark-transparent.png" alt="" width="86" height="70">
+    <a href="blog.html">Voltar ao Caderno</a>
+    <p>Instituto Potala · Indaiatuba, SP</p>
+  </footer>
+  <noscript><p class="journey-noscript">Ative o JavaScript para ver os textos dos escritores do Caderno.</p></noscript>
+  <script type="module" src="js/shared/portal-menu-boot.js"></script>
+</body>
+</html>
