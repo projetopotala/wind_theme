@@ -127,6 +127,13 @@ test("confirmação de gravação: só afirma o que foi conferido; cadastro exis
   assert.equal(nadaMuda(ex, { ...planoEx.perfil, roles: ["client"], phone: "1" }), false);
 });
 
+test("perfil já vinculado a conta de e-mail diferente (caso real em Production) não é tratado como 'outra pessoa'", () => {
+  const r = analisarConta({ contas: [], perfisProf: [{ profile_id: "p1", linked_user_id: "u9", link_active: true }] }, { email: "cadastro@exemplo.test", perfilId: "p1" });
+  assert.equal(r.situacao, "perfil-ja-tem-conta");
+  const tela = renderizarCadastro({ etapa: 4, email: "cadastro@exemplo.test", existenteId: "p1", contasCarregadas: { contas: [], perfisProf: [{ profile_id: "p1", linked_user_id: "u9", link_active: true }] } }, perfis);
+  assert.match(tela, /já tem uma conta de acesso vinculada \(o e-mail da conta pode ser diferente/);
+});
+
 test("vínculo desativado com este perfil é tratado à parte (o banco exige reativar)", () => {
   const contas = [{ id: "u1", email: "ana@exemplo.test", links: [{ profile_id: "p1", link_active: false }] }];
   assert.equal(analisarConta({ contas, perfisProf: [] }, { email: "ana@exemplo.test", perfilId: "p1" }).situacao, "vinculo-inativo");

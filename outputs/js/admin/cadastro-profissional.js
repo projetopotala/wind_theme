@@ -174,7 +174,7 @@ function corpo(estado, perfis) {
         nenhuma: "Nenhuma conta com este e-mail. Quando a pessoa criar a conta no site, vincule em Usuários e acessos.",
         "ja-vinculada": "A conta com este e-mail já está vinculada a este perfil. Nada a fazer.",
         "vinculada-a-outro": `A conta com este e-mail já está vinculada a outro perfil (${e(a.outro?.display_name || "outro cadastro")}). Cada conta tem um único perfil; nada será vinculado. Resolva em Usuários e acessos.`,
-        "perfil-ja-tem-conta": "Este perfil já está vinculado a outra conta de acesso. Nada será vinculado aqui; confira em Usuários e acessos.",
+        "perfil-ja-tem-conta": "Este perfil já tem uma conta de acesso vinculada (o e-mail da conta pode ser diferente do e-mail do cadastro). Nada será vinculado aqui; confira em Usuários e acessos.",
         "vinculo-inativo": "A conta com este e-mail já tem vínculo com este perfil, mas desativado. Para reativar, use Usuários e acessos (Reativar vínculo).",
       };
       if (a.situacao === "vinculada-a-outro" && a.outro?.profile_id && perfis.some((p) => p.id === a.outro.profile_id) && estado.existenteId !== a.outro.profile_id) {
@@ -349,7 +349,9 @@ export function createCadastroGuiado({ root, operations, client, onSalvo = () =>
     }
     const id = perfilSalvo?.id || existente?.id || (perfis().find((p) => normalizarEmail(p.email) && normalizarEmail(p.email) === plano.perfil.email)?.id) || "";
     const resultado = { nome: perfilSalvo?.display_name || existente?.display_name || plano.perfil.display_name, ativo: plano.perfil.active, publicado: plano.perfil.published, vinculado: false, erroVinculo: "", contaId: plano.vincular ? plano.contaId : "" };
-    const jaVinculada = analisarConta(estado.contasCarregadas || {}, { email: existente?.email || estado.email, perfilId: existente?.id || "" }).situacao === "ja-vinculada";
+    const vinculoAtual = (estado.contasCarregadas?.perfisProf || []).find((x) => x.profile_id === existente?.id);
+    const jaVinculada = analisarConta(estado.contasCarregadas || {}, { email: existente?.email || estado.email, perfilId: existente?.id || "" }).situacao === "ja-vinculada"
+      || Boolean(vinculoAtual?.linked_user_id && vinculoAtual.link_active !== false);
     resultado.vinculado = jaVinculada;
     if (plano.vincular && id) Object.assign(resultado, await vincularConta(plano.contaId, id));
     resultado.mensagem = existente ? "Cadastro existente atualizado." : "Cadastro criado.";
