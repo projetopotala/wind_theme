@@ -1,0 +1,36 @@
+/* Cadastro guiado de profissional (js/admin/cadastro-profissional.js). Reaproveita .op-dialog e .op-form-body. */
+.cg-dialog form { display: grid; }
+.cg-dialog form > header, .cg-dialog form > footer { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--admin-line); }
+.cg-dialog form > footer { justify-content: flex-end; flex-wrap: wrap; border-top: 1px solid var(--admin-line); border-bottom: 0; }
+.cg-dialog form > footer button, .cg-proximos .op-button { min-height: 44px; }
+.cg-dialog h2 { margin: 0; font: 500 1.4rem Georgia, serif; }
+.cg-dialog h2:focus { outline: none; }
+.cg-etapas { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 12px 20px; list-style: none; border-bottom: 1px solid var(--admin-hairline); color: var(--admin-muted); font-size: .76rem; }
+.cg-etapas li { display: inline-flex; align-items: center; gap: 6px; }
+.cg-etapas span { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 1px solid var(--admin-line); border-radius: 50%; font-size: .7rem; }
+.cg-etapas li[data-feita] span { border-color: var(--admin-gold); color: var(--admin-gold); }
+.cg-etapas li[aria-current="step"] { color: var(--admin-ivory); font-weight: 600; }
+.cg-etapas li[aria-current="step"] span { border-color: var(--admin-gold); background: var(--admin-gold); color: #1a1613; }
+.cg-explica { margin: 0; color: var(--admin-ivory); font-size: .9rem; line-height: 1.5; }
+.cg-nota { margin: 0; padding: 0 0 0 16px; color: var(--admin-muted); font-size: .8rem; line-height: 1.5; }
+p.cg-nota { padding: 0; }
+.cg-lista, .cg-situacao { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.cg-candidato { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--admin-line); border-radius: 10px; }
+.cg-candidato small { grid-column: 1; color: var(--admin-muted); }
+.cg-candidato > :is(button, .op-badge) { grid-column: 2; grid-row: 1 / span 2; }
+.cg-resumo { display: grid; gap: 6px; margin: 0; }
+.cg-resumo div { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--admin-hairline); }
+.cg-resumo dt { color: var(--admin-muted); font-size: .8rem; }
+.cg-resumo dd { margin: 0; overflow-wrap: anywhere; }
+.cg-situacao li { padding: 8px 12px; border-left: 3px solid var(--admin-line); border-radius: 6px; background: var(--admin-panel-soft); }
+.cg-situacao li[data-ok="sim"] { border-left-color: var(--admin-green, #7fb069); }
+.cg-situacao li small { display: block; color: var(--admin-muted); }
+.cg-proximos { display: flex; flex-wrap: wrap; gap: 8px; }
+.cg-rascunho { margin: 0; padding: 8px 20px; background: var(--admin-gold-soft); color: var(--admin-ivory); font-size: .82rem; }
+.cg-link { padding: 0; border: 0; background: none; color: var(--admin-gold); text-decoration: underline; cursor: pointer; font: inherit; }
+.op-form-error:focus { outline: 2px solid var(--admin-gold); outline-offset: 2px; }
+@media (max-width: 560px) {
+  .cg-resumo div { grid-template-columns: 1fr; gap: 2px; }
+  .cg-candidato { grid-template-columns: 1fr; }
+  .cg-candidato > :is(button, .op-badge) { grid-column: 1; grid-row: auto; justify-self: start; }
+}

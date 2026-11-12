@@ -14,7 +14,7 @@
 
 export const TAREFAS = Object.freeze([
   {
-    id: "profissional", secao: "pessoas", formulario: "person",
+    id: "profissional", secao: "pessoas", guiado: "[data-cadastro-guiado]", formulario: "person",
     marcar: 'input[name="roles"][value="professional"]',
     guia: "Preencha nome e contato. O papel Profissional já vem marcado. Publicar o perfil e vincular uma conta de acesso são escolhas separadas, feitas depois.",
   },
@@ -91,6 +91,9 @@ export function executarTarefa(root, id) {
   if (!tarefa || !secaoPermitida(root, tarefa.secao)) return false;
   botaoDaSecao(root, tarefa.secao).click();
   const area = root.querySelector(`[data-admin-workspace="${tarefa.secao}"]`);
+  /* Com a operação carregada, Pessoas oferece o cadastro guiado (P1B); sem ele, o formulário simples continua valendo. */
+  const guiado = tarefa.guiado ? area?.querySelector(tarefa.guiado) : null;
+  if (guiado) { guiado.click(); return true; }
   if (tarefa.formulario) {
     const botao = [...(area?.querySelectorAll(`[data-op-action="${tarefa.formulario}"]`) || [])].find((b) => !b.dataset.id && !b.disabled);
     if (!botao) { area?.querySelector("h2")?.focus?.(); return true; }
