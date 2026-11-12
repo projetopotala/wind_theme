@@ -215,7 +215,7 @@ function corpo(estado, perfis) {
           ${item(r.ativo, "Cadastro ativo", "inativo: não aparece nas escolhas da operação")}
           ${item(r.publicado, "Disponível publicamente", "não publicado (pode publicar depois em Pessoas)")}
           ${item(r.vinculado, "Conta de acesso vinculada", r.erroVinculo || "sem vínculo (faça em Usuários e acessos quando houver conta)")}
-          ${r.erroVinculo && r.contaId ? `<li><button type="button" class="op-button" data-cg-revincular ${estado.salvando ? "disabled" : ""}>Tentar vincular de novo</button></li>` : ""}
+          ${r.erroVinculo && r.contaId && r.repetivel ? `<li><button type="button" class="op-button" data-cg-revincular ${estado.salvando ? "disabled" : ""}>Tentar vincular de novo</button></li>` : ""}
           ${item(false, "Horários de atendimento", "a configurar em Atendimentos")}
           ${item(false, "Turma ou curso", "a configurar em Criar turma")}
         </ul>
@@ -363,9 +363,11 @@ export function createCadastroGuiado({ root, operations, client, onSalvo = () =>
   async function vincularConta(contaId, perfilId) {
     try {
       const { error } = await client.rpc("admin_link_professional", { p_user_id: contaId, p_profile_id: perfilId });
-      if (!error) return { vinculado: true, erroVinculo: "" };
-      return { vinculado: false, erroVinculo: `vínculo não feito: ${error.code === "42501" ? "seu acesso não permite vincular contas" : error.message || "erro do banco"}` };
-    } catch { return { vinculado: false, erroVinculo: "vínculo pendente: sem resposta do banco (tentar de novo é seguro)" }; }
+      if (!error) return { vinculado: true, erroVinculo: "", repetivel: false };
+      /* Erro com código vem de uma regra do banco (permissão, vínculo existente): repetir não muda nada. */
+      if (error.code) return { vinculado: false, repetivel: false, erroVinculo: `vínculo não feito: ${error.code === "42501" ? "seu acesso não permite vincular contas" : error.message || "erro do banco"}` };
+      return { vinculado: false, repetivel: true, erroVinculo: "vínculo pendente: sem resposta do banco (tentar de novo é seguro)" };
+    } catch { return { vinculado: false, repetivel: true, erroVinculo: "vínculo pendente: sem resposta do banco (tentar de novo é seguro)" }; }
   }
 
   async function revincular() {

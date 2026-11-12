@@ -138,8 +138,10 @@ test("mensagens honestas: sem afirmar 'nada foi gravado' sem conferir; nova tent
   assert.match(js, /Não foi gravado \(conferido no banco\)/);
   assert.match(js, /Não foi possível confirmar se o cadastro foi gravado/);
   assert.match(js, /await operations\.refresh\?\.\(\)/, "confere relendo o banco");
-  const t7 = renderizarCadastro({ etapa: 7, resultado: { nome: "Carla", ativo: true, publicado: false, vinculado: false, erroVinculo: "vínculo pendente", contaId: "u1" } }, perfis);
+  const t7 = renderizarCadastro({ etapa: 7, resultado: { nome: "Carla", ativo: true, publicado: false, vinculado: false, erroVinculo: "vínculo pendente", contaId: "u1", repetivel: true } }, perfis);
   assert.match(t7, /data-cg-revincular/);
+  const regra = renderizarCadastro({ etapa: 7, resultado: { nome: "Carla", vinculado: false, erroVinculo: "vínculo não feito: Esta conta já possui vínculo.", contaId: "u1", repetivel: false } }, perfis);
+  assert.doesNotMatch(regra, /data-cg-revincular/, "recusa por regra do banco não oferece repetir");
   assert.match(t7, /O perfil|Perfil profissional: Carla/);
 });
 
