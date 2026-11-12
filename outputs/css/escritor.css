@@ -17,6 +17,14 @@
 .escritores-lista a { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-height: 44px; padding: 10px 0; border-bottom: 1px solid var(--cad-ouro-linha); color: var(--cad-texto); text-decoration: none; font: 400 1.02rem/1.35 var(--cad-serifa); }
 .escritores-lista a:hover, .escritores-lista a[aria-current="page"] { color: var(--cad-ouro); }
 .escritores-lista small { flex: none; color: var(--cad-fraco); font: .7rem/1 var(--cad-sans); letter-spacing: .08em; }
+/* P2B: perfil do escritor (retrato + apresentação). Sem imagem, as iniciais ocupam o lugar. */
+.escritor-cabeca--perfil { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: clamp(18px, 3vw, 36px); max-width: 920px; }
+.escritor-cabeca__texto { display: grid; gap: 12px; min-width: 0; }
+.escritor-retrato { display: grid; place-items: center; width: clamp(96px, 14vw, 160px); aspect-ratio: 1; margin: 0; overflow: hidden; border: 1px solid var(--cad-ouro-linha); border-radius: 50%; background: rgba(216, 178, 106, .06); }
+.escritor-retrato img { width: 100%; height: 100%; object-fit: cover; }
+.escritor-retrato--iniciais { color: var(--cad-ouro); font: 400 clamp(1.8rem, 4vw, 2.8rem)/1 var(--cad-serifa); letter-spacing: .04em; }
+.escritor-contagem { margin: 0; color: var(--cad-fraco); font: 700 .66rem/1.4 var(--cad-sans); letter-spacing: .16em; text-transform: uppercase; }
+@media (max-width: 639px) { .escritor-cabeca--perfil { grid-template-columns: 1fr; align-items: start; } }
 /* Assinatura como link, no artigo e nos cartões do Caderno. */
 .article-autor, .post-credito a { color: inherit; text-decoration: underline; text-decoration-color: var(--cad-ouro-linha); text-underline-offset: 3px; }
 .article-autor:hover, .post-credito a:hover { color: var(--cad-ouro); text-decoration-color: currentColor; }

@@ -677,3 +677,27 @@ option { background: var(--painel); color: var(--marfim); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* P2B: perfis dos escritores (Configurações) */
+.mesa-escritores__busca { display: block; max-width: 360px; margin: 14px 0 0; }
+.mesa-escritores__busca input { width: 100%; }
+.mesa-escritores { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.mesa-escritores > li { border: 1px solid var(--linha); border-radius: 12px; background: var(--painel-2); }
+.mesa-escritores > li.is-aberto { border-color: var(--linha-forte); }
+.mesa-escritor { display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 8px; }
+.mesa-escritor__foto { display: grid; flex: none; place-items: center; width: 46px; height: 46px; overflow: hidden; border-radius: 50%; background: var(--painel-3); color: var(--ouro); font-weight: 700; letter-spacing: .04em; }
+.mesa-escritor__foto img { width: 100%; height: 100%; object-fit: cover; }
+.mesa-escritor__nome { display: grid; flex: 1; min-width: 0; gap: 2px; }
+.mesa-escritor__nome strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mesa-escritor__nome small { color: var(--fraco); }
+.mesa-escritor__acoes { display: flex; align-items: center; gap: 6px; }
+.mesa-escritor__form { padding: 4px 14px 14px; border-top: 1px solid var(--linha); }
+.mesa-escritor__form .mesa-dica { margin: 10px 0 14px; overflow-wrap: anywhere; }
+.mesa-escritor__form .mesa-dica a { color: var(--ouro); }
+.mesa-escritor__imagem { align-items: center; gap: 10px; flex-wrap: wrap; }
+.mesa-escritor__visivel { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 8px; color: var(--suave); }
+.mesa-escritor__visivel input { width: 18px; height: 18px; accent-color: var(--ouro); }
+@media (max-width: 640px) {
+  .mesa-escritor { flex-wrap: wrap; }
+  .mesa-escritor__acoes { width: 100%; justify-content: flex-end; }
+}
