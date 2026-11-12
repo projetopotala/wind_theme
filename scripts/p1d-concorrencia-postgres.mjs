@@ -155,6 +155,60 @@ try {
     registrar("H. repetição do mesmo identificador", "ok, ativas=1", `${repete.ok ? "ok" : repete.erro}, ativas=${contar("document->>'offering_id'='G'")}`);
   }
 
+  /* I. Múltiplos registros e auditoria pela via normal (op_apply como Owner). */
+  sql(turma("I", 3));
+  {
+    const op = (acao, chave, alteracoes) => `set test.uid = '${OWNER}'; set role authenticated; select public.op_apply(${sql("select revision from public.op_meta where id = 1")}, '${chave}', '${acao}', '{}'::jsonb, null, '${JSON.stringify(alteracoes)}'::jsonb);`;
+    const ins = (id, pessoa, situacao = "active") => ({ table: "enrollments", id, after: { id, profile_id: pessoa, offering_id: "I", status: situacao } });
+    const estado = () => sql("select (select revision from public.op_meta where id = 1) || '/' || (select count(*) from public.op_records where collection = 'audit_events') || '/' || (select count(*) from public.op_requests)");
+    const lote = await sessao(op("enrollment.save", "chave-i1", [ins("i1", "al-28"), ins("i2", "al-29"), ins("i3", "al-30", "waitlist")]));
+    registrar("I1. enrollment.save legítimo com 3 registros", "ok, inscrições=3", `${lote.ok ? "ok" : lote.erro}, inscrições=${contar("document->>'offering_id'='I'")}`);
+    const antes = estado();
+    const misto = await sessao(op("enrollment.save", "chave-i2", [ins("i4", "al-1", "waitlist"), { table: "rooms", id: "s9", after: { id: "s9", code: "S9", name: "S9", status: "unconfirmed" } }]));
+    const depois = estado();
+    registrar("I2. lote misto (inscrição + sala) recusado; inscrição, auditoria, chave e revisão desfeitas", "recusa escopo, nada muda", `${/fora do escopo/.test(misto.erro) ? "recusa escopo" : misto.erro}, ${antes === depois && contar("id='i4'") === 0 ? "nada muda" : "mudou " + antes + " -> " + depois}`);
+    const errada = await sessao(op("person.save", "chave-i3", [ins("i5", "al-2", "waitlist")]));
+    registrar("I3. ação declarada incompatível (person.save gravando inscrição)", "recusa escopo", /fora do escopo/.test(errada.erro) ? "recusa escopo" : errada.erro || "gravou");
+    const turmaOk = await sessao(op("offering.save", "chave-i4", [{ table: "activity_offerings", id: "I", after: { id: "I", title: "TESTE INTERNO I", definition_id: "def", mode: "online", capacity: 5 } }]));
+    registrar("I4. offering.save legítimo", "ok", turmaOk.ok ? "ok" : turmaOk.erro);
+    const comum = await sessao(`set test.uid = '00000000-0000-0000-0000-0000000000b9'; set role authenticated; select public.op_apply(${sql("select revision from public.op_meta where id = 1")}, 'chave-i5', 'enrollment.save', '{}'::jsonb, null, '[]'::jsonb);`);
+    registrar("I5. conta sem administração", "42501", /não permite/.test(comum.erro) ? "42501" : comum.erro || "gravou");
+    const direto = await sessao(`set role authenticated; insert into public.op_records(collection, id, document) values ('enrollments', 'x', '{}');`);
+    registrar("I6. escrita direta na tabela pela role da aplicação", "permission denied", /permission denied/.test(direto.erro) ? "permission denied" : direto.erro || "gravou");
+  }
+
+  /* R. Rollback numa instância descartável com a P1D aplicada e dados presentes. */
+  {
+    const marca = () => sql("select md5(string_agg(collection || id || document::text, '|' order by collection, id)) from public.op_records");
+    const antes = marca();
+    arquivo(readFileSync(new URL("supabase/rollbacks/202611120001_rollback_integridade_inscricoes.sql", raiz), "utf8"));
+    const objetos = sql("select (select count(*) from pg_trigger where tgrelid = 'public.op_records'::regclass and tgname in ('op_records_validate_enrollment','op_records_protect_enrollment_refs','op_records_validate_scope')) || '/' || (select count(*) from pg_proc where proname in ('validate_op_enrollment','validate_op_scope','op_turma_capacidade')) || '/' || (to_regclass('public.op_records_enrollment_pessoa_turma') is not null)");
+    registrar("R1. rollback remove só os objetos da P1D", "0/0/false", objetos);
+    registrar("R2. rollback preserva os dados", "iguais", marca() === antes ? "iguais" : "diferentes");
+    const guardas = sql("select string_agg(tgname, ',' order by tgname) from pg_trigger where tgrelid = 'public.op_records'::regclass and not tgisinternal");
+    registrar("R3. guarda anterior de Agenda/Salas continua", "op_records_validate_before_write", guardas);
+    const salaOnline = await sessao(`insert into public.op_records(collection, id, document) values ('schedule_items', 'z', '{"id":"z","title":"x","mode":"online","room_id":"r","status":"booked","starts_at":"2027-01-01T10:00:00Z","ends_at":"2027-01-01T11:00:00Z","participants":1}');`);
+    registrar("R4. guarda da Agenda ainda bloqueia aula online com sala", "recusa", salaOnline.ok ? "gravou" : "recusa");
+    const apos = await sessao(`set test.uid = '${OWNER}'; set role authenticated; select public.op_apply(${sql("select revision from public.op_meta where id = 1")}, 'chave-r5', 'enrollment.save', '{}'::jsonb, null, '[{"table":"enrollments","id":"r5","after":{"id":"r5","profile_id":"al-28","offering_id":"A","status":"waitlist"}}]'::jsonb);`);
+    registrar("R5. op_apply continua funcionando após o rollback (sem dependência quebrada)", "ok", apos.ok ? "ok" : apos.erro);
+    arquivo(mig("202611120001_integridade_inscricoes.sql"));
+    registrar("R6. reaplicação depois do rollback", "3 gatilhos", sql("select count(*) from pg_trigger where tgname in ('op_records_validate_enrollment','op_records_protect_enrollment_refs','op_records_validate_scope')") + " gatilhos");
+  }
+
+  /* S. Script de homologação do LAB (supabase/ops/p1d-homologacao-lab.sql) com auth.uid() no formato do Supabase. */
+  {
+    arquivo(`create or replace function auth.uid() returns uuid language sql stable as $f$
+      select coalesce(nullif(current_setting('request.jwt.claim.sub', true), ''), (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'))::uuid $f$;
+      insert into public.users(id, role, name) values ('00000000-0000-0000-0000-0000000000e1', 'blog_editor', 'editor');`);
+    const marca = () => sql("select md5(string_agg(collection || id || document::text, '|' order by collection, id)) || (select revision from public.op_meta where id = 1) from public.op_records");
+    const antes = marca();
+    /* -f com o arquivo do repositório: no Windows, passar o SQL pela linha de comando corromperia os acentos. */
+    const saida = spawnSync(exe("psql"), [...psqlArgs, "-f", new URL("supabase/ops/p1d-homologacao-lab.sql", raiz).pathname.replace(/^\/([A-Za-z]:)/, "$1")], { encoding: "utf8", env: { ...process.env, PGCLIENTENCODING: "UTF8" } }).stderr;
+    console.log(saida.replace(/^psql:[^E]*/m, "").trim());
+    registrar("S1. homologação do LAB: todos os casos conforme o esperado", "Falhas: 0", (/Falhas: \d+/.exec(saida) || ["sem resumo"])[0]);
+    registrar("S2. homologação do LAB não deixa nada gravado", "iguais", marca() === antes ? "iguais" : "diferentes");
+  }
+
   const falhas = resultados.filter((r) => !r.ok);
   console.log(`\n${resultados.length - falhas.length} de ${resultados.length} cenários conforme o esperado.`);
   process.exitCode = falhas.length ? 1 : 0;

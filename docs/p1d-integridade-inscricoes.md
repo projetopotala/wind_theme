@@ -3,6 +3,7 @@
 Migration: `supabase/migrations/202611120001_integridade_inscricoes.sql` (**preparada, não aplicada**).
 Rollback: `supabase/rollbacks/202611120001_rollback_integridade_inscricoes.sql`.
 Verificação antes e depois (somente leitura): `supabase/ops/p1d-preflight-inscricoes.sql`.
+Homologação no LAB (transação que se desfaz sozinha): `supabase/ops/p1d-homologacao-lab.sql`.
 
 ## 1. Lacunas (antes da P1D)
 `op_apply` grava as alterações recebidas conferindo só permissão (`is_portal_admin`), revisão (`PT409`), chave de repetição, coleção permitida e `id` do documento. `validate_op_record` cobre só salas e agenda. As regras de inscrição existiam apenas no motor do navegador (`operations/schedule.js`). Uma conta com administração podia, com `op_apply` montado à mão e a revisão em dia:
@@ -39,12 +40,13 @@ Testes que registram a linha de base: `tests/potala/op-apply-inscricoes-banco.te
 Códigos: `23505` duplicata · `23514` capacidade · `23503` referência/remoção · `22023` situação, identificador, capacidade inválida ou escopo · `42501` sem administração (já existia).
 
 ## 4. Provas
+- Rollback, múltiplos registros, atomicidade da auditoria e o script de homologação do LAB também são validados por `scripts/p1d-concorrencia-postgres.mjs` (23 cenários) numa instância descartável.
 - `tests/potala/p1d-integridade-inscricoes-banco.test.mjs` (PGlite, migrations reais, chamadas diretas a `op_apply`).
 - `scripts/p1d-concorrencia-postgres.mjs` — PostgreSQL 17 temporário e isolado, várias sessões simultâneas (última vaga, mesmo aluno, promoção simultânea, cancelamento confirmado e desfeito, redução de capacidade, 12 sessões para 3 vagas, op_apply concorrente, repetição de chave). Uso: `node scripts/p1d-concorrencia-postgres.mjs`.
 
 ## 5. Plano de aplicação (exige autorização expressa)
 1. **Pré-checagem em Production (leitura):** rodar `supabase/ops/p1d-preflight-inscricoes.sql`; todos os contadores de `bloqueia_aplicacao` devem ser 0. A própria migration recusa se não forem.
-2. **LAB primeiro (`hmspabllgxqfzzricijv`)**, com autorização de escrita: aplicar só esta migration; rodar a pré-checagem (bloco `instalado`); homologar no painel (seção 6).
+2. **LAB primeiro (`hmspabllgxqfzzricijv`)**, com autorização de escrita e acesso de administração ao banco do LAB (CLI vinculado ou SQL Editor do projeto): aplicar só esta migration; rodar a pré-checagem (bloco `instalado`); rodar `supabase/ops/p1d-homologacao-lab.sql` — ele termina com o erro proposital "P1D-HOMOLOGACAO desfeita (nada gravado). Falhas: 0" e a lista dos 24 casos; homologar no painel (seção 6).
 3. **Production (`gotrumwuimpoeggwamut`)**: aplicar **somente** `202611120001_integridade_inscricoes.sql` pelo procedimento controlado, registrando só esta versão no histórico. **Não** usar `db push` em lote nem `migration repair` em versões antigas (issue #52).
 4. Rodar de novo a pré-checagem (`instalado`: 3 gatilhos, índice, 3 funções; `gatilhos_todos` mantém os 4 anteriores).
 5. Publicar o frontend da PR (mensagem em português para duplicata) — pode ir antes ou depois da migration; sem a migration a mensagem nova simplesmente não aparece.
