@@ -9,6 +9,7 @@ import { createAdminController } from "./admin-controller.js";
 import { createAdminShell } from "./admin-shell.js";
 import { ligarTarefas } from "./admin-tarefas.js";
 import { createCadastroGuiado } from "./cadastro-profissional.js";
+import { createOrganizarCurso } from "./organizar-curso.js";
 import { createOperationsClient } from "./operations/client.js";
 import { createOperationsController } from "./operations/controller.js";
 import { carregarRecebidos } from "./recebidos.js";
@@ -30,6 +31,7 @@ let appointmentPanel = null;
 let atendimentosPanel = null;
 let accessPanel = null;
 let cadastroGuiado = null;
+let organizarCurso = null;
 let usuarioAtual = null;
 const firstAccess = isAdminFirstAccess(window.location);
 
@@ -82,8 +84,16 @@ async function abrirOperacao(client, access) {
     root: panel,
     operations,
     client,
-    onSalvo() { operationsController?.render(); void accessPanel?.reload().catch(() => {}); },
+    onSalvo({ id } = {}) { organizarCurso?.professorCadastrado(id); operationsController?.render(); void accessPanel?.reload().catch(() => {}); },
     onNavegar(section) { panel.querySelector(`[data-admin-nav] [data-section="${section}"]`)?.click(); },
+  });
+  /* P1C: organizar um curso, sobre os mesmos comandos de Cursos e atividades e da Agenda. */
+  organizarCurso = createOrganizarCurso({
+    root: panel,
+    operations,
+    onSalvo() { operationsController?.render(); },
+    onNavegar(section) { panel.querySelector(`[data-admin-nav] [data-section="${section}"]`)?.click(); },
+    abrirCadastroProfissional() { cadastroGuiado?.abrir(); return panel.querySelector("[data-cg-dialog]"); },
   });
   carregarRecebidos(client)
     .then((dados) => operationsController?.definirRecebidos(dados))
@@ -101,13 +111,13 @@ try {
     client,
     root,
     onState(state) {
-      if (state !== "authorized") { appointmentPanel?.clear(); atendimentosPanel?.clear(); accessPanel?.clear(); cadastroGuiado?.limpar(); }
+      if (state !== "authorized") { appointmentPanel?.clear(); atendimentosPanel?.clear(); accessPanel?.clear(); cadastroGuiado?.limpar(); organizarCurso?.limpar(); }
       else if (appointmentPanel) { void appointmentPanel.reload(); void atendimentosPanel?.reload(); }
     },
     async onAuthorized(access) {
       /* Troca de conta na mesma aba: nada do rascunho anterior fica disponível. */
       const quem = access.session?.user?.id || access.user?.id || null;
-      if (usuarioAtual && quem !== usuarioAtual) cadastroGuiado?.limpar();
+      if (usuarioAtual && quem !== usuarioAtual) { cadastroGuiado?.limpar(); organizarCurso?.limpar(); }
       usuarioAtual = quem;
       shell?.setUser({
         name: access.user?.name || access.session?.user?.email || "Administração Potala",

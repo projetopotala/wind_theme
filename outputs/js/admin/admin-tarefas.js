@@ -25,16 +25,16 @@ export const TAREFAS = Object.freeze([
     id: "solicitacoes", secao: "atendimentos", ancora: "#atend-solicitacoes",
   },
   {
-    id: "curso", secao: "ofertas", formulario: "definition",
+    id: "curso", secao: "ofertas", guiado: "[data-organizar-curso]", intencao: "curso", formulario: "definition",
     escolher: ['select[name="kind"]', "course"],
     guia: "Dê o nome do curso. Depois, use “Criar turma” para abrir uma edição dele, com professor e modalidade.",
   },
   {
-    id: "turma", secao: "ofertas", formulario: "offering",
+    id: "turma", secao: "ofertas", guiado: "[data-organizar-curso]", intencao: "turma", formulario: "offering",
     guia: "Escolha o curso, o professor e a modalidade. As aulas entram depois, na Agenda.",
   },
   {
-    id: "inscrever", secao: "ofertas", ancora: "[data-admin-workspace=\"ofertas\"] .op-card:nth-of-type(2)",
+    id: "inscrever", secao: "ofertas", guiado: "[data-organizar-curso]", intencao: "inscrever", ancora: "[data-admin-workspace=\"ofertas\"] .op-card:nth-of-type(2)",
   },
   {
     id: "site", secao: "jornada",
@@ -91,9 +91,14 @@ export function executarTarefa(root, id) {
   if (!tarefa || !secaoPermitida(root, tarefa.secao)) return false;
   botaoDaSecao(root, tarefa.secao).click();
   const area = root.querySelector(`[data-admin-workspace="${tarefa.secao}"]`);
-  /* Com a operação carregada, Pessoas oferece o cadastro guiado (P1B); sem ele, o formulário simples continua valendo. */
+  /* Com a operação carregada, Pessoas e Cursos oferecem o fluxo guiado (P1B/P1C); sem ele, o formulário simples continua valendo. */
   const guiado = tarefa.guiado ? area?.querySelector(tarefa.guiado) : null;
-  if (guiado) { guiado.click(); return true; }
+  if (guiado) {
+    if (tarefa.intencao) guiado.setAttribute("data-organizar-intencao", tarefa.intencao);
+    guiado.click();
+    if (tarefa.intencao) guiado.removeAttribute("data-organizar-intencao");
+    return true;
+  }
   if (tarefa.formulario) {
     const botao = [...(area?.querySelectorAll(`[data-op-action="${tarefa.formulario}"]`) || [])].find((b) => !b.dataset.id && !b.disabled);
     if (!botao) { area?.querySelector("h2")?.focus?.(); return true; }
