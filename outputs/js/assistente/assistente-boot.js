@@ -5,19 +5,20 @@
  * Decide o modo:
  *   - backend encontrado e ativo (GET responde {ativo:true}) -> conversa real;
  *   - fora de Production, sem backend ativo -> modo de demonstração rotulado, sem IA;
- *   - Production sem backend ativo -> a bolinha NÃO aparece (nada de promessa vazia).
+ *   - Production sem backend ativo -> a bolinha APARECE em modo indisponivel: avisa que as respostas
+ *     inteligentes estao temporariamente indisponiveis, nao envia nada a IA e oferece atalhos reais.
  * O CSS é carregado só quando a bolinha vai de fato aparecer.
  */
-import { criarTransporteReal, criarTransporteSimulado, resolverBackend } from "./assistente-cliente.js";
+import { criarTransporteIndisponivel, criarTransporteReal, criarTransporteSimulado, resolverBackend } from "./assistente-cliente.js";
 import { montarAssistente } from "./assistente-ui.js";
 
-export async function decidirModo({ origem = globalThis.location?.origin || "", resolver = resolverBackend, real = criarTransporteReal, simulado = criarTransporteSimulado } = {}) {
+export async function decidirModo({ origem = globalThis.location?.origin || "", resolver = resolverBackend, real = criarTransporteReal, simulado = criarTransporteSimulado, indisponivel = criarTransporteIndisponivel } = {}) {
   const backend = await resolver(origem);
   if (backend.url) {
     const transporte = real(backend);
     if (await transporte.ativo()) return transporte;
   }
-  return backend.tipo === "producao" ? null : simulado();
+  return backend.tipo === "producao" ? indisponivel() : simulado();
 }
 
 function carregarEstilo(doc) {

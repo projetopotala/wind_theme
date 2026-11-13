@@ -102,6 +102,40 @@ export function criarTransporteSimulado({ carregarBase = () => fetch(new URL("..
   };
 }
 
+/* Atalhos do portal mostrados quando as respostas inteligentes estao indisponiveis (so paginas existentes). */
+export const ATALHOS = Object.freeze([
+  { url: "cursos.html", titulo: "Cursos" },
+  { url: "atendimentos.html", titulo: "Atendimentos" },
+  { url: "recepcao.html", titulo: "Recep\u00e7\u00e3o" },
+  { url: "profissionais.html", titulo: "Profissionais" },
+  { url: "blog.html", titulo: "Blog" },
+  { url: "programacao.html", titulo: "Programa\u00e7\u00e3o" },
+]);
+
+/*
+ * MODO INDISPON\u00cdVEL (Production com a IA desligada): nenhuma pergunta sai do navegador,
+ * nada \u00e9 enviado \u00e0 OpenAI e nada finge ser resposta da IA. Diz claramente que as respostas
+ * inteligentes est\u00e3o temporariamente indispon\u00edveis e aponta p\u00e1ginas reais do portal.
+ */
+export function criarTransporteIndisponivel({ carregarBase = () => fetch(new URL("../../ia/conhecimento.json", import.meta.url)).then((r) => r.json()) } = {}) {
+  let base = null;
+  return {
+    modo: "indisponivel",
+    async ativo() { return true; },
+    async perguntar(mensagens) {
+      base ||= await carregarBase().catch(() => ({ paginas: [] }));
+      const pergunta = mensagens[mensagens.length - 1]?.texto || "";
+      const achados = pontuar(pergunta, base.paginas || []).slice(0, 3);
+      const fonte = achados.length ? achados : ATALHOS.filter((a) => a.url === "recepcao.html");
+      const links = linksSeguros(fonte.map((p) => ({ url: p.url, titulo: p.titulo })));
+      const resposta = achados.length
+        ? "As respostas inteligentes est\u00e3o temporariamente indispon\u00edveis. Estas p\u00e1ginas do portal parecem relacionadas ao que voc\u00ea procura:"
+        : "As respostas inteligentes est\u00e3o temporariamente indispon\u00edveis e n\u00e3o encontrei uma p\u00e1gina espec\u00edfica. A Recep\u00e7\u00e3o pode orientar voc\u00ea:";
+      return { resposta, links };
+    },
+  };
+}
+
 /* Conversa da sessão: sobrevive à navegação entre páginas, some ao fechar a aba. */
 export function lerSessao(armazenamento = globalThis.sessionStorage) {
   try {

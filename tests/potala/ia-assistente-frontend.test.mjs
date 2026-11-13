@@ -98,7 +98,7 @@ test("backend por origem: Production fixo; LAB/local pelo arquivo de ambiente; P
 test("modo: Production só mostra a bolinha com backend ativo; fora dela cai no modo de demonstração", async () => {
   const real = (ativo) => () => ({ modo: "real", ativo: async () => ativo });
   assert.equal((await decidirModo({ origem: "https://wind-theme.vercel.app", real: real(true) })).modo, "real");
-  assert.equal(await decidirModo({ origem: "https://wind-theme.vercel.app", real: real(false) }), null, "Production sem backend: nada aparece");
+  assert.equal((await decidirModo({ origem: "https://wind-theme.vercel.app", real: real(false) })).modo, "indisponivel", "Production sem backend: bolinha em modo indisponivel");
   assert.equal((await decidirModo({ origem: "https://wind-theme-abc-potala.vercel.app", real: real(false) })).modo, "simulado");
 });
 
@@ -128,6 +128,27 @@ test("modo de demonstração: sem IA, rotulado, com links reais do portal", asyn
   assert.ok(r.links.some((l) => l.url === "cursos.html"));
   const nada = await t.perguntar([{ papel: "usuario", texto: "zzz qqq" }]);
   assert.deepEqual(nada.links.map((l) => l.url), ["recepcao.html"]);
+});
+
+test("modo indispon\u00edvel: avisa, n\u00e3o chama a rede nem a IA, e leva \u00e0s p\u00e1ginas certas", async () => {
+  const { criarTransporteIndisponivel, ATALHOS } = await import("../../outputs/js/assistente/assistente-cliente.js");
+  const base = JSON.parse((await import("node:fs")).readFileSync(new URL("../../outputs/ia/conhecimento.json", import.meta.url), "utf8"));
+  const t = criarTransporteIndisponivel({ carregarBase: async () => base });
+  const esperado = {
+    "Quero agendar uma consulta": ["atendimentos.html", "recepcao.html"],
+    "Quero acessar um curso": ["cursos.html"],
+    "Quero falar com algu\u00e9m": ["recepcao.html"],
+    "Quero conhecer os profissionais": ["profissionais.html", "especialistas.html"],
+    "Quero ler o blog": ["blog.html", "revista.html"],
+  };
+  for (const [pergunta, paginas] of Object.entries(esperado)) {
+    const r = await t.perguntar([{ papel: "usuario", texto: pergunta }]);
+    assert.match(r.resposta, /temporariamente indispon\u00edveis/);
+    assert.doesNotMatch(r.resposta, /agendei|inscrevi|paguei|confirmado/i);
+    const urls = r.links.map((l) => l.url);
+    for (const p of paginas) assert.ok(urls.includes(p), pergunta + " deveria apontar para " + p + " (veio " + urls.join(",") + ")");
+  }
+  for (const a of ATALHOS) assert.ok(base.paginas.some((p) => p.url === a.url), "atalho para p\u00e1gina inexistente: " + a.url);
 });
 
 test("sessão: só nesta aba, até 12 mensagens, links revalidados ao ler; envio limitado a 8, sem links", () => {
