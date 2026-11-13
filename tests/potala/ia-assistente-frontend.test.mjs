@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { DESTINOS_SEM_CONTEUDO, PAGINAS_DO_ASSISTENTE, extrairPagina, linkPermitido, normalizar, pontuar, termos } from "../../outputs/js/assistente/conhecimento.js";
+import { DESTINOS_SEM_CONTEUDO, INTENCOES, PAGINAS_DO_ASSISTENTE, extrairPagina, linkPermitido, normalizar, pontuar, termos } from "../../outputs/js/assistente/conhecimento.js";
 import * as servidor from "../../supabase/functions/assistente-potala/conhecimento.ts";
 import {
   ErroDoAssistente, criarTransporteReal, criarTransporteSimulado, lerSessao, linksSeguros, mensagensParaEnvio, resolverBackend, salvarSessao,
@@ -41,6 +41,25 @@ test("regras do navegador e do servidor são idênticas (páginas, normalizaçã
   for (const url of ["cursos.html", "/cursos.html", "admin.html", "https://x.invalid", "artigo.html", "artigo.html?post=a-b", "artigo.html?nome=a", "escritor.html?nome=lin", "cursos.html?x=1", "javascript:alert(1)", "artigo.html?post=A_B", "meu-potala.html", "artigo.html?post=a?post=b"]) {
     assert.equal(servidor.linkPermitido(url), linkPermitido(url), url);
   }
+});
+
+test("intenções de navegação levam às páginas canônicas (navegador e servidor iguais)", () => {
+  const docs = BASE.paginas.map((p) => ({ ...p, tipo: "pagina" }));
+  const casos = {
+    "Quero agendar uma consulta.": ["atendimentos.html", "recepcao.html", "meu-potala.html"],
+    "Quero acessar um curso.": ["cursos.html", "meu-potala.html"],
+    "Quais cursos estão disponíveis?": ["cursos.html"],
+    "Quero falar com a recepção.": ["recepcao.html"],
+    "Quero conhecer os profissionais.": ["profissionais.html", "especialistas.html"],
+    "Quero ler os artigos do blog.": ["blog.html"],
+  };
+  for (const [pergunta, esperadas] of Object.entries(casos)) {
+    const top = pontuar(pergunta, docs).slice(0, esperadas.length).map((d) => d.url);
+    assert.deepEqual(top, esperadas, pergunta);
+    assert.deepEqual(servidor.pontuar(pergunta, docs).map((d) => d.url), pontuar(pergunta, docs).map((d) => d.url), pergunta);
+  }
+  assert.deepEqual(servidor.INTENCOES, INTENCOES);
+  for (const { paginas } of INTENCOES) for (const u of paginas) assert.equal(linkPermitido(u), u, "página de intenção precisa ser link permitido: " + u);
 });
 
 test("busca acha as páginas certas para perguntas típicas", () => {

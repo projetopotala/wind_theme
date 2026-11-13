@@ -33,7 +33,33 @@ export function termos(texto: unknown): string[] {
   return [...new Set(normalizar(texto).split(" ").filter((t) => t.length > 2 && !VAZIAS.has(t)))].slice(0, 24);
 }
 
-export function pontuar<T extends { titulo: string; descricao: string; texto: string; autor?: string; categoria?: string }>(pergunta: unknown, documentos: T[] = []): T[] {
+/*
+ * Intenções de navegação: pedidos comuns ("agendar uma consulta", "acessar um curso",
+ * "falar com a recepção"...) levam às páginas canônicas, em ordem, mesmo quando outra
+ * página repete essas palavras no menu. Cada palavra da pergunta que COMEÇA com um
+ * gatilho ativa a intenção; a 1ª página ganha 15 pontos, a 2ª 11, a 3ª 7.
+ */
+export const INTENCOES: readonly { gatilhos: readonly string[]; paginas: readonly string[] }[] = Object.freeze([
+  { gatilhos: ["agend", "consult", "marcar", "sessa", "terapi", "tratament"], paginas: ["atendimentos.html", "recepcao.html", "meu-potala.html"] },
+  { gatilhos: ["acess", "inscri", "matricul", "login", "entrar", "conta"], paginas: ["meu-potala.html", "cursos.html"] },
+  { gatilhos: ["curso", "formac", "aula", "turma", "aprend"], paginas: ["cursos.html", "programacao.html", "especialistas.html"] },
+  { gatilhos: ["recep", "contat", "falar", "atendent", "duvid", "telefon", "whatsapp", "email", "endereco"], paginas: ["recepcao.html"] },
+  { gatilhos: ["profission", "terapeut", "especialist", "professor", "equipe"], paginas: ["profissionais.html", "especialistas.html"] },
+  { gatilhos: ["blog", "artig", "ler", "leitur", "caderno", "materi", "escritor", "texto"], paginas: ["blog.html", "revista.html"] },
+  { gatilhos: ["evento", "programac", "calendar"], paginas: ["programacao.html", "eventos.html"] },
+  { gatilhos: ["loja", "compr", "produt", "marketplac"], paginas: ["marketplace.html"] },
+]);
+
+export function bonusDeIntencao(busca: string[], url: string | undefined): number {
+  let bonus = 0;
+  for (const { gatilhos, paginas } of INTENCOES) {
+    const posicao = url ? paginas.indexOf(url) : -1;
+    if (posicao >= 0 && busca.some((t) => gatilhos.some((g) => t.startsWith(g)))) bonus += 15 - 4 * posicao;
+  }
+  return bonus;
+}
+
+export function pontuar<T extends { url?: string; titulo: string; descricao: string; texto: string; autor?: string; categoria?: string }>(pergunta: unknown, documentos: T[] = []): T[] {
   const busca = termos(pergunta);
   if (!busca.length) return [];
   return documentos
@@ -46,6 +72,7 @@ export function pontuar<T extends { titulo: string; descricao: string; texto: st
         if (cabeca.includes(raiz)) pontos += 3;
         if (corpo.includes(raiz)) pontos += 1;
       }
+      pontos += bonusDeIntencao(busca, doc.url);
       return { doc, pontos, ordem };
     })
     .filter((x) => x.pontos > 0)
