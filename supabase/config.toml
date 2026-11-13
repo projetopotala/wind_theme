@@ -18,3 +18,8 @@ verify_jwt = true
 # o handler exige o segredo dedicado SWEEPER_SECRET no cabecalho x-sweeper-secret,
 # compara em tempo constante antes de qualquer acao e falha fechado se ele estiver ausente.
 verify_jwt = false
+
+[functions.assistente-potala]
+# Assistente publico (IA-01). Visitante anonimo: a chave publicavel e validada pelo wrapper no POST.
+# A OPENAI_API_KEY fica so nos segredos da funcao; IA_ATIVO=true liga, qualquer outro valor desliga.
+verify_jwt = false
