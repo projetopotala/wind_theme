@@ -27,7 +27,7 @@ export const DESTINOS_SEM_CONTEUDO = ["meu-potala.html"];
 
 export const normalizar = (texto: unknown) => String(texto ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
-const VAZIAS = new Set("a o as os de da do das dos e em no na nos nas um uma uns umas para por com sem que qual quais como onde quando eu voce voces me te se ao aos ha tem ter sobre mais menos muito pouco isso esse essa este esta ola oi bom boa dia tarde noite quero queria gostaria saber posso pode podem algum alguma".split(" "));
+const VAZIAS = new Set("a o as os de da do das dos e em no na nos nas um uma uns umas para por com sem que qual quais como onde quando eu voce voces me te se ao aos ha tem ter sobre mais menos muito pouco isso esse essa este esta ola oi bom boa dia tarde noite quero queria gostaria saber posso pode podem algum alguma instituto potala".split(" "));
 
 export function termos(texto: unknown): string[] {
   return [...new Set(normalizar(texto).split(" ").filter((t) => t.length > 2 && !VAZIAS.has(t)))].slice(0, 24);
@@ -80,11 +80,14 @@ function documentoDoArtigo(doc: Record<string, unknown>): Documento | null {
   const slug = String(doc.slug || doc.id || "");
   if (!SLUG.test(slug)) return null;
   const blocos = Array.isArray(doc.content) ? doc.content as Record<string, unknown>[] : [];
-  const corpo = blocos.filter((b) => ["paragraph", "heading", "quote"].includes(String(b?.type))).map((b) => SEM_MARCACAO(String(b.text || ""))).join(" ");
+  const corpo = texto(blocos.filter((b) => ["paragraph", "heading", "quote"].includes(String(b?.type))).map((b) => SEM_MARCACAO(String(b.text || ""))).join(" "), 900);
+  const descricao = texto(doc.excerpt, 400);
+  /* Sem corpo nem resumo não há o que dizer do artigo: só ocuparia o contexto (ex.: posts de teste vazios). */
+  if (!corpo && !descricao) return null;
   const autor = texto(doc.author, 120) || "Instituto Potala";
   return {
-    tipo: "artigo", url: `artigo.html?post=${slug}`, titulo: texto(doc.title, 200), descricao: texto(doc.excerpt, 400),
-    autor, categoria: texto(doc.category, 60), texto: texto(corpo, 900),
+    tipo: "artigo", url: `artigo.html?post=${slug}`, titulo: texto(doc.title, 200), descricao,
+    autor, categoria: texto(doc.category, 60), texto: corpo,
   };
 }
 

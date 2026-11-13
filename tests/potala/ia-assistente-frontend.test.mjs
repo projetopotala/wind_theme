@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { DESTINOS_SEM_CONTEUDO, PAGINAS_DO_ASSISTENTE, linkPermitido, normalizar, pontuar, termos } from "../../outputs/js/assistente/conhecimento.js";
+import { DESTINOS_SEM_CONTEUDO, PAGINAS_DO_ASSISTENTE, extrairPagina, linkPermitido, normalizar, pontuar, termos } from "../../outputs/js/assistente/conhecimento.js";
 import * as servidor from "../../supabase/functions/assistente-potala/conhecimento.ts";
 import {
   ErroDoAssistente, criarTransporteReal, criarTransporteSimulado, lerSessao, linksSeguros, mensagensParaEnvio, resolverBackend, salvarSessao,
@@ -149,4 +149,16 @@ test("a bolinha está em todas as páginas públicas e em nenhuma página privad
   for (const privada of ["admin.html", "blog-admin.html", "meu-potala.html", "sala-atendimento.html", "confirmar-conta.html", "redefinir-senha.html", "index.html"]) {
     assert.doesNotMatch(ler(`outputs/${privada}`), /assistente-boot\.js/, privada);
   }
+});
+
+test("base de conhecimento: avisos de estado da página ficam fora; conteúdo de status e noscript útil fica", () => {
+  const html = `<body><p class="s" role="status">Carregando os textos publicados…</p><p data-x hidden>Nenhum texto encontrado neste caminho.</p>
+    <span data-n role="status" aria-live="polite">16 especialistas · 22 aulas</span><noscript><p>Ative o JavaScript para ver os textos.</p></noscript>
+    <noscript><a href="cursos.html">Cursos</a></noscript><p>Texto real.</p></body>`;
+  const { texto } = extrairPagina("escritor.html", html);
+  assert.doesNotMatch(texto, /Carregando|Nenhum texto encontrado|Ative o JavaScript/);
+  assert.match(texto, /16 especialistas/);
+  assert.match(texto, /Cursos/);
+  assert.match(texto, /Texto real/);
+  for (const p of BASE.paginas) assert.doesNotMatch(p.texto, /Carregando os textos|Ative o JavaScript|Nenhum texto encontrado/, p.url);
 });

@@ -63,7 +63,16 @@ export function extrairPagina(url, html) {
   const fonte = String(html ?? "");
   const titulo = TITULOS_DO_ASSISTENTE[url] || entidade((fonte.match(/<title>([\s\S]*?)<\/title>/i) || [])[1] || url).replace(/\s+[—-]\s+Instituto Potala$/i, "");
   const descricao = entidade((fonte.match(/<meta\s+name="description"\s+content="([^"]*)"/i) || [])[1] || "");
-  const corpo = (fonte.match(/<body[\s\S]*<\/body>/i) || [fonte])[0];
+  /*
+   * Fora da base: avisos de estado da página — "Carregando os textos publicados…" (role="status") e
+   * <noscript> com "Ative o JavaScript…". Lidos pelo modelo, viravam "os textos ainda não estão
+   * carregados" (homologação IA-01, pergunta #4). Também saem <p>/<span> simples com `hidden` (estados
+   * vazios como "Nenhum texto encontrado…", que o visitante não vê). Demais role="status" e <noscript> ficam.
+   */
+  const corpo = (fonte.match(/<body[\s\S]*<\/body>/i) || [fonte])[0]
+    .replace(/<(p|span)\b[^>]*\shidden(?=[\s>=])[^>]*>[^<]*<\/\1>/gi, " ")
+    .replace(/<noscript>(?:(?!<\/noscript>)[\s\S])*?Ative o JavaScript(?:(?!<\/noscript>)[\s\S])*<\/noscript>/gi, " ")
+    .replace(/<(p|div|span)\b[^>]*\brole="status"[^>]*>\s*Carregando[^<]*<\/\1>/gi, " ");
   const texto = extrairTextoDaPagina(corpo).slice(0, LIMITE_TEXTO_PAGINA);
   return { url, titulo, descricao, texto };
 }
@@ -71,7 +80,7 @@ export function extrairPagina(url, html) {
 /* Minúsculas, sem acentos, só letras e números. */
 export const normalizar = (texto) => String(texto ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
-const VAZIAS = new Set("a o as os de da do das dos e em no na nos nas um uma uns umas para por com sem que qual quais como onde quando eu voce voces me te se ao aos ha tem ter sobre mais menos muito pouco isso esse essa este esta ola oi bom boa dia tarde noite quero queria gostaria saber posso pode podem algum alguma".split(" "));
+const VAZIAS = new Set("a o as os de da do das dos e em no na nos nas um uma uns umas para por com sem que qual quais como onde quando eu voce voces me te se ao aos ha tem ter sobre mais menos muito pouco isso esse essa este esta ola oi bom boa dia tarde noite quero queria gostaria saber posso pode podem algum alguma instituto potala".split(" "));
 
 export function termos(texto) {
   return [...new Set(normalizar(texto).split(" ").filter((t) => t.length > 2 && !VAZIAS.has(t)))].slice(0, 24);
