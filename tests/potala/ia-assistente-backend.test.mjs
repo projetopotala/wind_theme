@@ -127,6 +127,19 @@ test("IP do visitante: o cliente não escolhe o próprio balde trocando X-Forwar
   assert.equal(lerConfiguracao((n) => ({ IA_FONTE_IP: "x-forwarded-for-primeiro" })[n]).fonteIp, "", "fonte não reconhecida não é aceita (assistente fica desligado)");
 });
 
+test("E10: ensaio com IA_FONTE_IP ausente ou inválida responde 503 antes de reservar cota", async () => {
+  const base = { IA_ATIVO: "false", IA_ENSAIO: "true", OPENAI_API_KEY: "", SUPABASE_URL: "https://hmspabllgxqfzzricijv.supabase.co" };
+  for (const fonte of ["x-forwarded-for-primeiro", "", "X-FORWARDED-FOR-ULTIMO", "cf-connecting-ip "]) {
+    const { handle, registro } = montar({ ambiente: { ...base, IA_FONTE_IP: fonte } });
+    const r = await handle(pedido(conversa(), { cabecalhos: { "x-forwarded-for": "6.6.6.6, 203.0.113.9", "cf-connecting-ip": "198.51.100.1" } }));
+    assert.equal(r.status, 503, "fonte: " + JSON.stringify(fonte));
+    const texto = await r.text();
+    assert.equal(registro.reservas.length, 0, "nenhuma cota reservada");
+    assert.equal(registro.chamadas.length + registro.tokens.length, 0, "nenhuma chamada ao modelo");
+    assert.doesNotMatch(texto + registro.eventos.join(""), /6\.6\.6\.6|203\.0\.113\.9|198\.51\.100\.1|segredo-de-teste|ensaio/);
+  }
+});
+
 test("ensaio (IA_ATIVO=false + IA_ENSAIO=true): cotas e identidade no banco, NUNCA OpenAI, nunca IP bruto", async () => {
   const amb = { IA_ATIVO: "false", IA_ENSAIO: "true", OPENAI_API_KEY: "", SUPABASE_URL: "https://hmspabllgxqfzzricijv.supabase.co" };
   const { handle, registro } = montar({ ambiente: amb });

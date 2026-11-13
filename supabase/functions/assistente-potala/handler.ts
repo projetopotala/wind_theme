@@ -236,7 +236,7 @@ export function createAssistantHandler({ env, reservarUso, registrarTokens, carr
     if (request.headers.has("origin") && !Object.keys(headers).length) return json(403, { erro: "origem", mensagem: ERRO.origem }, {});
     const pronto = cfg.ativo && cfg.apiKey && cfg.segredoHash && cfg.origens.length && cfg.modelo && cfg.fonteIp;
     /* Ensaio: só com IA_ATIVO desligado. Exercita identidade e cotas no banco e NUNCA chama a OpenAI. */
-    const ensaio = !cfg.ativo && cfg.ensaio && cfg.segredoHash && cfg.origens.length;
+    const ensaio = !cfg.ativo && cfg.ensaio && cfg.segredoHash && cfg.origens.length && cfg.fonteIp;
     if (request.method === "GET") return json(200, { ativo: Boolean(pronto) }, headers);
     if (request.method !== "POST") return json(405, { erro: "metodo" }, headers);
     if (!pronto && !ensaio) return json(503, { erro: "desativado", mensagem: ERRO.desativado }, headers);
@@ -247,7 +247,7 @@ export function createAssistantHandler({ env, reservarUso, registrarTokens, carr
     const conversa = validarConversa(corpo);
     if (!conversa) return json(400, { erro: "invalido", mensagem: ERRO.invalido }, headers);
 
-    const visitante = await hashDoVisitante(request, cfg.segredoHash, agora(), cfg.fonteIp || "x-forwarded-for-ultimo");
+    const visitante = await hashDoVisitante(request, cfg.segredoHash, agora(), cfg.fonteIp);
     try {
       const { error } = await reservarUso({ p_cliente: visitante, p_limite_minuto: cfg.limiteMinuto, p_limite_dia: cfg.limiteDia, p_limite_global: cfg.limiteGlobalDia, p_limite_tokens: cfg.limiteTokensDia });
       if (error) {
@@ -263,7 +263,7 @@ export function createAssistantHandler({ env, reservarUso, registrarTokens, carr
       const fontes: Record<string, string> = {};
       for (const fonte of FONTES_DE_IP) fontes[fonte] = await marca(fonte);
       const xff = (request.headers.get("x-forwarded-for") || "").split(",").filter((v) => v.trim()).length;
-      return json(200, { ensaio: true, fonte_em_uso: cfg.fonteIp || "x-forwarded-for-ultimo", visitante: visitante.slice(0, 8), fontes, xff_qtd: xff, sem_ip: (await hashDoValor("sem-ip", cfg.segredoHash, agora())).slice(0, 8) }, headers);
+      return json(200, { ensaio: true, fonte_em_uso: cfg.fonteIp, visitante: visitante.slice(0, 8), fontes, xff_qtd: xff, sem_ip: (await hashDoValor("sem-ip", cfg.segredoHash, agora())).slice(0, 8) }, headers);
     }
 
     let docs: Documento[];
