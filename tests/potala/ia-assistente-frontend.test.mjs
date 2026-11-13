@@ -148,6 +148,8 @@ test("modo indispon\u00edvel: avisa, n\u00e3o chama a rede nem a IA, e leva \u00
     const urls = r.links.map((l) => l.url);
     for (const p of paginas) assert.ok(urls.includes(p), pergunta + " deveria apontar para " + p + " (veio " + urls.join(",") + ")");
   }
+  assert.deepEqual(ATALHOS.map((a) => a.url), ["cursos.html", "atendimentos.html", "recepcao.html", "profissionais.html", "blog.html", "programacao.html"]);
+  for (const a of ATALHOS) assert.ok(linkPermitido(a.url), "atalho recusado pela regra de links: " + a.url);
   for (const a of ATALHOS) assert.ok(base.paginas.some((p) => p.url === a.url), "atalho para p\u00e1gina inexistente: " + a.url);
 });
 

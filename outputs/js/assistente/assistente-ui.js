@@ -9,7 +9,8 @@
  * diálogo não modal (não prende o foco nem bloqueia a página); as mensagens ficam numa
  * região role="log" com aria-live; Esc minimiza e devolve o foco à bolinha.
  */
-import { ATALHOS, LIMITE_PERGUNTA, MAX_HISTORICO, limparSessao, linksSeguros, lerSessao, mensagensParaEnvio, salvarSessao } from "./assistente-cliente.js";
+import { ATALHOS, LIMITE_PERGUNTA, MAX_HISTORICO, limparSessao, lerSessao, mensagensParaEnvio, salvarSessao } from "./assistente-cliente.js";
+import { linkPermitido } from "./conhecimento.js";
 
 export const SUGESTOES = Object.freeze([
   "Que cursos e atividades o Instituto oferece?",
@@ -54,7 +55,7 @@ export function montarAssistente({ doc = document, transporte, base = new URL(".
   const cabeca = el(doc, "header", { classe: "pa-cabeca" }, [el(doc, "div", { classe: "pa-cabeca__marca", "aria-hidden": "true" }, [marca.cloneNode()]), el(doc, "div", { classe: "pa-cabeca__texto" }, [titulo, subtitulo]), acoes]);
 
   const lista = el(doc, "div", { classe: "pa-mensagens", role: "log", "aria-live": "polite", "aria-relevant": "additions", "aria-label": "Conversa com o assistente", tabindex: "0" });
-  const sugestoes = el(doc, "div", { classe: "pa-sugestoes", role: "group", "aria-label": indisponivel ? "Atalhos do portal" : "Sugest\u00f5es de perguntas" }, (indisponivel ? linksSeguros(ATALHOS).map((l) => el(doc, "a", { classe: "pa-sugestao pa-atalho", href: hrefDoPortal(doc, l.url), texto: l.titulo })) : SUGESTOES.map((s) => el(doc, "button", { type: "button", classe: "pa-sugestao", "data-pa-sugestao": s, texto: s }))));
+  const sugestoes = el(doc, "div", { classe: "pa-sugestoes", role: "group", "aria-label": indisponivel ? "Atalhos do portal" : "Sugest\u00f5es de perguntas" }, (indisponivel ? ATALHOS.filter((l) => linkPermitido(l.url)).map((l) => el(doc, "a", { classe: "pa-sugestao pa-atalho", href: hrefDoPortal(doc, l.url), texto: l.titulo })) : SUGESTOES.map((s) => el(doc, "button", { type: "button", classe: "pa-sugestao", "data-pa-sugestao": s, texto: s }))));
   const campo = el(doc, "textarea", { id: "pa-pergunta", classe: "pa-campo", rows: 1, maxlength: LIMITE_PERGUNTA, placeholder: "Escreva sua pergunta…", autocomplete: "off", enterkeyhint: "send" });
   const contador = el(doc, "span", { classe: "pa-contador", "aria-hidden": "true", texto: `0/${LIMITE_PERGUNTA}` });
   const enviar = el(doc, "button", { type: "submit", classe: "pa-enviar", "aria-label": "Enviar pergunta" }, [el(doc, "span", { "aria-hidden": "true", texto: "➤" })]);
