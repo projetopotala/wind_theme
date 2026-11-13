@@ -138,13 +138,19 @@ export function ipDoVisitante(request: Request, fonte: string): string {
   return /^[0-9a-fA-F:.]{3,45}$/.test(valor) ? valor : "sem-ip";
 }
 
-/* Hash diário do visitante: IP + segredo + dia. O IP nunca sai daqui. */
+/* Dia civil de Brasília (mesmo calendário do banco: now() at time zone 'America/Sao_Paulo'). */
+const CALENDARIO_BRASILIA = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" });
+export function diaDeBrasilia(agora: Date): string {
+  return CALENDARIO_BRASILIA.format(agora);
+}
+
+/* Hash diário do visitante: IP + segredo + dia de Brasília. O IP nunca sai daqui. */
 export async function hashDoVisitante(request: Request, segredo: string, agora: Date, fonte: string): Promise<string> {
   return hashDoValor(ipDoVisitante(request, fonte), segredo, agora);
 }
 
 async function hashDoValor(ip: string, segredo: string, agora: Date): Promise<string> {
-  const dia = agora.toISOString().slice(0, 10);
+  const dia = diaDeBrasilia(agora);
   const dados = new TextEncoder().encode(`${segredo}|${dia}|${ip}`);
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", dados));
   return [...digest].map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);

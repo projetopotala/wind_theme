@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
-  ESQUEMA_RESPOSTA, INSTRUCOES, chamarOpenAI, ipDoVisitante, createAssistantHandler, filtrarLinks, hashDoVisitante, lerConfiguracao, textoSemLinks, validarConversa,
+  ESQUEMA_RESPOSTA, INSTRUCOES, chamarOpenAI, diaDeBrasilia, ipDoVisitante, createAssistantHandler, filtrarLinks, hashDoVisitante, lerConfiguracao, textoSemLinks, validarConversa,
 } from "../../supabase/functions/assistente-potala/handler.ts";
 import { criarFonteDeConhecimento, montarContexto } from "../../supabase/functions/assistente-potala/conhecimento.ts";
 
@@ -298,4 +298,21 @@ test("Edge Function: segredos só por Deno.env, config.toml sem JWT obrigatório
   assert.match(handler, /env\("OPENAI_API_KEY"\)/);
   for (const fonte of [index, handler]) assert.doesNotMatch(fonte, /sk-[A-Za-z0-9]{10,}|sb_secret_/);
   assert.match(readFileSync(new URL("../../supabase/config.toml", import.meta.url), "utf8"), /\[functions\.assistente-potala\][\s\S]*?verify_jwt = false/);
+});
+
+test("identidade diária segue o calendário de Brasília, como o banco (viradas de 21h e meia-noite)", async () => {
+  const req = () => new Request("https://x/", { headers: { "cf-connecting-ip": "198.51.100.7" } });
+  const h = (iso) => hashDoVisitante(req(), "s", new Date(iso), "cf-connecting-ip");
+  // 21h de Brasília = 00h UTC: o dia UTC muda, o de Brasília NÃO.
+  assert.equal(diaDeBrasilia(new Date("2026-11-13T23:59:59Z")), "2026-11-13");
+  assert.equal(diaDeBrasilia(new Date("2026-11-14T00:00:00Z")), "2026-11-13");
+  assert.equal(await h("2026-11-13T23:59:59Z"), await h("2026-11-14T00:00:01Z"), "virada das 21h não troca a identidade");
+  assert.equal(await h("2026-11-13T12:00:00Z"), await h("2026-11-14T02:59:59Z"), "mesmo dia de Brasília, mesma identidade");
+  // Meia-noite de Brasília = 03h UTC: aqui a identidade muda, junto com o dia do banco.
+  assert.equal(diaDeBrasilia(new Date("2026-11-14T02:59:59Z")), "2026-11-13");
+  assert.equal(diaDeBrasilia(new Date("2026-11-14T03:00:00Z")), "2026-11-14");
+  assert.notEqual(await h("2026-11-14T02:59:59Z"), await h("2026-11-14T03:00:00Z"), "meia-noite de Brasília troca a identidade");
+  // Virada de ano.
+  assert.equal(diaDeBrasilia(new Date("2027-01-01T02:59:59Z")), "2026-12-31");
+  assert.equal(diaDeBrasilia(new Date("2027-01-01T03:00:00Z")), "2027-01-01");
 });
