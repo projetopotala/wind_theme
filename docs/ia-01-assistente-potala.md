@@ -30,14 +30,15 @@ Os passos abaixo são feitos **no painel do Supabase**, primeiro no LAB, e em Pr
 
 1. **Aplicar a migration** `supabase/migrations/202611130001_ia_assistente_uso.sql`. Use o procedimento controlado: uma versão por vez, sem `db push`.
 2. **Publicar a função:** `supabase functions deploy assistente-potala --project-ref <projeto>`.
-3. **Cadastrar os segredos.** Abra o painel do projeto → **Edge Functions → Secrets** (página *Edge Function Secrets*), preencha **Key** e **Value** e clique em **Save**:
+3. **Cadastrar os segredos em duas fases.** A fase de ensaio (só no LAB) **não usa `OPENAI_API_KEY`**: ela não é cadastrada até a autorização das chamadas pagas. A tabela abaixo é a configuração final, depois dessa autorização. Abra o painel do projeto → **Edge Functions → Secrets** (página *Edge Function Secrets*), preencha **Key** e **Value** e clique em **Save**:
 
    | Key | Value |
    |---|---|
-   | `OPENAI_API_KEY` | a chave da OpenAI (cole direto no painel; nunca em arquivo, chat ou commit) |
+   | `OPENAI_API_KEY` | **só na fase final, com autorização de chamadas pagas**: a chave da OpenAI (cole direto no painel; nunca em arquivo, chat ou commit) |
    | `IA_SEGREDO_HASH` | um texto aleatório longo (ex.: gerado por um gerenciador de senhas) |
    | `IA_ORIGENS_PERMITIDAS` | `https://wind-theme.vercel.app` (no LAB: o endereço da Preview do LAB) |
    | `IA_SITE_URL` | `https://wind-theme.vercel.app` (de onde a função lê `/ia/conhecimento.json`) |
+   | `IA_FONTE_IP` | obrigatório; a fonte aprovada no ensaio do LAB |
    | `IA_ATIVO` | `true` — **liga** o assistente; qualquer outro valor desliga na hora |
 
    A documentação do Supabase confirma que funções já publicadas leem segredos novos imediatamente, sem precisar republicar. Alterar segredos de Production exige o papel Owner ou Administrator no Supabase.
@@ -82,6 +83,6 @@ Esse comando regenera `outputs/ia/conhecimento.json` a partir das páginas públ
 ### Escolha da fonte de IP (obrigatória) e modo ensaio
 
 - Nenhum cabeçalho é presumido confiável. `IA_FONTE_IP` passou a ser **obrigatório**: sem ele (ou com valor fora da lista), o assistente fica desligado.
-- `IA_ENSAIO=true` só tem efeito com `IA_ATIVO=false`: o POST valida o pedido, calcula a identidade e **reserva a cota real no banco**, mas nunca chama a OpenAI e não precisa de `OPENAI_API_KEY`. A resposta traz só marcas de 8 caracteres (hash com segredo e dia) de cada fonte candidata, a quantidade de valores em X-Forwarded-For e a marca do balde `sem-ip` — nunca o IP.
+- `IA_ENSAIO=true` só tem efeito no projeto LAB (`SUPABASE_URL` do LAB) e com `IA_ATIVO=false`; em Production é ignorado pelo código: o POST valida o pedido, calcula a identidade e **reserva a cota real no banco**, mas nunca chama a OpenAI e não precisa de `OPENAI_API_KEY`. A resposta traz só marcas de 8 caracteres (hash com segredo e dia) de cada fonte candidata, a quantidade de valores em X-Forwarded-For e a marca do balde `sem-ip` — nunca o IP.
 - A fonte escolhida no LAB é a que (a) não muda quando o cliente forja o cabeçalho, (b) é igual em chamadas seguidas do mesmo visitante e (c) é diferente para redes diferentes. Se nenhuma cumprir (c), o limite por visitante vira um balde comum; a proteção financeira continua no teto global do banco.
 - Depois da escolha: `IA_ENSAIO` removido ou `false`.

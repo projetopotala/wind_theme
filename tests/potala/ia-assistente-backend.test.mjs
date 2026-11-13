@@ -128,7 +128,7 @@ test("IP do visitante: o cliente não escolhe o próprio balde trocando X-Forwar
 });
 
 test("ensaio (IA_ATIVO=false + IA_ENSAIO=true): cotas e identidade no banco, NUNCA OpenAI, nunca IP bruto", async () => {
-  const amb = { IA_ATIVO: "false", IA_ENSAIO: "true", OPENAI_API_KEY: "" };
+  const amb = { IA_ATIVO: "false", IA_ENSAIO: "true", OPENAI_API_KEY: "", SUPABASE_URL: "https://hmspabllgxqfzzricijv.supabase.co" };
   const { handle, registro } = montar({ ambiente: amb });
   const r = await handle(pedido(conversa(), { cabecalhos: { "x-forwarded-for": "6.6.6.6, 203.0.113.9", "cf-connecting-ip": "198.51.100.1" } }));
   assert.equal(r.status, 200);
@@ -142,7 +142,12 @@ test("ensaio (IA_ATIVO=false + IA_ENSAIO=true): cotas e identidade no banco, NUN
   assert.deepEqual((await (await handle(pedido(null, { metodo: "GET" }))).json()), { ativo: false });
   const negado = montar({ ambiente: amb, reserva: { error: { code: "PT429" } } });
   assert.equal((await negado.handle(pedido(conversa()))).status, 429, "limites valem no ensaio");
-  const ligado = montar({ ambiente: { IA_ENSAIO: "true" } });
+  for (const url of ["https://gotrumwuimpoeggwamut.supabase.co", "https://hmspabllgxqfzzricijv.supabase.co.evil.com", ""]) {
+    const fora = montar({ ambiente: { ...amb, SUPABASE_URL: url } });
+    assert.equal((await fora.handle(pedido(conversa()))).status, 503, "ensaio fora do LAB é ignorado: " + url);
+    assert.equal(fora.registro.reservas.length + fora.registro.chamadas.length, 0);
+  }
+  const ligado = montar({ ambiente: { IA_ENSAIO: "true", SUPABASE_URL: amb.SUPABASE_URL } });
   await ligado.handle(pedido(conversa()));
   assert.equal(ligado.registro.chamadas.length, 1, "ensaio é ignorado quando IA_ATIVO=true");
 });

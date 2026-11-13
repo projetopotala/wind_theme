@@ -128,6 +128,8 @@ export function validarConversa(corpo: unknown): Mensagem[] | null {
  * fica desligado. Valor ausente/inválido no pedido: balde comum "sem-ip" (mais restrito).
  * A proteção financeira não depende disto: o teto global do banco vale para todos.
  */
+/* O modo ensaio só existe no LAB: em qualquer outro projeto (inclusive Production) é ignorado. */
+export const PROJETO_LAB = "hmspabllgxqfzzricijv";
 export const FONTES_DE_IP = ["x-forwarded-for-ultimo", "cf-connecting-ip", "x-real-ip"] as const;
 export function ipDoVisitante(request: Request, fonte: string): string {
   const valor = fonte === "cf-connecting-ip" || fonte === "x-real-ip"
@@ -213,7 +215,7 @@ export function lerConfiguracao(env: Env) {
     limiteTokensDia: inteiro(env("IA_LIMITE_TOKENS_DIA"), 1_500_000, 1000, 100_000_000),
     segredoHash: env("IA_SEGREDO_HASH") || "",
     fonteIp: (FONTES_DE_IP as readonly string[]).includes(env("IA_FONTE_IP") || "") ? env("IA_FONTE_IP") as string : "",
-    ensaio: env("IA_ENSAIO") === "true",
+    ensaio: env("IA_ENSAIO") === "true" && new RegExp(`^https://${PROJETO_LAB}\\.supabase\\.co/?$`).test(env("SUPABASE_URL") || ""),
     origens: (env("IA_ORIGENS_PERMITIDAS") || "").split(",").map((v) => v.trim()).filter(Boolean),
   };
 }
