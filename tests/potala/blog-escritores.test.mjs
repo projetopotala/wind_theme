@@ -86,7 +86,7 @@ test("página do escritor: nome, apresentação, cartões com imagem, título, r
 test("estados: índice, escritor sem textos, banco indisponível e carregando", () => {
   const indice = renderizarPagina({ estado: "indice", publicados });
   assert.match(indice, /<h1 id="escritor-titulo">Escritores<\/h1>/);
-  assert.equal((indice.match(/<li><a href="escritor\.html\?nome=/g) || []).length, 3);
+  assert.equal((indice.match(/<a class="escritor-cartao__acao" href="escritor\.html\?nome=/g) || []).length, 3);
   const vazio = renderizarPagina({ estado: "escritor", slug: "ninguem-aqui", publicados });
   assert.match(vazio, /Nenhum texto publicado/);
   assert.match(vazio, /Voltar ao Caderno/);
