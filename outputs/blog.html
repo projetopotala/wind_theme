@@ -29,6 +29,7 @@
     <nav class="cad-menu" aria-label="Caminhos do Caderno">
       <ul data-blog-menu>
         <li><a href="blog.html" data-categoria-link="todos" aria-current="page">Início</a></li>
+        <li><a href="escritor.html" data-escritores-link>Escritores</a></li>
         <li><a href="blog.html?categoria=artigos" data-categoria-link="artigos">Artigos</a></li>
         <li><a href="blog.html?categoria=oraculos" data-categoria-link="oraculos">Oráculos</a></li>
         <li><a href="blog.html?categoria=terapias" data-categoria-link="terapias">Terapias</a></li>
@@ -47,6 +48,12 @@
       </label>
     </div>
   </header>
+
+  <aside class="escritores-faixa" aria-label="Escritores do Caderno">
+    <p class="escritores-faixa__rotulo">Quem escreve</p>
+    <ul class="escritores-faixa__rostos" data-escritores-faixa-rostos></ul>
+    <a class="escritores-faixa__link" href="escritor.html" data-escritores-link>Conheça nossos escritores <span aria-hidden="true">→</span></a>
+  </aside>
 
   <main class="blog" id="conteudo">
     <section class="blog-hero" aria-labelledby="blog-titulo">
@@ -77,6 +84,22 @@
       <h2 class="sr-only">Categorias</h2>
       <ul data-blog-categorias></ul>
     </nav>
+
+    <section class="blog-escritores-secao" aria-labelledby="escritores-secao-titulo" data-blog-escritores-secao hidden>
+      <header class="blog-list-head">
+        <h2 id="escritores-secao-titulo">Conheça nossos escritores</h2>
+        <a class="escritores-ver-todos" href="escritor.html">Ver todos os escritores</a>
+      </header>
+      <div class="escritores-ferramentas">
+        <label class="escritores-busca">
+          <span class="sr-only">Buscar escritor por nome</span>
+          <input type="search" data-escritores-busca placeholder="Buscar escritor por nome…" autocomplete="off">
+        </label>
+        <p class="escritores-resumo" data-escritores-resumo role="status" aria-live="polite"></p>
+      </div>
+      <ul class="escritores-cartoes" data-escritores-cartoes></ul>
+      <p class="blog-vazio" data-escritores-vazio hidden>Nenhum escritor encontrado com esse nome.</p>
+    </section>
 
     <section class="blog-artigos" aria-labelledby="artigos">
       <header class="blog-list-head">
