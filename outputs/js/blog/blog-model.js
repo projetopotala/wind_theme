@@ -170,9 +170,25 @@ export function termosDaBusca(value) {
   return semAcento(value).split(/\s+/).filter(Boolean);
 }
 
+/* O corpo do texto tambem entra na busca (paragrafos, titulos, citacoes, listas e legendas), limitado para a pagina nao pesar. */
+const LIMITE_DO_CORPO = 8000;
+export function corpoPesquisavel(post = {}) {
+  const partes = [];
+  let total = 0;
+  for (const bloco of Array.isArray(post.content) ? post.content : []) {
+    for (const trecho of [bloco?.text, bloco?.caption, bloco?.cite, ...(Array.isArray(bloco?.items) ? bloco.items : [])]) {
+      if (typeof trecho !== "string" || !trecho) continue;
+      partes.push(trecho);
+      total += trecho.length;
+      if (total >= LIMITE_DO_CORPO) return partes.join(" ").slice(0, LIMITE_DO_CORPO);
+    }
+  }
+  return partes.join(" ");
+}
+
 export function textoPesquisavel(post = {}, rotuloDaCategoria = (id) => id) {
   return semAcento([
-    post.title, post.excerpt, post.author, post.category, rotuloDaCategoria(post.category), ...(post.tags || []),
+    post.title, post.subtitle, post.excerpt, post.author, post.category, rotuloDaCategoria(post.category), ...(post.tags || []), corpoPesquisavel(post),
   ].join(" "));
 }
 
