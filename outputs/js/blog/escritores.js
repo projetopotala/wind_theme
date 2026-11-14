@@ -63,7 +63,7 @@ export function escritoresDoCaderno(publicados = []) {
   return [...grupos.entries()]
     .map(([slug, textos]) => {
       const ordenados = [...textos].sort(recentesPrimeiro);
-      return { slug, nome: grafiaPrincipal(ordenados), total: ordenados.length, ultimo: ordenados[0]?.publishedAt || "", institucional: slug === slugDoEscritor(ASSINATURA_INSTITUCIONAL) };
+      return { slug, nome: grafiaPrincipal(ordenados), total: ordenados.length, ultimo: ordenados[0]?.publishedAt || "", temas: temasDoEscritor(ordenados), institucional: slug === slugDoEscritor(ASSINATURA_INSTITUCIONAL) };
     })
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 }
@@ -140,4 +140,48 @@ export const paragrafosDaBio = (bio = "") => String(bio).split(/\n\s*\n/).map((p
 export function iniciaisDoEscritor(nome = "") {
   const palavras = String(nome).split(/\s+/).filter((p) => p && !/^(d[aeo]s?|e)$/i.test(p));
   return (palavras.length ? palavras : [String(nome)]).slice(0, 2).map((p) => [...p][0]?.toLocaleUpperCase("pt-BR") || "").join("") || "IP";
+}
+
+/*
+ * DESCOBERTA DE ESCRITORES (UX): temas, busca por nome e destaque na página inicial.
+ * Tudo sai só do que já é público: a assinatura dos textos publicados e, quando houver,
+ * o perfil visível. Nada é inventado e nenhum dado privado participa.
+ */
+
+/* Categorias abordadas pelo escritor, da mais frequente para a menos, com a contagem real. */
+export function temasDoEscritor(textos = []) {
+  const contagem = new Map();
+  for (const post of textos) {
+    const id = String(post?.category || "").trim();
+    if (id) contagem.set(id, (contagem.get(id) || 0) + 1);
+  }
+  return [...contagem.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"))
+    .map(([id, total]) => ({ id, total }));
+}
+
+const semAcentoDeBusca = (valor) => String(valor ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+
+/* Busca por nome (sem acento, qualquer parte, todas as palavras). Termo vazio devolve todos. */
+export function filtrarEscritores(escritores = [], termo = "", perfis = new Map()) {
+  const palavras = semAcentoDeBusca(termo).split(" ").filter(Boolean);
+  if (!palavras.length) return [...escritores];
+  return escritores.filter((item) => {
+    const nome = semAcentoDeBusca(`${item.nome} ${perfis.get?.(item.slug)?.nome || ""}`);
+    return palavras.every((palavra) => nome.includes(palavra));
+  });
+}
+
+/* Quem aparece na página inicial: os que mais publicaram, depois por nome. */
+export function escritoresEmDestaque(escritores = [], limite = 6) {
+  return [...escritores]
+    .sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome, "pt-BR"))
+    .slice(0, limite);
+}
+
+/* Resumo curto da biografia cadastrada (vazio quando não há). Corta em palavra inteira. */
+export function resumoDaBio(bio = "", limite = 150) {
+  const texto = paragrafosDaBio(bio).join(" ");
+  if (texto.length <= limite) return texto;
+  return `${texto.slice(0, limite - 1).replace(/\s+\S*$/, "")}…`;
 }

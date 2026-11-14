@@ -70,8 +70,10 @@ test("perfil oculto, imagem insegura vinda do banco e perfil sem textos", () => 
 
 test("índice e 'outros escritores' usam o nome público, mas o link continua o endereço da assinatura", () => {
   const indice = renderizarPagina({ estado: "indice", publicados, perfis: [perfilNucleo] });
-  assert.match(indice, /<a href="escritor\.html\?nome=nucleo-de-oraculos"><span>Núcleo de Oráculos do Instituto<\/span>/);
-  assert.match(indice, /<a href="escritor\.html\?nome=lin-watanabe"><span>Lin Watanabe<\/span>/);
+  assert.match(indice, /<h3 class="escritor-cartao__nome">Núcleo de Oráculos do Instituto<\/h3>/);
+  assert.match(indice, /href="escritor\.html\?nome=nucleo-de-oraculos" aria-label="Ver publicações de Núcleo de Oráculos do Instituto"/);
+  assert.match(indice, /<h3 class="escritor-cartao__nome">Lin Watanabe<\/h3>/);
+  assert.match(indice, /href="escritor\.html\?nome=lin-watanabe"/);
 });
 
 test("SEO do perfil: descrição da apresentação, og:image absoluta e canônico inalterado", () => {
