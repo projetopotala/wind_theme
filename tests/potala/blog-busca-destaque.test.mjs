@@ -222,3 +222,21 @@ test("a configuração só conecta a origem oficial a Production; aliases e depl
     assert.throws(() => escolherAmbiente({ origem }), (erro) => erro.codigo === "origem-desconhecida", origem);
   }
 });
+
+test("a busca encontra palavras do corpo do texto, ignorando acento, e continua achando titulo e escritor", () => {
+  const comCorpo = [
+    post("a", "Primeira conversa", "terapias", "2026-09-01", { author: "Ana Souza", content: [
+      { id: "a1", type: "paragraph", text: "A escuta inicial acolhe a hist\u00f3ria de cada pessoa." },
+      { id: "a2", type: "list", items: ["respira\u00e7\u00e3o", "postura"] },
+      { id: "a3", type: "quote", text: "Calma", cite: "Autora An\u00f4nima" },
+    ] }),
+    post("b", "Outro texto", "artigos", "2026-09-02", { content: [{ id: "b1", type: "paragraph", text: "Nada a ver." }] }),
+  ];
+  const achados = (termo) => filtrarPostsDoCaderno(comCorpo, { termo, rotuloDaCategoria: rotulo }).map((p) => p.id);
+  assert.deepEqual(achados("historia"), ["a"], "palavra s\u00f3 do corpo");
+  assert.deepEqual(achados("respiracao"), ["a"], "item de lista");
+  assert.deepEqual(achados("anonima"), ["a"], "cita\u00e7\u00e3o");
+  assert.deepEqual(achados("ana souza"), ["a"], "escritor");
+  assert.deepEqual(achados("primeira"), ["a"], "t\u00edtulo");
+  assert.deepEqual(achados("inexistente"), []);
+});
