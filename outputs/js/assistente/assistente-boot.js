@@ -21,20 +21,28 @@ export async function decidirModo({ origem = globalThis.location?.origin || "", 
   return backend.tipo === "producao" ? indisponivel() : simulado();
 }
 
+/* Resolve quando o CSS carregou (ou falhou, ou passou 2 s): montar a janela antes dele a deixaria como
+   elemento comum no fim da pagina, e qualquer foco ou rolagem a levaria para la. */
 function carregarEstilo(doc) {
-  if (doc.querySelector("link[data-assistente-estilo]")) return;
+  if (doc.querySelector("link[data-assistente-estilo]")) return Promise.resolve();
   const link = doc.createElement("link");
   link.rel = "stylesheet";
   link.href = new URL("../../css/assistente-flutuante.css", import.meta.url).href;
   link.setAttribute("data-assistente-estilo", "");
+  const pronto = new Promise((resolver) => {
+    link.addEventListener("load", resolver, { once: true });
+    link.addEventListener("error", resolver, { once: true });
+    setTimeout(resolver, 2000);
+  });
   doc.head.append(link);
+  return pronto;
 }
 
 export async function iniciarAssistente(doc = document) {
   if (doc.documentElement.hasAttribute("data-sem-assistente")) return null;
   const transporte = await decidirModo();
   if (!transporte) return null;
-  carregarEstilo(doc);
+  await carregarEstilo(doc);
   return montarAssistente({ doc, transporte });
 }
 

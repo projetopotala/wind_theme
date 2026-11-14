@@ -85,7 +85,7 @@ export function montarAssistente({ doc = document, transporte, base = new URL(".
     lista.scrollTop = lista.scrollHeight;
   }
 
-  function abrir() {
+  function abrir({ foco = true } = {}) {
     janela.hidden = false;
     raiz.dataset.aberto = "true";
     bolinha.setAttribute("aria-expanded", "true");
@@ -94,7 +94,7 @@ export function montarAssistente({ doc = document, transporte, base = new URL(".
     estado.aberto = true;
     salvarSessao(estado, armazenamento);
     desenhar();
-    campo.focus();
+    if (foco) campo.focus({ preventScroll: true });
   }
   function minimizar({ foco = true } = {}) {
     janela.hidden = true;
@@ -104,14 +104,14 @@ export function montarAssistente({ doc = document, transporte, base = new URL(".
     bolinha.querySelector(".pa-bolinha__ponto").hidden = !estado.mensagens.length;
     estado.aberto = false;
     salvarSessao(estado, armazenamento);
-    if (foco) bolinha.focus();
+    if (foco) bolinha.focus({ preventScroll: true });
   }
   function limpar() {
     estado.mensagens = [];
     limparSessao(armazenamento);
     salvarSessao(estado, armazenamento);
     desenhar();
-    campo.focus();
+    campo.focus({ preventScroll: true });
   }
 
   async function perguntar(texto) {
@@ -133,7 +133,7 @@ export function montarAssistente({ doc = document, transporte, base = new URL(".
       estado.mensagens = estado.mensagens.slice(-MAX_HISTORICO);
       salvarSessao({ ...estado, mensagens: estado.mensagens.filter((m) => !m.erro) }, armazenamento);
       desenhar();
-      if (!janela.hidden) campo.focus();
+      if (!janela.hidden) campo.focus({ preventScroll: true });
     }
   }
 
@@ -155,7 +155,8 @@ export function montarAssistente({ doc = document, transporte, base = new URL(".
 
   doc.body.append(raiz);
   desenhar();
-  if (estado.aberto) abrir();
+  /* Conversa que estava aberta na pagina anterior: reabre SEM roubar o foco nem rolar a pagina. */
+  if (estado.aberto) abrir({ foco: false });
   else minimizar({ foco: false });
   return { raiz, abrir, minimizar, limpar, perguntar, estado };
 }
