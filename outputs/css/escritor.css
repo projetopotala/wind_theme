@@ -69,3 +69,25 @@
   .escritor-cartao__acao { width: 100%; justify-content: center; }
   .escritores-busca { flex-basis: 100%; max-width: none; }
 }
+
+/* Faixa "Quem escreve" na primeira tela e menu com Escritores em destaque. */
+.escritores-faixa { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; width: min(100% - 32px, 1200px); margin: 0 auto; padding: 12px 0; }
+.escritores-faixa__rotulo { margin: 0; color: var(--cad-fraco); font: 700 .62rem/1 var(--cad-sans); letter-spacing: .2em; text-transform: uppercase; }
+.escritores-faixa__rostos { display: flex; align-items: center; margin: 0; padding: 0; list-style: none; }
+.escritores-faixa__rostos:empty { display: none; }
+.escritores-faixa__rostos li + li { margin-left: -6px; }
+.escritores-faixa__rosto { display: grid; place-items: center; width: 44px; height: 44px; overflow: hidden; border: 1px solid var(--cad-ouro-linha); border-radius: 50%; background: var(--cad-painel); color: var(--cad-ouro); font: 600 .8rem/1 var(--cad-serifa); text-decoration: none; }
+.escritores-faixa__rosto img { width: 100%; height: 100%; object-fit: cover; }
+.escritores-faixa__rosto:hover { border-color: var(--cad-ouro); }
+.escritores-faixa__rosto:focus-visible, .escritores-faixa__link:focus-visible { outline: 2px solid var(--cad-ouro); outline-offset: 3px; }
+.escritores-faixa__link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 1px solid var(--cad-ouro); border-radius: 999px; color: var(--cad-ouro); font: 700 .66rem/1 var(--cad-sans); letter-spacing: .16em; text-transform: uppercase; text-decoration: none; }
+.escritores-faixa__link:hover { background: rgba(215, 186, 120, .12); }
+.cad-menu a[data-escritores-link] { color: var(--cad-ouro); }
+@media (max-width: 480px) {
+  .escritores-faixa { justify-content: space-between; gap: 8px 12px; }
+  .escritores-faixa__rotulo { display: none; }
+  .escritores-faixa__rostos li:nth-child(n+4) { display: none; }
+  .escritores-faixa__link { padding: 0 14px; letter-spacing: .12em; }
+  .escritor-cartao { flex-direction: row; align-items: center; gap: 12px; padding: 14px; }
+  .escritor-cartao__foto { width: 52px; height: 52px; }
+}

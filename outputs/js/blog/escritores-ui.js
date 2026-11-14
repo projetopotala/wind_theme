@@ -40,5 +40,19 @@ export function cartoesDosEscritores(escritores = [], perfis = new Map()) {
   return escritores.map((item) => cartaoDoEscritor(item, perfis.get?.(item.slug) || null)).join("");
 }
 
+/* Faixa compacta da primeira tela: iniciais (ou foto cadastrada) com link para cada perfil. */
+export function faixaDosEscritores(escritores = [], perfis = new Map()) {
+  return escritores.map((item) => {
+    const perfil = perfis.get?.(item.slug) || null;
+    const nome = perfil?.nome || item.nome;
+    const href = `escritor.html?nome=${encodeURIComponent(item.slug || slugDoEscritor(nome))}`;
+    const imagem = imagemDePerfilSegura(perfil?.imagem);
+    const rosto = imagem
+      ? `<img src="${e(imagem)}" alt="" width="40" height="40" loading="lazy" decoding="async">`
+      : `<span aria-hidden="true">${e(iniciaisDoEscritor(nome))}</span>`;
+    return `<li><a class="escritores-faixa__rosto" href="${e(href)}" aria-label="Ver publicações de ${e(nome)}" title="${e(nome)}">${rosto}</a></li>`;
+  }).join("");
+}
+
 /* Reexporta para quem só precisa do endereço. */
 export { hrefDoEscritor };

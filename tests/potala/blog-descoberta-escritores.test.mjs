@@ -1,11 +1,11 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
   escritoresDoCaderno, escritoresEmDestaque, filtrarEscritores, perfisPorSlug, resumoDaBio, temasDoEscritor,
 } from "../../outputs/js/blog/escritores.js";
-import { cartaoDoEscritor, cartoesDosEscritores } from "../../outputs/js/blog/escritores-ui.js";
+import { cartaoDoEscritor, cartoesDosEscritores, faixaDosEscritores } from "../../outputs/js/blog/escritores-ui.js";
 import { diretorioDeEscritores, filtrarTextos, renderizarPagina } from "../../outputs/js/blog/escritor-controller.js";
 import { menuDasCategorias } from "../../outputs/js/blog/blog-controller.js";
 
@@ -137,7 +137,13 @@ test("páginas: seção de escritores na página inicial antes dos artigos, e en
   assert.match(blog, /<section class="blog-escritores-secao"[^>]* hidden>/, "oculta até haver escritores publicados");
   assert.match(blog, /<li><a href="escritor\.html" data-escritores-link>Escritores<\/a><\/li>/);
   assert.match(ler("artigo.html"), /data-escritores-link>Escritores<\/a>/);
-  assert.match(menuDasCategorias([{ id: "artigos", rotulo: "artigos" }]), /<li><a href="escritor\.html" data-escritores-link>Escritores<\/a><\/li>$/);
+  assert.match(menuDasCategorias([{ id: "artigos", rotulo: "artigos" }]), /Início<\/a><\/li><li><a href="escritor\.html" data-escritores-link>Escritores<\/a><\/li><li><a href="blog\.html\?categoria=artigos"/, "Escritores logo depois de Início, visível no celular sem rolar o menu");
+  assert.ok(blog.indexOf("escritores-faixa") > 0 && blog.indexOf("escritores-faixa") < blog.indexOf('<main class="blog"'), "faixa de escritores na primeira tela, antes do conteúdo");
+  assert.match(blog, /<a class="escritores-faixa__link" href="escritor\.html"/);
+  const rostos = faixaDosEscritores([{ slug: "ana-lima", nome: "Ana <b>Lima</b>", total: 2 }, { slug: "x", nome: "Beto", total: 1 }], new Map([["x", { nome: "Beto", imagem: "javascript:alert(1)" }]]));
+  assert.match(rostos, /aria-label="Ver publicações de Ana &lt;b&gt;Lima&lt;\/b&gt;"/);
+  assert.doesNotMatch(rostos, /<b>|javascript:/);
+  assert.match(rostos, /<span aria-hidden="true">B<\/span>/);
 });
 
 test("rotas e links existentes continuam: escritor.html?nome=…", () => {
