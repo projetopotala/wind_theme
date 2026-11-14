@@ -68,3 +68,6 @@ dialog form { display: grid; gap: .8rem; padding: 1.25rem; }
 .of-botoes { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: flex-end; }
 @media (max-width: 480px) { .of-linha input, .of-linha select { min-width: 0; width: 100%; } .of-linha label { flex: 1 1 100%; } .of-botoes > * { flex: 1 1 100%; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+
+/* Confirmação demonstrativa: o aviso de simulação é sempre o primeiro texto, nunca parece uma venda real. */
+.of-simulacao { margin: 0 0 12px; padding: 10px 14px; border: 2px dashed currentColor; border-radius: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }

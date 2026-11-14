@@ -99,3 +99,17 @@ test("página ofertas.html: avisa que é demonstração e não carrega nada de p
   const js = readFileSync(new URL("../../outputs/js/ofertas/ofertas.js", import.meta.url), "utf8");
   assert.ok(!/innerHTML|mercadopago|service_role|fetch\(\s*["'`]https?:/i.test(js));
 });
+
+test("confirmação demonstrativa nunca afirma que algo aconteceu de verdade", async () => {
+  const modelo = await import("../../outputs/js/ofertas/ofertas-modelo.js");
+  assert.match(modelo.AVISO_SIMULACAO, /^SIMULAÇÃO: nada foi registrado, reservado, cobrado nem enviado\.$/);
+  const comPreco = porId("curso-taro-arcanos-maiores");
+  for (const acao of Object.keys(modelo.ACOES)) {
+    for (const oferta of [{ ...comPreco, acao }, { id: "x", acao }]) {
+      const t = modelo.textoDaConfirmacao(oferta);
+      if (!t) continue;
+      assert.match(t, /^No ambiente real, /, `${acao}: texto condicional`);
+      assert.doesNotMatch(t, /^(Inscrição|Vaga|Pagamento|Pedido|Horário|Participação)/, `${acao}: não afirma fato consumado`);
+    }
+  }
+});

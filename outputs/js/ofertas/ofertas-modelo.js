@@ -91,16 +91,19 @@ export function gerarProtocolo(oferta, instante = Date.now(), aleatorio = Math.r
   return `DEMO-${hash.toString(36).toUpperCase().padStart(6, "0").slice(-6)}`;
 }
 
+/* Aviso fixo da confirmação: a vitrine é demonstrativa e nada do que ela mostra aconteceu de verdade. */
+export const AVISO_SIMULACAO = "SIMULAÇÃO: nada foi registrado, reservado, cobrado nem enviado.";
+
 export function textoDaConfirmacao(oferta) {
   switch (oferta?.acao) {
-    case "inscrever": return "Inscrição registrada. Você receberia a confirmação por e-mail e os detalhes do curso.";
+    case "inscrever": return "No ambiente real, a inscrição seria registrada e você receberia a confirmação por e-mail.";
     case "reservar-vaga": return temCobranca(oferta)
-      ? "Vaga reservada e pagamento aprovado. A vaga fica garantida para você."
-      : "Vaga reservada. A Recepção confirma a presença com você.";
-    case "solicitar-agendamento": return "Pedido enviado. A Recepção entra em contato para combinar o horário com o profissional.";
-    case "agendar": return "Horário agendado. Você receberia o lembrete e o acesso ao atendimento.";
-    case "pagar": return "Pagamento aprovado. Você receberia o recibo por e-mail.";
-    case "participar": return "Participação registrada. Basta comparecer no horário.";
+      ? "No ambiente real, a vaga seria reservada após a aprovação do pagamento."
+      : "No ambiente real, a vaga seria reservada e a Recepção confirmaria a presença.";
+    case "solicitar-agendamento": return "No ambiente real, o pedido iria para a Recepção, que combinaria o horário com o profissional.";
+    case "agendar": return "No ambiente real, o horário ficaria agendado e você receberia o lembrete.";
+    case "pagar": return "No ambiente real, o pagamento seria processado e o recibo chegaria por e-mail.";
+    case "participar": return "No ambiente real, sua participação ficaria registrada.";
     default: return "";
   }
 }

@@ -5,7 +5,7 @@
  */
 import {
   ACOES, FORMATOS, HORARIOS_DE_EXEMPLO, MODALIDADES, filtrarOfertas, formatarPreco, gerarProtocolo,
-  linkDaRecepcao, passosDoFluxo, rotuloDaAcao, temCobranca, textoDaConfirmacao, validarDados,
+  linkDaRecepcao, passosDoFluxo, rotuloDaAcao, temCobranca, textoDaConfirmacao, AVISO_SIMULACAO, validarDados,
 } from "./ofertas-modelo.js";
 
 const el = (doc, tag, props = {}, filhos = []) => {
@@ -121,6 +121,7 @@ export async function iniciarOfertas(doc = document, { carregar = () => fetch("o
       corpo.push(el(doc, "p", { texto: `Total: ${formatarPreco(oferta)}. No ambiente real, o pagamento seria feito no Mercado Pago (Pix ou cartão); aqui é só uma simulação.` }));
       corpo.push(el(doc, "fieldset", { classe: "of-grupo" }, [el(doc, "legend", { texto: "Forma de pagamento (simulada)" }), ...["Pix", "Cartão"].map((f) => el(doc, "label", { classe: "of-opcao" }, [el(doc, "input", { type: "radio", name: "forma", value: f, checked: (fluxo.forma || "Pix") === f }), el(doc, "span", { texto: f })]))]));
     } else if (passo === "confirmacao") {
+      corpo.push(el(doc, "p", { classe: "of-simulacao", role: "alert", texto: AVISO_SIMULACAO }));
       corpo.push(el(doc, "p", { classe: "of-confirmacao", role: "status", texto: textoDaConfirmacao(oferta) }));
       corpo.push(el(doc, "p", { classe: "of-protocolo", texto: `Protocolo demonstrativo: ${fluxo.protocolo}` }));
       corpo.push(el(doc, "p", { classe: "of-nota", texto: "Esta tela mostra o final do caminho. Nenhum dado foi guardado." }));
