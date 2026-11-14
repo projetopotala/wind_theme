@@ -153,6 +153,18 @@ test("modo indispon\u00edvel: avisa, n\u00e3o chama a rede nem a IA, e leva \u00
   for (const a of ATALHOS) assert.ok(base.paginas.some((p) => p.url === a.url), "atalho para p\u00e1gina inexistente: " + a.url);
 });
 
+test("rolagem: o assistente nunca rola a p\u00e1gina (foco sem rolagem; n\u00e3o rouba foco ao reabrir; espera o CSS)", async () => {
+  const fs = await import("node:fs");
+  const ui = fs.readFileSync(new URL("../../outputs/js/assistente/assistente-ui.js", import.meta.url), "utf8");
+  const boot = fs.readFileSync(new URL("../../outputs/js/assistente/assistente-boot.js", import.meta.url), "utf8");
+  const focos = ui.match(/\.focus\([^)]*\)/g) || [];
+  assert.ok(focos.length >= 4);
+  for (const f of focos) assert.equal(f, ".focus({ preventScroll: true })", "foco sem preventScroll rola a p\u00e1gina");
+  assert.match(ui, /if \(estado\.aberto\) abrir\(\{ foco: false \}\)/, "reabrir conversa da p\u00e1gina anterior n\u00e3o pode focar o campo");
+  assert.match(boot, /await carregarEstilo\(doc\);\s*return montarAssistente/, "montar s\u00f3 depois de o CSS carregar");
+  assert.doesNotMatch(ui, /scrollIntoView|scrollTo\(/);
+});
+
 test("sessão: só nesta aba, até 12 mensagens, links revalidados ao ler; envio limitado a 8, sem links", () => {
   const mem = new Map();
   const arm = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v), removeItem: (k) => mem.delete(k) };
