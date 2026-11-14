@@ -5,7 +5,8 @@ import { criarBlogPublico, quandoFoi, validarEnvioDeComentario } from "./blog-re
 import { applyBlogSettings } from "./blog-settings.js";
 import { definirCategorias } from "./article-renderer.js";
 import { criarRestPublico } from "../supabase/rest.js";
-import { escritoresDoCaderno, hrefDoEscritor } from "./escritores.js";
+import { escritoresDoCaderno, escritoresEmDestaque, filtrarEscritores, hrefDoEscritor, perfisPorSlug } from "./escritores.js";
+import { cartoesDosEscritores, contagemDeTextos } from "./escritores-ui.js";
 
 const escapar = (valor) => String(valor ?? "")
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -27,7 +28,7 @@ const maiuscula = (texto) => String(texto).charAt(0).toLocaleUpperCase("pt-BR") 
 export function menuDasCategorias(categorias = catalogo, { inicioComoFiltro = true } = {}) {
   return `<li><a href="blog.html"${inicioComoFiltro ? ' data-categoria-link="todos"' : ""}>Início</a></li>${categorias
     .map((categoria) => `<li><a href="blog.html?categoria=${encodeURIComponent(categoria.id)}" data-categoria-link="${escapar(categoria.id)}">${escapar(maiuscula(categoria.rotulo))}</a></li>`)
-    .join("")}`;
+    .join("")}<li><a href="escritor.html" data-escritores-link>Escritores</a></li>`;
 }
 
 function cardValues(post) {
@@ -208,6 +209,11 @@ export function montar(root = document) {
   const categoriesTarget = root.querySelector("[data-blog-categorias]");
   const recentTarget = root.querySelector("[data-blog-recentes]");
   const escritoresTarget = root.querySelector("[data-blog-escritores]");
+  const escritoresSecao = root.querySelector("[data-blog-escritores-secao]");
+  const escritoresCartoes = root.querySelector("[data-escritores-cartoes]");
+  const escritoresVazio = root.querySelector("[data-escritores-vazio]");
+  const escritoresBusca = root.querySelector("[data-escritores-busca]");
+  const escritoresResumo = root.querySelector("[data-escritores-resumo]");
   const empty = root.querySelector("[data-blog-vazio]");
   const search = root.querySelector("[data-blog-search]");
   if (!gridTarget) return { destroy() {} };
@@ -377,6 +383,27 @@ export function montar(root = document) {
       <button class="cad-botao-contorno" type="button" data-blog-tentar>Tentar de novo</button>
     </div>`;
   }
+  /* Conheça nossos escritores: só quem tem texto publicado, com a contagem real. Perfil é complemento. */
+  let escritoresDaHome = [];
+  let perfisDaHome = new Map();
+  let termoDeEscritores = "";
+  const desenharEscritores = () => {
+    if (!escritoresSecao || !escritoresCartoes) return;
+    const todos = escritoresDaHome.map((item) => ({ ...item, nome: perfisDaHome.get(item.slug)?.nome || item.nome }));
+    escritoresSecao.hidden = !todos.length;
+    if (!todos.length) return;
+    const busca = termoDeEscritores.trim();
+    const achados = busca ? filtrarEscritores(todos, busca, perfisDaHome) : escritoresEmDestaque(todos, 6);
+    escritoresCartoes.innerHTML = cartoesDosEscritores(achados, perfisDaHome);
+    if (escritoresVazio) escritoresVazio.hidden = achados.length > 0;
+    if (escritoresResumo) {
+      const total = todos.reduce((soma, item) => soma + item.total, 0);
+      escritoresResumo.textContent = busca
+        ? (achados.length === 1 ? "1 escritor encontrado" : `${achados.length} escritores encontrados`)
+        : `${todos.length === 1 ? "1 escritor" : `${todos.length} escritores`} · ${contagemDeTextos(total)}`;
+    }
+  };
+  escritoresBusca?.addEventListener("input", () => { termoDeEscritores = escritoresBusca.value; desenharEscritores(); });
   const carregarTextos = () => blog.listarPublicados().then((publicados) => {
     /* Na prévia do editor, o rascunho que chegou pela mensagem vale mais que o banco. */
     if (!recebeuPrevia) {
@@ -390,6 +417,12 @@ export function montar(root = document) {
       escritoresTarget.innerHTML = escritores.map((item) => `<li><a href="${escapar(hrefDoEscritor(item.nome))}">${escapar(item.nome)}</a></li>`).join("");
       escritoresTarget.closest("section")?.toggleAttribute("hidden", !escritores.length);
     }
+    escritoresDaHome = escritoresDoCaderno(publicados);
+    desenharEscritores();
+    Promise.resolve(blog.listarPerfis ? blog.listarPerfis() : []).then((linhas) => {
+      perfisDaHome = perfisPorSlug(linhas);
+      desenharEscritores();
+    }, () => {});
   }, (erro) => {
     if (!recebeuPrevia) mostrarIndisponivel(erro);
   });

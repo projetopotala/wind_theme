@@ -35,6 +35,7 @@
         <li><a href="blog.html?categoria=praticas" data-categoria-link="praticas">Práticas</a></li>
         <li><a href="blog.html?categoria=cultura" data-categoria-link="cultura">Cultura</a></li>
         <li><a href="blog.html?categoria=cursos" data-categoria-link="cursos">Cursos</a></li>
+        <li><a href="escritor.html" data-escritores-link>Escritores</a></li>
       </ul>
       <button class="cad-busca-abrir" type="button" data-blog-busca-abrir aria-expanded="false" aria-controls="blog-busca" aria-label="Buscar no Caderno">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
@@ -77,6 +78,22 @@
       <h2 class="sr-only">Categorias</h2>
       <ul data-blog-categorias></ul>
     </nav>
+
+    <section class="blog-escritores-secao" aria-labelledby="escritores-secao-titulo" data-blog-escritores-secao hidden>
+      <header class="blog-list-head">
+        <h2 id="escritores-secao-titulo">Conheça nossos escritores</h2>
+        <a class="escritores-ver-todos" href="escritor.html">Ver todos os escritores</a>
+      </header>
+      <div class="escritores-ferramentas">
+        <label class="escritores-busca">
+          <span class="sr-only">Buscar escritor por nome</span>
+          <input type="search" data-escritores-busca placeholder="Buscar escritor por nome…" autocomplete="off">
+        </label>
+        <p class="escritores-resumo" data-escritores-resumo role="status" aria-live="polite"></p>
+      </div>
+      <ul class="escritores-cartoes" data-escritores-cartoes></ul>
+      <p class="blog-vazio" data-escritores-vazio hidden>Nenhum escritor encontrado com esse nome.</p>
+    </section>
 
     <section class="blog-artigos" aria-labelledby="artigos">
       <header class="blog-list-head">
