@@ -155,6 +155,42 @@ export function aplicarCampo(bloco, campo, valor) {
 }
 
 /*
+ * Troca o formato de um bloco de texto sem perder o que foi escrito: parágrafo,
+ * título (nível 2 ou 3), subtítulo, lista e citação. Aplicar o mesmo formato de
+ * novo desfaz (volta a parágrafo). Blocos de outro tipo (imagem, vídeo…) ficam como estão.
+ */
+export const FORMATOS_DE_TEXTO = Object.freeze(["paragraph", "heading", "list", "quote"]);
+
+export function textoDoBloco(bloco) {
+  if (bloco?.type === "list") return (bloco.items || []).join("\n");
+  return String(bloco?.text || "");
+}
+
+export function converterBloco(bloco, formato) {
+  if (!bloco || !FORMATOS_DE_TEXTO.includes(bloco.type)) return bloco;
+  const texto = textoDoBloco(bloco);
+  const base = { id: bloco.id };
+  const mesmo = (
+    (formato === "h2" && bloco.type === "heading" && Number(bloco.level) !== 3)
+    || (formato === "h3" && bloco.type === "heading" && Number(bloco.level) === 3)
+    || (formato === "lista" && bloco.type === "list" && !bloco.ordered)
+    || (formato === "numerada" && bloco.type === "list" && bloco.ordered)
+    || (formato === "citacao" && bloco.type === "quote")
+  );
+  if (mesmo || formato === "paragrafo") return { ...base, type: "paragraph", text: texto };
+  if (formato === "h2" || formato === "h3") return { ...base, type: "heading", level: formato === "h3" ? 3 : 2, text: texto.replace(/\s*\n+\s*/g, " ").trim() };
+  if (formato === "lista" || formato === "numerada") {
+    const itens = texto.split("\n").map((item) => item.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "")).filter((item) => item.trim());
+    return { ...base, type: "list", ordered: formato === "numerada", items: itens };
+  }
+  if (formato === "citacao") return { ...base, type: "quote", text: texto, cite: bloco.cite || "" };
+  return bloco;
+}
+
+/* Quais blocos aceitam negrito, itálico e link (os que têm texto corrido). */
+export const aceitaMarcas = (bloco) => ["paragraph", "quote", "callout", "list"].includes(bloco?.type);
+
+/*
  * Negrito, itálico e link com as marcas que o Caderno entende (**, * e
  * [texto](endereço)). Devolve o texto novo e onde o cursor deve ficar.
  */

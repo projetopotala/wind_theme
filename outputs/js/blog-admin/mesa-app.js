@@ -262,6 +262,7 @@ export function criarMesa({ raiz, repositorio: repositorioBruto, permissoes = {}
       document.title = `${editor.registro ? textoAtual(editor.registro).title : "Novo post"} — Mesa do Caderno`;
       return;
     }
+    editor.sairDoFoco();
     for (const secao of raiz.querySelectorAll("[data-mesa-view]")) secao.hidden = secao.dataset.mesaView !== rota.tela;
     telas[rota.tela].desenhar(rota.parametros);
     document.title = `${telas[rota.tela].titulo} — Mesa do Caderno`;

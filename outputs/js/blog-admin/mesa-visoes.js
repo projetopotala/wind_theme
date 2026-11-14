@@ -75,7 +75,9 @@ export function criarVisaoGeral(el, ctx) {
         .sort((a, b) => b.leituras - a.leituras)
         .slice(0, 4);
       const totalDeLeituras = Object.values(loja.leituras).reduce((soma, valor) => soma + valor, 0);
+      const aguardando = podePublicar(ctx.permissoes) ? loja.registros.filter((registro) => registro.status === "review").length : 0;
       const pendencias = [
+        aguardando && { ir: "#/posts?status=review", icone: "eye", texto: `${plural(aguardando, "texto aguardando", "textos aguardando")} a sua revisão` },
         atencao.comentarios && { ir: "#/comentarios", icone: "message-circle", texto: `${plural(atencao.comentarios, "comentário aguardando", "comentários aguardando")} leitura` },
         atencao.pendentes.length && { ir: "#/posts?atencao=pendentes", icone: "history", texto: `${plural(atencao.pendentes.length, "texto publicado tem", "textos publicados têm")} alterações ainda não publicadas` },
         atencao.semCapa.length && { ir: "#/posts?atencao=sem-capa", icone: "image", texto: `${plural(atencao.semCapa.length, "texto sem", "textos sem")} imagem de capa` },

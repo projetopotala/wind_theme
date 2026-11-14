@@ -701,3 +701,45 @@ option { background: var(--painel); color: var(--marfim); }
   .mesa-escritor { flex-wrap: wrap; }
   .mesa-escritor__acoes { width: 100%; justify-content: flex-end; }
 }
+
+/* ------------------------------------------------------------------
+ * Escrita ampla: barra de formatação, modo foco e pedido de correções
+ * ------------------------------------------------------------------ */
+.mesa-editor__area { padding-top: 16px; }
+.mesa-folha { max-width: 860px; }
+.mesa-folha__texto { padding: 36px 88px 64px; }
+.mesa-atalhos { max-width: 860px; }
+.mesa-barra-texto { position: sticky; top: 8px; z-index: 8; display: flex; align-items: center; gap: 2px; width: max-content; max-width: 100%; margin: 0 auto 20px; padding: 4px; overflow-x: auto; border: 1px solid var(--linha-forte); border-radius: 10px; background: var(--painel); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); scrollbar-width: none; }
+.mesa-barra-texto button { display: grid; place-items: center; flex: none; min-width: 34px; height: 32px; padding: 0 6px; border: 0; border-radius: 7px; background: none; color: var(--suave); font: 700 .78rem var(--sans); cursor: pointer; }
+.mesa-barra-texto button:hover { background: var(--painel-2); color: var(--marfim); }
+.mesa-barra-texto button:focus-visible { outline: 2px solid var(--ouro); outline-offset: -2px; }
+.mesa-barra-texto .mesa-icone { width: 16px; height: 16px; }
+.mesa-barra-texto__sep { flex: none; width: 1px; height: 18px; margin: 0 4px; background: var(--linha-forte); }
+.mesa-correcao { margin: 0 0 22px; padding: 14px 16px; border: 1px solid rgba(216, 178, 106, .4); border-radius: 10px; background: var(--ouro-veu); color: var(--marfim); font-family: var(--sans); font-size: .9rem; line-height: 1.5; }
+.mesa-correcao strong { display: flex; align-items: center; gap: 8px; color: var(--ouro); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+.mesa-correcao .mesa-icone { width: 15px; height: 15px; }
+.mesa-correcao p { margin: 8px 0 6px; white-space: pre-wrap; }
+.mesa-correcao small { color: var(--fraco); }
+.mesa-correcoes { display: grid; gap: 10px; width: 100%; }
+.mesa-app[data-tela="editor"][data-foco="on"] { grid-template-columns: minmax(0, 1fr); }
+.mesa-app[data-tela="editor"][data-foco="on"] .mesa-trilho,
+.mesa-app[data-tela="editor"][data-foco="on"] .mesa-barra-movel,
+.mesa-app[data-tela="editor"][data-foco="on"] .mesa-veu { display: none; }
+.mesa-editor[data-foco="on"] .mesa-voltar,
+.mesa-editor[data-foco="on"] .mesa-editor__divisor,
+.mesa-editor[data-foco="on"] .mesa-editor__nome,
+.mesa-editor[data-foco="on"] [data-editor-previa],
+.mesa-editor[data-foco="on"] [data-editor-alternar-painel],
+.mesa-editor[data-foco="on"] .mesa-atalhos kbd { display: none; }
+.mesa-editor[data-foco="on"] .mesa-editor__topo { border-bottom-color: transparent; background: transparent; }
+.mesa-editor[data-foco="on"] [data-editor-foco] { color: var(--ouro); }
+.mesa-editor[data-foco="on"] .mesa-folha { max-width: 920px; }
+@media (max-width: 1100px) {
+  .mesa-folha__texto { padding: 32px 48px 56px; }
+}
+@media (max-width: 720px) {
+  .mesa-editor__area { padding-top: 0; }
+  .mesa-barra-texto { top: 0; width: 100%; margin: 0 0 8px; border-width: 0 0 1px; border-radius: 0; box-shadow: none; }
+  .mesa-folha__texto { padding: 22px 16px 40px; }
+  .mesa-botao--config span { display: none; }
+}
