@@ -76,3 +76,15 @@ order by p.proname, r.rolname;
 select tgname, pg_get_triggerdef(oid) as definicao
 from pg_trigger
 where tgrelid = 'public.blog_posts'::regclass and not tgisinternal;
+
+-- 10. Colunas das tabelas que a 202611060003 usa (op_records, appointment_profile_accounts, appointment_requests,
+--     appointment_room_sessions): confirme que existem as colunas lidas por ela, em especial
+--     op_records(id, collection, document), appointment_profile_accounts(user_id, profile_id)
+--     e appointment_room_sessions(closed_at). O ensaio em Postgres isolado usa as migrations do repositório;
+--     esta consulta confirma que o LAB real tem o mesmo formato.
+select table_name, string_agg(column_name, ', ' order by ordinal_position) as colunas
+from information_schema.columns
+where table_schema = 'public'
+  and table_name in ('op_records', 'appointment_profile_accounts', 'appointment_requests', 'appointment_room_sessions')
+group by table_name
+order by table_name;
