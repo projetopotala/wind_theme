@@ -17,7 +17,8 @@
 import { CATEGORIAS } from "./blog-data.js";
 import { normalizePost, normalizePosts, slugifyBlogTitle } from "./blog-model.js";
 import { comoPerfil, slugValido } from "./escritores.js";
-import { SUPABASE_CONFIG } from "../supabase/config.js";
+/* A configuração do banco só é carregada no envio de imagem (import dinâmico): a mesa de demonstração e o Blog público
+   não podem falhar na importação em origem sem banco (Preview de apresentação). */
 
 export const BLOG_PADRAO = Object.freeze({ name: "Caderno de Travessia", cover: "media/blog-hero-caminhante.webp" });
 
@@ -255,7 +256,7 @@ async function resumoDoArquivo(arquivo) {
   return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function criarBlogAdministrativo({ client, config = SUPABASE_CONFIG, xhr = () => new XMLHttpRequest() } = {}) {
+export function criarBlogAdministrativo({ client, config = null, xhr = () => new XMLHttpRequest() } = {}) {
   if (!client?.from || !client?.rpc) throw new TypeError("Um cliente Supabase válido é obrigatório.");
   const urlPublica = (nome) => client.storage.from(MIDIA_BUCKET).getPublicUrl(nome).data.publicUrl;
 
@@ -373,11 +374,12 @@ export function criarBlogAdministrativo({ client, config = SUPABASE_CONFIG, xhr 
       const { data: sessao } = await client.auth.getSession();
       const token = sessao?.session?.access_token;
       if (!token) throw new BlogRemotoError("enviar a imagem", { message: "Sua sessão expirou. Entre de novo para enviar imagens." });
+      const cfg = config || (await import("../supabase/config.js")).SUPABASE_CONFIG;
       await new Promise((resolver, falhar) => {
         const pedido = xhr();
-        pedido.open("POST", `${config.url}/storage/v1/object/${MIDIA_BUCKET}/${encodeURIComponent(nome)}`);
+        pedido.open("POST", `${cfg.url}/storage/v1/object/${MIDIA_BUCKET}/${encodeURIComponent(nome)}`);
         pedido.setRequestHeader("Authorization", `Bearer ${token}`);
-        pedido.setRequestHeader("apikey", config.publishableKey);
+        pedido.setRequestHeader("apikey", cfg.publishableKey);
         pedido.setRequestHeader("x-upsert", "false");
         pedido.setRequestHeader("Content-Type", arquivo.type);
         pedido.upload.onprogress = (evento) => { if (evento.lengthComputable) aoProgresso(evento.loaded / evento.total); };

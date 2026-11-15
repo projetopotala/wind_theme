@@ -1,4 +1,4 @@
-import { classificarOrigem, escolherAmbiente } from "./ambiente.js";
+import { classificarOrigem, ehOrigemDeApresentacao, escolherAmbiente } from "./ambiente.js";
 
 /*
  * Configuração pública do Supabase, escolhida pela ORIGEM da página (veja
@@ -44,7 +44,8 @@ try {
   const overlayLab = tipo === "lab" ? await carregar("./ambiente-lab.js", "AMBIENTE_LAB") : null;
   const overlayLocal = tipo === "local" ? await carregar("./ambiente-local.js", "AMBIENTE_LOCAL") : null;
   const overlayPreview = tipo === "desconhecido" ? await carregar("../preview/ambiente-e2e.js", "AMBIENTE_E2E") : null;
-  perfil = escolherAmbiente({ origem, overlayLab, overlayLocal, overlayPreview });
+  const overlayApresentacao = tipo === "desconhecido" && ehOrigemDeApresentacao(origem) ? await carregar("../preview/apresentacao.js", "APRESENTACAO") : null;
+  perfil = escolherAmbiente({ origem, overlayLab, overlayLocal, overlayPreview, overlayApresentacao });
 } catch (erro) {
   avisar(erro);
   throw erro;

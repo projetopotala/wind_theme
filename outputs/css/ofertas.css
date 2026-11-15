@@ -71,3 +71,6 @@ dialog form { display: grid; gap: .8rem; padding: 1.25rem; }
 
 /* Confirmação demonstrativa: o aviso de simulação é sempre o primeiro texto, nunca parece uma venda real. */
 .of-simulacao { margin: 0 0 12px; padding: 10px 14px; border: 2px dashed currentColor; border-radius: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+
+/* Imagem ilustrativa do cartão (apresentação): nunca passa da largura do cartão e mantém a proporção. */
+.of-imagem { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; background: var(--of-linha); }

@@ -19,6 +19,8 @@ export class RestError extends Error {
 }
 
 export function criarRestPublico({ config = SUPABASE_CONFIG, fetchImpl = globalThis.fetch?.bind(globalThis) } = {}) {
+  /* Preview de apresentação (sem banco): nenhuma requisição sai; quem chama trata como "sem conexão". */
+  if (config.semBanco) fetchImpl = () => Promise.reject(new TypeError("Esta apresentação não usa banco de dados."));
   if (typeof fetchImpl !== "function") throw new TypeError("fetch indisponível.");
   const base = `${String(config.url).replace(/\/$/, "")}/rest/v1`;
   const cabecalhos = { apikey: config.publishableKey };

@@ -40,7 +40,11 @@ export async function iniciarOfertas(doc = document, { carregar = () => fetch("o
 
   let catalogo;
   try { catalogo = await carregar(); } catch { lista.replaceChildren(el(doc, "li", { classe: "of-vazio", texto: "Não foi possível carregar as ofertas agora. Fale com a Recepção." })); return null; }
-  const ofertas = Array.isArray(catalogo?.ofertas) ? catalogo.ofertas : [];
+  const vitrine = raiz.dataset.ofertasVitrine || "";
+  const todas = Array.isArray(catalogo?.ofertas) ? catalogo.ofertas : [];
+  /* Vitrine temática (ex.: só os cursos): o catálogo marca cada item com "vitrine"; sem o atributo, mostra tudo. */
+  const ofertas = vitrine ? todas.filter((o) => String(o.vitrine || "").split(",").includes(vitrine)) : todas;
+  if (vitrine) chips.hidden = true;
   const filtro = { modalidade: "todas", formato: "todos", termo: "" };
 
   formato.replaceChildren(...FORMATOS.map((f) => el(doc, "option", { value: f.id, texto: f.rotulo })));
@@ -49,7 +53,12 @@ export async function iniciarOfertas(doc = document, { carregar = () => fetch("o
   function cartao(oferta) {
     const preco = formatarPreco(oferta);
     const botao = el(doc, "button", { type: "button", classe: "of-acao", "data-oferta": oferta.id, texto: rotuloDaAcao(oferta) });
+    /* Imagem ilustrativa só de arquivos do próprio portal (media/); qualquer outro endereço é ignorado. */
+    const imagem = /^media\/[\w.-]+\.(?:webp|jpe?g|png)$/.test(String(oferta.imagem || ""))
+      ? el(doc, "img", { classe: "of-imagem", src: oferta.imagem, alt: oferta.imagemAlt || "", width: 640, height: 360, loading: "lazy", decoding: "async" })
+      : null;
     return el(doc, "li", {}, [el(doc, "article", { classe: "of-cartao", "data-modalidade-oferta": oferta.modalidade }, [
+      imagem,
       el(doc, "p", { classe: "of-etiqueta", texto: `${MODALIDADES.find((m) => m.id === oferta.modalidade)?.rotulo || "Oferta"} · ${oferta.formato === "online" ? "Online" : "Presencial"}` }),
       el(doc, "h3", { classe: "of-titulo", texto: oferta.titulo }),
       el(doc, "p", { classe: "of-resumo", texto: oferta.resumo }),

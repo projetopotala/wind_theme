@@ -1,0 +1,38 @@
+/* APRESENTAÇÃO (16/11/2026): complementos do ofertas.css para as páginas de demonstração. Sem dependência de banco. */
+.ap-faixa { margin: 0 0 1.25rem; padding: .7rem 1rem; border: 2px dashed var(--of-ouro); border-radius: 12px; background: var(--of-papel); font-size: .92rem; }
+.ap-faixa strong { text-transform: uppercase; letter-spacing: .06em; }
+.of-imagem { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; background: var(--of-linha); }
+.ap-explica { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; margin: 0 0 1.5rem; }
+.ap-explica > div { padding: 1rem 1.1rem; border: 1px solid var(--of-linha); border-radius: 14px; background: var(--of-papel); }
+.ap-explica h2 { margin: 0 0 .3rem; font: 400 1.15rem/1.25 Georgia, "Times New Roman", serif; }
+.ap-explica p { margin: 0; color: var(--of-suave); font-size: .93rem; }
+.ap-explica a { color: var(--of-ouro); }
+.ap-trilha { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+.ap-passo { padding: .35rem .8rem; border: 1px solid var(--of-linha); border-radius: 999px; font-size: .82rem; color: var(--of-suave); }
+.ap-passo[aria-current="step"] { background: var(--of-escuro); border-color: var(--of-escuro); color: #fff; }
+.ap-passo[data-feito="true"] { color: var(--of-tinta); border-color: var(--of-ouro); }
+.ap-palco { max-width: 38rem; border: 1px solid var(--of-linha); border-radius: 18px; background: var(--of-papel); }
+.ap-palco form { display: grid; gap: .8rem; padding: 1.25rem; }
+.ap-indisponivel { opacity: .55; }
+.ap-resumo { display: grid; gap: .4rem; margin: 0; }
+.ap-resumo div { display: grid; grid-template-columns: 7.5rem 1fr; gap: .5rem; padding-bottom: .4rem; border-bottom: 1px solid var(--of-linha); }
+.ap-resumo dt { color: var(--of-suave); }
+.ap-resumo dd { margin: 0; }
+.ap-roteiro { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 1rem; margin: 0 0 2rem; padding: 0; list-style: none; }
+.ap-roteiro li { display: flex; flex-direction: column; gap: .5rem; padding: 1.1rem; border: 1px solid var(--of-linha); border-radius: 16px; background: var(--of-papel); }
+.ap-roteiro h2 { margin: 0; font: 400 1.25rem/1.25 Georgia, "Times New Roman", serif; }
+.ap-roteiro p { margin: 0; color: var(--of-suave); font-size: .93rem; }
+.ap-etiqueta { align-self: flex-start; padding: .15rem .6rem; border-radius: 999px; background: #efe3cf; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; }
+.ap-etiqueta[data-tipo="real"] { background: #e6efe0; }
+.ap-links { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: auto; padding-top: .4rem; }
+.ap-links a { min-height: 44px; display: inline-flex; align-items: center; padding: .5rem 1rem; border: 1px solid var(--of-escuro); border-radius: 999px; color: var(--of-tinta); text-decoration: none; font-size: .92rem; }
+.ap-links a:first-child { background: var(--of-escuro); color: #fff; }
+.ap-limites { margin: 0 0 2rem; padding-left: 1.2rem; display: grid; gap: .3rem; color: var(--of-suave); }
+.mesa-demo-faixa { position: sticky; top: 0; z-index: 30; margin: 0; padding: .55rem 1rem; background: #f2e9dc; color: #3a2a20; border-bottom: 2px dashed #7a5a2b; font: 600 .85rem/1.35 system-ui, sans-serif; text-align: center; }
+.mesa-demo-faixa a { color: inherit; margin-left: .6rem; }
+@media (max-width: 480px) { .ap-resumo div { grid-template-columns: 1fr; } }
+
+/* Correções para a vitrine: atributo hidden vence o display do componente; imagem respeita a proporção. */
+[hidden] { display: none !important; }
+.of-imagem { height: auto; }
+.of-nota a, .ap-faixa a { color: var(--of-ouro); }

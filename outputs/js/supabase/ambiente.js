@@ -25,6 +25,12 @@ export const HOSTS_OFICIAIS = Object.freeze(["wind-theme.vercel.app"]);
 // Alias do projeto LAB e deployments isolados (wind-theme-m2-lab-preview-<id>-potala).
 // Âncoras nas duas pontas: nada com prefixo ou sufixo acrescentado passa.
 export const HOST_LAB = /^wind-theme-m2-lab-preview(?:-[a-z0-9]+-potala)?\.vercel\.app$/;
+/*
+ * PREVIEW DE APRESENTAÇÃO (sem banco). Só vale em origem https desconhecida de um deployment da Vercel do projeto
+ * (wind-theme-<id>-potala ou wind-theme-git-<ramo>-potala) E quando o ramo traz js/preview/apresentacao.js.
+ * Nunca é produção, LAB ou local; não tem URL, chave nem projeto: nenhuma leitura ou escrita em banco acontece.
+ */
+export const HOST_APRESENTACAO = /^wind-theme-(?:git-[a-z0-9-]+|[a-z0-9]+)-potala\.vercel\.app$/;
 const HOST_LOCAL = /^(?:localhost|127\.0\.0\.1|\[::1\]|(?:[a-z0-9-]+\.)+localhost)$/;
 
 export const PUBLICAVEL_PRODUCAO = "sb_publishable_daUl7ko5Dg-C5jO67g4sEQ_rGLbbu0e";
@@ -56,6 +62,11 @@ function origemValida(origem) {
   try { u = new URL(String(origem || "")); } catch { return null; }
   if (u.origin === "null" || u.username || u.password) return null;
   return u;
+}
+
+export function ehOrigemDeApresentacao(origem) {
+  const u = origemValida(origem);
+  return Boolean(u && u.protocol === "https:" && !u.port && HOST_APRESENTACAO.test(u.hostname) && classificarOrigem(origem) === "desconhecido");
 }
 
 /* Classifica a origem: "producao" | "lab" | "local" | "desconhecido". Comparação exata. */
@@ -129,7 +140,7 @@ function perfilExterno(ambiente, dados, origem, nomeArquivo) {
  * próprio ambiente: em qualquer outra origem ele é ignorado e não desvia nada.
  * Sem origem conhecida não existe perfil: o resultado é um erro controlado.
  */
-export function escolherAmbiente({ origem = "", overlayLab = null, overlayLocal = null, overlayPreview = null } = {}) {
+export function escolherAmbiente({ origem = "", overlayLab = null, overlayLocal = null, overlayPreview = null, overlayApresentacao = null } = {}) {
   const tipo = classificarOrigem(origem);
   const u = origemValida(origem);
   if (tipo === "producao") {
@@ -155,6 +166,17 @@ export function escolherAmbiente({ origem = "", overlayLab = null, overlayLocal 
       siteUrl: u.origin,
       origemAutorizada: overlayPreview.origin,
       appointments: overlayPreview.appointments,
+    });
+  }
+  if (tipo === "desconhecido" && overlayApresentacao?.apresentacao === true && ehOrigemDeApresentacao(origem)) {
+    return Object.freeze({
+      ambiente: "apresentacao",
+      semBanco: true,
+      projectRef: "",
+      url: "",
+      publishableKey: "",
+      siteUrl: u.origin,
+      appointments: Object.freeze({ authenticatedRequests: false, admin: false, reservations: false, publicRequests: false, turnstileSiteKey: "" }),
     });
   }
   throw new ErroDeAmbiente(

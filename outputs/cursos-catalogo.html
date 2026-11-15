@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f2e9dc">
+  <meta name="description" content="Cursos e oficinas do Instituto Potala: quem conduz, quando acontece, formato, valor da programação pública e inscrição demonstrativa.">
+  <meta name="robots" content="noindex">
+  <title>Cursos abertos - Instituto Potala</title>
+  <link rel="stylesheet" href="css/ofertas.css">
+  <link rel="stylesheet" href="css/apresentacao.css">
+  <script type="module" src="js/ofertas/ofertas.js"></script>
+</head>
+<body data-section="cursos-catalogo">
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <main class="of-pagina" id="conteudo" data-ofertas data-ofertas-vitrine="cursos">
+    <nav class="of-topo" aria-label="Navegação">
+      <a href="travessia.html">Instituto Potala</a>
+      <a href="cursos.html">Voltar para Cursos</a>
+    </nav>
+    <p class="of-kicker">Cursos</p>
+    <h1>Cursos e oficinas abertos</h1>
+    <p class="of-lead">Veja quem conduz, quando acontece, o formato e o valor de cada curso. Abra um curso para ver os detalhes e experimentar o caminho de inscrição.</p>
+    <p class="ap-faixa" role="note"><strong>Demonstração.</strong> Os cursos vêm da programação pública do Instituto, consultada em novembro de 2026. A inscrição é uma simulação: nenhuma vaga é reservada, nada é cobrado e nenhum dado é guardado ou enviado. As imagens são ilustrativas.</p>
+    <div class="ap-explica">
+      <div>
+        <h2>Cursos: o catálogo público</h2>
+        <p>Qualquer pessoa pode conhecer os cursos, ver detalhes e iniciar uma inscrição, sem precisar de conta.</p>
+      </div>
+      <div>
+        <h2>Meu Potala: a área de quem já é aluno</h2>
+        <p>Depois da matrícula, a pessoa acompanha seus cursos e atividades em <a href="meu-potala.html">Meu Potala</a>, com login.</p>
+      </div>
+    </div>
+
+    <section class="of-filtros" aria-label="Filtros">
+      <ul class="of-chips" data-ofertas-modalidades aria-label="Tipo de oferta" hidden></ul>
+      <div class="of-linha">
+        <label>Buscar <input type="search" data-ofertas-busca placeholder="curso, responsável, tema…" autocomplete="off"></label>
+        <label>Formato <select data-ofertas-formato></select></label>
+      </div>
+    </section>
+    <p class="of-contagem" data-ofertas-contagem aria-live="polite"></p>
+    <ul class="of-lista" data-ofertas-lista></ul>
+    <dialog data-ofertas-dialogo aria-labelledby="of-dialogo-titulo"></dialog>
+    <p class="of-nota" style="margin-top:1.5rem">Dúvidas? <a href="recepcao.html">Fale com a Recepção</a>. Para cuidar de si, veja os <a href="atendimentos.html">Atendimentos</a>.</p>
+  </main>
+</body>
+</html>
