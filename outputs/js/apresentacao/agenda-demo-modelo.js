@@ -76,7 +76,7 @@ export function resumoDaSimulacao(estado) {
     data: data.rotulo,
     horario: horario.rotulo,
     formato: servico.formato === "online" ? "Online" : "Presencial",
-    valor: formatarPreco(servico),
+    valor: `${formatarPreco(servico)} (ilustrativo)`,
   };
 }
 
