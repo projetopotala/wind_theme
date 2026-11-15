@@ -14,7 +14,7 @@ import { icone } from "../admin/icones.js";
 import { validarDocumento } from "../blog/blog-conteudo.js";
 import { BLOG_BLOCK_TYPES, estimateReadingMinutes, normalizePost, normalizePosts } from "../blog/blog-model.js";
 import {
-  TIPOS_DE_BLOCO, aplicarCampo, blocoHtml, blocoNovo, corpoHtml, duplicarBloco, formatarSelecao, insercaoHtml, menuDeBlocosHtml,
+  TIPOS_DE_BLOCO, atualizarVisual, aceitaMarcas, aplicarCampo, blocoHtml, blocoNovo, converterBloco, corpoHtml, duplicarBloco, formatarSelecao, insercaoHtml, menuDeBlocosHtml,
 } from "./mesa-blocos.js";
 import {
   SECOES_DO_PORTAL, autoresDe, enderecoLivre, fraseDoAgendamento, fraseDoStatus, hojeNoInstituto, horaDe, instanteDe,
@@ -125,7 +125,11 @@ export function createBlogEditor({ root, ctx } = {}) {
   let repetir = false;
   let ocupado = false;
   let selecionado = "";
-  let aba = lerPreferencia("mesa.aba", "publicacao");
+  /* Sem escolha guardada, quem só escreve começa em "Detalhes" (resumo, categoria); quem publica, em "Publicação". */
+  let aba = lerPreferencia("mesa.aba", "");
+  let foco = false;
+  let painelAntesDoFoco = false;
+  let ultimoBlocoDeTexto = "";
   let escolha = "agora";
   let agenda = sugestaoDeAgenda();
   let slugAutomatico = true;
@@ -135,7 +139,8 @@ export function createBlogEditor({ root, ctx } = {}) {
   let esperaDaPrevia = null;
   /* Sobe quando a sessao muda: gravacoes que comecaram antes nao mexem mais no editor. */
   let geracao = 0;
-  let painelAberto = lerPreferencia("mesa.painel", "aberto") === "aberto" && !globalThis.matchMedia?.("(max-width: 1100px)").matches;
+  /* O painel começa fechado: a folha ganha o espaço todo e as configurações abrem quando preciso. */
+  let painelAberto = lerPreferencia("mesa.painel", "fechado") === "aberto" && !globalThis.matchMedia?.("(max-width: 1100px)").matches;
 
   root.innerHTML = `<div class="mesa-editor" data-painel="${painelAberto ? "aberto" : "fechado"}">
     <header class="mesa-editor__topo">
@@ -145,15 +150,30 @@ export function createBlogEditor({ root, ctx } = {}) {
       <span class="mesa-salvo" data-editor-salvo role="status"></span>
       <div class="mesa-editor__acoes">
         <button type="button" class="mesa-botao mesa-botao--contorno" data-editor-previa>${i("eye")}<span>Pré-visualizar</span></button>
-        <button type="button" class="mesa-botao-icone" data-editor-alternar-painel aria-controls="mesa-painel" aria-expanded="${painelAberto}" title="Configurações do texto">${i("settings")}<span class="sr-only">Configurações do texto</span></button>
+        <button type="button" class="mesa-botao-icone" data-editor-foco aria-pressed="false" title="Modo foco (Ctrl+Shift+F)">${i("panel-left-close")}<span class="sr-only">Modo foco</span></button>
+        <button type="button" class="mesa-botao mesa-botao--contorno mesa-botao--config" data-editor-alternar-painel aria-controls="mesa-painel" aria-expanded="${painelAberto}" title="Capa, resumo, categoria e publicação">${i("settings")}<span>Configurações</span></button>
         <button type="button" class="mesa-botao mesa-botao--principal" data-editor-principal></button>
       </div>
     </header>
     <div class="mesa-editor__meio">
       <div class="mesa-editor__area" data-editor-area>
+        <div class="mesa-barra-texto" data-editor-barra role="toolbar" aria-label="Formatação do texto">
+          <button type="button" data-barra="negrito" title="Negrito (Ctrl+B)">${i("bold")}<span class="sr-only">Negrito</span></button>
+          <button type="button" data-barra="italico" title="Itálico (Ctrl+I)">${i("italic")}<span class="sr-only">Itálico</span></button>
+          <button type="button" data-barra="link" title="Link">${i("link")}<span class="sr-only">Link</span></button>
+          <span class="mesa-barra-texto__sep" aria-hidden="true"></span>
+          <button type="button" data-barra="h2" title="Título de uma parte">${i("heading")}<span class="sr-only">Título</span></button>
+          <button type="button" data-barra="h3" class="mesa-barra-texto__texto" title="Subtítulo"><span aria-hidden="true">H3</span><span class="sr-only">Subtítulo</span></button>
+          <button type="button" data-barra="lista" title="Lista com marcadores">${i("list")}<span class="sr-only">Lista</span></button>
+          <button type="button" data-barra="numerada" class="mesa-barra-texto__texto" title="Lista numerada"><span aria-hidden="true">1.</span><span class="sr-only">Lista numerada</span></button>
+          <button type="button" data-barra="citacao" title="Citação">${i("quote")}<span class="sr-only">Citação</span></button>
+          <span class="mesa-barra-texto__sep" aria-hidden="true"></span>
+          <button type="button" data-barra="imagem" title="Inserir imagem">${i("image")}<span class="sr-only">Imagem</span></button>
+        </div>
         <article class="mesa-folha" data-editor-folha aria-label="Texto">
           <div class="mesa-folha__capa" data-editor-capa></div>
           <div class="mesa-folha__texto">
+            <aside class="mesa-correcao" data-editor-correcao hidden role="note"></aside>
             <button type="button" class="mesa-folha__categoria" data-editor-categoria title="Mudar a categoria"></button>
             <label class="sr-only" for="mesa-campo-titulo">Título</label>
             <textarea id="mesa-campo-titulo" class="mesa-folha__titulo" data-editor-campo="title" rows="1" maxlength="160" placeholder="Título do texto"></textarea>
@@ -286,6 +306,13 @@ export function createBlogEditor({ root, ctx } = {}) {
       if (minha !== geracao) return false;
       const primeiraVez = !registro;
       registro = novo;
+      /* O banco é quem guarda o pedido de correções: se ele difere do que a tela tem (aba antiga), a tela segue o banco. */
+      const doBanco = textoAtual(novo)?.correcao;
+      if (JSON.stringify(doBanco || null) !== JSON.stringify(post.correcao || null)) {
+        if (doBanco) post.correcao = doBanco; else delete post.correcao;
+        desenharCorrecao();
+        salvoComo = assinatura();
+      }
       salvoComo = agora;
       ultimoSalvamento = new Date();
       avisouErro = false;
@@ -347,6 +374,8 @@ export function createBlogEditor({ root, ctx } = {}) {
     clearTimeout(espera);
     if (emVoo) await emVoo;
     let documento = paraGravar();
+    /* O pedido de correções vale até o texto voltar à revisão ou ser publicado. */
+    if (["revisao", "publicar", "agendar"].includes(acao) && documento.correcao) { delete documento.correcao; delete post.correcao; desenharCorrecao(); }
     let quando = null;
     if (acao === "publicar" || acao === "agendar") {
       const problemas = pendenciasParaPublicar(post);
@@ -397,13 +426,44 @@ export function createBlogEditor({ root, ctx } = {}) {
       } else if (acao === "agendar") {
         ctx.avisos.mostrar(fraseDoAgendamento(quando));
       } else {
-        ctx.avisos.mostrar({ revisao: "Enviado para revisão.", despublicar: "O texto voltou a ser rascunho.", arquivar: "Texto arquivado.", restaurar: "O texto voltou a ser rascunho." }[acao]);
+        ctx.avisos.mostrar({ revisao: "Enviado para revisão. Quem publica vai ler e publicar o texto ou devolvê-lo com correções.", despublicar: "O texto voltou a ser rascunho.", arquivar: "Texto arquivado.", restaurar: "O texto voltou a ser rascunho." }[acao]);
       }
       escolha = registro.status === "scheduled" ? "agendar" : "agora";
       desenharCabecalho();
       desenharPainel();
     } catch (erro) {
       ctx.avisos.mostrar(`Não foi possível ${VERBO[acao] || "salvar"}: ${erro.message}`, { tipo: "erro" });
+    } finally {
+      ocupado = false;
+      desenharBotoes();
+    }
+  }
+
+  /*
+   * O Owner devolve o texto em revisão ao escritor com uma observação. O texto volta a rascunho (o escritor
+   * não perde nada) e a nota segue dentro do próprio texto, que o escritor lê: o histórico de versões do
+   * Owner não é visível a ele. O banco só aceita essa devolução de quem tem permissão de publicar.
+   */
+  async function pedirCorrecoes() {
+    if (ocupado || !post || !publica() || registro?.status !== "review") return;
+    const campo = corpoDoPainel.querySelector("[data-correcao-texto]");
+    const nota = String(campo?.value || "").trim();
+    if (nota.length < 5) {
+      ctx.avisos.mostrar("Escreva o que precisa mudar (pelo menos uma frase curta).", { tipo: "erro" });
+      campo?.focus();
+      return;
+    }
+    clearTimeout(espera);
+    if (emVoo) await emVoo;
+    const documento = { ...paraGravar(), correcao: { texto: nota.slice(0, 600), por: ctx.usuario?.autor || ctx.usuario?.nome || "Owner", em: new Date().toISOString() } };
+    ocupado = true;
+    desenharBotoes();
+    try {
+      const novo = await ctx.salvarRegistro(documento, "despublicar", { registrar: true, resumo: cortar(`Correções pedidas: ${nota}`, 400) });
+      carregar(novo);
+      ctx.avisos.mostrar("Texto devolvido ao escritor com as correções.");
+    } catch (erro) {
+      ctx.avisos.mostrar(`Não foi possível devolver: ${erro.message}`, { tipo: "erro" });
     } finally {
       ocupado = false;
       desenharBotoes();
@@ -499,6 +559,71 @@ export function createBlogEditor({ root, ctx } = {}) {
       : `<button type="button" class="mesa-capa mesa-capa--vazia" data-capa-acao="trocar">${i("image")}<strong>Adicionar imagem de capa</strong><small>Abre o artigo e aparece nos cartões do Blog. Você também pode arrastar uma foto para cá.</small></button>`;
   }
 
+  /* Pedido de correções do Owner: aparece no topo da folha enquanto o texto não for enviado de novo. */
+  function desenharCorrecao() {
+    const alvo = $("[data-editor-correcao]");
+    const pedido = post?.correcao;
+    alvo.hidden = !pedido?.texto;
+    alvo.innerHTML = pedido?.texto
+      ? `<strong>${i("message-circle")}Correções pedidas${pedido.por ? ` por ${esc(pedido.por)}` : ""}</strong><p>${esc(pedido.texto)}</p><small>Ajuste o texto e clique em “Enviar para revisão” de novo.</small>`
+      : "";
+  }
+
+  /* ---------------- barra de formatação e modo foco ---------------- */
+
+  const blocoDaBarra = () => post.content.find((item) => item.id === (selecionado || ultimoBlocoDeTexto)) || null;
+
+  async function acaoDaBarra(nome) {
+    if (nome === "imagem") { await novoBloco("image", selecionado || ultimoBlocoDeTexto || post.content.at(-1)?.id || ""); return; }
+    const bloco = blocoDaBarra();
+    if (["negrito", "italico", "link"].includes(nome)) {
+      if (!bloco || !aceitaMarcas(bloco)) {
+        ctx.avisos.mostrar("Clique dentro de um parágrafo para usar negrito, itálico ou link.", { tipo: "info" });
+        return;
+      }
+      formatarBloco(bloco.id, nome);
+      return;
+    }
+    const formato = nome;
+    if (!bloco) {
+      /* Sem bloco escolhido: a barra cria o bloco no fim do texto. */
+      const tipo = { h2: "heading", h3: "heading", lista: "list", numerada: "list", citacao: "quote" }[formato];
+      const novo = inserirBloco(tipo, post.content.at(-1)?.id || "", formato === "h3" ? { level: 3 } : formato === "numerada" ? { ordered: true } : {});
+      focarBloco(novo.id);
+      return;
+    }
+    const convertido = converterBloco(bloco, formato);
+    if (convertido === bloco) {
+      ctx.avisos.mostrar("Este bloco não muda de formato. Escolha um bloco de texto.", { tipo: "info" });
+      return;
+    }
+    post.content = post.content.map((item) => (item.id === bloco.id ? convertido : item));
+    desenharBlocos();
+    focarBloco(bloco.id, { fim: true });
+    mudou();
+  }
+
+  function aplicarFoco(ligado) {
+    if (foco === ligado) return;
+    foco = ligado;
+    casca.dataset.foco = ligado ? "on" : "off";
+    root.closest(".mesa-app")?.setAttribute("data-foco", ligado ? "on" : "off");
+    const botao = $("[data-editor-foco]");
+    botao.setAttribute("aria-pressed", String(ligado));
+    botao.title = ligado ? "Sair do modo foco (Esc)" : "Modo foco (Ctrl+Shift+F)";
+    botao.querySelector(".sr-only").textContent = ligado ? "Sair do modo foco" : "Modo foco";
+    if (ligado) {
+      painelAntesDoFoco = painelAberto;
+      if (painelAberto) { painelAberto = false; casca.dataset.painel = "fechado"; $("[data-editor-alternar-painel]").setAttribute("aria-expanded", "false"); }
+    } else if (painelAntesDoFoco) {
+      painelAberto = true;
+      casca.dataset.painel = "aberto";
+      $("[data-editor-alternar-painel]").setAttribute("aria-expanded", "true");
+      desenharPainel();
+    }
+    /* Nada é redesenhado: o cursor e o texto ficam onde estavam. */
+  }
+
   function desenharCategoria() {
     $("[data-editor-categoria]").innerHTML = `${i("tag")}${esc(ctx.rotuloDaCategoria(post.category))}`;
   }
@@ -516,6 +641,7 @@ export function createBlogEditor({ root, ctx } = {}) {
 
   function desenharFolha() {
     desenharCapa();
+    desenharCorrecao();
     desenharCategoria();
     const titulo = $('[data-editor-campo="title"]');
     const subtitulo = $('[data-editor-campo="subtitle"]');
@@ -533,6 +659,7 @@ export function createBlogEditor({ root, ctx } = {}) {
   }
 
   function selecionar(id) {
+    if (id) ultimoBlocoDeTexto = id;
     if (selecionado === id) return;
     selecionado = id;
     marcarSelecao();
@@ -680,6 +807,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     if (!campo) return;
     const resultado = formatarSelecao(campo.value, campo.selectionStart ?? campo.value.length, campo.selectionEnd ?? campo.value.length, formato);
     campo.value = resultado.texto;
+    atualizarVisual(campo);
     crescer(campo);
     campo.focus();
     campo.setSelectionRange(resultado.inicio, resultado.fim);
@@ -786,7 +914,11 @@ export function createBlogEditor({ root, ctx } = {}) {
       </section>` : ""}
       <section class="mesa-painel__secao mesa-painel__acoes">
         ${status === "draft" ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="revisao">${i("eye")}Enviar para revisão</button>` : ""}
-        ${status === "review" && publica() ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="despublicar">${i("undo-2")}Voltar a rascunho</button>` : ""}
+        ${status === "review" && publica() ? `<div class="mesa-correcoes">
+            <label class="mesa-campo"><span class="mesa-campo__rotulo">Pedir correções ao escritor</span>
+              <textarea data-correcao-texto rows="3" maxlength="600" placeholder="O que precisa mudar antes de publicar?" aria-label="Correções pedidas"></textarea></label>
+            <button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="correcoes">${i("undo-2")}Devolver com correções</button>
+          </div>` : ""}
         ${status === "scheduled" ? `${publica() ? `<button type="button" class="mesa-botao mesa-botao--contorno" data-editor-acao="publicar">${i("send")}Publicar agora</button><button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Cancelar agendamento</button>` : ""}` : ""}
         ${status === "published" ? `<a class="mesa-botao mesa-botao--contorno" href="/artigo.html?post=${encodeURIComponent(registro.post.slug)}" target="_blank" rel="noopener">${i("external-link")}Ver no Blog</a>${publica() ? `<button type="button" class="mesa-botao mesa-botao--fantasma" data-editor-acao="despublicar">${i("undo-2")}Despublicar</button>` : ""}` : ""}
       </section>
@@ -805,6 +937,13 @@ export function createBlogEditor({ root, ctx } = {}) {
     const relacionados = (post.relatedPostIds || []).map((id) => publicados.find((item) => item.id === id)).filter(Boolean);
     const portal = post.relatedPortal || [];
     return `<section class="mesa-painel__secao">
+        <div class="mesa-campo"><span class="mesa-campo__rotulo">Imagem de capa</span>
+          ${post.cover ? `<img class="mesa-seo__imagem" src="${esc(enderecoDoSite(post.cover))}" alt="">` : '<p class="mesa-dica">Sem capa. Ela abre o artigo e aparece nos cartões do Blog.</p>'}
+          <div class="mesa-linha">
+            <button type="button" class="mesa-botao mesa-botao--contorno mesa-botao--pequeno" data-capa-acao="trocar">${i("image")}${post.cover ? "Trocar capa" : "Escolher capa"}</button>
+            ${post.cover ? `<button type="button" class="mesa-botao mesa-botao--fantasma mesa-botao--pequeno" data-capa-acao="remover">${i("trash-2")}Remover</button>` : ""}
+          </div>
+        </div>
         ${campoDoPainel("Resumo", `<textarea data-editor-campo="excerpt" rows="4" maxlength="300" placeholder="Duas ou três linhas que aparecem nos cartões do Blog" aria-label="Resumo">${esc(post.excerpt)}</textarea>`, { conta: "excerpt" })}
         <div class="mesa-campo"><span class="mesa-campo__rotulo">Categoria</span>
           <div class="mesa-linha">
@@ -1005,6 +1144,7 @@ export function createBlogEditor({ root, ctx } = {}) {
   /* ---------------- eventos da folha ---------------- */
 
   folha.addEventListener("focusin", (evento) => {
+    if (evento.target.matches?.(".mesa-campo-visual textarea")) crescer(evento.target);
     const bloco = evento.target.closest("[data-bloco-id]");
     if (bloco) selecionar(bloco.dataset.blocoId);
     else if (evento.target.closest("[data-editor-campo], [data-editor-capa]")) selecionar("");
@@ -1012,7 +1152,7 @@ export function createBlogEditor({ root, ctx } = {}) {
 
   folha.addEventListener("input", (evento) => {
     const alvo = evento.target;
-    if (alvo.matches("textarea")) crescer(alvo);
+    if (alvo.matches("textarea")) { crescer(alvo); atualizarVisual(alvo); }
     const campo = alvo.dataset.editorCampo;
     if (campo) { lerCampo(campo, alvo); return; }
     const campoDoBloco = alvo.dataset.blocoCampo;
@@ -1159,8 +1299,24 @@ export function createBlogEditor({ root, ctx } = {}) {
 
   /* ---------------- eventos do painel e do cabeçalho ---------------- */
 
+  /* A barra não tira o cursor do texto: o mousedown não move o foco. */
+  $("[data-editor-barra]").addEventListener("mousedown", (evento) => { if (evento.target.closest("button")) evento.preventDefault(); });
+  $("[data-editor-barra]").addEventListener("click", async (evento) => {
+    const botao = evento.target.closest("[data-barra]");
+    if (botao && post) await acaoDaBarra(botao.dataset.barra);
+  });
+  root.addEventListener("keydown", (evento) => {
+    if ((evento.ctrlKey || evento.metaKey) && evento.shiftKey && evento.key.toLowerCase() === "f") {
+      evento.preventDefault();
+      aplicarFoco(!foco);
+      return;
+    }
+    if (evento.key === "Escape" && foco && previa.hidden && !ctx.menuAberto?.() && !evento.defaultPrevented) aplicarFoco(false);
+  });
+
   root.addEventListener("click", async (evento) => {
     const alvo = evento.target;
+    if (alvo.closest("[data-editor-foco]")) { aplicarFoco(!foco); return; }
     if (alvo.closest("[data-editor-principal]")) { await mudarStatus(acaoPrincipal().acao); return; }
     if (alvo.closest("[data-editor-previa]")) { abrirPrevia(); return; }
     if (alvo.closest("[data-editor-repetir]")) { await salvar({ registrar: false, silencioso: false }); return; }
@@ -1169,6 +1325,8 @@ export function createBlogEditor({ root, ctx } = {}) {
     const trocaDeAba = alvo.closest("[data-editor-aba]");
     if (trocaDeAba) { abrirPainel(trocaDeAba.dataset.editorAba); trocaDeAba.focus(); return; }
     if (!painel.contains(alvo)) return;
+    const capaDoPainel = alvo.closest("[data-capa-acao]");
+    if (capaDoPainel) { await acaoDaCapa(capaDoPainel.dataset.capaAcao); desenharPainel(); return; }
     const escolhaDe = alvo.closest("[data-escolha]");
     if (escolhaDe) {
       escolha = escolhaDe.dataset.escolha;
@@ -1181,6 +1339,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     if (acao) {
       const nome = acao.dataset.editorAcao;
       if (nome === "descartar") await descartarAlteracoes();
+      else if (nome === "correcoes") await pedirCorrecoes();
       else if (nome === "excluir") await excluir();
       else await mudarStatus(nome);
       return;
@@ -1321,6 +1480,8 @@ export function createBlogEditor({ root, ctx } = {}) {
     escolha = agendar || registro?.status === "scheduled" ? "agendar" : "agora";
     agenda = registro?.status === "scheduled" ? partesDoInstante(registro.publicarEm) : sugestaoDeAgenda();
     if (!previa.hidden) fecharPrevia();
+    aplicarFoco(false);
+    if (!aba) aba = publica() ? "publicacao" : "detalhes";
     desenharCabecalho();
     desenharFolha();
     if (agendar) abrirPainel("publicacao");
@@ -1345,6 +1506,7 @@ export function createBlogEditor({ root, ctx } = {}) {
       previa.hidden = true;
       casca.classList.remove("tem-previa");
       quadro.src = "about:blank";
+      aplicarFoco(false);
       registro = null;
       post = null;
       base = null;
@@ -1357,7 +1519,9 @@ export function createBlogEditor({ root, ctx } = {}) {
       for (const alvo of root.querySelectorAll("[data-editor-blocos], [data-editor-capa], [data-editor-categoria], [data-editor-nome], [data-editor-status], [data-editor-salvo], [data-editor-palavras]")) alvo.replaceChildren();
       corpoDoPainel.replaceChildren();
       rodapeDoPainel.replaceChildren();
+      $("[data-editor-correcao]").replaceChildren();
     },
+    sairDoFoco: () => aplicarFoco(false),
     textoPendente: () => (post ? clone(post) : null),
     abrir(id, { agendar = false } = {}) {
       const encontrado = id ? ctx.loja.registros.find((item) => item.id === id) : null;

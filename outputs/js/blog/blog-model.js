@@ -116,7 +116,18 @@ export function normalizePost(post = {}, index = 0) {
       image: text(seo.image),
     },
     updatedAt: text(post.updatedAt) || new Date(0).toISOString(),
+    ...correcaoDoPost(post.correcao),
   };
+}
+
+/*
+ * Pedido de correções do Owner ao escritor. Só existe enquanto o texto não é
+ * publicado (a Mesa o tira ao publicar); sem pedido, o campo nem aparece.
+ */
+function correcaoDoPost(correcao) {
+  const texto = text(correcao?.texto).slice(0, 600);
+  if (!texto) return {};
+  return { correcao: { texto, por: text(correcao?.por).slice(0, 80), em: text(correcao?.em).slice(0, 40) } };
 }
 
 export function normalizePosts(posts = []) {
