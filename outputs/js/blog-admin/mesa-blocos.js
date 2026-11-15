@@ -8,6 +8,7 @@
  */
 import { icone } from "../admin/icones.js";
 import { enderecoDoVideo } from "../blog/article-renderer.js";
+import { marcarTextoEmLinha } from "../shared/markdown.js";
 import { esc } from "./mesa-ui.js";
 
 export const TIPOS_DE_BLOCO = Object.freeze([
@@ -44,7 +45,31 @@ export function duplicarBloco(bloco) {
 }
 
 /* Um campo de texto que cresce com o conteúdo: escrever, não rolar dentro de caixinhas. */
-const area = (campo, valor, { classe = "", placeholder = "", rotulo = "" } = {}) => `<textarea class="mesa-campo-livre ${classe}" data-bloco-campo="${campo}" rows="1" placeholder="${esc(placeholder)}" aria-label="${esc(rotulo || placeholder)}">${esc(valor)}</textarea>`;
+/*
+ * Texto corrido com formatação à vista. O que fica salvo continua sendo o mesmo texto com as marcas
+ * (**negrito**, *itálico*, [link](endereço)); a tela só desenha por cima, com o MESMO conversor da página pública:
+ * fora de edição o bloco aparece formatado, e dentro dele uma faixa "Como fica" mostra o resultado enquanto há marcas.
+ */
+const temMarcas = (texto) => /\*|\]\(/.test(texto);
+const desenhoDoTexto = (valor) => marcarTextoEmLinha(valor);
+const area = (campo, valor, { classe = "", placeholder = "", rotulo = "", visual = false } = {}) => {
+  const caixa = `<textarea class="mesa-campo-livre ${classe}" data-bloco-campo="${campo}" rows="1" placeholder="${esc(placeholder)}" aria-label="${esc(rotulo || placeholder)}">${esc(valor)}</textarea>`;
+  if (!visual) return caixa;
+  const html = desenhoDoTexto(valor);
+  return `<div class="mesa-campo-visual${String(valor).trim() ? "" : " is-vazio"}"><div class="mesa-visual ${classe}" data-visual aria-hidden="true">${html}</div>${caixa}<div class="mesa-ao-vivo" data-ao-vivo aria-hidden="true"${temMarcas(valor) ? "" : " hidden"}>${html}</div></div>`;
+};
+
+/* Atualiza o desenho formatado de um campo depois de qualquer mudança no texto dele. */
+export function atualizarVisual(campo) {
+  const caixa = campo?.closest?.(".mesa-campo-visual");
+  if (!caixa) return;
+  const html = desenhoDoTexto(campo.value);
+  caixa.querySelector("[data-visual]").innerHTML = html;
+  caixa.classList.toggle("is-vazio", !campo.value.trim());
+  const vivo = caixa.querySelector("[data-ao-vivo]");
+  vivo.innerHTML = html;
+  vivo.hidden = !temMarcas(campo.value);
+}
 const linha = (campo, valor, rotulo, placeholder = "") => `<label class="mesa-opcao"><span>${esc(rotulo)}</span><input type="text" data-bloco-campo="${campo}" value="${esc(valor)}" placeholder="${esc(placeholder)}"></label>`;
 const escolha = (campo, valor, rotulo, opcoes) => `<label class="mesa-opcao"><span>${esc(rotulo)}</span><select data-bloco-campo="${campo}">${opcoes.map(([chave, texto]) => `<option value="${esc(chave)}" ${String(valor) === String(chave) ? "selected" : ""}>${esc(texto)}</option>`).join("")}</select></label>`;
 const vazioDeImagem = (acao, texto) => `<button type="button" class="mesa-bloco__imagem-vazia" data-bloco-acao="${acao}">${icone("image", { classe: "mesa-icone" })}<span>${esc(texto)}</span></button>`;
@@ -52,13 +77,13 @@ const vazioDeImagem = (acao, texto) => `<button type="button" class="mesa-bloco_
 function corpoDoBloco(bloco) {
   switch (bloco.type) {
     case "paragraph":
-      return area("text", bloco.text, { classe: `mesa-texto${bloco.size === "lead" ? " is-abertura" : ""}${bloco.align === "center" ? " is-centro" : ""}`, placeholder: "Escreva aqui…", rotulo: "Texto" });
+      return area("text", bloco.text, { classe: `mesa-texto${bloco.size === "lead" ? " is-abertura" : ""}${bloco.align === "center" ? " is-centro" : ""}`, placeholder: "Escreva aqui…", rotulo: "Texto", visual: true });
     case "heading":
       return area("text", bloco.text, { classe: `mesa-titulo-bloco${Number(bloco.level) === 3 ? " is-sub" : ""}`, placeholder: "Título da parte", rotulo: "Título" });
     case "quote":
-      return `${area("text", bloco.text, { classe: "mesa-citacao", placeholder: "A frase que merece destaque", rotulo: "Citação" })}${bloco.cite ? `<p class="mesa-citacao__autoria">— ${esc(bloco.cite)}</p>` : ""}`;
+      return `${area("text", bloco.text, { classe: "mesa-citacao", placeholder: "A frase que merece destaque", rotulo: "Citação", visual: true })}${bloco.cite ? `<p class="mesa-citacao__autoria">— ${esc(bloco.cite)}</p>` : ""}`;
     case "callout":
-      return `<div class="mesa-destaque mesa-destaque--${esc(bloco.tone || "nota")}">${icone("sticky-note", { classe: "mesa-icone" })}${area("text", bloco.text, { placeholder: "Uma nota que o leitor não pode perder", rotulo: "Destaque" })}</div>`;
+      return `<div class="mesa-destaque mesa-destaque--${esc(bloco.tone || "nota")}">${icone("sticky-note", { classe: "mesa-icone" })}${area("text", bloco.text, { placeholder: "Uma nota que o leitor não pode perder", rotulo: "Destaque", visual: true })}</div>`;
     case "image":
       return bloco.src
         ? `<figure class="mesa-figura${bloco.width === "full" ? " is-total" : ""}"><img src="${esc(bloco.src)}" alt="${esc(bloco.alt)}">${bloco.caption ? `<figcaption>${esc(bloco.caption)}</figcaption>` : ""}</figure>`
@@ -74,7 +99,7 @@ function corpoDoBloco(bloco) {
         : `<div class="mesa-video is-vazio">${icone("video", { classe: "mesa-icone" })}<span>${bloco.url ? "Endereço não reconhecido. Use um link do YouTube ou do Vimeo." : "Cole o endereço do vídeo nas opções abaixo."}</span></div>`;
     }
     case "list":
-      return area("items", (bloco.items || []).join("\n"), { classe: `mesa-lista${bloco.ordered ? " is-numerada" : ""}`, placeholder: "Um item por linha", rotulo: "Lista" });
+      return area("items", (bloco.items || []).join("\n"), { classe: `mesa-lista${bloco.ordered ? " is-numerada" : ""}`, placeholder: "Um item por linha", rotulo: "Lista", visual: true });
     case "divider":
       return '<hr class="mesa-separador">';
     default:
@@ -155,6 +180,42 @@ export function aplicarCampo(bloco, campo, valor) {
 }
 
 /*
+ * Troca o formato de um bloco de texto sem perder o que foi escrito: parágrafo,
+ * título (nível 2 ou 3), subtítulo, lista e citação. Aplicar o mesmo formato de
+ * novo desfaz (volta a parágrafo). Blocos de outro tipo (imagem, vídeo…) ficam como estão.
+ */
+export const FORMATOS_DE_TEXTO = Object.freeze(["paragraph", "heading", "list", "quote"]);
+
+export function textoDoBloco(bloco) {
+  if (bloco?.type === "list") return (bloco.items || []).join("\n");
+  return String(bloco?.text || "");
+}
+
+export function converterBloco(bloco, formato) {
+  if (!bloco || !FORMATOS_DE_TEXTO.includes(bloco.type)) return bloco;
+  const texto = textoDoBloco(bloco);
+  const base = { id: bloco.id };
+  const mesmo = (
+    (formato === "h2" && bloco.type === "heading" && Number(bloco.level) !== 3)
+    || (formato === "h3" && bloco.type === "heading" && Number(bloco.level) === 3)
+    || (formato === "lista" && bloco.type === "list" && !bloco.ordered)
+    || (formato === "numerada" && bloco.type === "list" && bloco.ordered)
+    || (formato === "citacao" && bloco.type === "quote")
+  );
+  if (mesmo || formato === "paragrafo") return { ...base, type: "paragraph", text: texto };
+  if (formato === "h2" || formato === "h3") return { ...base, type: "heading", level: formato === "h3" ? 3 : 2, text: texto.replace(/\s*\n+\s*/g, " ").trim() };
+  if (formato === "lista" || formato === "numerada") {
+    const itens = texto.split("\n").map((item) => item.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "")).filter((item) => item.trim());
+    return { ...base, type: "list", ordered: formato === "numerada", items: itens };
+  }
+  if (formato === "citacao") return { ...base, type: "quote", text: texto, cite: bloco.cite || "" };
+  return bloco;
+}
+
+/* Quais blocos aceitam negrito, itálico e link (os que têm texto corrido). */
+export const aceitaMarcas = (bloco) => ["paragraph", "quote", "callout", "list"].includes(bloco?.type);
+
+/*
  * Negrito, itálico e link com as marcas que o Caderno entende (**, * e
  * [texto](endereço)). Devolve o texto novo e onde o cursor deve ficar.
  */
@@ -168,5 +229,20 @@ export function formatarSelecao(texto, inicio, fim, formato) {
     return { texto: novo, inicio: posicaoDoEndereco, fim: posicaoDoEndereco + 8 };
   }
   const marca = formato === "negrito" ? "**" : "*";
+  /* Aplicar de novo tira a marca: seleção já em negrito/itálico volta a ser texto simples. */
+  const cercado = formato === "negrito"
+    ? antes.endsWith("**") && depois.startsWith("**")
+    : /(^|[^*])\*$/.test(antes) && /^\*([^*]|$)/.test(depois);
+  if (cercado && texto.slice(inicio, fim)) {
+    const semAntes = antes.slice(0, -marca.length);
+    return { texto: `${semAntes}${meio}${depois.slice(marca.length)}`, inicio: semAntes.length, fim: semAntes.length + meio.length };
+  }
+  const dentro = formato === "negrito"
+    ? /^\*\*[^*]+\*\*$/.test(meio)
+    : /^\*[^*]+\*$/.test(meio);
+  if (dentro && texto.slice(inicio, fim)) {
+    const limpo = meio.slice(marca.length, -marca.length);
+    return { texto: `${antes}${limpo}${depois}`, inicio: antes.length, fim: antes.length + limpo.length };
+  }
   return { texto: `${antes}${marca}${meio}${marca}${depois}`, inicio: antes.length + marca.length, fim: antes.length + marca.length + meio.length };
 }
