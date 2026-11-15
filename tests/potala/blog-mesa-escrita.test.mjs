@@ -101,3 +101,67 @@ test("estilo: modo foco esconde so os menus e a barra fica fixa no topo da area 
   assert.match(css, /\.mesa-barra-texto \{ position: sticky;/);
   assert.match(css, /\.mesa-folha \{ max-width: 860px; \}/);
 });
+
+test("formatacao: negrito e italico alternam (aplicar de novo tira a marca) sem perder o texto", () => {
+  const ligado = formatarSelecao("ola mundo bonito", 4, 9, "negrito");
+  assert.equal(ligado.texto, "ola **mundo** bonito");
+  const desligado = formatarSelecao(ligado.texto, ligado.inicio, ligado.fim, "negrito");
+  assert.equal(desligado.texto, "ola mundo bonito");
+  assert.equal(desligado.texto.slice(desligado.inicio, desligado.fim), "mundo");
+  const itl = formatarSelecao("ola mundo", 4, 9, "italico");
+  assert.equal(itl.texto, "ola *mundo*");
+  assert.equal(formatarSelecao(itl.texto, itl.inicio, itl.fim, "italico").texto, "ola mundo");
+  /* italico dentro de negrito nao desfaz o negrito */
+  const negrito = formatarSelecao("a mundo b", 2, 7, "negrito");
+  const ambos = formatarSelecao(negrito.texto, negrito.inicio, negrito.fim, "italico");
+  assert.equal(ambos.texto, "a ***mundo*** b");
+  /* selecao que inclui as proprias marcas tambem desfaz */
+  assert.equal(formatarSelecao("a **mundo** b", 2, 11, "negrito").texto, "a mundo b");
+});
+
+test("formatacao visual: o bloco usa o mesmo conversor da pagina publica e o texto salvo continua com as marcas", async () => {
+  const { blocoHtml } = await import("../../outputs/js/blog-admin/mesa-blocos.js");
+  const { renderArticleBlock } = await import("../../outputs/js/blog/article-renderer.js");
+  const bloco = { id: "p1", type: "paragraph", text: "Um **forte**, um *suave* e um [link](https://exemplo.org)." };
+  const html = blocoHtml(bloco);
+  const publico = renderArticleBlock(bloco);
+  for (const marca of ["<strong>forte</strong>", "<em>suave</em>", '<a href="https://exemplo.org">link</a>']) {
+    assert.ok(html.includes(marca), "editor: " + marca);
+    assert.ok(publico.includes(marca), "publico: " + marca);
+  }
+  /* o textarea guarda o texto com marcas (modelo de documentos intacto) */
+  assert.match(html, /<textarea[^>]*data-bloco-campo="text"[^>]*>Um \*\*forte\*\*, um \*suave\* e um \[link\]\(https:\/\/exemplo\.org\)\.<\/textarea>/);
+  /* texto vazio nao ganha camada visual (o placeholder continua visivel) e HTML colado e escapado */
+  assert.match(blocoHtml({ id: "v", type: "paragraph", text: "" }), /mesa-campo-visual is-vazio/);
+  const perigoso = blocoHtml({ id: "x", type: "paragraph", text: "<img src=x onerror=alert(1)> **ok**" });
+  assert.equal(/<img src=x/.test(perigoso.replace(/<textarea[\s\S]*?<\/textarea>/, "")), false);
+  /* artigos antigos (sem marcas) abrem normalmente */
+  assert.ok(blocoHtml({ id: "a", type: "paragraph", text: "Texto simples antigo." }).includes("Texto simples antigo."));
+});
+
+test("correcoes: a tela segue o pedido gravado no banco quando ele difere da aba aberta", () => {
+  assert.match(editor, /const doBanco = textoAtual\(novo\)\?\.correcao;/);
+});
+
+test("migration 202611150001: so refaz mesa_salvar_post, sem tabelas nem politicas novas, e protege a nota", () => {
+  const sqlNova = readFileSync(new URL("../../supabase/migrations/202611150001_blog_correcoes_protegidas.sql", import.meta.url), "utf8").replace(/--.*$/gm, "");
+  assert.match(sqlNova, /^\s*begin;[\s\S]*commit;\s*$/);
+  assert.doesNotMatch(sqlNova, /create table|alter table|create policy|drop policy|create trigger/i);
+  assert.equal((sqlNova.match(/create or replace function/g) || []).length, 1);
+  assert.match(sqlNova, /security definer set search_path = ''/);
+  assert.match(sqlNova, /revoke all on function public\.mesa_salvar_post\(jsonb,text,timestamptz,boolean,text\) from public, anon;/);
+  assert.match(sqlNova, /p_post - 'correcao'/);
+  assert.match(sqlNova, /documento - 'correcao'/);
+  assert.match(sqlNova, /atual\.document \? 'correcao'/);
+});
+
+test("Meus textos: quem so escreve ve apenas os proprios textos na lista; Owner ve tudo", async () => {
+  const { registrosDaLista, nomeDaLista } = await import("../../outputs/js/blog-admin/mesa-visoes.js");
+  const loja = { registros: [{ id: "a", criadoPor: "u1" }, { id: "b", criadoPor: "u2" }, { id: "c", criadoPor: "u1" }] };
+  const escritor = { loja, permissoes: { publicar: false, somenteProprios: true, usuarioId: "u1" } };
+  assert.deepEqual(registrosDaLista(escritor).map((r) => r.id), ["a", "c"]);
+  assert.equal(nomeDaLista(escritor.permissoes), "Meus textos");
+  const owner = { loja, permissoes: { publicar: true } };
+  assert.equal(registrosDaLista(owner).length, 3);
+  assert.equal(nomeDaLista(owner.permissoes), "Posts");
+});

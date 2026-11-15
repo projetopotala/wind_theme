@@ -1,6 +1,7 @@
 /*
  * FLUXO EDITORIAL COM UM UNICO OWNER, executado no banco (Postgres isolado, PGlite).
  *
+ * Inclui a 202611150001 (pedido de correcoes protegido no banco).
  * Contas: um Owner administrativo, duas escritoras comuns (nivel "writer") e uma leitora sem acesso.
  * Nao existe conta de editor. Reproduz a ordem real do LAB: tudo ate 202611050000, 202611120002,
  * 202611060003 e 202611060005. Nao toca em nenhum banco real.
@@ -54,7 +55,7 @@ before(async () => {
     create function storage.foldername(n text) returns text[] language sql as $$ select string_to_array(n,'/') $$;
   `);
   for (const f of todas.filter((nome) => versao(nome) < "202611060001")) await db.exec(sql(f));
-  for (const v of ["202611120002", "202611060003", "202611060005"]) await db.exec(sql(arquivo(v)));
+  for (const v of ["202611120002", "202611060003", "202611060005", "202611150001"]) await db.exec(sql(arquivo(v)));
   await db.exec(`
     insert into auth.users (id, email, aud, role) values
       ('${OWNER}', 'owner-sintetico@example.invalid', 'authenticated', 'authenticated'),
@@ -145,4 +146,87 @@ test("revogar o acesso da escritora vale na proxima chamada e nao apaga o texto 
   assert.equal(await tenta(() => listar()), "42501");
   await como(OWNER);
   assert.ok((await listar()).some((r) => r.id === "texto-do-fluxo"), "o texto continua com o Owner");
+});
+
+/* ------------------------------------------------------------------
+ * Notas de correcao: persistencia, isolamento e protecao no banco
+ * ------------------------------------------------------------------ */
+const NOTA = { texto: "Citar a fonte do segundo paragrafo.", por: "Owner sintetico", em: "2026-11-15T12:00:00Z" };
+const ID2 = "texto-das-notas";
+const base2 = (extra = {}) => documento({ id: ID2, slug: ID2, title: "Texto das notas", ...extra });
+const doDoc = async (id) => (await db.query("select document, status from public.blog_posts where id = $1", [id])).rows[0];
+
+test("notas: a escritora nao inventa pedido de correcao em texto proprio (criar, salvar, enviar)", async () => {
+  await como(OWNER);
+  await db.query("select public.admin_set_blog_access($1, 'writer')", [ANA]);
+  await como(ANA);
+  const criado = await salvar(base2({ correcao: { texto: "Forjado pela escritora" } }), "rascunho");
+  assert.equal(doc(criado).correcao, undefined);
+  await salvar(base2({ correcao: { texto: "Forjado de novo" } }), "rascunho");
+  await db.exec("reset role");
+  assert.equal((await doDoc(ID2)).document.correcao, undefined);
+});
+
+test("notas: persistem apos fechar e reabrir, mesmo com autosave de aba desatualizada da escritora", async () => {
+  await salvar(base2(), "revisao").catch(() => null);
+  await como(ANA);
+  await salvar(base2(), "revisao");
+  await como(OWNER);
+  assert.equal((await salvar(base2({ correcao: NOTA }), "despublicar", "Correcoes pedidas")).status, "draft");
+  /* aba antiga da escritora (sem a nota) salva sozinha: a nota continua */
+  await como(ANA);
+  const velho = await salvar(base2({ title: "Texto das notas (editado na aba antiga)" }), "rascunho");
+  assert.deepEqual(doc(velho).correcao, NOTA, "a nota resiste ao autosave desatualizado");
+  /* e tentar trocar a nota por outra tambem nao funciona */
+  const troca = await salvar(base2({ correcao: { texto: "Outra nota" } }), "rascunho");
+  assert.deepEqual(doc(troca).correcao, NOTA);
+  const reaberto = (await listar()).find((r) => r.id === ID2);
+  assert.deepEqual(doc(reaberto).correcao, NOTA, "ao reabrir a nota esta la");
+});
+
+test("notas: so a escritora autora e o Owner leem; outra escritora, conta comum e visitante nao (RPC e RLS)", async () => {
+  await como(BIA);
+  assert.ok(!(await listar()).some((r) => r.id === ID2), "Bia nao ve o texto");
+  assert.equal((await db.query("select id from public.blog_posts where id = $1", [ID2])).rows.length, 0, "RLS: Bia nao le a tabela");
+  assert.equal((await db.query("select id from public.blog_post_versions where post_id = $1", [ID2])).rows.length, 0, "RLS: Bia nao le versoes");
+  assert.equal(await tenta(() => salvar(base2({ title: "Tentativa da Bia" }), "rascunho")), "42501");
+  assert.equal(await tenta(() => salvar(base2(), "revisao")), "42501");
+  await como(SEM_ACESSO);
+  assert.equal(await tenta(() => listar()), "42501");
+  assert.equal((await db.query("select id from public.blog_posts where id = $1", [ID2])).rows.length, 0);
+  await como(null);
+  assert.equal((await db.query("select id from public.blog_posts where id = $1", [ID2])).rows.length, 0, "visitante nao le rascunho");
+  assert.equal(await tenta(() => listar()), "42501");
+  await como(OWNER);
+  assert.deepEqual(doc((await listar()).find((r) => r.id === ID2)).correcao, NOTA, "Owner le a nota");
+});
+
+test("notas: reenviar para revisao limpa a nota; o Owner publica e o texto publico nao carrega a nota", async () => {
+  await como(ANA);
+  const reenviado = await salvar(base2({ title: "Texto das notas (corrigido)" }), "revisao");
+  assert.equal(reenviado.status, "review");
+  assert.equal(doc(reenviado).correcao, undefined);
+  await como(OWNER);
+  /* mesmo que o cliente do Owner mande a nota por engano, o banco tira */
+  const publicado = await salvar(base2({ title: "Texto das notas (corrigido)", correcao: NOTA }), "publicar");
+  assert.equal(publicado.status, "published");
+  await como(null);
+  const publico = (await db.query("select document from public.blog_posts where id = $1 and status = 'published'", [ID2])).rows;
+  assert.equal(publico.length, 1);
+  assert.equal(publico[0].document.correcao, undefined);
+  assert.equal(JSON.stringify(publico[0].document).includes("fonte do segundo"), false);
+});
+
+test("notas: edicao pendente de texto no ar nunca leva a nota; Owner agendando tambem a remove", async () => {
+  await como(ANA);
+  await salvar(base2({ title: "Pendente", correcao: { texto: "forjado" } }), "pendente");
+  await db.exec("reset role");
+  const linha = (await db.query("select pending_document from public.blog_posts where id = $1", [ID2])).rows[0];
+  assert.equal(linha.pending_document.correcao, undefined);
+  await como(OWNER);
+  await salvar(base2({ title: "Texto das notas (corrigido)" }), "despublicar");
+  const futuro = new Date(Date.now() + 86400000).toISOString();
+  const agendado = (await db.query("select public.mesa_salvar_post($1::jsonb, 'agendar', $2::timestamptz, true, '') as r", [JSON.stringify(base2({ correcao: NOTA })), futuro])).rows[0].r;
+  assert.equal(agendado.status, "scheduled");
+  assert.equal((await doDoc(ID2)).document.correcao, undefined);
 });

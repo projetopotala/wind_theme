@@ -14,7 +14,7 @@ import { icone } from "../admin/icones.js";
 import { validarDocumento } from "../blog/blog-conteudo.js";
 import { BLOG_BLOCK_TYPES, estimateReadingMinutes, normalizePost, normalizePosts } from "../blog/blog-model.js";
 import {
-  TIPOS_DE_BLOCO, aceitaMarcas, aplicarCampo, blocoHtml, blocoNovo, converterBloco, corpoHtml, duplicarBloco, formatarSelecao, insercaoHtml, menuDeBlocosHtml,
+  TIPOS_DE_BLOCO, atualizarVisual, aceitaMarcas, aplicarCampo, blocoHtml, blocoNovo, converterBloco, corpoHtml, duplicarBloco, formatarSelecao, insercaoHtml, menuDeBlocosHtml,
 } from "./mesa-blocos.js";
 import {
   SECOES_DO_PORTAL, autoresDe, enderecoLivre, fraseDoAgendamento, fraseDoStatus, hojeNoInstituto, horaDe, instanteDe,
@@ -306,6 +306,13 @@ export function createBlogEditor({ root, ctx } = {}) {
       if (minha !== geracao) return false;
       const primeiraVez = !registro;
       registro = novo;
+      /* O banco é quem guarda o pedido de correções: se ele difere do que a tela tem (aba antiga), a tela segue o banco. */
+      const doBanco = textoAtual(novo)?.correcao;
+      if (JSON.stringify(doBanco || null) !== JSON.stringify(post.correcao || null)) {
+        if (doBanco) post.correcao = doBanco; else delete post.correcao;
+        desenharCorrecao();
+        salvoComo = assinatura();
+      }
       salvoComo = agora;
       ultimoSalvamento = new Date();
       avisouErro = false;
@@ -800,6 +807,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     if (!campo) return;
     const resultado = formatarSelecao(campo.value, campo.selectionStart ?? campo.value.length, campo.selectionEnd ?? campo.value.length, formato);
     campo.value = resultado.texto;
+    atualizarVisual(campo);
     crescer(campo);
     campo.focus();
     campo.setSelectionRange(resultado.inicio, resultado.fim);
@@ -1136,6 +1144,7 @@ export function createBlogEditor({ root, ctx } = {}) {
   /* ---------------- eventos da folha ---------------- */
 
   folha.addEventListener("focusin", (evento) => {
+    if (evento.target.matches?.(".mesa-campo-visual textarea")) crescer(evento.target);
     const bloco = evento.target.closest("[data-bloco-id]");
     if (bloco) selecionar(bloco.dataset.blocoId);
     else if (evento.target.closest("[data-editor-campo], [data-editor-capa]")) selecionar("");
@@ -1143,7 +1152,7 @@ export function createBlogEditor({ root, ctx } = {}) {
 
   folha.addEventListener("input", (evento) => {
     const alvo = evento.target;
-    if (alvo.matches("textarea")) crescer(alvo);
+    if (alvo.matches("textarea")) { crescer(alvo); atualizarVisual(alvo); }
     const campo = alvo.dataset.editorCampo;
     if (campo) { lerCampo(campo, alvo); return; }
     const campoDoBloco = alvo.dataset.blocoCampo;

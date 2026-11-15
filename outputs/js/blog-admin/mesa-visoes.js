@@ -28,6 +28,12 @@ const capinha = (post) => (post.cover
 
 const vazio = (icone_, texto, acao = "") => `<div class="mesa-vazio">${i(icone_)}<p>${texto}</p>${acao}</div>`;
 
+/* Quem só escreve vê, em "Meus textos", apenas os próprios; os demais ficam na loja só para conferir endereços. */
+export const registrosDaLista = (ctx) => (ctx.permissoes?.somenteProprios
+  ? ctx.loja.registros.filter((registro) => registro.criadoPor === ctx.permissoes.usuarioId)
+  : ctx.loja.registros);
+export const nomeDaLista = (permissoes) => (permissoes?.somenteProprios ? "Meus textos" : "Posts");
+
 /* O que cada status permite no menu "⋯". */
 export function itensDoMenu(registro, permissoes) {
   const { status } = registro;
@@ -186,7 +192,7 @@ export function criarListaDePosts(el, ctx) {
   function resultado() {
     const { loja } = ctx;
     const ids = new Set(loja.categorias.map(({ id }) => id));
-    let lista = filtrarPosts(loja.registros, { ...filtros, rotuloDaCategoria: ctx.rotuloDaCategoria });
+    let lista = filtrarPosts(registrosDaLista(ctx), { ...filtros, rotuloDaCategoria: ctx.rotuloDaCategoria });
     if (filtros.atencao) lista = lista.filter((registro) => ATENCAO[filtros.atencao].testar(registro, ids));
     return lista;
   }
@@ -215,12 +221,11 @@ export function criarListaDePosts(el, ctx) {
   }
 
   function desenharLista() {
-    const { loja } = ctx;
     const lista = resultado();
     const alvo = el.querySelector("[data-posts-lista]");
     const rodape = el.querySelector("[data-posts-rodape]");
     const temFiltro = filtros.busca || filtros.categoria || filtros.autor || filtros.periodo || filtros.atencao || filtros.status !== "todos";
-    if (!loja.registros.length) {
+    if (!registrosDaLista(ctx).length) {
       alvo.innerHTML = vazio("pen-line", "Nenhum texto ainda. O primeiro começa com um título.", `<a class="mesa-botao mesa-botao--principal" href="#/novo">${i("plus")}Novo post</a>`);
     } else if (!lista.length) {
       alvo.innerHTML = vazio("search", filtros.busca ? `Nada encontrado para “${esc(filtros.busca)}”.` : "Nenhum texto com esses filtros.", temFiltro ? '<button type="button" class="mesa-botao mesa-botao--contorno" data-posts-limpar>Limpar filtros</button>' : "");
@@ -230,7 +235,7 @@ export function criarListaDePosts(el, ctx) {
     rodape.innerHTML = lista.length > 0
       ? `<p>Mostrando ${numero.format(Math.min(mostrando, lista.length))} de ${numero.format(lista.length)}</p>${lista.length > mostrando ? '<button type="button" class="mesa-botao mesa-botao--contorno" data-posts-mais>Ver mais textos</button>' : ""}`
       : "";
-    const contagem = contarPorStatus(loja.registros);
+    const contagem = contarPorStatus(registrosDaLista(ctx));
     for (const aba of el.querySelectorAll("[data-posts-status]")) {
       const status = aba.dataset.postsStatus;
       aba.setAttribute("aria-selected", String(status === filtros.status));
@@ -239,7 +244,7 @@ export function criarListaDePosts(el, ctx) {
     const chip = el.querySelector("[data-posts-atencao]");
     chip.hidden = !filtros.atencao;
     if (filtros.atencao) chip.querySelector("span").textContent = `Mostrando: ${ATENCAO[filtros.atencao].rotulo}`;
-    el.querySelector("[data-posts-total]").textContent = plural(loja.registros.length, "texto", "textos");
+    el.querySelector("[data-posts-total]").textContent = plural(registrosDaLista(ctx).length, "texto", "textos");
     if (pendenteDeFoco) {
       el.querySelector(`[data-post-menu="${CSS.escape(pendenteDeFoco)}"]`)?.focus();
       pendenteDeFoco = "";
@@ -251,7 +256,7 @@ export function criarListaDePosts(el, ctx) {
     const { loja } = ctx;
     const abas = ["todos", ...ORDEM_DOS_STATUS];
     el.innerHTML = `<header class="mesa-cabeca">
-        <div class="mesa-cabeca__titulo"><h1 class="mesa-titulo" tabindex="-1">Posts</h1><span class="mesa-sobre" data-posts-total></span></div>
+        <div class="mesa-cabeca__titulo"><h1 class="mesa-titulo" tabindex="-1">${nomeDaLista(ctx.permissoes)}</h1><span class="mesa-sobre" data-posts-total></span></div>
         <label class="mesa-busca mesa-busca--grande">${i("search")}<span class="sr-only">Buscar no blog</span>
           <input type="search" data-posts-busca placeholder="Buscar no blog" value="${esc(filtros.busca)}" aria-describedby="posts-busca-dica"></label>
         <a class="mesa-botao mesa-botao--principal" href="#/novo">${i("plus")}Novo post</a>
@@ -263,7 +268,7 @@ export function criarListaDePosts(el, ctx) {
         </div>
         <div class="mesa-selecoes">
           <label><span class="sr-only">Categoria</span><select data-posts-filtro="categoria">${opcoes(loja.categorias.map((item) => [item.id, item.rotulo]), filtros.categoria, "Todas as categorias")}</select></label>
-          <label><span class="sr-only">Autor</span><select data-posts-filtro="autor">${opcoes(autoresDe(loja.registros).map((nome) => [nome, nome]), filtros.autor, "Todos os autores")}</select></label>
+          <label><span class="sr-only">Autor</span><select data-posts-filtro="autor">${opcoes(autoresDe(registrosDaLista(ctx)).map((nome) => [nome, nome]), filtros.autor, "Todos os autores")}</select></label>
           <label><span class="sr-only">Período</span><select data-posts-filtro="periodo">${Object.entries(PERIODOS).map(([valor, rotulo]) => `<option value="${valor}" ${valor === filtros.periodo ? "selected" : ""}>${esc(rotulo)}</option>`).join("")}</select></label>
           <label><span class="sr-only">Ordenar</span><select data-posts-filtro="ordem">${Object.entries(ORDENACOES).map(([valor, rotulo]) => `<option value="${valor}" ${valor === filtros.ordem ? "selected" : ""}>Ordenar: ${esc(rotulo)}</option>`).join("")}</select></label>
         </div>

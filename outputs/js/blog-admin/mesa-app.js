@@ -14,7 +14,7 @@ import { criarBiblioteca } from "./mesa-midia.js";
 import { enderecoLivre, permissoesDaMesa, textoAtual } from "./mesa-modelo.js";
 import { ErroDeSessao, criarGuardaDeSessao, decidirSaida, protegerRepositorio, textoParaCopia } from "./mesa-sessao.js";
 import { criarAvisos, criarConfirmacao, criarMenu, criarPaleta, esc } from "./mesa-ui.js";
-import { criarComentarios, criarConfiguracoes, criarListaDePosts, criarVisaoGeral } from "./mesa-visoes.js";
+import { criarComentarios, criarConfiguracoes, criarListaDePosts, criarVisaoGeral, nomeDaLista } from "./mesa-visoes.js";
 
 const TELAS = ["visao", "posts", "comentarios", "configuracoes"];
 
@@ -416,6 +416,12 @@ export function criarMesa({ raiz, repositorio: repositorioBruto, permissoes = {}
         perfil.title = usuario?.nome ? `Conectado como ${usuario.nome}` : "Acesso de teste";
       }
       raiz.dataset.demonstracao = String(Boolean(repositorio.demonstracao));
+      /* Quem só escreve entra em "Meus textos". */
+      const nomePosts = nomeDaLista(ctx.permissoes);
+      const rotuloPosts = $('[data-mesa-nav="posts"] span');
+      if (rotuloPosts) rotuloPosts.textContent = nomePosts;
+      const voltar = raiz.querySelector(".mesa-voltar span");
+      if (voltar) voltar.textContent = nomePosts;
       await rotear();
     },
     /* Tela de login: devolve true se havia alteracoes pendentes que foram descartadas. */
