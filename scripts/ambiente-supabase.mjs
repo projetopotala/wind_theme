@@ -22,6 +22,7 @@ export const PROJETOS_BLOQUEADOS_EM_PRODUCAO = Object.freeze(["hmspabllgxqfzzric
 export const ARQUIVO_LAB = "js/supabase/ambiente-lab.js";
 export const ARQUIVO_LOCAL = "js/supabase/ambiente-local.js";
 export const ARQUIVO_PREVIEW_E2E = "js/preview/ambiente-e2e.js";
+export const ARQUIVO_APRESENTACAO = "js/preview/apresentacao.js";
 export const FONTE_LAB_JSON = "ops/lab-preview/ambiente-lab.local.json";
 const HOST_LAB_PROJETO = "wind-theme-m2-lab-preview.vercel.app";
 
@@ -50,8 +51,9 @@ function jwtDeServico(texto) {
 }
 
 /* Varre outputs/ e devolve a lista de problemas (vazia = limpo). */
-export function varrerSaida(pastaSaida, { permitirLab = false, permitirPreviewE2E = false } = {}) {
+export function varrerSaida(pastaSaida, { permitirLab = false, permitirPreviewE2E = false, permitirApresentacao = false } = {}) {
   const problemas = [];
+  if (!permitirApresentacao && existsSync(join(pastaSaida, ARQUIVO_APRESENTACAO))) problemas.push(`${ARQUIVO_APRESENTACAO} só pode existir na Preview da branch de apresentação`);
   if (!permitirLab && existsSync(join(pastaSaida, ARQUIVO_LAB))) problemas.push(`${ARQUIVO_LAB} não pode existir em um pacote de produção`);
   // A configuração local nunca pertence a um pacote publicado, em nenhum modo.
   if (existsSync(join(pastaSaida, ARQUIVO_LOCAL))) problemas.push(`${ARQUIVO_LOCAL} é só para uso local e não pode existir em um pacote publicado`);
@@ -117,6 +119,14 @@ export async function conferirDecisao(raiz, { modo, permitirPreviewE2E = false }
 // Comparação exata (===): nenhum prefixo, sufixo ou padrão passa. Trocar a branch exige novo PR.
 export const BRANCH_PREVIEW_E2E = "feat/prod-03-blog-permissoes";
 
+// A marca do modo sem banco só vale na Preview desta branch (ou em build local, sem variáveis da Vercel). Em Production, ou na Preview de
+// outra branch, a presença do arquivo derruba o build.
+export const BRANCH_APRESENTACAO = "demo/apresentacao-16-11";
+export function apresentacaoPermitida(env = process.env) {
+  if (env.VERCEL_ENV === "production") return false;
+  return !env.VERCEL_GIT_COMMIT_REF || env.VERCEL_GIT_COMMIT_REF === BRANCH_APRESENTACAO;
+}
+
 export function previewE2EAtiva(env = process.env) {
   return env.POTALA_APPOINTMENT_E2E_PREVIEW === "true"
     && env.VERCEL_ENV === "preview"
@@ -163,7 +173,7 @@ export async function verificar(modo, { raiz = raizPadrao, env = process.env } =
   const permitirPreviewE2E = previewE2EAtiva(env);
   const hostProjeto = String(env.VERCEL_PROJECT_PRODUCTION_URL || "");
   if (modo === "producao" && HOST_LAB.test(hostProjeto)) problemas.push("o projeto Vercel LAB não pode rodar a verificação de produção");
-  problemas.push(...varrerSaida(pastaSaida, { permitirLab: modo === "lab", permitirPreviewE2E }));
+  problemas.push(...varrerSaida(pastaSaida, { permitirLab: modo === "lab", permitirPreviewE2E, permitirApresentacao: apresentacaoPermitida(env) }));
   problemas.push(...(await conferirDecisao(raiz, { modo, permitirPreviewE2E })));
   return { modo, problemas };
 }

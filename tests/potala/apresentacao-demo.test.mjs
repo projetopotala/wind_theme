@@ -135,3 +135,44 @@ test("a marca da apresentação não tem URL nem chave de banco e o sem-banco n�
   await assert.rejects(() => rest.ler("blog_posts", {}), /Sem conexão/);
   assert.equal(chamadas, 0);
 });
+
+test("guarda de build: a marca da apresentação derruba Production e Preview de outra branch", async () => {
+  const { apresentacaoPermitida, BRANCH_APRESENTACAO } = await import("../../scripts/ambiente-supabase.mjs");
+  assert.equal(apresentacaoPermitida({ VERCEL_ENV: "production", VERCEL_GIT_COMMIT_REF: BRANCH_APRESENTACAO }), false);
+  assert.equal(apresentacaoPermitida({ VERCEL_ENV: "production" }), false);
+  assert.equal(apresentacaoPermitida({ VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_REF: "main" }), false);
+  assert.equal(apresentacaoPermitida({ VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_REF: "demo/apresentacao-16-11-x" }), false);
+  assert.equal(apresentacaoPermitida({ VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_REF: BRANCH_APRESENTACAO }), true);
+  assert.equal(apresentacaoPermitida({}), true, "build local sem variáveis da Vercel");
+});
+
+test("modo demonstração das ofertas: rótulos ilustrativos e nenhum link externo real", () => {
+  const js = ler("js/ofertas/ofertas.js");
+  assert.match(js, /data-ofertas-demo/);
+  for (const pagina of ["cursos-catalogo.html", "ofertas.html"]) assert.match(ler(pagina), /data-ofertas-demo/, pagina);
+  for (const pagina of ["apresentacao.html", "cursos-catalogo.html", "agendar-demo.html"]) {
+    const h = ler(pagina);
+    assert.match(h, /ilustrativ/, pagina);
+    assert.doesNotMatch(h, /wa\.me|href="meu-potala\.html"/, pagina);
+  }
+});
+
+test("roteiro: todo link interno existe e o único externo é o Blog oficial, aberto em nova aba", () => {
+  const h = ler("apresentacao.html");
+  const hrefs = [...h.matchAll(/<a [^>]*href="([^"]+)"[^>]*>/g)].map((m) => m[1]);
+  assert.ok(hrefs.length >= 8);
+  const externos = hrefs.filter((x) => /^https?:/.test(x));
+  assert.deepEqual(externos, ["https://wind-theme.vercel.app/blog.html"]);
+  assert.match(h, /href="https:\/\/wind-theme\.vercel\.app\/blog\.html" target="_blank" rel="noopener noreferrer"/);
+  for (const href of hrefs.filter((x) => !/^https?:/.test(x))) assert.ok(existsSync(new URL(href.split("#")[0], raiz)), href);
+  for (const pagina of ["cursos-catalogo.html", "agendar-demo.html", "mesa-demo.html"]) {
+    for (const m of ler(pagina).matchAll(/<a [^>]*href="([^"#]+)"/g)) if (!/^https?:/.test(m[1])) assert.ok(existsSync(new URL(m[1].replace(/^\//, ""), raiz)), `${pagina}: ${m[1]}`);
+  }
+});
+
+test("mesa de demonstração: reiniciar só apaga as chaves da própria demonstração", () => {
+  const js = ler("js/apresentacao/mesa-demo-entry.js");
+  assert.match(js, /data-reiniciar-demo/);
+  assert.match(js, /removeItem\(CHAVE\)/);
+  assert.doesNotMatch(js, /localStorage\.clear|\.clear\(\)/);
+});

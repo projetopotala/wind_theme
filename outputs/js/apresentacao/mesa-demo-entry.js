@@ -34,6 +34,13 @@ const repositorio = Object.fromEntries(METODOS.map((nome) => [nome, (...args) =>
 Object.defineProperty(repositorio, "demonstracao", { get: () => true });
 repositorio.reset = () => demonstracao.reset();
 
+/* Reiniciar: apaga só as duas chaves desta demonstração (textos e situação) e recarrega com os três textos originais. */
+document.querySelector("[data-reiniciar-demo]")?.addEventListener("click", () => {
+  try { globalThis.localStorage?.removeItem(CHAVE); globalThis.localStorage?.removeItem(`${CHAVE}.meta`); } catch { /* sem armazenamento, nada a apagar */ }
+  window.location.hash = "#/visao";
+  window.location.reload();
+});
+
 if (root && panel) {
   root.dataset.blogGate = "mesa";
   root.dataset.authState = "demonstracao";

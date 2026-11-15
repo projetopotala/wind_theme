@@ -41,6 +41,9 @@ export async function iniciarOfertas(doc = document, { carregar = () => fetch("o
   let catalogo;
   try { catalogo = await carregar(); } catch { lista.replaceChildren(el(doc, "li", { classe: "of-vazio", texto: "Não foi possível carregar as ofertas agora. Fale com a Recepção." })); return null; }
   const vitrine = raiz.dataset.ofertasVitrine || "";
+  /* Modo demonstração: tudo é rotulado como ilustrativo e nenhum link leva a serviço externo real (WhatsApp, Marketplace). */
+  const demo = raiz.hasAttribute("data-ofertas-demo");
+  const ILUSTRATIVO = "Demonstração: preços, datas, vagas e horários são ilustrativos.";
   const todas = Array.isArray(catalogo?.ofertas) ? catalogo.ofertas : [];
   /* Vitrine temática (ex.: só os cursos): o catálogo marca cada item com "vitrine"; sem o atributo, mostra tudo. */
   const ofertas = vitrine ? todas.filter((o) => String(o.vitrine || "").split(",").includes(vitrine)) : todas;
@@ -52,22 +55,23 @@ export async function iniciarOfertas(doc = document, { carregar = () => fetch("o
 
   function cartao(oferta) {
     const preco = formatarPreco(oferta);
-    const botao = el(doc, "button", { type: "button", classe: "of-acao", "data-oferta": oferta.id, texto: rotuloDaAcao(oferta) });
+    const botao = el(doc, "button", { type: "button", classe: "of-acao", "data-oferta": oferta.id, texto: demo ? `${rotuloDaAcao(oferta)} (simulação)` : rotuloDaAcao(oferta) });
     /* Imagem ilustrativa só de arquivos do próprio portal (media/); qualquer outro endereço é ignorado. */
     const imagem = /^media\/[\w.-]+\.(?:webp|jpe?g|png)$/.test(String(oferta.imagem || ""))
       ? el(doc, "img", { classe: "of-imagem", src: oferta.imagem, alt: oferta.imagemAlt || "", width: 640, height: 360, loading: "lazy", decoding: "async" })
       : null;
     return el(doc, "li", {}, [el(doc, "article", { classe: "of-cartao", "data-modalidade-oferta": oferta.modalidade }, [
       imagem,
-      el(doc, "p", { classe: "of-etiqueta", texto: `${MODALIDADES.find((m) => m.id === oferta.modalidade)?.rotulo || "Oferta"} · ${oferta.formato === "online" ? "Online" : "Presencial"}` }),
+      el(doc, "p", { classe: "of-etiqueta", texto: `${demo ? "Demonstração · " : ""}${MODALIDADES.find((m) => m.id === oferta.modalidade)?.rotulo || "Oferta"} · ${oferta.formato === "online" ? "Online" : "Presencial"}` }),
       el(doc, "h3", { classe: "of-titulo", texto: oferta.titulo }),
       el(doc, "p", { classe: "of-resumo", texto: oferta.resumo }),
       el(doc, "dl", { classe: "of-fatos" }, [
         el(doc, "div", {}, [el(doc, "dt", { texto: "Com" }), el(doc, "dd", { texto: oferta.responsavel })]),
         el(doc, "div", {}, [el(doc, "dt", { texto: "Quando" }), el(doc, "dd", { texto: oferta.quando })]),
-        el(doc, "div", {}, [el(doc, "dt", { texto: "Valor" }), el(doc, "dd", { classe: "of-preco", texto: preco })]),
+        el(doc, "div", {}, [el(doc, "dt", { texto: "Valor" }), el(doc, "dd", { classe: "of-preco", texto: demo ? `${preco} (ilustrativo)` : preco })]),
         oferta.vagas ? el(doc, "div", {}, [el(doc, "dt", { texto: "Vagas" }), el(doc, "dd", { texto: `${oferta.vagas} (limitadas)` })]) : null,
       ]),
+      demo ? el(doc, "p", { classe: "of-nota", texto: "Datas, valores e vagas ilustrativos." }) : null,
       botao,
     ])]);
   }
@@ -87,7 +91,7 @@ export async function iniciarOfertas(doc = document, { carregar = () => fetch("o
   const fluxo = { oferta: null, indice: 0, dados: {}, horario: "", forma: "", protocolo: "" };
 
   function aviso() {
-    return el(doc, "p", { classe: "of-aviso", role: "note", texto: "Demonstração: nada é gravado, enviado ou cobrado." });
+    return el(doc, "p", { classe: "of-aviso", role: "note", texto: demo ? `${ILUSTRATIVO} Nada é gravado, enviado ou cobrado.` : "Demonstração: nada é gravado, enviado ou cobrado." });
   }
 
   function campo(rotulo, nome, { tipo = "text", obrigatorio = false, erro = "", valor = "" } = {}) {
@@ -112,11 +116,12 @@ export async function iniciarOfertas(doc = document, { carregar = () => fetch("o
       corpo.push(el(doc, "p", { texto: oferta.resumo }));
       corpo.push(el(doc, "ul", { classe: "of-detalhes" }, [
         el(doc, "li", { texto: `Com ${oferta.responsavel}` }), el(doc, "li", { texto: oferta.quando }),
-        el(doc, "li", { texto: `Valor: ${formatarPreco(oferta)}` }), oferta.acaoNota ? el(doc, "li", { texto: oferta.acaoNota }) : null,
+        el(doc, "li", { texto: demo ? `Valor: ${formatarPreco(oferta)} (ilustrativo)` : `Valor: ${formatarPreco(oferta)}` }), oferta.acaoNota ? el(doc, "li", { texto: oferta.acaoNota }) : null,
         el(doc, "li", { texto: `Como funciona: ${ACOES[oferta.acao]?.resumo || "Atendimento humano"}` }),
       ]));
-      if (oferta.acao === "recepcao") corpo.push(el(doc, "a", { classe: "of-botao", href: linkDaRecepcao(catalogo.whatsapp, oferta), rel: "noreferrer", target: "_blank", texto: "Conversar com a Recepção no WhatsApp" }));
-      if (oferta.acao === "marketplace") corpo.push(el(doc, "a", { classe: "of-botao", href: "marketplace.html", texto: "Ir para o Marketplace" }));
+      if (demo && ["recepcao", "marketplace"].includes(oferta.acao)) corpo.push(el(doc, "p", { classe: "of-nota", texto: oferta.acao === "recepcao" ? "Na versão real, aqui haveria um botão para conversar com a Recepção no WhatsApp. Nesta demonstração ele está desligado." : "Na versão real, aqui haveria um link para o Marketplace. Nesta demonstração ele está desligado." }));
+      else if (oferta.acao === "recepcao") corpo.push(el(doc, "a", { classe: "of-botao", href: linkDaRecepcao(catalogo.whatsapp, oferta), rel: "noreferrer", target: "_blank", texto: "Conversar com a Recepção no WhatsApp" }));
+      if (!demo && oferta.acao === "marketplace") corpo.push(el(doc, "a", { classe: "of-botao", href: "marketplace.html", texto: "Ir para o Marketplace" }));
     } else if (passo === "horario") {
       corpo.push(el(doc, "fieldset", { classe: "of-grupo" }, [el(doc, "legend", { texto: "Horários de exemplo da demonstração" }), ...HORARIOS_DE_EXEMPLO.map((h) => el(doc, "label", { classe: "of-opcao" }, [el(doc, "input", { type: "radio", name: "horario", value: h, checked: fluxo.horario === h }), el(doc, "span", { texto: h })]))]));
       if (erros.horario) corpo.push(el(doc, "p", { classe: "of-erro", role: "alert", texto: erros.horario }));
