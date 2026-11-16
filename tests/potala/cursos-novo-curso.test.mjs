@@ -66,9 +66,11 @@ test("editar curso existente: mesmos ids, sem criar outro; sem turma nao gera tu
   assert.deepEqual(montarPlanoNovoCurso({ ...novoFormulario(), nome: "Só curso" }, S).map((p) => p.tipo), ["definition.save"]);
 });
 
-test("tela: so cursos (nao atendimentos) na lista; texto escapado; interessados do curso", () => {
+test("tela: identifica o curso editado; texto escapado; interessados do curso", () => {
   const html = renderizarNovoCurso({ ...dadosDoCurso(S, "d-yoga"), nome: "<b>x</b>" }, S, { interessados: [{ course_id: "d-yoga", name: "Ana", email: "ana@x.test" }, { course_id: "outro", name: "Bia", email: "b@x" }] });
-  assert.match(html, /Curso de Yoaga \(rascunho\)/);
+  assert.match(html, /Editar curso/);
+  assert.match(html, /nc-selo-rascunho">Rascunho<\/span> Curso de Yoaga/);
+  assert.doesNotMatch(html, /data-nc-escolher/, "sem seletor que leve a editar o curso errado");
   assert.doesNotMatch(html, /Meditação/);
   assert.doesNotMatch(html, /<b>x<\/b>/);
   assert.match(html, /Interessados \(1\)/);
@@ -78,7 +80,9 @@ test("tela: so cursos (nao atendimentos) na lista; texto escapado; interessados 
 
 test("painel: botao 'Novo curso' e principal; Organizar continua como opcao", () => {
   const views = readFileSync(new URL("../../outputs/js/admin/operations/views.js", import.meta.url), "utf8");
-  assert.match(views, /op-primary" data-novo-curso="">Novo curso<\/button>[\s\S]{0,200}<button type="button" class="op-button" data-organizar-curso/);
+  assert.match(views, /op-primary" data-novo-curso="">Novo curso<\/button>/);
+  assert.match(views, /<div data-cursos-painel><\/div>/);
+  assert.match(views, /<details class="op-avancado">[\s\S]{0,300}data-organizar-curso/, "Organizar continua como opcao, nas configuracoes avancadas");
   assert.match(readFileSync(new URL("../../outputs/js/admin/admin-entry.js", import.meta.url), "utf8"), /createNovoCurso\(\{ root: panel, operations, client/);
 });
 

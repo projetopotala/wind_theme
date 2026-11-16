@@ -1,0 +1,26 @@
+## Fluxo
+Criar curso → Publicar → Receber interessados/inscrições → Aprovar → Pagamento → Matrícula.
+Reaproveita #77 e #78. **Não toca na #79** (demonstração de pagamento) nem em cobrança real.
+
+## O que muda (só frontend admin)
+- Formulário: Nome, Descrição, Capa (galeria do site), Gratuito/Pago, **Salvar rascunho** e **Publicar curso**. Turma/datas/vagas ficam em "Abrir inscrições" (recolhido).
+- Publicar não exige professor, data nem vagas. Curso publicado sem turma → "Tenho interesse"; com turma aberta → "Inscrever-se" (regras de vagas inalteradas).
+- Lista do Owner: preço, estado, nº de interessados e de pedidos, botões Editar / Ver interessados / Gerenciar inscrições.
+- Duplicados: aviso de nome parecido + selo de estado + código curto. Nada é apagado, mesclado ou alterado.
+
+## Segurança
+Sem migrations, RLS/permissões/concorrência de vagas intactas, sem dados fictícios em Production, nenhuma conta nova.
+
+## Testes
+- Cursos: 43/43 (novos: `cursos-cadastro-simples`). Lint e build OK.
+- `test:portal`: 1949/1953 antes de corrigir 1 regressão minha (já corrigida); restam as falhas conhecidas blog-b1 e d4-livekit (x2).
+
+## Limitações
+- Capa escolhida da galeria do site; upload real exigiria migration de storage (precisa de GO).
+- Duplicata "Curso Meditação Potala" (rascunho) vs "Curso de Meditação Potala" (publicado) só sinalizada; decisão do Owner.
+
+Draft — sem merge, sem migrations, sem Production.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+https://claude.ai/code/session_0188C99qC3zMhNDpuFuHU5ya
