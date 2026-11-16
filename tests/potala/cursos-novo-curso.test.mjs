@@ -41,9 +41,14 @@ test("validacao: nome, descricao para publicar, turma completa para abrir inscri
 test("plano usa os comandos oficiais e o motor da operacao aceita (curso novo com turma e aula)", () => {
   const dados = { ...novoFormulario(), nome: "TESTE INTERNO Novo", descricao: "Descrição", valor: "150,00", publicar: true, comTurma: true, professorId: "prof", capacidade: "4", aula: { data: amanha, inicio: "10:00", fim: "11:00", salaId: "", link: "https://meet.exemplo.com/x" } };
   const passos = montarPlanoNovoCurso(dados, S);
-  assert.deepEqual(passos.map((p) => p.tipo), ["definition.save", "offering.save", "schedule.save"]);
+  assert.deepEqual(passos.map((p) => p.chave), ["curso", "turma", "aula:1", "publicar:curso", "publicar:turma"]);
   assert.equal(passos[0].payload.price_cents, 15000);
-  assert.equal(passos[0].payload.published, true);
+  assert.equal(passos[0].payload.published, false, "grava em rascunho");
+  assert.equal(passos[1].payload.published, false);
+  assert.equal(passos[3].payload.published, true, "publica so no fim");
+  assert.deepEqual(passos[3].payload.id, { ref: "curso" });
+  assert.deepEqual(passos[4].payload.id, { ref: "turma" });
+  assert.equal(passos[4].payload.published, true);
   assert.deepEqual(passos[1].payload.definition_id, { ref: "curso" });
   assert.equal(passos[1].payload.capacity, 4);
   const r = simularPlano(S, passos);
@@ -113,4 +118,28 @@ test("falha durante o salvamento guarda os ids gravados para continuar sem dupli
   const dados = { ...novoFormulario(), cursoId: "d-yoga", nome: "Curso de Yoaga" };
   assert.equal(montarPlanoNovoCurso(dados, S)[0].payload.id, "d-yoga");
   assert.deepEqual(validarNovoCurso(dados, S), [], "nao acusa nome repetido do proprio curso");
+});
+
+test("falha antes do fim deixa o curso em rascunho (nada publicado)", async () => {
+  const { executarPlano } = await import("../../outputs/js/admin/organizar-curso.js");
+  const gravados = [];
+  const operations = { snapshot: S, refresh: async () => {}, async command(tipo, payload) {
+    if (tipo === "schedule.save") throw Object.assign(new Error("conflito de agenda"), { code: "22023" });
+    gravados.push({ tipo, payload }); return { id: tipo === "definition.save" ? "novo-curso" : "nova-turma" };
+  } };
+  const dados = { ...novoFormulario(), nome: "TESTE INTERNO Falha", descricao: "D", valor: "10", publicar: true, comTurma: true, professorId: "prof", capacidade: "3", aula: { data: amanha, inicio: "10:00", fim: "11:00", salaId: "", link: "" } };
+  const r = await executarPlano({ operations, passos: montarPlanoNovoCurso(dados, S) });
+  assert.equal(r.ok, false);
+  assert.ok(gravados.length >= 2);
+  assert.ok(gravados.every((g) => g.payload.published === false), "nenhuma gravacao publicou");
+});
+
+test("publicado sem turma continua permitido (publica no fim); edicao de curso publicado nao o tira do ar", () => {
+  const p = montarPlanoNovoCurso({ ...novoFormulario(), nome: "Só curso", descricao: "D", publicar: true }, S);
+  assert.deepEqual(p.map((x) => [x.chave, x.payload.published]), [["curso", false], ["publicar:curso", true]]);
+  const S2 = { ...S, activity_definitions: [{ ...S.activity_definitions[0], published: true }] };
+  const e = montarPlanoNovoCurso({ ...dadosDoCurso(S2, "d-yoga"), publicar: true, descricao: "D" }, S2);
+  assert.equal(e[0].payload.published, true, "continua publicado durante a edicao");
+  const rascunho = montarPlanoNovoCurso({ ...dadosDoCurso(S2, "d-yoga"), publicar: false }, S2);
+  assert.ok(rascunho.every((x) => x.payload.published === false), "voltar para rascunho despublica");
 });

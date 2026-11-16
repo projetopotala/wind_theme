@@ -1,6 +1,10 @@
 -- Reverte 202611160006: restaura list_public_courses exatamente como esta em Production (16/11) e remove o catalogo
--- de cursos sem turma e o registro de interesse. ATENCAO: apagar course_interests remove os interesses registrados;
--- exportar antes, se houver algum. Os documentos da operacao (op_records) nao sao alterados.
+-- de cursos sem turma, o registro de interesse e a verificacao de preco. Os documentos da operacao (op_records)
+-- nao sao alterados.
+-- INTERESSES REAIS SAO PRESERVADOS: se public.course_interests tiver qualquer linha, a tabela NAO e apagada; fica
+-- intacta, apenas sem acesso de leitura para authenticated (RLS continua ligada). Recuperacao: reaplicar a migration
+-- 202611160006 (create table if not exists mantem as linhas e devolve politica e permissoes). Se a tabela estiver
+-- vazia, ela e removida.
 -- Nao mexe no historico de migrations.
 begin;
 CREATE OR REPLACE FUNCTION public.list_public_courses()
@@ -72,5 +76,17 @@ drop function if exists public.op_price_cents_guard();
 drop function if exists public.admin_list_course_interests();
 drop function if exists public.register_course_interest(text);
 drop function if exists public.list_public_course_definitions();
-drop table if exists public.course_interests;
+do $guard$
+begin
+  if to_regclass('public.course_interests') is null then
+    return;
+  end if;
+  if exists (select 1 from public.course_interests) then
+    revoke all on table public.course_interests from public, anon, authenticated;
+    raise notice 'course_interests preservada com registros reais; reaplique 202611160006 para restaurar o acesso.';
+  else
+    drop table public.course_interests;
+  end if;
+end;
+$guard$;
 commit;

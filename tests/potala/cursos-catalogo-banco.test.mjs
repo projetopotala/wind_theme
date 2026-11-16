@@ -117,7 +117,7 @@ test("rollback volta ao catalogo anterior e remove apenas o que a migration crio
   const antes = Number((await db.query("select count(*) n from public.op_records")).rows[0].n);
   await db.exec(ROLLBACK);
   assert.equal(Number((await db.query("select count(*) n from public.op_records")).rows[0].n), antes);
-  assert.equal((await db.query("select to_regclass('public.course_interests') t")).rows[0].t, null);
+  assert.equal((await db.query("select to_regclass('public.course_interests') t")).rows[0].t, null, "vazia: removida");
   assert.equal(Number((await db.query("select count(*) n from pg_proc where proname in ('list_public_course_definitions','register_course_interest','admin_list_course_interests')")).rows[0].n), 0);
   assert.equal(Number((await db.query("select count(*) n from pg_proc where proname='list_public_courses'")).rows[0].n), 1);
 });
@@ -147,4 +147,16 @@ test("falha no meio do cadastro: curso publicado sem turma nao aparece como insc
   await salvar("offering.save", "activity_offerings", turma("tp", "parcial"));
   assert.equal((await abertas()).length, 0, "sem aula futura: nao abre inscricoes");
   assert.deepEqual((await outros()).map((x) => x.id), ["parcial"], "aparece so como curso sem turma (sem preco)");
+});
+
+test("rollback com interesses reais preserva a tabela e os registros; reaplicar restaura o acesso", async () => {
+  const { db, como, salvar } = await montar();
+  await salvar("definition.save", "activity_definitions", curso("c1"));
+  await como(U.aluno, "select public.register_course_interest('c1')");
+  await db.exec(ROLLBACK);
+  assert.ok((await db.query("select to_regclass('public.course_interests') t")).rows[0].t, "tabela mantida");
+  assert.equal(Number((await db.query("select count(*) n from public.course_interests")).rows[0].n), 1, "registro preservado");
+  await assert.rejects(() => como(U.aluno, "select * from public.course_interests"), /permission denied/i);
+  await db.exec(readFileSync(new URL("../../supabase/migrations/202611160006_cursos_catalogo_simples.sql", import.meta.url), "utf8"));
+  assert.equal((await como(U.aluno, "select count(*) n from public.course_interests")).rows[0].n, 1, "reaplicar devolve o acesso com os dados");
 });

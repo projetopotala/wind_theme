@@ -82,10 +82,20 @@ export function montarPlanoNovoCurso(dados, s) {
   const curso = {
     ...(existente ? { id: existente.id } : {}), title: String(dados.nome).trim(), kind: "course",
     summary: String(dados.descricao || "").trim().slice(0, 600), image: String(dados.imagem || "").trim(),
-    price_cents: centavos, published: dados.publicar === true,
+    price_cents: centavos,
+    /* Durante a gravacao: rascunho. Curso que ja estava publicado e continua publicado nao sai do ar na edicao. */
+    published: dados.publicar === true && existente?.published === true,
   };
   passos.push({ chave: "curso", tipo: "definition.save", define: "curso", payload: curso, descricao: `${existente ? "Atualizar" : "Cadastrar"} o curso "${curso.title}"` });
-  if (!dados.comTurma) return passos;
+  /* Publicacao so no fim, depois de todas as gravacoes: se algo falhar antes, o curso fica em rascunho. */
+  const publicarNoFim = (lista) => {
+    if (dados.publicar !== true) return lista;
+    lista.push({ chave: "publicar:curso", tipo: "definition.save", payload: { ...curso, id: existente ? existente.id : { ref: "curso" }, published: true }, descricao: `Publicar o curso "${curso.title}"` });
+    const turma = lista.find((p) => p.chave === "turma");
+    if (turma) lista.push({ chave: "publicar:turma", tipo: "offering.save", payload: { ...turma.payload, id: turma.payload.id || { ref: "turma" }, published: true }, descricao: `Abrir as inscrições de "${curso.title}"` });
+    return lista;
+  };
+  if (!dados.comTurma) return publicarNoFim(passos);
   const turmaExistente = (s?.activity_offerings || []).find((o) => o.id === dados.turmaId) || null;
   const cap = Number(dados.capacidade);
   passos.push({
@@ -93,7 +103,8 @@ export function montarPlanoNovoCurso(dados, s) {
     payload: {
       ...(turmaExistente ? { id: turmaExistente.id } : {}), title: curso.title, definition_id: existente ? existente.id : { ref: "curso" },
       professional_id: dados.professorId, mode: dados.modalidade === "online" ? "online" : "presencial", capacity: cap,
-      price_cents: centavos, summary: curso.summary, image: curso.image, published: dados.publicar === true,
+      price_cents: centavos, summary: curso.summary, image: curso.image,
+      published: dados.publicar === true && turmaExistente?.published === true,
     },
     descricao: `${turmaExistente ? "Atualizar" : "Abrir"} a turma de "${curso.title}"`,
   });
@@ -112,7 +123,7 @@ export function montarPlanoNovoCurso(dados, s) {
       descricao: `Agendar a aula de ${a.data.split("-").reverse().join("/")}, ${a.inicio}-${a.fim}`,
     });
   }
-  return passos;
+  return publicarNoFim(passos);
 }
 
 export function renderizarNovoCurso(dados, s, { erros = [], interessados = [], mensagem = "" } = {}) {
