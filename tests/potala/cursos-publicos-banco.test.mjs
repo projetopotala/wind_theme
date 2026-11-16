@@ -23,6 +23,10 @@ async function montar({ aplicar = true } = {}) {
     create function public.is_portal_admin() returns boolean language sql stable security definer set search_path = '' as $$
       select (select auth.uid()) is not null and exists (select 1 from public.users where id = (select auth.uid()) and role in ('owner','admin') and active = true) $$;
   `);
+  for (const [id, papel, email] of [["00000000-0000-0000-0000-0000000000a1", "owner", "owner@potala.test"], ["00000000-0000-0000-0000-0000000000a3", "user", "comum@potala.test"]]) {
+    await db.query("insert into auth.users(id, email) values ($1,$2)", [id, email]);
+    await db.query("insert into public.users(id, role, name, email) values ($1,$2,$3,$4)", [id, papel, papel, email]);
+  }
   await db.exec(mig("202609170001_operacao_do_instituto.sql"));
   await db.exec(mig("202610230001_restore_operational_guard.sql"));
   await db.exec("grant usage on schema public, auth to anon, authenticated; grant execute on function auth.uid() to anon, authenticated");
@@ -51,7 +55,17 @@ async function montar({ aplicar = true } = {}) {
   await doc("schedule_items", "s0", { offering_id: "pub", room_id: "sala", title: "Aula passada", starts_at: "2020-01-10T13:00:00+00", ends_at: "2020-01-10T14:00:00+00", status: "booked" });
   if (aplicar) await db.exec(mig("202611160001_cursos_publicos.sql"));
   const como = async (papel, sql, params) => { await db.exec(`set role ${papel}`); try { return await db.query(sql, params); } finally { await db.exec("reset role"); } };
-  return { db, como };
+  /* op_apply como o painel chama: sessao autenticada de uma conta (Owner ou comum). */
+  let n = 0;
+  const salvarTurma = async (uid, after) => {
+    const rev = Number((await db.query("select revision from public.op_meta where id = 1")).rows[0].revision);
+    await db.exec(`set test.uid = '${uid}'; set role authenticated`);
+    try {
+      const r = await db.query("select public.op_apply($1,$2,'offering.save','{}'::jsonb,null,$3::jsonb) as r", [rev, `chave-${++n}`, JSON.stringify([{ table: "activity_offerings", id: after.id, after }])]);
+      return { ok: true, data: r.rows[0].r };
+    } catch (e) { return { ok: false, code: e.code, message: e.message }; } finally { await db.exec("reset role; set test.uid = ''"); }
+  };
+  return { db, como, salvarTurma };
 }
 
 test("anonimo ve so turmas ativas, marcadas e de atividade publicavel", async () => {
@@ -127,4 +141,44 @@ test("rollback remove a funcao e preserva os dados; reaplicar e seguro", async (
   await db.exec(mig("202611160001_cursos_publicos.sql"));
   await db.exec(mig("202611160001_cursos_publicos.sql"));
   assert.equal((await db.query("select count(*) as n from pg_proc where proname = 'list_public_courses'")).rows[0].n, 1);
+});
+
+test("inscricao sem status conta como vaga ocupada (sem informar vaga que nao existe)", async () => {
+  const { db, como } = await montar();
+  await db.query("insert into public.op_records(collection,id,document) values ('activity_offerings','um','{\"id\":\"um\",\"title\":\"TESTE INTERNO Uma vaga\",\"definition_id\":\"d-curso\",\"capacity\":1,\"published\":true}'::jsonb)");
+  await db.query("insert into public.op_records(collection,id,document) values ('enrollments','sem-status','{\"id\":\"sem-status\",\"profile_id\":\"al-1\",\"offering_id\":\"um\"}'::jsonb)");
+  const um = (await como("anon", "select public.list_public_courses() as c")).rows[0].c.find((x) => x.id === "um");
+  assert.equal(um.availability, "esgotado");
+  assert.equal(um.spots_left, 0);
+});
+
+test("integracao com o Owner: so aparece o que o Owner divulga pelo cadastro; conta comum nao divulga", async () => {
+  const { como, salvarTurma } = await montar();
+  const OWNER = "00000000-0000-0000-0000-0000000000a1";
+  const COMUM = "00000000-0000-0000-0000-0000000000a3";
+  const ids = async () => (await como("anon", "select public.list_public_courses() as c")).rows[0].c.map((x) => x.id);
+  const turma = (extra = {}) => ({ id: "nova", title: "TESTE INTERNO Nova turma", definition_id: "d-curso", mode: "presencial", capacity: 3, published: false, summary: "", price_text: "", image: "", ...extra });
+
+  assert.ok(!(await ids()).includes("nova"));
+  assert.equal((await salvarTurma(OWNER, turma())).ok, true, "Owner cadastra sem divulgar");
+  assert.ok(!(await ids()).includes("nova"), "cadastrada, mas nao divulgada: nao aparece");
+
+  assert.equal((await salvarTurma(OWNER, turma({ published: true, summary: "Descricao oficial", price_text: "R$ 80" }))).ok, true);
+  const lista = (await como("anon", "select public.list_public_courses() as c")).rows[0].c;
+  const nova = lista.find((x) => x.id === "nova");
+  assert.ok(nova, "divulgada pelo Owner: aparece");
+  assert.equal(nova.summary, "Descricao oficial");
+  assert.equal(nova.price_text, "R$ 80");
+  assert.equal(nova.image, null, "imagem vazia nao vira caminho");
+  assert.equal(nova.spots_left, 3);
+
+  assert.equal((await salvarTurma(OWNER, turma({ published: true, active: false }))).ok, true);
+  assert.ok(!(await ids()).includes("nova"), "desativada some");
+
+  assert.equal((await salvarTurma(OWNER, turma({ published: false }))).ok, true);
+  assert.ok(!(await ids()).includes("nova"), "divulgacao retirada some");
+
+  const negado = await salvarTurma(COMUM, turma({ id: "invasora", published: true }));
+  assert.equal(negado.ok, false, "conta comum nao cadastra nem divulga");
+  assert.ok(!(await ids()).includes("invasora"));
 });

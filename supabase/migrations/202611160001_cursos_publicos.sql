@@ -17,7 +17,8 @@
 --   * a turma nao esta marcada como inativa (document.active = false);
 --   * a atividade ligada (definition_id) existe e seu tipo e curso, workshop, palestra, evento ou
 --     atividade cultural. Atendimento, locacao e grupo nunca aparecem como curso.
--- Vagas: contam inscricoes active e completed, a mesma regra de op_turma_capacidade (202611120001).
+-- Vagas: contam inscricoes active e completed (sem status = active, como em my_course_enrollments), a mesma
+-- regra de op_turma_capacidade (202611120001). Lotada e "esgotado"; sem capacidade cadastrada nao se informa limite.
 --
 -- Seguranca: SECURITY DEFINER com search_path vazio, somente leitura (STABLE); EXECUTE para anon e
 -- authenticated; nenhum acesso direto a op_records e concedido. Reaplicar e seguro (create or replace).
@@ -68,7 +69,7 @@ as $$
       from public.op_records e
       where e.collection = 'enrollments'
         and e.document ->> 'offering_id' = o.id
-        and e.document ->> 'status' in ('active', 'completed')
+        and coalesce(e.document ->> 'status', 'active') in ('active', 'completed')
     ) ocup on true
     left join lateral (
       select (s.document ->> 'starts_at')::timestamptz as inicio,
