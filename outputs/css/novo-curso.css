@@ -1,0 +1,12 @@
+/* Novo curso (js/admin/novo-curso.js). Reaproveita .op-dialog, .op-button, .op-check e .op-field-hint. */
+.nc-dialog{overflow:auto}
+.nc-dialog form{display:grid;gap:.85rem;max-width:40rem;padding:0 20px 20px}
+.nc-dialog label{display:grid;gap:.3rem}
+.nc-cabecalho{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.nc-dialog fieldset{display:flex;flex-direction:column;gap:.7rem;height:auto;max-height:none;min-width:0;overflow:visible;border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:.7rem;padding:.8rem 1rem;margin:0}
+.nc-dialog .op-check{display:flex;align-items:center;gap:.5rem}
+.nc-dialog input:not([type="checkbox"]):not([type="radio"]),.nc-dialog textarea,.nc-dialog select{width:100%;box-sizing:border-box;min-height:2.6rem}
+.nc-erros{margin:0;padding:.7rem 1.4rem;border-radius:.6rem;border:1px solid #c0392b;color:inherit}
+.nc-ok{margin:0;font-weight:600}
+.nc-interessados ul{margin:.3rem 0 0;padding-left:1.1rem}
+@media (max-width:480px){.nc-dialog form{max-width:100%}}

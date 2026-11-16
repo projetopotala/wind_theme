@@ -10,6 +10,7 @@ import { createAdminShell } from "./admin-shell.js";
 import { ligarTarefas } from "./admin-tarefas.js";
 import { createCadastroGuiado } from "./cadastro-profissional.js";
 import { createOrganizarCurso } from "./organizar-curso.js";
+import { createNovoCurso } from "./novo-curso.js";
 import { createOperationsClient } from "./operations/client.js";
 import { createOperationsController } from "./operations/controller.js";
 import { carregarRecebidos } from "./recebidos.js";
@@ -87,6 +88,8 @@ async function abrirOperacao(client, access) {
     onSalvo({ id } = {}) { organizarCurso?.professorCadastrado(id); operationsController?.render(); void accessPanel?.reload().catch(() => {}); },
     onNavegar(section) { panel.querySelector(`[data-admin-nav] [data-section="${section}"]`)?.click(); },
   });
+  /* Novo curso: caminho principal simples (mesmos comandos e mesmo motor do Organizar um curso). */
+  createNovoCurso({ root: panel, operations, client, onSalvo() { operationsController?.render(); } });
   /* P1C: organizar um curso, sobre os mesmos comandos de Cursos e atividades e da Agenda. */
   organizarCurso = createOrganizarCurso({
     root: panel,
