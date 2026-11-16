@@ -23,3 +23,12 @@ verify_jwt = false
 # Assistente publico (IA-01). Visitante anonimo: a chave publicavel e validada pelo wrapper no POST.
 # A OPENAI_API_KEY fica so nos segredos da funcao; IA_ATIVO=true liga, qualquer outro valor desliga.
 verify_jwt = false
+
+[functions.create-course-payment-checkout]
+# Aluno autenticado; a RPC revalida auth.uid(), titularidade e preco congelado.
+verify_jwt = true
+
+[functions.asaas-course-webhook]
+# O Asaas nao envia JWT Supabase. O handler exige ASAAS_WEBHOOK_TOKEN no
+# cabecalho asaas-access-token e compara antes de persistir/processar o evento.
+verify_jwt = false

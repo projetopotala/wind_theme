@@ -15,6 +15,7 @@
 
 import { criarSessao } from "./sessao.js";
 import { criarAutenticacaoDemonstracao, criarDadosDemonstracao } from "./adaptadores/demonstracao.js";
+import { ativarDemonstracaoDePagamento, encerrarDemonstracaoDePagamento } from "./pagamento-demonstracao.js";
 import { montarPainelConta } from "./painel-conta.js";
 import { criarAcoesComConta } from "./acoes-com-conta.js";
 import { montarAlternadores } from "./alternadores.js";
@@ -34,6 +35,13 @@ function relatarFalhaDePersistencia(erro, contexto) {
 export function querDemonstracao(local = globalThis.location, armazenamento = globalThis.sessionStorage) {
   const pedido = new URLSearchParams(local?.search || "").get("demo");
   try {
+    /* ?demo=pagamento: demonstracao do pagamento de cursos, so local ou Preview. */
+    if (pedido === "pagamento") {
+      if (!ativarDemonstracaoDePagamento(local, armazenamento)) return armazenamento?.getItem(CHAVE_DEMO) === "1";
+      armazenamento?.setItem(CHAVE_DEMO, "1");
+      return true;
+    }
+    if (pedido === "sair") encerrarDemonstracaoDePagamento(armazenamento);
     if (pedido === "conta" || pedido === "visita") {
       armazenamento?.setItem(CHAVE_DEMO, "1");
       return true;
@@ -207,7 +215,7 @@ export function obterSessaoGlobal({ documento = document, janela = window } = {}
      * fictícia, sem formulário. Antes de a sessão ler quem está dentro — por
      * isso aqui, e não depois de montar.
      */
-    if (pedido === "visita") autenticacao.iniciarVisita();
+    if (pedido === "visita" || pedido === "pagamento") autenticacao.iniciarVisita();
     sessaoGlobal = criarSessao({ autenticacao, dados: criarDadosDemonstracao(), aoFalhar: relatarFalhaDePersistencia });
   } else {
     /* Sair da demonstração leva junto a pessoa fictícia, para ela não reaparecer numa próxima visita. */

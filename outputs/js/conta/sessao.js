@@ -240,6 +240,11 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
       return aposUsarDados(await dados.cancelarInscricaoCurso(id));
     },
 
+    async iniciarPagamentoCurso(id, idempotencia) {
+      exigirConta();
+      return aposUsarDados(await dados.iniciarPagamentoCurso(id, idempotencia));
+    },
+
     async opcoesAtendimento() {
       exigirConta();
       return aposUsarDados(await dados.opcoesAtendimento());

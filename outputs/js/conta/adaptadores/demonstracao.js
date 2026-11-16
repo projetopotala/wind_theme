@@ -18,6 +18,10 @@
 import { ErroDeConta } from "../mensagens.js";
 import { FABRICAS, criarPerfil, criarUsuario } from "../modelos.js";
 import { sementeDeDemonstracao } from "../dados-demonstracao.js";
+import {
+  PAGINA_PAGAMENTO_DEMO, PEDIDO_DEMO_ID, demonstracaoDePagamentoPermitida, encerrarDemonstracaoDePagamento,
+  lerEstadoDemo, pedidoDemonstracao,
+} from "../pagamento-demonstracao.js";
 
 const CHAVE_SESSAO = "potala.conta.demo.sessao";
 
@@ -138,6 +142,8 @@ export function criarDadosDemonstracao({
   armazenamento = globalThis.localStorage,
   agora = () => new Date(),
   semente = sementeDeDemonstracao,
+  sessao = globalThis.sessionStorage,
+  local = globalThis.location,
 } = {}) {
   const memoria = new Map();
   const chave = (usuarioId, nome) => `potala.conta.demo.${usuarioId}.${nome}`;
@@ -224,8 +230,21 @@ export function criarDadosDemonstracao({
       );
     },
 
-    async inscricoesCursos() { return []; },
-    async cancelarInscricaoCurso() { return null; },
+    /* Pagamento de cursos: so a simulacao local (?demo=pagamento, ambiente local ou Preview). */
+    async inscricoesCursos() {
+      const estado = demonstracaoDePagamentoPermitida(local) ? lerEstadoDemo(sessao) : null;
+      return estado ? [pedidoDemonstracao(estado)] : [];
+    },
+    async iniciarPagamentoCurso(id) {
+      if (id !== PEDIDO_DEMO_ID || !demonstracaoDePagamentoPermitida(local) || !lerEstadoDemo(sessao)) {
+        throw new Error("Pagamento disponível somente na conta conectada.");
+      }
+      return `${PAGINA_PAGAMENTO_DEMO}?pedido=${encodeURIComponent(PEDIDO_DEMO_ID)}`;
+    },
+    async cancelarInscricaoCurso(id) {
+      if (id === PEDIDO_DEMO_ID) encerrarDemonstracaoDePagamento(sessao);
+      return null;
+    },
 
     async opcoesAtendimento() {
       return [

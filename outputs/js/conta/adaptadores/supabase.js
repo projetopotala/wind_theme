@@ -359,6 +359,19 @@ export function criarDadosSupabase({ client } = {}) {
       return data;
     },
 
+    /* Checkout hospedado: envia somente IDs. O valor e o curso sao relidos no banco. */
+    async iniciarPagamentoCurso(id, idempotencia) {
+      const { data, error } = await client.functions.invoke("create-course-payment-checkout", {
+        body: { request_id: id, idempotency_key: idempotencia },
+      });
+      if (error || !data?.checkout_url) throw falhouDados(error || { message: "Página de pagamento indisponível." });
+      const url = new URL(data.checkout_url);
+      if (url.protocol !== "https:" || url.hostname !== "asaas.com" || url.pathname !== "/checkoutSession/show") {
+        throw new TypeError("O provedor devolveu um endereço de pagamento inválido.");
+      }
+      return url.toString();
+    },
+
     async opcoesAtendimento() {
       const { data, error } = await client.rpc("list_appointment_offerings");
       if (error) throw falhouDados(error);

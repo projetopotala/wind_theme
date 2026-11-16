@@ -400,6 +400,18 @@ export async function montarMeuPotala({ documento = document, janela = window } 
   };
 
   const aoEnviar = (evento) => {
+    const pagarInscricao = evento.target.closest?.("[data-form='pagar-inscricao-curso']");
+    if (pagarInscricao) {
+      evento.preventDefault();
+      const botao = pagarInscricao.querySelector("[type='submit']");
+      if (!botao || !globalThis.crypto?.randomUUID) return;
+      pagarInscricao.dataset.idempotencia ||= globalThis.crypto.randomUUID();
+      agir(botao, async () => {
+        const url = await sessao.iniciarPagamentoCurso(pagarInscricao.getAttribute("data-inscricao"), pagarInscricao.dataset.idempotencia);
+        janela.location.assign(url);
+      }, "Abrindo o pagamento seguro…");
+      return;
+    }
     const cancelarInscricao = evento.target.closest?.("[data-form='cancelar-inscricao-curso']");
     if (cancelarInscricao) {
       evento.preventDefault();

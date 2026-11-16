@@ -7,10 +7,11 @@ import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
 /* PR B (migration 202611160007): inscricao pedida pelo aluno. TODAS as migrations reais; cursos gravados pelo op_apply. */
 const DIR = new URL("../../supabase/migrations/", import.meta.url);
 const ROLLBACK = readFileSync(new URL("../../supabase/rollbacks/202611160007_rollback_cursos_inscricao_aluno.sql", import.meta.url), "utf8");
-const U = { owner: "00000000-0000-0000-0000-0000000000a1", a1: "00000000-0000-0000-0000-0000000000c1", a2: "00000000-0000-0000-0000-0000000000c2", a3: "00000000-0000-0000-0000-0000000000c3" };
+const ROLLBACK_PAGAMENTOS = readFileSync(new URL("../../supabase/rollbacks/20261116101729_rollback_cursos_pagamentos_asaas_sandbox.sql", import.meta.url), "utf8");
+export const U = { owner: "00000000-0000-0000-0000-0000000000a1", a1: "00000000-0000-0000-0000-0000000000c1", a2: "00000000-0000-0000-0000-0000000000c2", a3: "00000000-0000-0000-0000-0000000000c3" };
 const FUTURO = new Date(Date.now() + 10 * 864e5);
 
-async function montar() {
+export async function montar() {
   const db = new PGlite({ extensions: { pgcrypto } });
   await db.exec(`
     create role anon nologin; create role authenticated nologin; create role service_role nologin;
@@ -175,10 +176,12 @@ test("rollback: preserva pedidos reais; sem pedidos remove tudo", async () => {
   const a = await montar();
   await a.turmaAberta("t1");
   await a.pedir(U.a1, "t1");
+  await a.db.exec(ROLLBACK_PAGAMENTOS);
   await a.db.exec(ROLLBACK);
   assert.equal(Number((await a.db.query("select count(*) n from public.course_enrollment_requests")).rows[0].n), 1);
   assert.equal(Number((await a.db.query("select count(*) n from pg_proc where proname='request_course_enrollment'")).rows[0].n), 0);
   const b = await montar();
+  await b.db.exec(ROLLBACK_PAGAMENTOS);
   await b.db.exec(ROLLBACK);
   assert.equal((await b.db.query("select to_regclass('public.course_enrollment_requests') t")).rows[0].t, null);
   assert.equal(Number((await b.db.query("select count(*) n from pg_trigger where tgname='op_enrollment_respeita_pedidos'")).rows[0].n), 0);
