@@ -45,10 +45,20 @@ export function reservationForm(row, operational = {}, { simple = false } = {}) 
   const offerings = (operational.activity_offerings || []).filter(item => item.active !== false);
   const professionals = (operational.profiles || []).filter(item => item.active !== false && item.roles?.includes("professional"));
   const clients = (operational.profiles || []).filter(item => item.active !== false && item.roles?.includes("client"));
-  const legacy = !row.offering_id || !row.professional_profile_id;
+  /* Pedido de conta logada com servico e sem profissional: o Owner escolhe quem atende. O banco confere o
+   * vinculo do profissional com a oferta e liga o cliente pela conta (sem escolher "cliente operacional"). */
+  const escolherProfissional = Boolean(row.requester_user_id && row.offering_id && !row.professional_profile_id);
+  const legacy = !escolherProfissional && (!row.offering_id || !row.professional_profile_id);
+  const oferta = offerings.find(item => item.id === row.offering_id);
+  const vinculados = new Set((operational.offering_professionals || [])
+    .filter(link => link.offering_id === row.offering_id && link.active !== false).map(link => link.professional_id));
+  const daOferta = professionals.filter(item => oferta?.professional_id ? item.id === oferta.professional_id : vinculados.has(item.id));
   const time = suggestedTime(row);
   const room = row.modality === "presencial" ? `<label>Sala<select data-reservation-room required><option value="">Escolha uma sala</option>${rooms.map(item => `<option value="${esc(item.id)}">${esc(item.name)}</option>`).join("")}</select></label>` : "";
   return `<fieldset data-appointment-reservation><legend>Confirmar na agenda</legend>
+    ${escolherProfissional ? `<p class="appointment-reservation-wide op-muted">O cliente pediu o serviço sem profissional definido. Escolha quem vai atender e o horário.</p>
+    <label>Profissional<select data-reservation-professional required><option value="">Escolha o profissional</option>${daOferta.map(item => option(item, "display_name")).join("")}</select></label>
+    ${daOferta.length ? "" : `<p class="appointment-reservation-wide op-muted" data-reservation-sem-profissional>Nenhum profissional está ligado a este serviço. Ligue um profissional ao serviço em Operação antes de confirmar.</p>`}` : ""}
     ${legacy ? `<p class="appointment-reservation-wide op-muted">Solicitação pública anterior: selecione explicitamente os cadastros operacionais. O sistema não associa pelo nome do serviço.</p>
     <label>Oferta<select data-reservation-offering required><option value="">Escolha a oferta</option>${offerings.map(item => option(item, "title", item.id === row.offering_id)).join("")}</select></label>
     <label>Profissional<select data-reservation-professional required><option value="">Escolha o profissional</option>${professionals.map(item => option(item, "display_name", item.id === row.professional_profile_id)).join("")}</select></label>
