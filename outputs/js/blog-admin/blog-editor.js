@@ -158,6 +158,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     <div class="mesa-editor__meio">
       <div class="mesa-editor__area" data-editor-area>
         <div class="mesa-barra-texto" data-editor-barra role="toolbar" aria-label="Formatação do texto">
+          <span class="mesa-barra-texto__rotulo" aria-hidden="true">Formatar</span>
           <button type="button" data-barra="negrito" title="Negrito (Ctrl+B)">${i("bold")}<span class="sr-only">Negrito</span></button>
           <button type="button" data-barra="italico" title="Itálico (Ctrl+I)">${i("italic")}<span class="sr-only">Itálico</span></button>
           <button type="button" data-barra="link" title="Link">${i("link")}<span class="sr-only">Link</span></button>
@@ -948,7 +949,7 @@ export function createBlogEditor({ root, ctx } = {}) {
         <div class="mesa-campo"><span class="mesa-campo__rotulo">Categoria</span>
           <div class="mesa-linha">
             <select data-editor-campo="category" aria-label="Categoria">${conhecida ? "" : `<option value="${esc(post.category)}" selected>${esc(ctx.rotuloDaCategoria(post.category))} (fora do menu)</option>`}${categorias.map((item) => `<option value="${esc(item.id)}" ${item.id === post.category ? "selected" : ""}>${esc(item.rotulo)}</option>`).join("")}</select>
-            <button type="button" class="mesa-botao mesa-botao--fantasma mesa-botao--pequeno" data-editor-nova-categoria>${i("plus")}Nova</button>
+            ${publica() ? `<button type="button" class="mesa-botao mesa-botao--fantasma mesa-botao--pequeno" data-editor-nova-categoria>${i("plus")}Nova categoria</button>` : ""}
           </div>
           <form class="mesa-linha" data-editor-categoria-form hidden>
             <input name="rotulo" maxlength="40" placeholder="Nome da nova categoria" aria-label="Nome da nova categoria" required>
