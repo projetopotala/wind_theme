@@ -78,7 +78,7 @@ test("Agendar abre formulario compacto com profissional elegivel, data, inicio, 
   const html = render({ agendando: U(1) });
   assert.equal((html.match(/data-appointment-confirm=/g) || []).length, 1);
   assert.match(html, /Profissional responsável<select data-reservation-professional/);
-  assert.match(html, /<option value="p1"\s*>Prof Um<\/option>/);
+  assert.match(html, /<option value="p1"\s+selected>Prof Um<\/option>/, "um único profissional elegível já vem escolhido");
   assert.match(html, /data-reservation-date type="date" min="2026-11-16" value="2026-11-16"/);
   assert.match(html, /data-reservation-start type="time" value="14:00"/);
   assert.match(html, /data-reservation-duration/);
@@ -151,4 +151,54 @@ test("cliente: mesmo pedido ainda aguardando nao e enviado de novo; formulario s
   const app = readFileSync(new URL("../../outputs/js/conta/spa/app.js", import.meta.url), "utf8");
   assert.match(app, /Você já tem uma solicitação igual aguardando confirmação/);
   assert.match(app, /Esse período de hoje já terminou/);
+});
+
+/* Reagendar: formulario editavel mesmo com horario publicado vencido ou preferencia vencida. */
+test("pedido com horario publicado (slot passado): formulario compacto editavel, default futuro e aviso", () => {
+  const slot = { id: "sl1", starts_at: "2026-11-16T14:00:00Z", ends_at: "2026-11-16T15:00:00Z", status: "held", held_by_request_id: U(1) };
+  const row = { ...rows[0], appointment_slot_id: "sl1", appointment_slot: slot }; // slot 11:00-12:00 SP; agora 12:00 SP
+  const html = reservationForm(row, operacional, { simple: true, agora: AGORA });
+  assert.match(html, /data-reservation-date type="date" min="2026-11-16" value="2026-11-16"/);
+  assert.match(html, /data-reservation-start type="time" value="13:00"/, "slot passado: sugere a proxima hora cheia");
+  assert.doesNotMatch(html, /readonly|disabled|datetime-local/);
+  assert.match(html, /data-reservation-aviso-slot[^>]*>O cliente escolheu o horário publicado de 16\/11\/2026, 11:00 às 12:00 \(já passou\)/);
+});
+
+test("pedido com horario publicado ainda futuro: sugere o proprio horario, tambem editavel", () => {
+  const slot = { id: "sl1", starts_at: "2026-11-17T17:00:00Z", ends_at: "2026-11-17T17:45:00Z", status: "held", held_by_request_id: U(1) };
+  const row = { ...rows[0], appointment_slot_id: "sl1", appointment_slot: slot };
+  const html = reservationForm(row, operacional, { simple: true, agora: AGORA });
+  assert.match(html, /value="2026-11-17"/);
+  assert.match(html, /data-reservation-start type="time" value="14:00"/);
+  assert.match(html, /<option value="45" selected>/);
+  assert.doesNotMatch(html, /readonly/);
+});
+
+test("preferencia vencida: o formulario nao comeca no passado e continua editavel", () => {
+  const html = reservationForm(rows[1], operacional, { simple: true, agora: AGORA });
+  assert.match(html, /data-reservation-date type="date" min="2026-11-16" value="2026-11-16"/);
+  assert.match(html, /data-reservation-start type="time" value="13:00"/);
+  assert.doesNotMatch(html, /readonly|disabled/);
+});
+
+test("servico com profissional fixo: aparece escolhido; varios elegiveis exigem escolha; inativo nunca aparece", () => {
+  const fixo = { ...operacional,
+    profiles: [...operacional.profiles, { id: "p2", display_name: "Prof Dois", roles: ["professional"], active: true }, { id: "p3", display_name: "Prof Inativo", roles: ["professional"], active: false }],
+    activity_offerings: [{ id: "o1", title: "Acolhimento", mode: "online", active: true, professional_id: "p2" }] };
+  const h1 = reservationForm(rows[0], fixo, { simple: true, agora: AGORA });
+  assert.match(h1, /<option value="p2"\s+selected>Prof Dois<\/option>/);
+  assert.doesNotMatch(h1, /Prof Um|Prof Inativo/);
+  const varios = { ...operacional,
+    profiles: [...operacional.profiles, { id: "p2", display_name: "Prof Dois", roles: ["professional"], active: true }, { id: "p3", display_name: "Prof Inativo", roles: ["professional"], active: false }],
+    offering_professionals: [{ offering_id: "o1", professional_id: "p1", active: true }, { offering_id: "o1", professional_id: "p2", active: true }, { offering_id: "o1", professional_id: "p3", active: true }] };
+  const h2 = reservationForm(rows[0], varios, { simple: true, agora: AGORA });
+  assert.match(h2, /<option value="">Escolha o profissional<\/option>/);
+  assert.match(h2, /Prof Um/); assert.match(h2, /Prof Dois/);
+  assert.doesNotMatch(h2, /Prof Inativo/);
+});
+
+test("a Central nunca digita sobre o que o Owner escreve: so o clique em Agendar redesenha o formulario", () => {
+  const src = readFileSync(new URL("../../outputs/js/admin/appointment-panel.js", import.meta.url), "utf8");
+  const mudanca = src.slice(src.indexOf("function change(event)"), src.indexOf("/* Lembra quais"));
+  assert.doesNotMatch(mudanca, /render\(/, "change nao redesenha o painel");
 });

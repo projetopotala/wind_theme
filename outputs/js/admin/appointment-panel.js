@@ -61,19 +61,28 @@ export function reservationForm(row, operational = {}, { simple = false, agora =
     .filter(link => link.offering_id === row.offering_id && link.active !== false).map(link => link.professional_id));
   const daOferta = professionals.filter(item => oferta?.professional_id ? item.id === oferta.professional_id : vinculados.has(item.id));
   const time = suggestedTime(row, agora);
-  if (simple && !legacy && !time.fromSlot) {
-    /* Formulário compacto: profissional, data, início, duração, sala (presencial) e observações. A confirmação é a mesma RPC. */
-    const [dia, hora] = time.start.split("T");
+  if (simple && !legacy) {
+    /* Formulário compacto: profissional, data, início, duração, sala (presencial) e observações. A confirmação é a mesma RPC.
+     * Pedido que escolheu um horário publicado também é editável: o Owner pode reagendar (o horário publicado é liberado).
+     * Início já passado (preferência vencida ou slot antigo) nunca vira valor padrão: sugere a próxima hora cheia. */
+    const passou = new Date(`${time.start}:00-03:00`).valueOf() <= agora.valueOf();
+    const proxima = new Date(Math.ceil((agora.valueOf() + 60000) / 3600000) * 3600000);
+    const base = passou ? { start: localDateTime(proxima), end: localDateTime(new Date(proxima.valueOf() + 3600000)) } : time;
+    const [dia, hora] = base.start.split("T");
+    const minutos = Math.round((Date.parse(`${base.end}:00-03:00`) - Date.parse(`${base.start}:00-03:00`)) / 60000);
+    const duracao = DURATIONS.includes(minutos) ? minutos : 60;
+    const dmy = (iso) => iso.slice(0, 10).split("-").reverse().join("/");
+    const avisoSlot = time.fromSlot ? `<p class="appointment-reservation-wide op-muted" data-reservation-aviso-slot>O cliente escolheu o horário publicado de ${esc(dmy(time.start))}, ${esc(time.start.slice(11))} às ${esc(time.end.slice(11))}${passou ? " (já passou)" : ""}. Você pode manter ou escolher outro: ao mudar, o horário publicado é liberado.</p>` : "";
     const fixo = professionals.find(item => item.id === row.professional_profile_id)?.display_name || row.professional_profile_id || "";
     const sala = row.modality === "presencial" ? `<label>Sala<select data-reservation-room required><option value="">Escolha uma sala</option>${rooms.map(item => `<option value="${esc(item.id)}">${esc(item.name)}</option>`).join("")}</select></label>` : "";
     return `<fieldset data-appointment-reservation class="atend-agendar-form"><legend>Agendar atendimento</legend>
-      <p class="appointment-reservation-wide op-muted">${esc(row.service)} · ${row.modality === "online" ? "Online (a sala privada é criada automaticamente)" : "Presencial"}</p>
+      <p class="appointment-reservation-wide op-muted">${esc(row.service)} · ${row.modality === "online" ? "Online (a sala privada é criada automaticamente)" : "Presencial"}</p>${avisoSlot}
       ${escolherProfissional ? `<p class="appointment-reservation-wide op-muted">Escolha quem vai atender e o horário.</p>
-      <label>Profissional responsável<select data-reservation-professional required><option value="">Escolha o profissional</option>${daOferta.map(item => option(item, "display_name")).join("")}</select></label>
+      <label>Profissional responsável<select data-reservation-professional required>${daOferta.length === 1 ? "" : '<option value="">Escolha o profissional</option>'}${daOferta.map(item => option(item, "display_name", daOferta.length === 1)).join("")}</select></label>
       ${daOferta.length ? "" : `<p class="appointment-reservation-wide op-muted" data-reservation-sem-profissional>Nenhum profissional está ligado a este serviço. Ligue um profissional ao serviço em Operação antes de confirmar.</p>`}` : `<p class="appointment-reservation-wide">Profissional responsável: <strong>${esc(fixo)}</strong> <span class="op-muted">(definido pelo serviço)</span></p>`}
       <label>Data<input data-reservation-date type="date" min="${esc(localDateTime(agora).slice(0, 10))}" value="${esc(dia)}" required></label>
       <label>Início<input data-reservation-start type="time" value="${esc(hora)}" required></label>
-      <label>Duração<select data-reservation-duration>${DURATIONS.map(min => `<option value="${min}" ${min === 60 ? "selected" : ""}>${min} minutos</option>`).join("")}</select></label>${sala}
+      <label>Duração<select data-reservation-duration>${DURATIONS.map(min => `<option value="${min}" ${min === duracao ? "selected" : ""}>${min} minutos</option>`).join("")}</select></label>${sala}
       <label class="appointment-reservation-wide">Observações (opcional)<textarea data-reservation-notes maxlength="1000"></textarea></label>
       <button type="button" data-appointment-confirm="${esc(row.id)}">Confirmar agendamento</button>
     </fieldset>`;
@@ -87,8 +96,8 @@ export function reservationForm(row, operational = {}, { simple = false, agora =
     <label>Oferta<select data-reservation-offering required><option value="">Escolha a oferta</option>${offerings.map(item => option(item, "title", item.id === row.offering_id)).join("")}</select></label>
     <label>Profissional<select data-reservation-professional required><option value="">Escolha o profissional</option>${professionals.map(item => option(item, "display_name", item.id === row.professional_profile_id)).join("")}</select></label>
     <label>Cliente operacional<select data-reservation-client required><option value="">Escolha o cliente</option>${clients.map(item => option(item, "display_name")).join("")}</select></label>` : ""}
-    <label>Início<input data-reservation-start type="datetime-local" value="${esc(time.start)}" ${time.fromSlot ? "readonly" : ""} required></label>
-    <label>Fim<input data-reservation-end type="datetime-local" value="${esc(time.end)}" ${time.fromSlot ? "readonly" : ""} required></label>${room}
+    <label>Início<input data-reservation-start type="datetime-local" value="${esc(time.start)}" ${time.fromSlot && !simple ? "readonly" : ""} required></label>
+    <label>Fim<input data-reservation-end type="datetime-local" value="${esc(time.end)}" ${time.fromSlot && !simple ? "readonly" : ""} required></label>${room}
     <label class="appointment-reservation-wide">Observações<textarea data-reservation-notes maxlength="1000"></textarea></label>
     ${simple && !legacy ? "" : `<label class="appointment-reservation-wide"><input data-reservation-confirm type="checkbox" required> Revisei horário, profissional, modalidade${row.modality === "presencial" ? " e sala" : ""} e confirmo esta reserva.</label>`}
     <button type="button" data-appointment-confirm="${esc(row.id)}">${simple ? "Confirmar atendimento" : "Confirmar reserva"}</button>
@@ -221,7 +230,9 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     const row = state.rows.find(item => item.id === id);
     if (!row || row.reservation_schedule_id) return;
     const expectedTime = suggestedTime(row);
-    if (row.appointment_slot_id && (!expectedTime.fromSlot || fields.start !== expectedTime.start || fields.end !== expectedTime.end)) {
+    /* Central de Atendimentos: o Owner pode reagendar um pedido que escolheu horário publicado (o banco libera o slot). */
+    const reagendar = view === "atendimentos";
+    if (!reagendar && row.appointment_slot_id && (!expectedTime.fromSlot || fields.start !== expectedTime.start || fields.end !== expectedTime.end)) {
       state.message = "O horário deve corresponder exatamente ao slot solicitado. Recarregue antes de confirmar.";
       render(true);
       return;
@@ -240,8 +251,8 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
         offeringId: fields.offering,
         professionalProfileId: fields.professional,
         clientProfileId: fields.client,
-        slotStartsAt: expectedTime.fromSlot ? expectedTime.start : "",
-        slotEndsAt: expectedTime.fromSlot ? expectedTime.end : "",
+        slotStartsAt: !reagendar && expectedTime.fromSlot ? expectedTime.start : "",
+        slotEndsAt: !reagendar && expectedTime.fromSlot ? expectedTime.end : "",
       });
       if (ticket !== epoch) return;
       delete state.reservationKeys[id];
