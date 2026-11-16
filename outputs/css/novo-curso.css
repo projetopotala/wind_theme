@@ -19,3 +19,51 @@
 .ic-item h3,.ic-item p{margin:0}
 .ic-situacao{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
 .ic-acoes{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.3rem}
+
+/* Cadastro simples: cabecalho, imagem, preco, avancado recolhido, acoes */
+.nc-cabecalho h2{margin:0}
+.nc-identidade{margin:.25rem 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:.4rem}
+.nc-identidade small{opacity:.7}
+.nc-opcional{font-size:.78rem;font-weight:400;opacity:.7;margin-left:.35rem}
+.nc-selo{display:inline-block;padding:.12rem .55rem;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border:1px solid currentColor}
+.nc-selo-publicado{color:var(--admin-green,#7fb069)}
+.nc-selo-rascunho{color:var(--admin-muted,#a99c88)}
+.nc-selo-aberto{color:var(--admin-gold,#d8b26a);margin-left:.35rem}
+.nc-aviso{border:1px solid var(--admin-gold,#d8b26a);border-radius:.7rem;padding:.7rem 1rem;background:var(--admin-gold-soft,rgba(216,178,106,.12))}
+.nc-aviso p{margin:0 0 .4rem}
+.nc-aviso ul{margin:0;padding-left:1.1rem;display:grid;gap:.35rem}
+.nc-aviso .op-button{margin-left:.3rem}
+.nc-capa{width:100%;max-width:22rem;aspect-ratio:16/9;border-radius:.6rem;overflow:hidden;display:grid;place-items:center;background:color-mix(in srgb,currentColor 8%,transparent)}
+.nc-capa img{width:100%;height:100%;object-fit:cover}
+.nc-sem-capa{opacity:.65;font-size:.9rem}
+.nc-galeria summary,.nc-avancado summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;gap:.3rem}
+.nc-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:.5rem;max-height:15rem;overflow:auto;padding:.2rem}
+.nc-miniatura{aspect-ratio:4/3;padding:0;border:2px solid transparent;border-radius:.45rem;overflow:hidden;background:color-mix(in srgb,currentColor 8%,transparent);color:inherit;cursor:pointer;font:inherit;font-size:.8rem}
+.nc-miniatura img{width:100%;height:100%;object-fit:cover;display:block}
+.nc-miniatura.nc-escolhida{border-color:var(--admin-gold,#d8b26a)}
+.nc-opcoes{display:flex;flex-wrap:wrap;gap:1.2rem}
+.nc-avancado{border:1px dashed color-mix(in srgb,currentColor 25%,transparent);border-radius:.7rem;padding:.3rem 1rem .8rem;display:grid;gap:.7rem}
+.nc-avancado[open]{display:grid}
+.nc-linha{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem}
+.nc-acoes{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:flex-end;position:sticky;bottom:0;padding:.6rem 0;background:var(--admin-panel,#1a1613)}
+.nc-acoes .op-button{min-height:44px}
+@media (max-width:480px){.nc-linha{grid-template-columns:1fr}.nc-acoes{justify-content:stretch}.nc-acoes .op-button{flex:1 1 100%}}
+
+/* Lista de cursos (js/admin/cursos-painel.js) */
+.cp-painel-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+.cp-painel-topo h3{margin:0}
+.cp-lista{list-style:none;margin:.8rem 0 0;padding:0;display:grid;gap:.7rem}
+.cp-curso{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.8rem 1.2rem;border:1px solid color-mix(in srgb,currentColor 16%,transparent);border-radius:.8rem;padding:.85rem 1rem}
+.cp-curso-info{display:grid;gap:.3rem;min-width:0;flex:1 1 18rem}
+.cp-curso-info h4{margin:0;font-size:1.05rem}
+.cp-curso-estado,.cp-curso-meta,.cp-curso-aviso{margin:0}
+.cp-curso-meta{opacity:.8;font-size:.9rem}
+.cp-curso-aviso{font-size:.85rem;color:var(--admin-gold,#d8b26a)}
+.cp-curso-acoes{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center}
+.cp-curso-acoes .op-button{min-height:40px}
+.cp-vazio{margin:.6rem 0 0;opacity:.75}
+.op-avancado{margin-top:1rem;border:1px solid color-mix(in srgb,currentColor 12%,transparent);border-radius:.8rem;padding:.4rem 1rem}
+.op-avancado>summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.op-avancado>summary small{font-weight:400;opacity:.65}
+.op-avancado-acoes{display:flex;flex-wrap:wrap;gap:.5rem;margin:.4rem 0 .8rem}
+@media (max-width:600px){.cp-curso-acoes{width:100%}.cp-curso-acoes .op-button{flex:1 1 calc(50% - .45rem)}}

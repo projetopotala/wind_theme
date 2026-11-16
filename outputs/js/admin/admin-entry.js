@@ -12,6 +12,7 @@ import { createCadastroGuiado } from "./cadastro-profissional.js";
 import { createOrganizarCurso } from "./organizar-curso.js";
 import { createNovoCurso } from "./novo-curso.js";
 import { createInscricoesCursos } from "./inscricoes-cursos.js";
+import { createCursosPainel } from "./cursos-painel.js";
 import { createOperationsClient } from "./operations/client.js";
 import { createOperationsController } from "./operations/controller.js";
 import { carregarRecebidos } from "./recebidos.js";
@@ -34,6 +35,7 @@ let atendimentosPanel = null;
 let accessPanel = null;
 let cadastroGuiado = null;
 let organizarCurso = null;
+let cursosPainel = null;
 let usuarioAtual = null;
 const firstAccess = isAdminFirstAccess(window.location);
 
@@ -76,7 +78,7 @@ async function abrirOperacao(client, access) {
   operationsController = createOperationsController({
     root: panel,
     client: operations,
-    onRendered: () => { appointmentPanel?.render(); atendimentosPanel?.render(); },
+    onRendered: () => { appointmentPanel?.render(); atendimentosPanel?.render(); cursosPainel?.render(); },
     onNavigate(section) {
       panel.querySelector(`[data-admin-nav] [data-section="${section}"]`)?.click();
     },
@@ -90,7 +92,10 @@ async function abrirOperacao(client, access) {
     onNavegar(section) { panel.querySelector(`[data-admin-nav] [data-section="${section}"]`)?.click(); },
   });
   /* Novo curso: caminho principal simples (mesmos comandos e mesmo motor do Organizar um curso). */
-  createNovoCurso({ root: panel, operations, client, onSalvo() { operationsController?.render(); } });
+  createNovoCurso({ root: panel, operations, client, onSalvo() { operationsController?.render(); void cursosPainel?.recarregar(); } });
+  /* Lista simples de cursos (cartoes com contagem de interessados e pedidos). */
+  cursosPainel = createCursosPainel({ root: panel, operations, client });
+  cursosPainel?.render();
   /* Inscricoes de cursos: fila dos pedidos feitos pelos alunos (decisoes no banco, com auditoria). */
   createInscricoesCursos({ root: panel, client });
   /* P1C: organizar um curso, sobre os mesmos comandos de Cursos e atividades e da Agenda. */
