@@ -143,12 +143,29 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
   let epoch = 0;
   const state = { slotDraft: {}, abertas: {}, agendando: null, rows: [], drafts: {}, phase: enabled === true ? "idle" : "disabled", busy: false,
     message: enabled === true ? "Carregue as solicitações de atendimento." : "Acompanhamento de atendimentos temporariamente indisponível. Aguardando homologação." };
+  /* O painel e redesenhado a cada acao (inclusive ao confirmar). O que o Owner digitou no formulario Agendar volta ao lugar
+     enquanto a confirmacao nao termina com sucesso. */
+  const CAMPOS_DO_FORMULARIO = ["[data-reservation-professional]", "[data-reservation-date]", "[data-reservation-start]", "[data-reservation-end]",
+    "[data-reservation-duration]", "[data-reservation-room]", "[data-reservation-notes]"];
+  function restaurarRascunho(target) {
+    const id = state.agendando;
+    const rascunho = id && state.rascunhos?.[id];
+    if (!rascunho) return;
+    const artigo = typeof target.querySelectorAll === "function"
+      ? [...target.querySelectorAll("[data-appointment-row]")].find(item => item.getAttribute("data-appointment-row") === id) : null;
+    if (!artigo) return;
+    for (const seletor of CAMPOS_DO_FORMULARIO) {
+      const campo = artigo.querySelector(seletor);
+      if (campo && rascunho[seletor] !== undefined) campo.value = rascunho[seletor];
+    }
+  }
   function render(focus = false) {
     const target = root.querySelector(selector);
     if (!target) return;
     if (view === "atendimentos") {
       target.innerHTML = renderAtendimentos({ ...state, agora: new Date(), operationalState: getOperationalState() || {}, reservationsEnabled,
         helpers: { reservationForm, suggestedTime, roomLink } });
+      restaurarRascunho(target);
       syncSlotForm(target.querySelector("[data-atendimentos-slot]"));
     } else {
       target.innerHTML = renderAppointmentPanel({ ...state, operationalState: getOperationalState() || {}, reservationsEnabled });
@@ -176,6 +193,7 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     APPOINTMENT_LINK_LOCKED: "O vínculo desta reserva não pode ser alterado.",
     APPOINTMENT_NOT_READY: "A operação do Instituto ainda não está inicializada.",
     APPOINTMENT_INVALID: "Revise os dados da reserva: algum campo não confere com a solicitação.",
+    APPOINTMENT_FAILED: "Não foi possível confirmar a reserva. Nada foi gravado; tente novamente em instantes.",
     APPOINTMENT_OVERLAP: "Conflito de agenda: o profissional (ou a sala) já tem outro horário nesse período. Escolha outro horário.",
   });
   /* Qualquer falha descarta as linhas em memoria, entao o fallback precisa
@@ -240,22 +258,36 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     state.reservationKeys ||= {};
     state.reservationKeys[id] ||= idFactory();
     return execute(async ticket => {
-      await confirmReservation(client, {
-        requestId: id,
-        expectedUpdatedAt: row.updated_at,
-        idempotencyKey: state.reservationKeys[id],
-        startsAt: fields.start,
-        endsAt: fields.end,
-        roomId: fields.room,
-        notes: fields.notes,
-        offeringId: fields.offering,
-        professionalProfileId: fields.professional,
-        clientProfileId: fields.client,
-        slotStartsAt: !reagendar && expectedTime.fromSlot ? expectedTime.start : "",
-        slotEndsAt: !reagendar && expectedTime.fromSlot ? expectedTime.end : "",
-      });
+      try {
+        await confirmReservation(client, {
+          requestId: id,
+          expectedUpdatedAt: row.updated_at,
+          idempotencyKey: state.reservationKeys[id],
+          startsAt: fields.start,
+          endsAt: fields.end,
+          roomId: fields.room,
+          notes: fields.notes,
+          offeringId: fields.offering,
+          professionalProfileId: fields.professional,
+          clientProfileId: fields.client,
+          slotStartsAt: !reagendar && expectedTime.fromSlot ? expectedTime.start : "",
+          slotEndsAt: !reagendar && expectedTime.fromSlot ? expectedTime.end : "",
+        });
+      } catch (error) {
+        /* Falha da confirmacao: nada foi gravado. A lista, o pedido pendente e o que foi digitado permanecem; so a mensagem
+           aparece. Sessao/permissao seguem o caminho de sempre (limpa o painel). */
+        if (accessDenied(error)) throw error;
+        if (ticket !== epoch) return;
+        state.message = error?.code ? mensagemDaFalha(error) : "Não foi possível confirmar a reserva. Nada foi gravado; revise os dados e tente novamente.";
+        if (error?.code === "APPOINTMENT_CONFLICT" || error?.code === "APPOINTMENT_MISSING") {
+          /* A solicitacao mudou: atualiza a lista em vez de deixar o Owner com dados velhos (ou sem lista). */
+          try { const atual = await loadAppointmentRequests(client); if (ticket === epoch) state.rows = atual; } catch { /* mantem a lista atual */ }
+        }
+        return;
+      }
       if (ticket !== epoch) return;
       delete state.reservationKeys[id];
+      if (state.rascunhos) delete state.rascunhos[id];
       const rows = await loadAppointmentRequests(client);
       if (ticket !== epoch) return;
       state.rows = rows; state.drafts = {};
@@ -305,6 +337,9 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
         if (!end) { state.message = "Informe data, início e duração."; render(true); return; }
         if (new Date(`${start}:00-03:00`).valueOf() <= Date.now()) { state.message = "Escolha um horário futuro."; render(true); return; }
       }
+      state.rascunhos ||= {};
+      state.rascunhos[confirmButton.dataset.appointmentConfirm] = Object.fromEntries(CAMPOS_DO_FORMULARIO
+        .map(seletor => [seletor, article.querySelector(seletor)?.value]).filter(([, valor]) => valor !== undefined));
       return confirm(confirmButton.dataset.appointmentConfirm, {
         start,
         end,
