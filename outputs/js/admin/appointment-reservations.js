@@ -14,7 +14,7 @@ function isoLocal(value) {
  * falhar de novo pelo mesmo motivo. A mensagem do banco nunca e repassada.
  */
 export const ERROS_DA_CONFIRMACAO = Object.freeze({
-  PT409: ["APPOINTMENT_CONFLICT", "A solicitação ou a agenda mudou. Recarregue antes de confirmar."],
+  PT409: ["APPOINTMENT_CONFLICT", "Conflito: o profissional (ou a sala) já tem outro horário nesse período, ou a solicitação mudou. Escolha outro horário ou recarregue."],
   PT422: ["APPOINTMENT_CLIENT_LINK", "O cadastro operacional do solicitante precisa ser revisado antes da confirmação."],
   42501: ["APPOINTMENT_FORBIDDEN", "Seu acesso não permite confirmar reservas."],
   P0002: ["APPOINTMENT_MISSING", "Esta solicitação não está mais acessível. Recarregue a lista."],

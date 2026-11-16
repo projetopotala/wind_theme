@@ -64,22 +64,28 @@ test("término é calculado pela duração (30/45/60) e vira o dia quando precis
 });
 
 test("a seção mostra as três áreas, cliente, profissional, serviço, data e horário", async () => {
-  const { panel, target } = setup();
+  const { panel, target, handlers } = setup();
   await panel.reload();
   const html = target.innerHTML;
-  for (const t of ["Disponibilizar horário", "Solicitações recebidas", "Consultas confirmadas"]) assert.ok(html.includes(t), t);
-  for (const t of ["Cliente Sintético", "Profissional Publicada", "Consulta online", "12/11/2026 · 10:00–11:00"]) assert.ok(html.includes(t), t);
+  for (const t of ["Disponibilizar horário", "Solicitações pendentes", "Consultas confirmadas", "Histórico e encerradas", "Canceladas"]) assert.ok(html.includes(t), t);
+  for (const t of ["Cliente Sintético", "Profissional Publicada", "Consulta online", "12/11/2026 às 10:00 – 11:00"]) assert.ok(html.includes(t), t);
   assert.match(html, /data-atendimentos-confirmed="10000000-0000-4000-8000-000000000002"/);
   assert.match(html, /data-atendimentos-goto="agenda"/);
+  assert.ok(!html.includes("data-appointment-confirm"), "primeira visualização: nenhum formulário de agendamento aberto");
+  assert.match(html, /<details class="atend-secao" id="atend-solicitacoes" data-atend-secao="solicitacoes" open>/, "só as pendentes abrem sozinhas");
   assert.match(html, /Profissional Oculta — não publicado/);
   /* confirmada não aparece entre as pendentes */
   const pendentes = html.slice(html.indexOf('id="atend-solicitacoes"'), html.indexOf('id="atend-confirmadas"'));
   assert.ok(!pendentes.includes("Cliente Confirmado"));
   /* pedido com slot: sem caixa de revisão; pedido legado mantém a exigência explícita */
-  const slotCard = pendentes.slice(pendentes.indexOf(`data-appointment-row="${REQ}"`), pendentes.indexOf(`data-appointment-row="${REQ_LEGACY}"`));
+  const abrir = async (id) => handlers.click({ target: { closest: (sel) => (sel === "[data-atendimentos-agendar]" ? { dataset: { atendimentosAgendar: id } } : null) } });
+  await abrir(REQ);
+  const slotCard = target.innerHTML.slice(target.innerHTML.indexOf(`data-appointment-row="${REQ}"`), target.innerHTML.indexOf(`data-appointment-row="${REQ_LEGACY}"`));
   assert.ok(!slotCard.includes("data-reservation-confirm"));
   assert.match(slotCard, /Confirmar atendimento/);
-  assert.match(pendentes.slice(pendentes.indexOf(`data-appointment-row="${REQ_LEGACY}"`)), /data-reservation-confirm/);
+  await abrir(REQ_LEGACY);
+  assert.equal(target.innerHTML.split("data-appointment-confirm=").length - 1, 1, "só um formulário aberto por vez");
+  assert.match(target.innerHTML.slice(target.innerHTML.indexOf(`data-appointment-row="${REQ_LEGACY}"`)), /data-reservation-confirm/);
 });
 
 test("somente administração autorizada vê a seção; sem acesso nada é consultado nem criado", async () => {

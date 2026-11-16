@@ -429,6 +429,13 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       if (minimo && String(campos.dataPreferida) < minimo) { aviso.textContent = "Escolha um dia a partir de hoje."; return; }
       if (!["manha", "tarde", "noite"].includes(campos.periodoPreferido)) { aviso.textContent = "Escolha o período."; return; }
       if (periodoEncerrado(String(campos.dataPreferida), campos.periodoPreferido)) { aviso.textContent = "Esse período de hoje já terminou. Escolha outro período ou outro dia."; return; }
+      /* Pedido equivalente (mesmo servico, dia e periodo) ainda aguardando: nao cria outro. */
+      const servicoEscolhido = String(opcao.textContent || "").replace(/ · (Online|Presencial)\s*$/, "").trim();
+      if ((dados?.atendimentos || []).some((p) => ["recebida", "em_contato"].includes(p.status) && p.servico === servicoEscolhido
+        && p.dataPreferida === campos.dataPreferida && p.periodoPreferido === campos.periodoPreferido)) {
+        aviso.textContent = "Você já tem uma solicitação igual aguardando confirmação. Não precisa enviar de novo.";
+        return;
+      }
       const diaEscolhido = String(campos.dataPreferida).split("-").reverse().join("/");
       if (!globalThis.crypto?.randomUUID) { aviso.textContent = "Seu navegador não oferece a proteção necessária para enviar agora."; return; }
       semHorario.dataset.idempotencia ||= globalThis.crypto.randomUUID();
