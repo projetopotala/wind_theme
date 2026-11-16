@@ -45,7 +45,7 @@ test("cada atalho aponta para seção, formulário ou endereço que já existem"
   assert.match(views, /action\('Inscrever','enrollment'/);
   const atend = ler("js/admin/atendimentos-view.js");
   assert.match(atend, /id="atend-horario"/);
-  assert.match(atend, /id="atend-solicitacoes"/);
+  assert.match(atend, /id: "solicitacoes"/);
   const controller = ler("js/admin/operations/controller.js");
   assert.match(controller, /\['professional','Profissional'\]/, "o papel Profissional existe no cadastro de pessoa");
   assert.match(controller, /\['course','Curso'\]/, "o tipo Curso existe no cadastro de atividade");

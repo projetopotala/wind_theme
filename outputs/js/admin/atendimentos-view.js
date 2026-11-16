@@ -8,11 +8,11 @@
  * banco. Nada aqui publica perfil, cria cadastro ou muda o que já existe.
  */
 import { esc } from "./operations/comum.js";
+import { classificarAtendimentos, secaoRecolhivel, cartaoPendente, cartaoConfirmado, cartaoHistorico, cartaoCancelado } from "./atendimentos-secoes.js";
 
 export const DURATIONS = Object.freeze([30, 45, 60]);
 
-const PERIODS = { manha: "Manhã", tarde: "Tarde", noite: "Noite" };
-const dmy = (iso) => String(iso || "").split("-").reverse().join("/");
+const fmtTime = (iso) => String(iso || '').slice(11, 16);
 
 /* Soma minutos a um horário de parede "AAAA-MM-DD" + "HH:mm", sem fuso. */
 export function computeEnd(date, time, minutes) {
@@ -35,30 +35,6 @@ export function slotErrorMessage(error) {
     case "22023": return "O horário não foi aceito. Confira: profissional publicado e ativo, serviço compatível com ele, horário no futuro e, se presencial, sala dentro do funcionamento.";
     default: return "Não foi possível disponibilizar o horário. Revise os dados e tente de novo.";
   }
-}
-
-const profileName = (state, id) => (state.profiles || []).find((item) => item.id === id)?.display_name || "";
-const fmtTime = (iso) => String(iso || "").slice(11, 16);
-
-function whenOf(row, suggestedTime, operational = {}) {
-  /* Consulta confirmada de pedido sem slot: o horário exato está no item da agenda ligado ao pedido. */
-  const item = row.reservation_schedule_id ? (operational.schedule_items || []).find((s) => s.id === row.reservation_schedule_id) : null;
-  if (item?.starts_at) {
-    const f = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-    const h = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
-    return `${f.format(new Date(item.starts_at)).replace(",", " às")}${item.ends_at ? ` - até ${h.format(new Date(item.ends_at))}` : ""}`;
-  }
-  const time = suggestedTime(row);
-  if (time.fromSlot) return `${dmy(time.start.slice(0, 10))} · ${fmtTime(time.start)}–${fmtTime(time.end)}`;
-  return `${dmy(row.preferred_date)} · ${PERIODS[row.preferred_period] || row.preferred_period} (horário a definir)`;
-}
-
-function summary(row, state, suggestedTime) {
-  const professional = profileName(state, row.professional_profile_id) || "A definir";
-  return `<dl class="atend-resumo"><dt>Cliente</dt><dd>${esc(row.requester_name)}</dd>
-    <dt>Profissional</dt><dd>${esc(professional)}</dd><dt>Serviço</dt><dd>${esc(row.service)}</dd>
-    <dt>Data e horário</dt><dd>${esc(whenOf(row, suggestedTime, state))}</dd>
-    <dt>Modalidade</dt><dd>${esc(row.modality === "online" ? "Online" : row.modality === "presencial" ? "Presencial" : row.modality)}</dd></dl>`;
 }
 
 function slotForm({ controls, busy, reservationsEnabled, operational, draft }) {
@@ -84,35 +60,32 @@ function slotForm({ controls, busy, reservationsEnabled, operational, draft }) {
     <button type="button" data-appointment-slot-create ${busy ? "disabled" : ""}>Disponibilizar horário</button></fieldset>`;
 }
 
-function requestCard(row, { operational, controls, busy, reservationsEnabled, helpers }) {
-  return `<article class="op-card" data-appointment-row="${esc(row.id)}"><h4>${esc(row.requester_name)} — ${esc(row.service)}</h4>
-    ${summary(row, operational, helpers.suggestedTime)}
-    <p class="op-muted">Contato (${esc(row.contact_type === "email" ? "e-mail" : "telefone")}): <span style="overflow-wrap:anywhere">${esc(row.contact)}</span></p>
-    ${controls && !busy && reservationsEnabled ? helpers.reservationForm(row, operational, { simple: true }) : ""}</article>`;
-}
-
-function confirmedCard(row, { operational, helpers }) {
-  return `<article class="op-card" data-atendimentos-confirmed="${esc(row.id)}"><h4>${esc(row.requester_name)} — ${esc(row.service)}</h4>
-    ${summary(row, operational, helpers.suggestedTime)}
-    ${helpers.roomLink(row)}
-    <button type="button" data-atendimentos-goto="agenda">Ver na Agenda</button></article>`;
-}
-
-export function renderAtendimentos({ rows, phase, message, busy, operationalState = {}, reservationsEnabled = false, slotDraft = {}, helpers }) {
+/*
+ * Primeira visualização: só o que exige ação (solicitações pendentes). O resto fica recolhido, com a contagem.
+ * Só um formulário "Agendar" fica aberto por vez (state.agendando); os demais são cartões compactos.
+ */
+export function renderAtendimentos({ rows, phase, message, busy, operationalState = {}, reservationsEnabled = false, slotDraft = {}, helpers,
+  agora = new Date(), abertas = {}, agendando = null }) {
   const controls = !["disabled", "forbidden"].includes(phase);
-  const ctx = { operational: operationalState, controls, busy, reservationsEnabled, helpers };
-  const pending = rows.filter((r) => !r.reservation_schedule_id && ["recebida", "em_contato"].includes(r.status));
-  const confirmed = rows.filter((r) => r.reservation_schedule_id);
+  const grupos = classificarAtendimentos(rows, operationalState, agora);
+  const aberta = (id, padrao = false) => (id in abertas ? abertas[id] === true : padrao);
+  const podeAgendar = Boolean(controls && !busy && reservationsEnabled);
+  const link = (row) => helpers.roomLink(row);
+  const sala = (row) => (row.reservation_schedule_id ? link(row) : "");
+  const pendentes = grupos.pendentes.map((row) => cartaoPendente(row, {
+    vencida: grupos.vencida(row), agendando, podeAgendar,
+    formulario: podeAgendar && agendando === row.id ? helpers.reservationForm(row, operationalState, { simple: true, agora }) : "",
+  })).join("");
+  const vencidas = grupos.pendentes.filter(grupos.vencida).length;
   return `<div class="atend" aria-busy="${busy}">
-    <nav class="atend-atalhos" aria-label="Áreas de atendimentos"><a href="#atend-horario">Disponibilizar horário</a>
-      <a href="#atend-solicitacoes">Solicitações recebidas (${pending.length})</a><a href="#atend-confirmadas">Consultas confirmadas (${confirmed.length})</a></nav>
     <p role="status" aria-live="polite" tabindex="-1" data-appointment-feedback>${esc(message)}</p>
     ${controls ? `<button type="button" data-appointment-reload ${busy ? "disabled" : ""}>Recarregar</button>` : ""}
-    <section class="op-card" id="atend-horario" aria-label="Disponibilizar horário"><h3>Disponibilizar horário</h3>${slotForm({ controls, busy, reservationsEnabled, operational: operationalState, draft: slotDraft })}</section>
-    <section class="op-card" id="atend-solicitacoes" aria-label="Solicitações recebidas"><h3>Solicitações recebidas</h3>
-      ${pending.length ? pending.map((r) => requestCard(r, ctx)).join("") : `<p class="op-muted">Nenhuma solicitação aguardando confirmação.</p>`}</section>
-    <section class="op-card" id="atend-confirmadas" aria-label="Consultas confirmadas"><h3>Consultas confirmadas</h3>
-      ${confirmed.length ? confirmed.map((r) => confirmedCard(r, ctx)).join("") : `<p class="op-muted">Nenhuma consulta confirmada ainda.</p>`}</section></div>`;
+    ${secaoRecolhivel({ id: "solicitacoes", titulo: "Solicitações pendentes", total: grupos.pendentes.length, aberta: aberta("solicitacoes", true), corpo: `${vencidas ? `<p class="atend-aviso" role="status">${vencidas} com data preferida já vencida: reagende, ou feche em "Estado" se não for mais necessário. Elas não somem sozinhas.</p>` : ""}${pendentes}`, vazio: "Nenhuma solicitação aguardando confirmação." })}
+    ${secaoRecolhivel({ id: "confirmadas", titulo: "Consultas confirmadas", total: grupos.confirmadas.length, aberta: aberta("confirmadas"), corpo: grupos.confirmadas.map((row) => cartaoConfirmado(row, { operacional: operationalState, link: `${sala(row)}<button type="button" data-atendimentos-goto="agenda">Ver na Agenda</button>` })).join(""), vazio: "Nenhuma consulta confirmada à frente." })}
+    ${secaoRecolhivel({ id: "historico", titulo: "Histórico e encerradas", total: grupos.historico.length, aberta: aberta("historico"), corpo: grupos.historico.map((row) => cartaoHistorico(row, { operacional: operationalState, link: "" })).join(""), vazio: "Nada no histórico ainda." })}
+    ${secaoRecolhivel({ id: "canceladas", titulo: "Canceladas", total: grupos.canceladas.length, aberta: aberta("canceladas"), corpo: grupos.canceladas.map(cartaoCancelado).join(""), vazio: "Nenhuma solicitação cancelada." })}
+    <details class="atend-secao" id="atend-horario" data-atend-secao="horario"${aberta("horario") ? " open" : ""}><summary><span class="atend-secao-titulo">Disponibilizar horário público</span></summary>
+      <div class="atend-secao-corpo">${slotForm({ controls, busy, reservationsEnabled, operational: operationalState, draft: slotDraft })}</div></details></div>`;
 }
 
 export function readSlotForm(form) {

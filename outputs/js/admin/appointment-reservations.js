@@ -15,6 +15,8 @@ function isoLocal(value) {
  */
 export const ERROS_DA_CONFIRMACAO = Object.freeze({
   PT409: ["APPOINTMENT_CONFLICT", "A solicitação ou a agenda mudou. Recarregue antes de confirmar."],
+  /* Conflito de profissional/sala vindo do gatilho da agenda (guarda_da_operacao). */
+  "23P01": ["APPOINTMENT_OVERLAP", "Conflito de agenda: o profissional (ou a sala) já tem outro horário nesse período. Escolha outro horário."],
   PT422: ["APPOINTMENT_CLIENT_LINK", "O cadastro operacional do solicitante precisa ser revisado antes da confirmação."],
   42501: ["APPOINTMENT_FORBIDDEN", "Seu acesso não permite confirmar reservas."],
   P0002: ["APPOINTMENT_MISSING", "Esta solicitação não está mais acessível. Recarregue a lista."],

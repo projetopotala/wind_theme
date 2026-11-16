@@ -110,7 +110,7 @@ test("quem atende e também é cliente vê as duas partes; cliente comum continu
   const pedidoDeCliente = { id: PEDIDO_COMO_CLIENTE, servico: "Acupuntura", modalidade: "online", status: "recebida", dataPreferida: "2026-11-20", periodoPreferido: "manha" };
   const ambos = atendimentos.renderizar({ atendimentos: [pedidoDeCliente], agendaProfissional: [{ id: PEDIDO_MEU, servico: "X", modalidade: "online", estado: "too_early", inicio: "2026-11-06T13:00:00Z", abre: "2026-11-06T12:45:00Z" }], atendimentoDisponivel: true });
   assert.match(ambos, /Sua agenda de atendimentos/);
-  assert.match(ambos, /Solicitações pendentes/);
+  assert.match(ambos, /Aguardando confirmação/);
   const cliente = atendimentos.renderizar({ atendimentos: [pedidoDeCliente], atendimentoDisponivel: true, opcoesAtendimento: [], horariosAtendimento: [] });
   assert.doesNotMatch(cliente, /Sua agenda de atendimentos/);
   assert.match(cliente, /Solicitar um atendimento/);

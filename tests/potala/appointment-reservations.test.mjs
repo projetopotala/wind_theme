@@ -214,6 +214,7 @@ test("cada SQLSTATE vira uma orientacao propria, sem vazar a mensagem do banco",
   const sigiloso = "coluna op_records.document detalhe interno do servidor";
   const esperado = [
     ["PT409", "APPOINTMENT_CONFLICT", /Recarregue antes de confirmar/],
+    ["23P01", "APPOINTMENT_OVERLAP", /Conflito de agenda/],
     ["PT422", "APPOINTMENT_CLIENT_LINK", /cadastro operacional/],
     ["42501", "APPOINTMENT_FORBIDDEN", /não permite confirmar/],
     ["P0002", "APPOINTMENT_MISSING", /não está mais acessível/],

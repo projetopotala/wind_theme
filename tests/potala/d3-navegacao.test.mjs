@@ -61,7 +61,7 @@ test("campos ausentes ou inválidos não inventam uma próxima consulta", () => 
   assert.match(html, /Horários confirmados anteriores[\s\S]*Atendimento sem-horario/);
   assert.match(html, /Horários confirmados anteriores[\s\S]*Atendimento horario-invalido/);
   assert.match(html, /Horários confirmados anteriores[\s\S]*Atendimento sem-reserva/);
-  assert.match(html, /Solicitações pendentes[\s\S]*Atendimento pendente-sem-horario/);
+  assert.match(html, /Aguardando confirmação[\s\S]*Atendimento pendente-sem-horario/);
   for (const id of ["sem-horario", "horario-invalido", "sem-reserva", "pendente-sem-horario"]) {
     assert.equal((html.match(new RegExp(`Atendimento ${id}`, "g")) || []).length, 1);
   }

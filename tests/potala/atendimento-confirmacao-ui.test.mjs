@@ -54,9 +54,9 @@ test("Owner: sugestao de horario para hoje nunca fica no passado", () => {
 test("Owner: consulta confirmada mostra o horario exato e nao 'horario a definir'", () => {
   const row = { id: "r1", requester_name: "Ana", service: "Acolhimento", modality: "online", status: "encerrada", reservation_schedule_id: "s1", professional_profile_id: "p1", preferred_date: "2026-11-16", preferred_period: "manha" };
   const operational = { profiles: [{ id: "p1", display_name: "Prof Um" }], schedule_items: [{ id: "s1", starts_at: "2026-11-16T18:00:00Z", ends_at: "2026-11-16T19:00:00Z" }] };
-  const html = renderAtendimentos({ rows: [row], phase: "ready", message: "", busy: false, operationalState: operational, helpers: { suggestedTime, reservationForm, roomLink: () => "" } });
+  const html = renderAtendimentos({ rows: [row], agora: new Date("2026-11-16T12:00:00Z"), abertas: { confirmadas: true }, phase: "ready", message: "", busy: false, operationalState: operational, helpers: { suggestedTime, reservationForm, roomLink: () => "" } });
   const confirmadas = html.split('id="atend-confirmadas"')[1];
-  assert.match(confirmadas, /16\/11\/2026 às 15:00 - até 16:00/);
+  assert.match(confirmadas, /16\/11\/2026 às 15:00 – 16:00/);
   assert.match(confirmadas, /Prof Um/);
   assert.doesNotMatch(confirmadas, /horário a definir/);
   assert.doesNotMatch(html.split('id="atend-confirmadas"')[0].split('id="atend-solicitacoes"')[1], /Ana/, "confirmada nao fica em solicitacoes recebidas");

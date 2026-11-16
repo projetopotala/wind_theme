@@ -5,7 +5,7 @@ import { confirmAppointmentReservation } from "./appointment-reservations.js";
 import { createAppointmentSlot } from "./appointment-slots.js";
 import { esc } from "./operations/comum.js";
 import { caminhoDaSala } from "../sala/estado-sala.js";
-import { renderAtendimentos, readSlotForm, syncSlotForm, computeEnd, slotErrorMessage } from "./atendimentos-view.js";
+import { renderAtendimentos, readSlotForm, syncSlotForm, computeEnd, slotErrorMessage, DURATIONS } from "./atendimentos-view.js";
 
 const LABELS = { recebida: "Recebida", em_contato: "Em contato", encerrada: "Encerrada", cancelada: "Cancelada" };
 /* Pedido com reserva e a consulta confirmada; "Encerrada" sozinho parecia pedido fechado sem consulta. */
@@ -46,7 +46,7 @@ export function suggestedTime(row, now = new Date()) {
 
 const option = (item, label, selected = false) => `<option value="${esc(item.id)}" ${selected ? "selected" : ""}>${esc(item[label] || item.title || item.display_name || item.name || item.id)}</option>`;
 
-export function reservationForm(row, operational = {}, { simple = false } = {}) {
+export function reservationForm(row, operational = {}, { simple = false, agora = new Date() } = {}) {
   if (row.reservation_schedule_id) return roomLink(row) + `<p class="mp-status">Reserva vinculada à agenda.</p>`;
   const rooms = (operational.rooms || []).filter(item => item.status === "available" && item.capacity);
   const offerings = (operational.activity_offerings || []).filter(item => item.active !== false);
@@ -60,7 +60,24 @@ export function reservationForm(row, operational = {}, { simple = false } = {}) 
   const vinculados = new Set((operational.offering_professionals || [])
     .filter(link => link.offering_id === row.offering_id && link.active !== false).map(link => link.professional_id));
   const daOferta = professionals.filter(item => oferta?.professional_id ? item.id === oferta.professional_id : vinculados.has(item.id));
-  const time = suggestedTime(row);
+  const time = suggestedTime(row, agora);
+  if (simple && !legacy && !time.fromSlot) {
+    /* Formulário compacto: profissional, data, início, duração, sala (presencial) e observações. A confirmação é a mesma RPC. */
+    const [dia, hora] = time.start.split("T");
+    const fixo = professionals.find(item => item.id === row.professional_profile_id)?.display_name || row.professional_profile_id || "";
+    const sala = row.modality === "presencial" ? `<label>Sala<select data-reservation-room required><option value="">Escolha uma sala</option>${rooms.map(item => `<option value="${esc(item.id)}">${esc(item.name)}</option>`).join("")}</select></label>` : "";
+    return `<fieldset data-appointment-reservation class="atend-agendar-form"><legend>Agendar atendimento</legend>
+      <p class="appointment-reservation-wide op-muted">${esc(row.service)} · ${row.modality === "online" ? "Online (a sala privada é criada automaticamente)" : "Presencial"}</p>
+      ${escolherProfissional ? `<p class="appointment-reservation-wide op-muted">Escolha quem vai atender e o horário.</p>
+      <label>Profissional responsável<select data-reservation-professional required><option value="">Escolha o profissional</option>${daOferta.map(item => option(item, "display_name")).join("")}</select></label>
+      ${daOferta.length ? "" : `<p class="appointment-reservation-wide op-muted" data-reservation-sem-profissional>Nenhum profissional está ligado a este serviço. Ligue um profissional ao serviço em Operação antes de confirmar.</p>`}` : `<p class="appointment-reservation-wide">Profissional responsável: <strong>${esc(fixo)}</strong> <span class="op-muted">(definido pelo serviço)</span></p>`}
+      <label>Data<input data-reservation-date type="date" min="${esc(localDateTime(agora).slice(0, 10))}" value="${esc(dia)}" required></label>
+      <label>Início<input data-reservation-start type="time" value="${esc(hora)}" required></label>
+      <label>Duração<select data-reservation-duration>${DURATIONS.map(min => `<option value="${min}" ${min === 60 ? "selected" : ""}>${min} minutos</option>`).join("")}</select></label>${sala}
+      <label class="appointment-reservation-wide">Observações (opcional)<textarea data-reservation-notes maxlength="1000"></textarea></label>
+      <button type="button" data-appointment-confirm="${esc(row.id)}">Confirmar agendamento</button>
+    </fieldset>`;
+  }
   const room = row.modality === "presencial" ? `<label>Sala<select data-reservation-room required><option value="">Escolha uma sala</option>${rooms.map(item => `<option value="${esc(item.id)}">${esc(item.name)}</option>`).join("")}</select></label>` : "";
   return `<fieldset data-appointment-reservation><legend>Confirmar na agenda</legend>
     ${escolherProfissional ? `<p class="appointment-reservation-wide op-muted">O cliente pediu o serviço sem profissional definido. Escolha quem vai atender e o horário.</p>
@@ -115,13 +132,13 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
   reservationsEnabled = APPOINTMENT_RESERVATIONS_ENABLED, getOperationalState = () => null, selector = "[data-appointment-admin]", view = "legacy",
   confirmReservation = confirmAppointmentReservation, createSlot = createAppointmentSlot, id = () => globalThis.crypto.randomUUID() } = {}) {
   let epoch = 0;
-  const state = { slotDraft: {}, rows: [], drafts: {}, phase: enabled === true ? "idle" : "disabled", busy: false,
+  const state = { slotDraft: {}, abertas: {}, agendando: null, rows: [], drafts: {}, phase: enabled === true ? "idle" : "disabled", busy: false,
     message: enabled === true ? "Carregue as solicitações de atendimento." : "Acompanhamento de atendimentos temporariamente indisponível. Aguardando homologação." };
   function render(focus = false) {
     const target = root.querySelector(selector);
     if (!target) return;
     if (view === "atendimentos") {
-      target.innerHTML = renderAtendimentos({ ...state, operationalState: getOperationalState() || {}, reservationsEnabled,
+      target.innerHTML = renderAtendimentos({ ...state, agora: new Date(), operationalState: getOperationalState() || {}, reservationsEnabled,
         helpers: { reservationForm, suggestedTime, roomLink } });
       syncSlotForm(target.querySelector("[data-atendimentos-slot]"));
     } else {
@@ -131,7 +148,7 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
   }
   function clear() {
     epoch++;
-    Object.assign(state, { rows: [], drafts: {}, reservationKeys: {}, busy: false, phase: enabled === true ? "forbidden" : "disabled", message: enabled === true ? "Acesso administrativo necessário." : "Acompanhamento de atendimentos temporariamente indisponível. Aguardando homologação." });
+    Object.assign(state, { rows: [], drafts: {}, reservationKeys: {}, agendando: null, busy: false, phase: enabled === true ? "forbidden" : "disabled", message: enabled === true ? "Acesso administrativo necessário." : "Acompanhamento de atendimentos temporariamente indisponível. Aguardando homologação." });
     render();
   }
   /*
@@ -150,6 +167,7 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     APPOINTMENT_LINK_LOCKED: "O vínculo desta reserva não pode ser alterado.",
     APPOINTMENT_NOT_READY: "A operação do Instituto ainda não está inicializada.",
     APPOINTMENT_INVALID: "Revise os dados da reserva: algum campo não confere com a solicitação.",
+    APPOINTMENT_OVERLAP: "Conflito de agenda: o profissional (ou a sala) já tem outro horário nesse período. Escolha outro horário.",
   });
   /* Qualquer falha descarta as linhas em memoria, entao o fallback precisa
      mandar recarregar: sem isso o painel fica vazio sem dizer o que fazer. */
@@ -169,6 +187,8 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     } catch (error) {
       if (ticket !== epoch) return;
       if (accessDenied(error)) { clear(); return; }
+      /* Conflito de agenda: nada foi gravado; mantém a lista e o formulário aberto para escolher outro horário. */
+      if (error?.code === "APPOINTMENT_OVERLAP") { state.message = mensagemDaFalha(error); return; }
       // Não expor corpos HTTP/SQL nem conservar dados possivelmente obsoletos.
       state.rows = []; state.drafts = {}; state.phase = "error";
       state.message = mensagemDaFalha(error);
@@ -228,7 +248,8 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
       const rows = await loadAppointmentRequests(client);
       if (ticket !== epoch) return;
       state.rows = rows; state.drafts = {};
-      state.message = "Reserva confirmada e vinculada à solicitação na agenda operacional.";
+      state.agendando = null;
+      state.message = "Agendamento confirmado. A consulta já está na agenda do cliente e do profissional; a sala online abre 15 minutos antes.";
     }, "Confirmando reserva…");
   }
   function click(event) {
@@ -238,6 +259,12 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     const confirmButton = event.target.closest?.("[data-appointment-confirm]");
     const slotButton = event.target.closest?.("[data-appointment-slot-create]");
     if (reloadButton && root.contains(reloadButton)) return reload();
+    const agendar = event.target.closest?.("[data-atendimentos-agendar]");
+    if (agendar && root.contains(agendar)) {
+      const alvo = agendar.dataset.atendimentosAgendar;
+      state.agendando = state.agendando === alvo ? null : alvo;
+      return render();
+    }
     if (slotButton && root.contains(slotButton)) {
       if (view === "atendimentos") return createSlotFromForm(slotButton.closest("[data-atendimentos-slot]"));
       const form = slotButton.closest("[data-appointment-slot]");
@@ -257,9 +284,19 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
       const article = confirmButton.closest("[data-appointment-row]");
       const box = article?.querySelector("[data-reservation-confirm]");
       if (view !== "atendimentos" ? !box?.checked : box && !box.checked) { state.message = "Confirme que revisou os dados da reserva."; render(true); return; }
+      let start = article.querySelector("[data-reservation-start]")?.value;
+      let end = article.querySelector("[data-reservation-end]")?.value;
+      const dia = article.querySelector("[data-reservation-date]")?.value;
+      if (dia !== undefined) {
+        /* Formulário compacto: data + início + duração. Horário passado nunca chega ao banco. */
+        end = computeEnd(dia, start, article.querySelector("[data-reservation-duration]")?.value);
+        start = `${dia}T${start}`;
+        if (!end) { state.message = "Informe data, início e duração."; render(true); return; }
+        if (new Date(`${start}:00-03:00`).valueOf() <= Date.now()) { state.message = "Escolha um horário futuro."; render(true); return; }
+      }
       return confirm(confirmButton.dataset.appointmentConfirm, {
-        start: article.querySelector("[data-reservation-start]")?.value,
-        end: article.querySelector("[data-reservation-end]")?.value,
+        start,
+        end,
         room: article.querySelector("[data-reservation-room]")?.value || "",
         notes: article.querySelector("[data-reservation-notes]")?.value || "",
         offering: article.querySelector("[data-reservation-offering]")?.value || "",
@@ -304,7 +341,9 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     const id = event.target.dataset?.appointmentState;
     if (!state.busy && state.rows.some(row => row.id === id) && STATES.includes(event.target.value)) state.drafts[id] = event.target.value;
   }
-  root.addEventListener("click", click); root.addEventListener("change", change);
+  /* Lembra quais seções o Owner abriu: o painel é redesenhado a cada ação. */
+  const alternar = (event) => { const chave = event.target?.dataset?.atendSecao; if (chave) state.abertas[chave] = event.target.open === true; };
+  root.addEventListener("click", click); root.addEventListener("change", change); root.addEventListener("toggle", alternar, true);
   const idFactory = id;
-  return { render, reload, save, confirm, clear, destroy() { clear(); root.removeEventListener("click", click); root.removeEventListener("change", change); } };
+  return { render, reload, save, confirm, clear, destroy() { clear(); root.removeEventListener("click", click); root.removeEventListener("change", change); root.removeEventListener("toggle", alternar, true); } };
 }

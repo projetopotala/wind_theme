@@ -220,7 +220,7 @@ function formularioSemHorario(opcoes, temHorarios, ofertaEscolhida, agora) {
         ${Object.entries(PERIODOS).map(([valor, nome]) => `<option value="${valor}"${diaInicial === minimo && periodoEncerrado(minimo, valor, agora) ? " disabled" : ""}>${nome}</option>`).join("")}
       </select>
     </label>
-    <p class="mp-nota">Isto é uma solicitação, não uma consulta marcada. Ela aparece abaixo em "Solicitações pendentes".</p>
+    <p class="mp-nota">Isto é uma solicitação, não uma consulta marcada. Ela aparece abaixo em "Aguardando confirmação".</p>
     <p class="mp-form-status" data-form-status role="alert"></p>
     <button class="mp-botao" type="submit">Solicitar atendimento</button>
   </form>`;
@@ -266,7 +266,7 @@ const vista = {
       <a href="#mp-atendimentos-cancelados"><strong>${cancelados.length}</strong><span>Cancelados</span></a>
     </nav>`;
     const acompanhamento = `${secao({
-      id: "mp-atendimentos-pendentes", kicker: "Aguardando ação", titulo: "Solicitações pendentes",
+      id: "mp-atendimentos-pendentes", kicker: "Em análise pela equipe", titulo: "Aguardando confirmação",
       corpo: listaDePedidos(pendentes, "Nenhuma solicitação aguarda retorno da equipe."),
     })}${secao({
       id: "mp-atendimentos-confirmados", kicker: "Próximos atendimentos", titulo: "Consultas confirmadas",
