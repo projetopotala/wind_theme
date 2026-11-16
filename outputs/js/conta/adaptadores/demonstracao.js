@@ -238,6 +238,7 @@ export function criarDadosDemonstracao({
 
     /* Demonstração não tem profissional vinculado: agenda de quem atende sempre vazia. */
     async agendaProfissional() { return []; },
+    async aulasDoProfessor() { return []; },
     async perfisProfissionais() { return []; },
 
     async solicitarHorarioAtendimento() {
