@@ -130,10 +130,10 @@ export function horarioSugerido(horarios, ofertaEscolhida) {
   ));
 }
 
-function formulario(opcoes, horarios, ofertaEscolhida = null) {
+function formularioHorario(opcoes, horarios, ofertaEscolhida = null) {
   const ofertas = new Map(opcoes.map((item) => [item.id, item]));
   const disponiveis = horarios.filter((item) => ofertas.has(item.offering_id));
-  if (!disponiveis.length) return `<p class="mp-aviso" role="status">Nenhum horário de atendimento está disponível agora.</p>`;
+  if (!disponiveis.length) return "";
   const sugerido = horarioSugerido(disponiveis, ofertaEscolhida);
   const escolhida = ofertaEscolhida ? ofertas.get(ofertaEscolhida) : null;
   const aviso = !escolhida ? ""
@@ -152,6 +152,53 @@ function formulario(opcoes, horarios, ofertaEscolhida = null) {
     <p class="mp-form-status" data-form-status role="alert"></p>
     <button class="mp-botao" type="submit">Solicitar atendimento</button>
   </form>`;
+}
+
+/*
+ * Pedido sem horario: o cliente escolhe o servico publicado e diz uma preferencia de dia e periodo.
+ * Usa submit_authenticated_appointment_request (identidade da sessao, RLS e limite no banco).
+ * Nao reserva nada: a equipe escolhe profissional e horario e so entao a consulta e confirmada.
+ */
+export function amanhaISO(agora = new Date()) {
+  const d = new Date(agora.valueOf() + 24 * 60 * 60 * 1000);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(d);
+}
+
+function formularioSemHorario(opcoes, temHorarios, ofertaEscolhida, agora) {
+  if (!opcoes.length) return `<p class="mp-aviso" role="status">Ainda não há serviços de atendimento publicados pelo Instituto.</p>`;
+  const minimo = amanhaISO(agora);
+  const titulo = temHorarios ? "Prefere outro dia? Peça sem escolher horário" : "Peça seu atendimento";
+  const nota = temHorarios
+    ? "Se nenhum horário acima servir, diga sua preferência. A equipe responde com profissional e horário."
+    : "Não há horários abertos agora, mas você pode pedir mesmo assim. A equipe responde com profissional e horário.";
+  return `<form class="mp-form mp-atendimento-form" data-form="atendimento-sem-horario" novalidate>
+    <p class="mp-kicker">${e(titulo)}</p>
+    <p class="mp-nota">${e(nota)}</p>
+    <label>Serviço
+      <select name="ofertaId" required>
+        <option value="">Escolha o serviço</option>
+        ${opcoes.map((item) => `<option value="${e(item.id)}" data-modalidade="${item.modality === "online" ? "online" : "presencial"}"${item.id === ofertaEscolhida ? " selected" : ""}>${e(item.service)} · ${item.modality === "online" ? "Online" : "Presencial"}</option>`).join("")}
+      </select>
+    </label>
+    <label>Dia de preferência
+      <input type="date" name="dataPreferida" min="${e(minimo)}" value="${e(minimo)}" required>
+    </label>
+    <label>Período de preferência
+      <select name="periodoPreferido" required>
+        <option value="manha">Manhã</option>
+        <option value="tarde">Tarde</option>
+        <option value="noite">Noite</option>
+      </select>
+    </label>
+    <p class="mp-nota">Isto é uma solicitação, não uma consulta marcada. Ela aparece abaixo em "Solicitações pendentes".</p>
+    <p class="mp-form-status" data-form-status role="alert"></p>
+    <button class="mp-botao" type="submit">Solicitar atendimento</button>
+  </form>`;
+}
+
+function formulario(opcoes, horarios, ofertaEscolhida = null, agora = new Date()) {
+  const comHorario = formularioHorario(opcoes, horarios, ofertaEscolhida);
+  return `${comHorario}${formularioSemHorario(opcoes, Boolean(comHorario), ofertaEscolhida, agora)}`;
 }
 
 const vista = {
@@ -203,7 +250,7 @@ const vista = {
     if (!atendimentoDisponivel) {
       return `${resumo}<p class="mp-aviso" role="status">Novas solicitações continuam desativadas enquanto o fluxo completo é preparado.</p>${acompanhamento}`;
     }
-    const corpo = formulario(opcoesAtendimento, horariosAtendimento, escolhaDoEndereco(parametros));
+    const corpo = formulario(opcoesAtendimento, horariosAtendimento, escolhaDoEndereco(parametros), referencia);
     return `${resumo}${secao({ id: "mp-atendimentos-novo", classe: "mp-atendimentos-acao", kicker: "Começar aqui", titulo: "Solicitar um atendimento", corpo })}${acompanhamento}`;
   },
 };
