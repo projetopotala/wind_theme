@@ -389,6 +389,26 @@ export function criarDadosSupabase({ client } = {}) {
     },
 
     /*
+     * Turmas que a conta MINISTRA (my_teaching_courses usa auth.uid() e o vínculo real com a turma;
+     * não exige matrícula nem pagamento). Função ausente (PGRST202/42883): lista vazia.
+     */
+    async aulasDoProfessor() {
+      const { data, error } = await client.rpc("my_teaching_courses");
+      if (error) {
+        if (["PGRST202", "42883"].includes(error.code)) return [];
+        throw falhouDados(error);
+      }
+      return (Array.isArray(data) ? data : []).filter((t) => t && typeof t.id === "string" && t.id).map((t) => ({
+        id: t.id,
+        curso: String(t.course_title || "Turma"),
+        modalidade: String(t.modality || ""),
+        proximaAula: t.next_session_at || null,
+        linkAula: typeof t.join_url === "string" ? t.join_url : null,
+        alunos: Number.isInteger(t.students) ? t.students : null,
+      }));
+    },
+
+    /*
      * Agenda de quem atende. `list_my_appointment_requests` só devolve o que a
      * pessoa pediu como cliente; quem atende não pede, então aparecia sem nada.
      *

@@ -255,6 +255,11 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
       return aposUsarDados(await dados.agendaProfissional(usuarioId));
     },
 
+    async aulasDoProfessor() {
+      exigirConta();
+      return aposUsarDados(await dados.aulasDoProfessor());
+    },
+
     async perfisProfissionais() {
       exigirConta();
       return aposUsarDados(await dados.perfisProfissionais());

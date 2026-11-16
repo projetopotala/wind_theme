@@ -1,5 +1,6 @@
 import { STATUS_DE_ATENDIMENTO } from "../../modelos.js";
 import { e, secao, vazio } from "./comum.js";
+import { aulasDoProfessor as secaoAulasDoProfessor } from "./aulas-do-professor.js";
 import { caminhoDaSala } from "../../../sala/estado-sala.js";
 
 /*
@@ -202,7 +203,7 @@ function formulario(opcoes, horarios, ofertaEscolhida = null, agora = new Date()
 }
 
 const vista = {
-  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], perfisProfissionais = [], atendimentoDisponivel = false, parametros = null, agora = new Date() }) {
+  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], perfisProfissionais = [], aulasDoProfessor = [], atendimentoDisponivel = false, parametros = null, agora = new Date() }) {
     /*
      * Profissional é quem o banco reconhece: vínculo ativo com perfil profissional
      * ativo (perfisProfissionais) ou consultas atribuídas. Com zero consultas a
@@ -210,8 +211,9 @@ const vista = {
      */
     const consultasProfissionais = Array.isArray(agendaProfissional) ? agendaProfissional : [];
     const temVinculo = Array.isArray(perfisProfissionais) && perfisProfissionais.length > 0;
-    if (consultasProfissionais.length || temVinculo) {
-      const agendaPropria = agendaDeQuemAtende(consultasProfissionais);
+    const aulasMinistradas = Array.isArray(aulasDoProfessor) ? aulasDoProfessor : [];
+    if (consultasProfissionais.length || temVinculo || aulasMinistradas.length) {
+      const agendaPropria = `${secaoAulasDoProfessor(aulasMinistradas, agora)}${agendaDeQuemAtende(consultasProfissionais)}`;
       if (!atendimentos.length) return agendaPropria;
       return `${agendaPropria}${vista.renderizar({ atendimentos, opcoesAtendimento, horariosAtendimento, atendimentoDisponivel, parametros, agora })}`;
     }

@@ -111,6 +111,10 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.perfisProfissionais()
       .then((lista) => ({ nome: "perfisProfissionais", lista }))
       .catch((erro) => ({ nome: "perfisProfissionais", lista: [], erro })));
+    /* Turmas que a conta ministra (vínculo real no banco): entrada na aula sem matrícula. */
+    leituras.push(sessao.aulasDoProfessor()
+      .then((lista) => ({ nome: "aulasDoProfessor", lista }))
+      .catch((erro) => ({ nome: "aulasDoProfessor", lista: [], erro })));
     leituras.push(sessao.inscricoesCursos()
       .then((lista) => ({ nome: "inscricoesCursos", lista }))
       .catch((erro) => ({ nome: "inscricoesCursos", lista: [], erro })));
@@ -125,6 +129,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         dados.opcoesAtendimento ||= [];
         dados.horariosAtendimento ||= [];
         dados.agendaProfissional ||= [];
+        dados.aulasDoProfessor ||= [];
         dados.perfisProfissionais ||= [];
         dados.falhas = respostas.filter((resposta) => resposta.erro).map((resposta) => resposta.nome);
         dono = usuarioId;

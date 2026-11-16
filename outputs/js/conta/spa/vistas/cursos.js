@@ -13,6 +13,7 @@
 import { fracaoDoProgresso, quandoLegivel, textoDoProgresso } from "../../leituras.js";
 import { STATUS_DE_INSCRICAO } from "../../modelos.js";
 import { barraDeProgresso, capa, e, secao, vazio } from "./comum.js";
+import { aulasDoProfessor as secaoAulasDoProfessor } from "./aulas-do-professor.js";
 
 /*
  * Entrada na aula online. O botao so existe quando o backend entregou um link https valido para
@@ -80,8 +81,9 @@ export function pedidosDeInscricao(pedidos = []) {
 }
 
 export default {
-  renderizar({ inscricoes, progressos, agora, inscricoesCursos = [] }) {
-    const pedidos = pedidosDeInscricao(inscricoesCursos);
+  renderizar({ inscricoes, progressos, agora, inscricoesCursos = [], aulasDoProfessor = [] }) {
+    /* Turmas que a pessoa ministra vêm primeiro; não dependem de inscrição nem de pagamento. */
+    const pedidos = `${secaoAulasDoProfessor(aulasDoProfessor, agora)}${pedidosDeInscricao(inscricoesCursos)}`;
     if (!inscricoes.length && pedidos) return pedidos;
     if (!inscricoes.length) {
       return secao({
