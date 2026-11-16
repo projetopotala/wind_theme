@@ -396,6 +396,31 @@ export async function montarMeuPotala({ documento = document, janela = window } 
   };
 
   const aoEnviar = (evento) => {
+    const semHorario = evento.target.closest?.("[data-form='atendimento-sem-horario']");
+    if (semHorario) {
+      evento.preventDefault();
+      const campos = Object.fromEntries(new FormData(semHorario));
+      const aviso = semHorario.querySelector("[data-form-status]");
+      const opcao = semHorario.querySelector("select[name='ofertaId']")?.selectedOptions?.[0];
+      if (!campos.ofertaId || !opcao) { aviso.textContent = "Escolha o serviço."; return; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(campos.dataPreferida || ""))) { aviso.textContent = "Escolha o dia de preferência."; return; }
+      if (!["manha", "tarde", "noite"].includes(campos.periodoPreferido)) { aviso.textContent = "Escolha o período."; return; }
+      if (!globalThis.crypto?.randomUUID) { aviso.textContent = "Seu navegador não oferece a proteção necessária para enviar agora."; return; }
+      semHorario.dataset.idempotencia ||= globalThis.crypto.randomUUID();
+      agir(semHorario.querySelector("[type='submit']"), async () => {
+        await sessao.solicitarAtendimento({
+          idempotencia: semHorario.dataset.idempotencia,
+          ofertaId: campos.ofertaId,
+          modalidade: opcao.dataset.modalidade === "online" ? "online" : "presencial",
+          dataPreferida: campos.dataPreferida,
+          periodoPreferido: campos.periodoPreferido,
+        });
+        delete semHorario.dataset.idempotencia;
+        dados = null;
+        dono = null;
+      }, "Solicitação recebida. A equipe vai escolher profissional e horário; ainda não é uma consulta confirmada.");
+      return;
+    }
     const pedido = evento.target.closest?.("[data-form='atendimento']");
     if (pedido) {
       evento.preventDefault();
