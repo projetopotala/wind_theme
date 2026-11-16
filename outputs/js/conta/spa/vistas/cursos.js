@@ -13,6 +13,7 @@
 import { fracaoDoProgresso, quandoLegivel, textoDoProgresso } from "../../leituras.js";
 import { STATUS_DE_INSCRICAO } from "../../modelos.js";
 import { barraDeProgresso, capa, e, secao, vazio } from "./comum.js";
+import { PAGINA_PAGAMENTO_DEMO, SELO_DEMONSTRACAO } from "../../pagamento-demonstracao.js";
 
 /*
  * Entrada na aula online. O botao so existe quando o backend entregou um link https valido para
@@ -73,8 +74,11 @@ export function pedidosDeInscricao(pedidos = []) {
           <p class="mp-status" data-status="${esc(p.status)}">${esc(rotulo)}</p>
           <h3 class="mp-cartao-titulo">${esc(p.course_title || "Curso")}</h3>
           <p class="mp-cartao-detalhe">${esc([p.mode === "online" ? "Online" : "Presencial", reais(p.price_cents)].filter(Boolean).join(" · "))}</p>
-          ${nota ? `<p class="mp-cartao-detalhe">${esc(nota)}</p>` : ""}
-          ${pagamento ? `<form class="mp-form" data-form="pagar-inscricao-curso" data-inscricao="${esc(p.id)}"><p class="mp-form-status" data-form-status role="alert"></p>${checkoutAtivo
+          ${p.demonstracao ? `<p class="mp-selo-demo" data-selo-demo>${esc(SELO_DEMONSTRACAO)}</p>` : ""}
+          ${nota ? `<p class="mp-cartao-detalhe">${esc(p.demonstracao ? p.nota_demonstracao : nota)}</p>` : ""}
+          ${p.demonstracao && p.status === "matriculada" ? `<a class="mp-botao mp-botao-pequeno" href="${PAGINA_PAGAMENTO_DEMO}?pedido=${esc(p.id)}">Acessar o curso (demonstração)</a>` : ""}
+          ${pagamento && p.demonstracao ? `<form class="mp-form" data-form="pagar-inscricao-curso" data-inscricao="${esc(p.id)}"><p class="mp-form-status" data-form-status role="alert"></p><button class="mp-botao mp-botao-pequeno" type="submit">Simular pagamento com Pix ou cartão</button></form>` : ""}
+          ${pagamento && !p.demonstracao ? `<form class="mp-form" data-form="pagar-inscricao-curso" data-inscricao="${esc(p.id)}"><p class="mp-form-status" data-form-status role="alert"></p>${checkoutAtivo
             ? `<a class="mp-botao mp-botao-pequeno" href="${esc(p.checkout_url)}">Continuar pagamento no Asaas</a>`
             : `<button class="mp-botao mp-botao-pequeno" type="submit">Pagar com Pix ou cartão</button>`}</form>` : ""}
           ${podeCancelar ? `<form class="mp-form" data-form="cancelar-inscricao-curso" data-inscricao="${esc(p.id)}"><p class="mp-form-status" data-form-status role="alert"></p><button class="mp-botao mp-botao-pequeno mp-botao-secundario" type="submit">Cancelar inscrição</button></form>` : ""}
