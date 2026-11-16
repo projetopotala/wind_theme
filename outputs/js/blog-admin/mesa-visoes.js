@@ -1,5 +1,5 @@
 /*
- * AS TELAS DA MESA: Visão geral, Posts, Comentários e Configurações.
+ * AS TELAS DA MESA: Visão geral, Textos, Comentários e Configurações.
  *
  * Cada tela desenha a partir da "loja" (o que a mesa já leu do banco) e pede
  * as ações ao contexto — editar, publicar, arquivar são as mesmas no menu "⋯"
@@ -32,7 +32,21 @@ const vazio = (icone_, texto, acao = "") => `<div class="mesa-vazio">${i(icone_)
 export const registrosDaLista = (ctx) => (ctx.permissoes?.somenteProprios
   ? ctx.loja.registros.filter((registro) => registro.criadoPor === ctx.permissoes.usuarioId)
   : ctx.loja.registros);
-export const nomeDaLista = (permissoes) => (permissoes?.somenteProprios ? "Meus textos" : "Posts");
+export const nomeDaLista = (permissoes) => (permissoes?.somenteProprios ? "Meus artigos" : "Textos");
+
+export function resumoDoEscritor(registros = []) {
+  const proprios = Array.isArray(registros) ? registros : [];
+  const precisaCorrecao = proprios.filter((registro) => registro.status === "draft" && Boolean(textoAtual(registro).correcao));
+  const rascunhos = proprios.filter((registro) => registro.status === "draft" && !textoAtual(registro).correcao);
+  return {
+    rascunhos,
+    revisao: proprios.filter((registro) => registro.status === "review"),
+    precisaCorrecao,
+    publicados: proprios.filter((registro) => registro.status === "published"),
+    continuar: [...precisaCorrecao, ...rascunhos]
+      .sort((a, b) => Date.parse(b.atualizadoEm || 0) - Date.parse(a.atualizadoEm || 0)).slice(0, 3),
+  };
+}
 
 /* O que cada status permite no menu "⋯". */
 export function itensDoMenu(registro, permissoes) {
@@ -82,6 +96,31 @@ export function criarVisaoGeral(el, ctx) {
         .slice(0, 4);
       const totalDeLeituras = Object.values(loja.leituras).reduce((soma, valor) => soma + valor, 0);
       const aguardando = podePublicar(ctx.permissoes) ? loja.registros.filter((registro) => registro.status === "review").length : 0;
+      if (!podePublicar(ctx.permissoes)) {
+        const escritor = resumoDoEscritor(registrosDaLista(ctx));
+        const etapas = [
+          { href: "#/posts?status=draft", icone: "pencil", rotulo: "Meus rascunhos", valor: escritor.rascunhos.length, ajuda: "Textos que só você vê" },
+          { href: "#/posts?status=review", icone: "eye", rotulo: "Aguardando revisão", valor: escritor.revisao.length, ajuda: "Enviados ao Instituto" },
+          { href: "#/posts?atencao=correcoes", icone: "message-circle", rotulo: "Precisa de correção", valor: escritor.precisaCorrecao.length, ajuda: "Observações para ajustar", destaque: escritor.precisaCorrecao.length > 0 },
+          { href: "#/posts?status=published", icone: "circle-check", rotulo: "Publicados", valor: escritor.publicados.length, ajuda: "Disponíveis no Blog" },
+        ];
+        el.innerHTML = `<header class="mesa-cabeca mesa-cabeca--escrita">
+            <div><p class="mesa-sobre">${esc(hoje)}</p><h1 class="mesa-titulo" tabindex="-1">${saudacao()}${ctx.usuario?.primeiroNome ? `, ${esc(ctx.usuario.primeiroNome)}` : ""}</h1><p class="mesa-introducao">Sua mesa de escrita. Comece uma ideia, acompanhe a revisão e volte exatamente de onde parou.</p></div>
+            <a class="mesa-botao mesa-botao--principal" href="#/novo">${i("plus")}Novo artigo</a>
+          </header>
+          ${loja.demonstracao ? `<p class="mesa-faixa">${i("circle-alert")}<span>Você está no acesso de teste: nada do que fizer aqui chega ao Blog que os visitantes leem.</span></p>` : ""}
+          <section class="mesa-jornada" aria-labelledby="mesa-jornada-titulo">
+            <div class="mesa-secao__cabeca"><div><p class="mesa-sobre">Sua jornada</p><h2 id="mesa-jornada-titulo" class="mesa-subtitulo">Do rascunho à publicação</h2></div><p>O Instituto revisa antes de cada publicação.</p></div>
+            <div class="mesa-jornada__etapas">${etapas.map((item) => `<a href="${item.href}" class="mesa-jornada__etapa${item.destaque ? " is-atencao" : ""}">${i(item.icone)}<span><strong>${esc(item.rotulo)}</strong><small>${esc(item.ajuda)}</small></span><b>${numero.format(item.valor)}</b></a>`).join("")}</div>
+          </section>
+          <section class="mesa-secao" aria-labelledby="mesa-continuar">
+            <div class="mesa-secao__cabeca"><div><p class="mesa-sobre">Em andamento</p><h2 id="mesa-continuar" class="mesa-subtitulo">Continue escrevendo</h2></div><a class="mesa-link" href="#/posts">Ver todos</a></div>
+            ${escritor.continuar.length
+              ? `<div class="mesa-continuar">${escritor.continuar.map((registro) => { const texto = textoAtual(registro); return `<a class="mesa-cartao" href="#/editar/${encodeURIComponent(registro.id)}"><span class="mesa-cartao__capa">${capinha(texto)}</span><span class="mesa-cartao__corpo">${texto.correcao ? `<span class="mesa-status mesa-status--correcao">${i("message-circle")}Correções pedidas</span>` : chipDeStatus(registro.status)}<strong>${esc(texto.title)}</strong><span class="mesa-cartao__pe"><small>Última edição ${esc(tempoRelativo(registro.atualizadoEm))}</small><span class="mesa-link">Continuar${i("chevron-right")}</span></span></span></a>`; }).join("")}</div>`
+              : vazio("pen-line", "Nenhum rascunho aberto. Que tal começar seu próximo artigo?", `<a class="mesa-botao mesa-botao--contorno" href="#/novo">${i("plus")}Novo artigo</a>`)}
+          </section>`;
+        return;
+      }
       const pendencias = [
         aguardando && { ir: "#/posts?status=review", icone: "eye", texto: `${plural(aguardando, "texto aguardando", "textos aguardando")} a sua revisão` },
         atencao.comentarios && { ir: "#/comentarios", icone: "message-circle", texto: `${plural(atencao.comentarios, "comentário aguardando", "comentários aguardando")} leitura` },
@@ -92,14 +131,14 @@ export function criarVisaoGeral(el, ctx) {
 
       el.innerHTML = `<header class="mesa-cabeca">
           <div><p class="mesa-sobre">${esc(hoje)}</p><h1 class="mesa-titulo" tabindex="-1">${saudacao()}${ctx.usuario?.primeiroNome ? `, ${esc(ctx.usuario.primeiroNome)}` : ""}</h1></div>
-          <a class="mesa-botao mesa-botao--principal" href="#/novo">${i("plus")}Novo post</a>
+          <a class="mesa-botao mesa-botao--principal" href="#/novo">${i("plus")}Novo artigo</a>
         </header>
         ${loja.demonstracao ? `<p class="mesa-faixa">${i("circle-alert")}<span>Você está no acesso de teste: nada do que fizer aqui chega ao Blog que os visitantes leem.</span></p>` : ""}
         <section class="mesa-numeros" aria-label="Números do blog">
           <a href="#/posts?status=published"><span>Publicados</span><strong>${numero.format(numeros.publicados)}</strong></a>
           <a href="#/posts?status=draft"><span>Rascunhos</span><strong>${numero.format(numeros.rascunhos)}</strong></a>
           <a href="#/posts?status=scheduled"><span>Agendados</span><strong>${numero.format(numeros.agendados)}</strong></a>
-          <a href="#/posts"><span>Posts este mês</span><strong>${numero.format(numeros.doMes)}</strong></a>
+          <a href="#/posts"><span>Textos este mês</span><strong>${numero.format(numeros.doMes)}</strong></a>
         </section>
 
         <section class="mesa-secao" aria-labelledby="mesa-continuar">
@@ -114,7 +153,7 @@ export function criarVisaoGeral(el, ctx) {
                     <span class="mesa-cartao__pe"><small>Última edição ${esc(tempoRelativo(registro.atualizadoEm))}</small><span class="mesa-link">Continuar${i("chevron-right")}</span></span>
                   </span></a>`;
               }).join("")}</div>`
-            : vazio("pen-line", "Nenhum rascunho aberto. Que tal começar um texto novo?", `<a class="mesa-botao mesa-botao--contorno" href="#/novo">${i("plus")}Novo post</a>`)}
+            : vazio("pen-line", "Nenhum rascunho aberto. Que tal começar um texto novo?", `<a class="mesa-botao mesa-botao--contorno" href="#/novo">${i("plus")}Novo artigo</a>`)}
         </section>
 
         <div class="mesa-colunas">
@@ -164,13 +203,14 @@ export function criarVisaoGeral(el, ctx) {
 }
 
 /* ------------------------------------------------------------------
- * Posts
+ * Textos
  * ------------------------------------------------------------------ */
 
 const ATENCAO = {
   "sem-capa": { rotulo: "textos sem capa", testar: (registro) => !textoAtual(registro).cover },
   "sem-categoria": { rotulo: "textos com categoria fora do menu", testar: (registro, ids) => !ids.has(textoAtual(registro).category) },
   pendentes: { rotulo: "alterações não publicadas", testar: (registro) => Boolean(registro.pendente) },
+  correcoes: { rotulo: "textos que precisam de correção", testar: (registro) => registro.status === "draft" && Boolean(textoAtual(registro).correcao) },
 };
 const POR_VEZ = 20;
 const ROTULO_DA_ABA = { todos: "Todos", draft: "Rascunhos", review: "Em revisão", scheduled: "Agendados", published: "Publicados", archived: "Arquivados" };
@@ -226,7 +266,7 @@ export function criarListaDePosts(el, ctx) {
     const rodape = el.querySelector("[data-posts-rodape]");
     const temFiltro = filtros.busca || filtros.categoria || filtros.autor || filtros.periodo || filtros.atencao || filtros.status !== "todos";
     if (!registrosDaLista(ctx).length) {
-      alvo.innerHTML = vazio("pen-line", "Nenhum texto ainda. O primeiro começa com um título.", `<a class="mesa-botao mesa-botao--principal" href="#/novo">${i("plus")}Novo post</a>`);
+      alvo.innerHTML = vazio("pen-line", "Nenhum texto ainda. O primeiro começa com um título.", `<a class="mesa-botao mesa-botao--principal" href="#/novo">${i("plus")}Novo artigo</a>`);
     } else if (!lista.length) {
       alvo.innerHTML = vazio("search", filtros.busca ? `Nada encontrado para “${esc(filtros.busca)}”.` : "Nenhum texto com esses filtros.", temFiltro ? '<button type="button" class="mesa-botao mesa-botao--contorno" data-posts-limpar>Limpar filtros</button>' : "");
     } else {
@@ -259,7 +299,7 @@ export function criarListaDePosts(el, ctx) {
         <div class="mesa-cabeca__titulo"><h1 class="mesa-titulo" tabindex="-1">${nomeDaLista(ctx.permissoes)}</h1><span class="mesa-sobre" data-posts-total></span></div>
         <label class="mesa-busca mesa-busca--grande">${i("search")}<span class="sr-only">Buscar no blog</span>
           <input type="search" data-posts-busca placeholder="Buscar no blog" value="${esc(filtros.busca)}" aria-describedby="posts-busca-dica"></label>
-        <a class="mesa-botao mesa-botao--principal" href="#/novo">${i("plus")}Novo post</a>
+        <a class="mesa-botao mesa-botao--principal" href="#/novo">${i("plus")}Novo artigo</a>
       </header>
       <p id="posts-busca-dica" class="sr-only">Procura no título, no texto, na categoria, no autor e nas etiquetas.</p>
       <div class="mesa-filtros">
@@ -313,7 +353,7 @@ export function criarListaDePosts(el, ctx) {
     }
   });
 
-  return { titulo: "Posts", desenhar, redesenhar: () => (el.querySelector("[data-posts-lista]") ? desenharLista() : desenhar()) };
+  return { titulo: "Textos", desenhar, redesenhar: () => (el.querySelector("[data-posts-lista]") ? desenharLista() : desenhar()) };
 }
 
 /* ------------------------------------------------------------------

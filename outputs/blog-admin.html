@@ -48,12 +48,12 @@
         <a class="mesa-trilho__marca" href="#/visao"><img src="/media/potala-mark-transparent.png" alt="Mesa do Caderno — início" width="44" height="36"></a>
         <div class="mesa-trilho__links">
           <a href="#/visao" data-mesa-nav="visao"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#layout-dashboard"></use></svg><span>Visão geral</span></a>
-          <a href="#/posts" data-mesa-nav="posts"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#file-text"></use></svg><span>Posts</span></a>
-          <a href="#/comentarios" data-mesa-nav="comentarios"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#message-circle"></use></svg><span>Comentários</span><span class="mesa-trilho__selo" data-mesa-selo-comentarios hidden></span></a>
-          <a href="#/configuracoes" data-mesa-nav="configuracoes"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#settings"></use></svg><span>Configurações</span></a>
+          <a href="#/posts" data-mesa-nav="posts"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#file-text"></use></svg><span>Textos</span></a>
+          <a href="#/comentarios" data-mesa-nav="comentarios" data-mesa-owner><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#message-circle"></use></svg><span>Comentários</span><span class="mesa-trilho__selo" data-mesa-selo-comentarios hidden></span></a>
+          <a href="#/configuracoes" data-mesa-nav="configuracoes" data-mesa-owner><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#settings"></use></svg><span>Configurações</span></a>
         </div>
         <div class="mesa-trilho__pe">
-          <a class="mesa-trilho__novo" href="#/novo" data-mesa-novo title="Novo post"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#plus"></use></svg><span>Novo post</span></a>
+          <a class="mesa-trilho__novo" href="#/novo" data-mesa-novo title="Novo artigo"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#plus"></use></svg><span>Novo artigo</span></a>
           <button type="button" data-mesa-paleta-abrir title="Comandos (Ctrl+K)"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#command"></use></svg><span>Comandos</span></button>
           <a href="/blog.html" target="_blank" rel="noopener" title="Ver o Blog"><svg class="mesa-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#external-link"></use></svg><span>Ver o Blog</span></a>
           <span class="mesa-perfil" data-mesa-perfil aria-hidden="true"></span>
@@ -64,7 +64,7 @@
 
       <div class="mesa-conteudo" data-mesa-conteudo>
         <section class="mesa-tela" data-mesa-view="visao" aria-label="Visão geral"></section>
-        <section class="mesa-tela" data-mesa-view="posts" aria-label="Posts" hidden></section>
+        <section class="mesa-tela" data-mesa-view="posts" aria-label="Textos" hidden></section>
         <section class="mesa-tela" data-mesa-view="comentarios" aria-label="Comentários" hidden></section>
         <section class="mesa-tela" data-mesa-view="configuracoes" aria-label="Configurações" hidden></section>
         <section class="mesa-tela mesa-tela--editor" data-mesa-view="editor" data-blog-editor aria-label="Editor" hidden></section>

@@ -144,7 +144,7 @@ export function createBlogEditor({ root, ctx } = {}) {
 
   root.innerHTML = `<div class="mesa-editor" data-painel="${painelAberto ? "aberto" : "fechado"}">
     <header class="mesa-editor__topo">
-      <a class="mesa-voltar" href="#/posts">${i("chevron-left")}<span>Posts</span></a>
+      <a class="mesa-voltar" href="#/posts">${i("chevron-left")}<span>Textos</span></a>
       <span class="mesa-editor__divisor" aria-hidden="true"></span>
       <div class="mesa-editor__nome"><p data-editor-nome tabindex="-1"></p><span data-editor-status></span></div>
       <span class="mesa-salvo" data-editor-salvo role="status"></span>
@@ -848,7 +848,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     else post[campo] = valor;
     if (campo === "title") {
       $("[data-editor-nome]").textContent = valor.trim() || "Texto sem título";
-      document.title = `${valor.trim() || "Novo post"} — Mesa do Caderno`;
+      document.title = `${valor.trim() || "Novo artigo"} — Mesa do Caderno`;
       if (slugAutomatico) {
         post.slug = enderecoLivre(valor || "novo-texto", ctx.loja.registros, post.id);
         const endereco = corpoDoPainel.querySelector('[data-editor-campo="slug"]');
