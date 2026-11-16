@@ -225,6 +225,7 @@ export function criarDadosDemonstracao({
     },
 
     async inscricoesCursos() { return []; },
+    async iniciarPagamentoCurso() { throw new Error("Pagamento disponível somente na conta conectada."); },
     async cancelarInscricaoCurso() { return null; },
 
     async opcoesAtendimento() {

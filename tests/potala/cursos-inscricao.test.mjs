@@ -32,21 +32,23 @@ test("pedido de inscricao: sem sessao pede login; codigos do banco viram mensage
   }
 });
 
-test("Meu Potala: estados claros; solicitada nunca aparece como matriculado; cancelar so antes de pagar", () => {
+test("Meu Potala: estados claros; pagamento abre Checkout Asaas sem marcar matricula", () => {
   assert.equal(SITUACAO_DO_PEDIDO.solicitada[0], "Inscrição solicitada");
   const html = pedidosDeInscricao([
     { id: "1", status: "solicitada", course_title: "<b>A</b>", price_cents: 15000, mode: "online" },
-    { id: "2", status: "aguardando_pagamento", course_title: "B", price_cents: 100 },
+    { id: "2", status: "aguardando_pagamento", course_title: "B", price_cents: 100, payment_status: "active", checkout_url: "https://asaas.com/checkoutSession/show?id=abc" },
     { id: "3", status: "matriculada", course_title: "C", price_cents: 0 },
   ]);
   assert.doesNotMatch(html, /<b>A<\/b>/);
   assert.match(html, /Inscrição solicitada[\s\S]*Aguardando pagamento[\s\S]*Matriculado/);
-  assert.equal((html.match(/data-form="cancelar-inscricao-curso"/g) || []).length, 2, "matriculada nao tem cancelar do aluno");
+  assert.match(html, /Continuar pagamento no Asaas/);
+  assert.equal((html.match(/data-form="cancelar-inscricao-curso"/g) || []).length, 1, "checkout ativo e matricula nao podem ser cancelados pelo navegador");
   const so = vista.renderizar({ inscricoes: [], progressos: [], agora: new Date(), inscricoesCursos: [{ id: "1", status: "solicitada", course_title: "A" }] });
   assert.match(so, /Seus pedidos de inscrição/);
   const app = ler("outputs/js/conta/spa/app.js");
   assert.match(app, /sessao\.inscricoesCursos\(\)/);
   assert.match(app, /await sessao\.cancelarInscricaoCurso\(id\)/);
+  assert.match(app, /await sessao\.iniciarPagamentoCurso/);
 });
 
 test("fila do Owner: acoes por estado e nenhuma acao de 'marcar pago'", () => {

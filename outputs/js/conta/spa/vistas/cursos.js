@@ -47,7 +47,7 @@ function cartaoDoCurso(inscricao, progresso, agora) {
 /* Pedidos de inscricao feitos pelo proprio aluno (PR B). "Matriculada" so depois da aprovacao e, se pago, do pagamento real. */
 export const SITUACAO_DO_PEDIDO = Object.freeze({
   solicitada: ["Inscrição solicitada", "O Instituto vai analisar seu pedido."],
-  aguardando_pagamento: ["Aguardando pagamento", "Inscrição aprovada. O pagamento online ainda não está disponível; o Instituto entra em contato."],
+  aguardando_pagamento: ["Aguardando pagamento", "Inscrição aprovada. Pague com Pix ou cartão na página segura do Asaas."],
   pagamento_confirmado: ["Pagamento confirmado", "Pagamento recebido. A matrícula está sendo concluída."],
   matriculada: ["Matriculado", "Sua vaga está garantida."],
   recusada: ["Inscrição não aprovada", "Fale com o Instituto se tiver dúvidas."],
@@ -65,14 +65,19 @@ export function pedidosDeInscricao(pedidos = []) {
     titulo: "Seus pedidos de inscrição",
     corpo: `<ul class="mp-lista-cartoes">${lista.map((p) => {
       const [rotulo, nota] = SITUACAO_DO_PEDIDO[p.status];
-      const pode = ["solicitada", "aguardando_pagamento"].includes(p.status);
+      const pagamento = p.status === "aguardando_pagamento";
+      const checkoutAtivo = pagamento && p.payment_status === "active" && /^https:\/\/asaas\.com\/checkoutSession\/show\?/.test(String(p.checkout_url || ""));
+      const podeCancelar = p.status === "solicitada" || (pagamento && !["creating", "active", "paid", "manual_review", "disputed"].includes(p.payment_status));
       return `<li class="mp-cartao mp-cartao-curso" data-inscricao-curso="${esc(p.id)}">
         <div class="mp-cartao-corpo">
           <p class="mp-status" data-status="${esc(p.status)}">${esc(rotulo)}</p>
           <h3 class="mp-cartao-titulo">${esc(p.course_title || "Curso")}</h3>
           <p class="mp-cartao-detalhe">${esc([p.mode === "online" ? "Online" : "Presencial", reais(p.price_cents)].filter(Boolean).join(" · "))}</p>
           ${nota ? `<p class="mp-cartao-detalhe">${esc(nota)}</p>` : ""}
-          ${pode ? `<form class="mp-form" data-form="cancelar-inscricao-curso" data-inscricao="${esc(p.id)}"><p class="mp-form-status" data-form-status role="alert"></p><button class="mp-botao mp-botao-pequeno mp-botao-secundario" type="submit">Cancelar inscrição</button></form>` : ""}
+          ${pagamento ? `<form class="mp-form" data-form="pagar-inscricao-curso" data-inscricao="${esc(p.id)}"><p class="mp-form-status" data-form-status role="alert"></p>${checkoutAtivo
+            ? `<a class="mp-botao mp-botao-pequeno" href="${esc(p.checkout_url)}">Continuar pagamento no Asaas</a>`
+            : `<button class="mp-botao mp-botao-pequeno" type="submit">Pagar com Pix ou cartão</button>`}</form>` : ""}
+          ${podeCancelar ? `<form class="mp-form" data-form="cancelar-inscricao-curso" data-inscricao="${esc(p.id)}"><p class="mp-form-status" data-form-status role="alert"></p><button class="mp-botao mp-botao-pequeno mp-botao-secundario" type="submit">Cancelar inscrição</button></form>` : ""}
         </div>
       </li>`;
     }).join("")}</ul>`,
