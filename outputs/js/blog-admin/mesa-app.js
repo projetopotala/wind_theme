@@ -11,10 +11,10 @@ import { definirCategorias, rotuloDaCategoria } from "../blog/article-renderer.j
 import { carregarDadosDaMesa } from "./blog-desk.js";
 import { createBlogEditor, mergeDraftPosts, postPreview } from "./blog-editor.js";
 import { criarBiblioteca } from "./mesa-midia.js";
-import { enderecoLivre, permissoesDaMesa, textoAtual } from "./mesa-modelo.js";
+import { enderecoLivre, permissoesDaMesa, podePublicar, textoAtual } from "./mesa-modelo.js";
 import { ErroDeSessao, criarGuardaDeSessao, decidirSaida, protegerRepositorio, textoParaCopia } from "./mesa-sessao.js";
 import { criarAvisos, criarConfirmacao, criarMenu, criarPaleta, esc } from "./mesa-ui.js";
-import { criarComentarios, criarConfiguracoes, criarListaDePosts, criarVisaoGeral, nomeDaLista } from "./mesa-visoes.js";
+import { criarComentarios, criarConfiguracoes, criarListaDePosts, criarVisaoGeral, nomeDaLista, registrosDaLista } from "./mesa-visoes.js";
 
 const TELAS = ["visao", "posts", "comentarios", "configuracoes"];
 
@@ -246,6 +246,12 @@ export function criarMesa({ raiz, repositorio: repositorioBruto, permissoes = {}
   }
 
   function mostrar(rota) {
+    if (!podePublicar(ctx.permissoes) && ["comentarios", "configuracoes"].includes(rota.tela)) {
+      avisos.mostrar("Essa área é reservada à revisão e publicação do Instituto.", { tipo: "info" });
+      globalThis.history.replaceState(null, "", "#/visao");
+      mostrar(lerRota("#/visao"));
+      return;
+    }
     rotaAtual = rota;
     raiz.dataset.tela = rota.tela;
     fecharGaveta();
@@ -259,7 +265,7 @@ export function criarMesa({ raiz, repositorio: repositorioBruto, permissoes = {}
         return;
       }
       for (const secao of raiz.querySelectorAll("[data-mesa-view]")) secao.hidden = secao.dataset.mesaView !== "editor";
-      document.title = `${editor.registro ? textoAtual(editor.registro).title : "Novo post"} — Mesa do Caderno`;
+      document.title = `${editor.registro ? textoAtual(editor.registro).title : "Novo artigo"} — Mesa do Caderno`;
       return;
     }
     editor.sairDoFoco();
@@ -323,17 +329,17 @@ export function criarMesa({ raiz, repositorio: repositorioBruto, permissoes = {}
   /* ---------------- paleta e atalhos ---------------- */
 
   function comandosGerais() {
-    const recentes = [...loja.registros].sort((a, b) => (Date.parse(b.atualizadoEm) || 0) - (Date.parse(a.atualizadoEm) || 0));
+    const recentes = [...registrosDaLista(ctx)].sort((a, b) => (Date.parse(b.atualizadoEm) || 0) - (Date.parse(a.atualizadoEm) || 0));
     return [
-      { grupo: "Ir para", rotulo: "Novo post", icone: "plus", executar: () => ctx.navegar("#/novo") },
+      { grupo: "Ir para", rotulo: "Novo artigo", icone: "plus", executar: () => ctx.navegar("#/novo") },
       { grupo: "Ir para", rotulo: "Visão geral", icone: "layout-dashboard", executar: () => ctx.navegar("#/visao") },
-      { grupo: "Ir para", rotulo: "Posts", icone: "file-text", executar: () => ctx.navegar("#/posts") },
+      { grupo: "Ir para", rotulo: nomeDaLista(ctx.permissoes), icone: "file-text", executar: () => ctx.navegar("#/posts") },
       { grupo: "Ir para", rotulo: "Buscar no blog", icone: "search", executar: async () => { ctx.navegar("#/posts"); await roteando; tela("posts").querySelector("[data-posts-busca]")?.focus(); } },
-      { grupo: "Ir para", rotulo: "Comentários", icone: "message-circle", executar: () => ctx.navegar("#/comentarios") },
-      { grupo: "Ir para", rotulo: "Configurações", icone: "settings", executar: () => ctx.navegar("#/configuracoes") },
+      podePublicar(ctx.permissoes) && { grupo: "Ir para", rotulo: "Comentários", icone: "message-circle", executar: () => ctx.navegar("#/comentarios") },
+      podePublicar(ctx.permissoes) && { grupo: "Ir para", rotulo: "Configurações", icone: "settings", executar: () => ctx.navegar("#/configuracoes") },
       { grupo: "Ir para", rotulo: "Abrir o Blog público", icone: "external-link", executar: () => globalThis.open("/blog.html", "_blank", "noopener") },
       ...recentes.map((registro) => ({ grupo: "Textos", rotulo: textoAtual(registro).title, icone: "pencil", executar: () => ctx.navegar(`#/editar/${encodeURIComponent(registro.id)}`) })),
-    ];
+    ].filter(Boolean);
   }
 
   document.addEventListener("keydown", (evento) => {
@@ -422,6 +428,7 @@ export function criarMesa({ raiz, repositorio: repositorioBruto, permissoes = {}
       if (rotuloPosts) rotuloPosts.textContent = nomePosts;
       const voltar = raiz.querySelector(".mesa-voltar span");
       if (voltar) voltar.textContent = nomePosts;
+      for (const item of raiz.querySelectorAll("[data-mesa-owner]")) item.hidden = !podePublicar(ctx.permissoes);
       await rotear();
     },
     /* Tela de login: devolve true se havia alteracoes pendentes que foram descartadas. */

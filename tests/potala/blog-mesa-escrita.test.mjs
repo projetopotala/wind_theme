@@ -156,12 +156,32 @@ test("migration 202611150001: so refaz mesa_salvar_post, sem tabelas nem politic
 });
 
 test("Meus textos: quem so escreve ve apenas os proprios textos na lista; Owner ve tudo", async () => {
-  const { registrosDaLista, nomeDaLista } = await import("../../outputs/js/blog-admin/mesa-visoes.js");
+  const { registrosDaLista, nomeDaLista, resumoDoEscritor } = await import("../../outputs/js/blog-admin/mesa-visoes.js");
   const loja = { registros: [{ id: "a", criadoPor: "u1" }, { id: "b", criadoPor: "u2" }, { id: "c", criadoPor: "u1" }] };
   const escritor = { loja, permissoes: { publicar: false, somenteProprios: true, usuarioId: "u1" } };
   assert.deepEqual(registrosDaLista(escritor).map((r) => r.id), ["a", "c"]);
-  assert.equal(nomeDaLista(escritor.permissoes), "Meus textos");
+  assert.equal(nomeDaLista(escritor.permissoes), "Meus artigos");
   const owner = { loja, permissoes: { publicar: true } };
   assert.equal(registrosDaLista(owner).length, 3);
-  assert.equal(nomeDaLista(owner.permissoes), "Posts");
+  assert.equal(nomeDaLista(owner.permissoes), "Textos");
+
+  const fluxo = resumoDoEscritor([
+    { id: "r", status: "draft", atualizadoEm: "2026-11-10", post: { title: "Rascunho" } },
+    { id: "c", status: "draft", atualizadoEm: "2026-11-12", post: { title: "Corrigir", correcao: { texto: "Rever abertura" } } },
+    { id: "v", status: "review", post: { title: "Revisão" } },
+    { id: "p", status: "published", post: { title: "Publicado" } },
+  ]);
+  assert.deepEqual([fluxo.rascunhos.length, fluxo.revisao.length, fluxo.precisaCorrecao.length, fluxo.publicados.length], [1, 1, 1, 1]);
+  assert.deepEqual(fluxo.continuar.map((item) => item.id), ["c", "r"], "correções aparecem antes dos demais rascunhos");
+});
+
+test("jornada do escritor: mostra os quatro estados e esconde controles editoriais do Owner", () => {
+  const visoes = fonte("js/blog-admin/mesa-visoes.js");
+  const app = fonte("js/blog-admin/mesa-app.js");
+  const html = fonte("blog-admin.html");
+  for (const texto of ["Meus rascunhos", "Aguardando revisão", "Precisa de correção", "Publicados"]) assert.match(visoes, new RegExp(texto));
+  assert.match(html, /data-mesa-nav="comentarios" data-mesa-owner/);
+  assert.match(html, /data-mesa-nav="configuracoes" data-mesa-owner/);
+  assert.match(app, /item\.hidden = !podePublicar\(ctx\.permissoes\)/);
+  assert.match(app, /\["comentarios", "configuracoes"\]\.includes\(rota\.tela\)/);
 });
