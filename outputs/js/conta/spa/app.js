@@ -111,6 +111,9 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.perfisProfissionais()
       .then((lista) => ({ nome: "perfisProfissionais", lista }))
       .catch((erro) => ({ nome: "perfisProfissionais", lista: [], erro })));
+    leituras.push(sessao.inscricoesCursos()
+      .then((lista) => ({ nome: "inscricoesCursos", lista }))
+      .catch((erro) => ({ nome: "inscricoesCursos", lista: [], erro })));
     /* "Para você" só recomenda texto do Blog confirmado no ar; sem confirmação, nenhum. */
     leituras.push(lerArtigosPublicados().then((lista) => ({ nome: "textosDoBlog", lista: lista || [] })));
     const promessa = Promise.all(leituras)
@@ -118,6 +121,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         if (sessao.obter().usuario?.id !== usuarioId) return null;
         dados = Object.fromEntries(respostas.map(({ nome, lista }) => [nome, lista]));
         dados.atendimentos ||= [];
+        dados.inscricoesCursos ||= [];
         dados.opcoesAtendimento ||= [];
         dados.horariosAtendimento ||= [];
         dados.agendaProfissional ||= [];
@@ -396,6 +400,17 @@ export async function montarMeuPotala({ documento = document, janela = window } 
   };
 
   const aoEnviar = (evento) => {
+    const cancelarInscricao = evento.target.closest?.("[data-form='cancelar-inscricao-curso']");
+    if (cancelarInscricao) {
+      evento.preventDefault();
+      const id = cancelarInscricao.getAttribute("data-inscricao");
+      agir(cancelarInscricao.querySelector("[type='submit']"), async () => {
+        await sessao.cancelarInscricaoCurso(id);
+        dados = null;
+        dono = null;
+      }, "Inscrição cancelada.");
+      return;
+    }
     const semHorario = evento.target.closest?.("[data-form='atendimento-sem-horario']");
     if (semHorario) {
       evento.preventDefault();

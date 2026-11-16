@@ -343,6 +343,22 @@ export function criarDadosSupabase({ client } = {}) {
       if (error) throw falhouDados(error);
     },
 
+    /* Pedidos de inscricao em cursos da propria conta (my_course_enrollment_requests usa auth.uid()). */
+    async inscricoesCursos() {
+      const { data, error } = await client.rpc("my_course_enrollment_requests");
+      if (error) {
+        if (["PGRST202", "42883"].includes(error.code)) return [];
+        throw falhouDados(error);
+      }
+      return Array.isArray(data) ? data : [];
+    },
+
+    async cancelarInscricaoCurso(id) {
+      const { data, error } = await client.rpc("cancel_my_course_enrollment_request", { p_id: id });
+      if (error) throw falhouDados(error);
+      return data;
+    },
+
     async opcoesAtendimento() {
       const { data, error } = await client.rpc("list_appointment_offerings");
       if (error) throw falhouDados(error);

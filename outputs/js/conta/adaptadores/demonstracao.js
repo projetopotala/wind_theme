@@ -224,6 +224,9 @@ export function criarDadosDemonstracao({
       );
     },
 
+    async inscricoesCursos() { return []; },
+    async cancelarInscricaoCurso() { return null; },
+
     async opcoesAtendimento() {
       return [
         { id: "demo-acupuntura", service: "Acupuntura", professional: "Profissional Potala", modality: "presencial" },

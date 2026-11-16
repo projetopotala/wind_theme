@@ -44,8 +44,45 @@ function cartaoDoCurso(inscricao, progresso, agora) {
   </li>`;
 }
 
+/* Pedidos de inscricao feitos pelo proprio aluno (PR B). "Matriculada" so depois da aprovacao e, se pago, do pagamento real. */
+export const SITUACAO_DO_PEDIDO = Object.freeze({
+  solicitada: ["Inscrição solicitada", "O Instituto vai analisar seu pedido."],
+  aguardando_pagamento: ["Aguardando pagamento", "Inscrição aprovada. O pagamento online ainda não está disponível; o Instituto entra em contato."],
+  pagamento_confirmado: ["Pagamento confirmado", "Pagamento recebido. A matrícula está sendo concluída."],
+  matriculada: ["Matriculado", "Sua vaga está garantida."],
+  recusada: ["Inscrição não aprovada", "Fale com o Instituto se tiver dúvidas."],
+  cancelada: ["Inscrição cancelada", ""],
+});
+const reais = (c) => (Number.isInteger(c) ? (c === 0 ? "Gratuito" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(c / 100)) : "");
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+
+export function pedidosDeInscricao(pedidos = []) {
+  const lista = (Array.isArray(pedidos) ? pedidos : []).filter((p) => p && SITUACAO_DO_PEDIDO[p.status]);
+  if (!lista.length) return "";
+  return secao({
+    id: "mp-cursos-inscricoes",
+    kicker: "Inscrições",
+    titulo: "Seus pedidos de inscrição",
+    corpo: `<ul class="mp-lista-cartoes">${lista.map((p) => {
+      const [rotulo, nota] = SITUACAO_DO_PEDIDO[p.status];
+      const pode = ["solicitada", "aguardando_pagamento"].includes(p.status);
+      return `<li class="mp-cartao mp-cartao-curso" data-inscricao-curso="${esc(p.id)}">
+        <div class="mp-cartao-corpo">
+          <p class="mp-status" data-status="${esc(p.status)}">${esc(rotulo)}</p>
+          <h3 class="mp-cartao-titulo">${esc(p.course_title || "Curso")}</h3>
+          <p class="mp-cartao-detalhe">${esc([p.mode === "online" ? "Online" : "Presencial", reais(p.price_cents)].filter(Boolean).join(" · "))}</p>
+          ${nota ? `<p class="mp-cartao-detalhe">${esc(nota)}</p>` : ""}
+          ${pode ? `<form class="mp-form" data-form="cancelar-inscricao-curso" data-inscricao="${esc(p.id)}"><p class="mp-form-status" data-form-status role="alert"></p><button class="mp-botao mp-botao-pequeno mp-botao-secundario" type="submit">Cancelar inscrição</button></form>` : ""}
+        </div>
+      </li>`;
+    }).join("")}</ul>`,
+  });
+}
+
 export default {
-  renderizar({ inscricoes, progressos, agora }) {
+  renderizar({ inscricoes, progressos, agora, inscricoesCursos = [] }) {
+    const pedidos = pedidosDeInscricao(inscricoesCursos);
+    if (!inscricoes.length && pedidos) return pedidos;
     if (!inscricoes.length) {
       return secao({
         id: "mp-cursos",
@@ -78,6 +115,6 @@ export default {
       })
       : "";
 
-    return `${emAndamento}${terminados}`;
+    return `${pedidos}${emAndamento}${terminados}`;
   },
 };

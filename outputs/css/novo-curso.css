@@ -10,3 +10,12 @@
 .nc-ok{margin:0;font-weight:600}
 .nc-interessados ul{margin:.3rem 0 0;padding-left:1.1rem}
 @media (max-width:480px){.nc-dialog form{max-width:100%}}
+
+/* Inscricoes de cursos (js/admin/inscricoes-cursos.js) */
+.ic-corpo{display:grid;gap:.85rem;padding:0 20px 20px}
+.ic-filtro{display:flex;gap:.5rem;flex-wrap:wrap}
+.ic-lista{list-style:none;margin:0;padding:0;display:grid;gap:.8rem}
+.ic-item{border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:.7rem;padding:.8rem 1rem;display:grid;gap:.35rem}
+.ic-item h3,.ic-item p{margin:0}
+.ic-situacao{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
+.ic-acoes{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.3rem}
