@@ -1,7 +1,8 @@
 -- Reverte 202611160007. Restaura list_public_courses (texto de 202611160006, igual a Production apos a PR #77),
 -- remove funcoes e o gatilho de capacidade dos pedidos. PEDIDOS REAIS SAO PRESERVADOS: se houver qualquer pedido,
 -- as tabelas ficam intactas (sem acesso de leitura para authenticated); recuperacao: reaplicar 202611160007
--- (create table if not exists mantem as linhas). Tabelas vazias sao removidas. op_records nao e alterado.
+-- (create table if not exists mantem as linhas). Tabelas vazias sao removidas. Matriculas ja gravadas na operacao
+-- (op_records enrollments) e cadastros de aluno criados permanecem: sao matriculas reais.
 -- Nao mexe no historico de migrations.
 begin;
 create or replace function public.list_public_courses()
@@ -88,6 +89,9 @@ drop function if exists public.course_enrollment_transition(uuid, timestamptz, t
 drop function if exists public.my_course_enrollment_requests();
 drop function if exists public.request_course_enrollment(uuid, text);
 drop function if exists public.course_seats_taken(text);
+drop function if exists public.course_enrollment_dematerialize(text);
+drop function if exists public.course_enrollment_materialize(uuid, text);
+drop function if exists public.course_student_profile(uuid);
 do $guard$
 begin
   if to_regclass('public.course_enrollment_requests') is null then

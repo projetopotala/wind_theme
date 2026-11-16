@@ -183,3 +183,72 @@ test("rollback: preserva pedidos reais; sem pedidos remove tudo", async () => {
   assert.equal((await b.db.query("select to_regclass('public.course_enrollment_requests') t")).rows[0].t, null);
   assert.equal(Number((await b.db.query("select count(*) n from pg_trigger where tgname='op_enrollment_respeita_pedidos'")).rows[0].n), 0);
 });
+
+test("matricula de verdade: gratuito aprovado vira matricula da operacao e aparece em Meu Potala (uma vaga so)", async () => {
+  const { db, como, turmaAberta, pedir, decidir } = await montar();
+  await turmaAberta("t1", { preco: 0, vagas: 2 });
+  const rev0 = Number((await db.query("select revision from public.op_meta where id=1")).rows[0].revision);
+  const id = (await pedir(U.a1, "t1")).r.id;
+  assert.equal((await decidir(id, "aprovar")).ok, true);
+  const req = (await db.query("select status, op_enrollment_id from public.course_enrollment_requests where id=$1", [id])).rows[0];
+  assert.equal(req.status, "matriculada");
+  const mat = (await db.query("select document from public.op_records where collection='enrollments' and id=$1", [req.op_enrollment_id])).rows[0].document;
+  assert.equal(mat.status, "active");
+  assert.equal(mat.offering_id, "t1");
+  const perfil = (await db.query("select document from public.op_records where collection='profiles' and id=$1", [mat.profile_id])).rows[0].document;
+  assert.equal(perfil.email, "a1@potala.test");
+  assert.deepEqual(perfil.roles, ["student"]);
+  assert.equal(Number((await db.query("select count(*) n from public.appointment_profile_accounts where user_id=$1 and profile_id=$2", [U.a1, mat.profile_id])).rows[0].n), 1);
+  assert.ok(Number((await db.query("select revision from public.op_meta where id=1")).rows[0].revision) > rev0, "revisao da operacao avancou");
+  const auditoria = (await db.query("select document->>'action' a from public.op_records where collection='audit_events' and document->'changes'->0->>'id'=$1", [req.op_enrollment_id])).rows;
+  assert.deepEqual(auditoria.map((x) => x.a), ["enrollment.save"]);
+  const meus = (await como(U.a1, "select public.my_course_enrollments() as l")).rows[0].l;
+  assert.equal(meus.length, 1, "o curso aparece em Meu Potala -> Em curso");
+  assert.equal(meus[0].course_ref, "t1");
+  const aberta = (await como(null, "select public.list_public_courses() as l")).rows[0].l[0];
+  assert.equal(aberta.spots_left, 1, "a vaga conta uma vez");
+  assert.equal((await pedir(U.a1, "t1")).code, "PT409", "ja matriculado nao pede de novo");
+});
+
+test("pago: so vira matricula da operacao depois da confirmacao do servidor; cancelar devolve a vaga", async () => {
+  const { db, como, turmaAberta, pedir, decidir, status } = await montar();
+  await turmaAberta("t1", { preco: 15000, vagas: 1 });
+  const id = (await pedir(U.a1, "t1")).r.id;
+  await decidir(id, "aprovar");
+  assert.equal(Number((await db.query("select count(*) n from public.op_records where collection='enrollments'")).rows[0].n), 0, "aguardando pagamento: sem matricula");
+  await como(null, "select public.confirm_course_enrollment_payment($1::uuid, 15000)", [id], "service_role");
+  const opId = (await db.query("select op_enrollment_id from public.course_enrollment_requests where id=$1", [id])).rows[0].op_enrollment_id;
+  assert.ok(opId);
+  assert.equal((await como(null, "select public.list_public_courses() as l")).rows[0].l[0].availability, "esgotado");
+  assert.equal((await decidir(id, "cancelar")).ok, true);
+  assert.equal(await status(id), "cancelada");
+  const doc = (await db.query("select document from public.op_records where id=$1", [opId])).rows[0].document;
+  assert.equal(doc.status, "cancelled", "matricula operacional cancelada junto");
+  assert.equal((await como(null, "select public.list_public_courses() as l")).rows[0].l[0].spots_left, 1, "vaga devolvida");
+});
+
+test("cadastro existente com o mesmo e-mail e reaproveitado; e-mail ambiguo e recusado sem gravar nada", async () => {
+  const { db, turmaAberta, pedir, decidir, status } = await montar();
+  await db.query("insert into public.op_records(collection,id,document) values ('profiles','existente','{\"id\":\"existente\",\"display_name\":\"TESTE INTERNO A2\",\"email\":\"a2@potala.test\",\"roles\":[\"client\"],\"active\":true}'::jsonb)");
+  await turmaAberta("t1", { preco: 0, vagas: 5 });
+  const a = (await pedir(U.a2, "t1")).r.id;
+  await decidir(a, "aprovar");
+  const doc = (await db.query("select document from public.op_records where collection='enrollments' and document->>'request_id'=$1", [a])).rows[0].document;
+  assert.equal(doc.profile_id, "existente", "nao cria cadastro repetido");
+  for (const n of [1, 2]) await db.query("insert into public.op_records(collection,id,document) values ('profiles',$1,$2::jsonb)", [`dup${n}`, JSON.stringify({ id: `dup${n}`, display_name: "TESTE INTERNO dup", email: "a3@potala.test", roles: ["client"], active: true })]);
+  const b = (await pedir(U.a3, "t1"));
+  assert.equal(b.code, "PT422", "pedido ja recusa quando o e-mail e ambiguo");
+  void status;
+});
+
+test("aprovacao que falha na operacao nao muda o pedido (tudo ou nada)", async () => {
+  const { db, turmaAberta, pedir, decidir, status } = await montar();
+  await turmaAberta("t1", { preco: 0, vagas: 5 });
+  const id = (await pedir(U.a1, "t1")).r.id;
+  /* cadastro com o id da conta ja usado por outra coisa: a criacao do perfil conflita */
+  await db.query("insert into public.op_records(collection,id,document) values ('profiles',$1,'{\"display_name\":\"TESTE INTERNO outro\",\"email\":\"outro@x.test\",\"roles\":[\"client\"],\"active\":true}'::jsonb)", [U.a1]);
+  const r = await decidir(id, "aprovar");
+  assert.equal(r.ok, false);
+  assert.equal(await status(id), "solicitada", "rollback da transacao");
+  assert.equal(Number((await db.query("select count(*) n from public.op_records where collection='enrollments'")).rows[0].n), 0);
+});

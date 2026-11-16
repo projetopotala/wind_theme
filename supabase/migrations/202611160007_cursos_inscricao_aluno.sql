@@ -17,6 +17,13 @@
 --   a mesma de op_turma_capacidade). Um gatilho extra na operacao impede que uma matricula manual passe da capacidade
 --   contando tambem os pedidos em andamento. Matriculas existentes nao sao revalidadas (so novas gravacoes).
 -- list_public_courses: igual a 202611160006, mas "vagas restantes" passa a descontar os pedidos em andamento.
+-- Matricula de verdade: ao virar "matriculada", o banco grava a matricula NA OPERACAO (op_records enrollments, status
+--   active) com evento de auditoria enrollment.save e nova revisao, igual ao painel. O aluno passa a ter o vinculo
+--   atual de cursos (Meu Potala "Em curso", proxima aula, link online, agenda). Cadastro operacional do aluno: o
+--   vinculado a conta (appointment_profile_accounts) ou o unico cadastro com o mesmo e-mail confirmado; sem nenhum,
+--   e criado (papel student) e vinculado, com auditoria; mais de um com o mesmo e-mail: recusa (PT422), sem adivinhar.
+--   Se o aluno ja tiver matricula ativa na turma, so vincula (nao duplica). Cancelar a matricula pela fila cancela a
+--   matricula operacional. A vaga da matricula e contada pela operacao (o pedido "matriculada" nao conta de novo).
 -- Reversao: supabase/rollbacks/202611160007_rollback_cursos_inscricao_aluno.sql (preserva pedidos reais).
 
 begin;
@@ -33,7 +40,8 @@ create table if not exists public.course_enrollment_requests (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   decided_at timestamptz,
-  decided_by uuid references auth.users (id) on delete set null
+  decided_by uuid references auth.users (id) on delete set null,
+  op_enrollment_id text
 );
 create unique index if not exists course_enrollment_requests_um_ativo
   on public.course_enrollment_requests (user_id, offering_id)
@@ -73,7 +81,7 @@ as $$
   ) + (
     select count(*)::integer from public.course_enrollment_requests r
     where r.offering_id = p_offering_id
-      and r.status in ('solicitada', 'aguardando_pagamento', 'pagamento_confirmado', 'matriculada')
+      and r.status in ('solicitada', 'aguardando_pagamento', 'pagamento_confirmado')
   );
 $$;
 revoke all on function public.course_seats_taken(text) from public, anon, authenticated;
@@ -221,6 +229,12 @@ begin
       and r.status in ('solicitada', 'aguardando_pagamento', 'pagamento_confirmado', 'matriculada')) then
     raise exception 'Você já tem uma inscrição nesta turma.' using errcode = 'PT409';
   end if;
+  -- Ja matriculado nesta turma pela operacao (inclusive matricula feita pelo Instituto): nao pede de novo.
+  if exists (select 1 from public.op_records e where e.collection = 'enrollments' and e.document ->> 'offering_id' = p_offering_id
+      and coalesce(e.document ->> 'status', 'active') in ('active', 'completed')
+      and e.document ->> 'profile_id' = public.course_student_profile(v_uid)) then
+    raise exception 'Você já está matriculado nesta turma.' using errcode = 'PT409';
+  end if;
   if public.course_seats_taken(p_offering_id) >= (v_turma ->> 'capacity')::integer then
     raise exception 'Turma lotada.' using errcode = '23514';
   end if;
@@ -256,6 +270,147 @@ as $$
   left join public.op_records d on d.collection = 'activity_definitions' and d.id = r.course_id
   where r.user_id = (select auth.uid());
 $$;
+
+-- Cadastro operacional da conta (sem criar). null = nenhum; erro se ambiguo.
+create or replace function public.course_student_profile(p_user uuid)
+returns text
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_link public.appointment_profile_accounts%rowtype;
+  v_email text;
+  v_n integer;
+  v_id text;
+begin
+  select * into v_link from public.appointment_profile_accounts where user_id = p_user;
+  if found then
+    if v_link.active is not true or not exists (select 1 from public.op_records p where p.collection = 'profiles'
+        and p.id = v_link.profile_id and coalesce((p.document ->> 'active')::boolean, true)) then
+      raise exception 'O cadastro do aluno precisa ser revisado pelo Instituto.' using errcode = 'PT422';
+    end if;
+    return v_link.profile_id;
+  end if;
+  select lower(nullif(btrim(u.email), '')) into v_email from auth.users u
+   where u.id = p_user and u.email_confirmed_at is not null and u.deleted_at is null;
+  if v_email is null then
+    raise exception 'Conta sem e-mail confirmado.' using errcode = '42501';
+  end if;
+  select count(*)::integer, min(p.id) into v_n, v_id from public.op_records p
+   where p.collection = 'profiles' and lower(nullif(btrim(p.document ->> 'email'), '')) = v_email;
+  if v_n > 1 then
+    raise exception 'Existem cadastros duplicados para este e-mail; o Instituto precisa revisar.' using errcode = 'PT422';
+  end if;
+  if v_n = 1 and exists (select 1 from public.appointment_profile_accounts a where a.profile_id = v_id) then
+    raise exception 'O cadastro com este e-mail pertence a outra conta.' using errcode = 'PT422';
+  end if;
+  return v_id;
+end;
+$$;
+revoke all on function public.course_student_profile(uuid) from public, anon, authenticated;
+
+-- Grava (ou vincula) a matricula operacional do pedido. Uso interno, dentro da transicao para "matriculada".
+create or replace function public.course_enrollment_materialize(p_id uuid, p_actor_kind text)
+returns text
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  r public.course_enrollment_requests%rowtype;
+  v_rev bigint;
+  v_perfil text;
+  v_email text;
+  v_nome text;
+  v_doc jsonb;
+  v_antes jsonb;
+  v_matricula text;
+  v_agora text := to_char(clock_timestamp() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"');
+  v_ator text := case when p_actor_kind = 'servidor' then 'Pagamento confirmado (servidor)' else 'Administração Potala' end;
+  v_evento text;
+begin
+  select * into r from public.course_enrollment_requests where id = p_id;
+  select revision into v_rev from public.op_meta where id = 1 for update;
+  if v_rev is null then
+    raise exception 'A operação do Instituto ainda não está inicializada.' using errcode = '55000';
+  end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('appointment-client:' || r.user_id::text, 0));
+  v_perfil := public.course_student_profile(r.user_id);
+  if v_perfil is null then
+    select lower(u.email), left(coalesce(nullif(btrim(u.raw_user_meta_data ->> 'full_name'), ''), split_part(u.email, '@', 1)), 100)
+      into v_email, v_nome from auth.users u where u.id = r.user_id;
+    v_perfil := r.user_id::text;
+    if exists (select 1 from public.op_records where collection = 'profiles' and id = v_perfil) then
+      raise exception 'A identidade do aluno conflita com outro cadastro.' using errcode = 'PT422';
+    end if;
+    v_doc := jsonb_build_object('id', v_perfil, 'display_name', v_nome, 'email', v_email, 'roles', jsonb_build_array('student'),
+      'active', true, 'published', false, 'created_at', v_agora, 'updated_at', v_agora);
+    insert into public.op_records (collection, id, document, updated_at) values ('profiles', v_perfil, v_doc, clock_timestamp());
+    insert into public.appointment_profile_accounts (user_id, profile_id, active) values (r.user_id, v_perfil, true);
+    v_evento := gen_random_uuid()::text;
+    insert into public.op_records (collection, id, document, updated_at) values ('audit_events', v_evento, jsonb_build_object(
+      'id', v_evento, 'actor', v_ator, 'at', v_agora, 'action', 'course.link_student_profile', 'reason', 'Inscrição pedida pelo aluno',
+      'changes', jsonb_build_array(jsonb_build_object('table', 'profiles', 'id', v_perfil, 'before', null, 'after', v_doc))), clock_timestamp());
+  elsif not exists (select 1 from public.appointment_profile_accounts where user_id = r.user_id) then
+    insert into public.appointment_profile_accounts (user_id, profile_id, active) values (r.user_id, v_perfil, true);
+  end if;
+
+  select e.id, e.document into v_matricula, v_antes from public.op_records e
+   where e.collection = 'enrollments' and e.document ->> 'profile_id' = v_perfil and e.document ->> 'offering_id' = r.offering_id;
+  if v_matricula is not null and coalesce(v_antes ->> 'status', 'active') in ('active', 'completed') then
+    return v_matricula;
+  end if;
+  if v_matricula is null then
+    v_matricula := 'insc-' || r.id::text;
+    v_doc := jsonb_build_object('id', v_matricula, 'profile_id', v_perfil, 'offering_id', r.offering_id, 'status', 'active',
+      'origin', 'course_enrollment_request', 'request_id', r.id::text, 'created_at', v_agora, 'updated_at', v_agora);
+    insert into public.op_records (collection, id, document, updated_at) values ('enrollments', v_matricula, v_doc, clock_timestamp());
+  else
+    v_doc := v_antes || jsonb_build_object('status', 'active', 'request_id', r.id::text, 'updated_at', v_agora);
+    update public.op_records set document = v_doc, updated_at = clock_timestamp() where collection = 'enrollments' and id = v_matricula;
+  end if;
+  v_evento := gen_random_uuid()::text;
+  insert into public.op_records (collection, id, document, updated_at) values ('audit_events', v_evento, jsonb_build_object(
+    'id', v_evento, 'actor', v_ator, 'at', v_agora, 'action', 'enrollment.save', 'reason', 'Inscrição pedida pelo aluno e aprovada',
+    'changes', jsonb_build_array(jsonb_build_object('table', 'enrollments', 'id', v_matricula, 'before', v_antes, 'after', v_doc))), clock_timestamp());
+  update public.op_meta set revision = v_rev + 1 where id = 1;
+  return v_matricula;
+end;
+$$;
+revoke all on function public.course_enrollment_materialize(uuid, text) from public, anon, authenticated;
+
+-- Cancela a matricula operacional ligada ao pedido (cancelamento pela fila do Owner).
+create or replace function public.course_enrollment_dematerialize(p_matricula text)
+returns void
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_rev bigint;
+  v_antes jsonb;
+  v_doc jsonb;
+  v_agora text := to_char(clock_timestamp() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"');
+  v_evento text := gen_random_uuid()::text;
+begin
+  select document into v_antes from public.op_records where collection = 'enrollments' and id = p_matricula;
+  if v_antes is null or coalesce(v_antes ->> 'status', 'active') = 'cancelled' then
+    return;
+  end if;
+  select revision into v_rev from public.op_meta where id = 1 for update;
+  v_doc := v_antes || jsonb_build_object('status', 'cancelled', 'updated_at', v_agora);
+  update public.op_records set document = v_doc, updated_at = clock_timestamp() where collection = 'enrollments' and id = p_matricula;
+  insert into public.op_records (collection, id, document, updated_at) values ('audit_events', v_evento, jsonb_build_object(
+    'id', v_evento, 'actor', 'Administração Potala', 'at', v_agora, 'action', 'enrollment.save', 'reason', 'Inscrição cancelada pela administração',
+    'changes', jsonb_build_array(jsonb_build_object('table', 'enrollments', 'id', p_matricula, 'before', v_antes, 'after', v_doc))), clock_timestamp());
+  update public.op_meta set revision = v_rev + 1 where id = 1;
+end;
+$$;
+revoke all on function public.course_enrollment_dematerialize(text) from public, anon, authenticated;
 
 -- Mudanca de estado com auditoria. Uso interno (as funcoes publicas abaixo decidem quem pode o que).
 create or replace function public.course_enrollment_transition(p_id uuid, p_expected timestamptz, p_to text, p_actor_kind text)
@@ -298,6 +453,12 @@ begin
    where id = p_id returning * into r;
   insert into public.course_enrollment_request_events (request_id, actor_id, actor_kind, from_status, to_status)
   values (p_id, (select auth.uid()), p_actor_kind, v_de, p_to);
+  if p_to = 'matriculada' then
+    update public.course_enrollment_requests set op_enrollment_id = public.course_enrollment_materialize(p_id, p_actor_kind)
+     where id = p_id returning * into r;
+  elsif p_to = 'cancelada' and v_de = 'matriculada' and r.op_enrollment_id is not null then
+    perform public.course_enrollment_dematerialize(r.op_enrollment_id);
+  end if;
   return jsonb_build_object('id', r.id, 'status', r.status, 'updated_at', r.updated_at);
 end;
 $$;
