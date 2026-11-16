@@ -46,3 +46,18 @@ test("app envia pelo pedido autenticado sem horario e nunca anuncia consulta con
   assert.match(app, /await sessao\.solicitarAtendimento\(\{[\s\S]*?ofertaId: campos\.ofertaId[\s\S]*?\}\);\s*delete semHorario\.dataset\.idempotencia/);
   assert.match(app, /ainda não é uma consulta confirmada/);
 });
+
+test("REGRESSAO 16/11: consulta futura de pedido sem horario fica em Confirmadas, nao em anteriores", () => {
+  const html = vista.renderizar({ atendimentoDisponivel: true, opcoesAtendimento: OPCOES, horariosAtendimento: [], agora: new Date("2026-11-16T07:30:00Z"),
+    atendimentos: [{ id: "a199a61e-0000-4000-8000-000000000000", servico: "Meditação", modalidade: "online", status: "encerrada", reservaId: "deb94390", inicio: "2026-11-17T12:00:00Z", fim: "2026-11-17T13:00:00Z", dataPreferida: "2026-11-17", periodoPreferido: "manha" }] });
+  const confirmadas = html.split('id="mp-atendimentos-confirmados"')[1].split('id="mp-atendimentos-historico"')[0];
+  assert.match(confirmadas, /Meditação/);
+  const anteriores = html.split('id="mp-atendimentos-historico"')[1].split('id="mp-atendimentos-cancelados"')[0];
+  assert.doesNotMatch(anteriores, /Meditação/);
+});
+
+test("envio sem horario confere o minimo (amanha) e mostra a data enviada", () => {
+  const app = readFileSync(new URL("../../outputs/js/conta/spa/app.js", import.meta.url), "utf8");
+  assert.match(app, /String\(campos\.dataPreferida\) < minimo/);
+  assert.match(app, /Solicitação recebida para \$\{diaEscolhido\}/);
+});

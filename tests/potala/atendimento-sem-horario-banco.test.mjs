@@ -150,3 +150,47 @@ test("rollback volta a fechar o pedido sem horario para contas logadas", async (
   assert.equal(r.ok, false);
   assert.match(r.message, /permission denied/i);
 });
+test("REGRESSAO 16/11: consulta confirmada de pedido sem horario aparece com data futura; sem duplicar", async () => {
+  const { db, como, pedir } = await montar();
+  const r = await pedir(U.cliente, "dddddddd-0000-0000-0000-000000000001", { oferta: "oferta" });
+  assert.equal(r.ok, true, r.message);
+  const p = (await db.query("select id, updated_at from public.appointment_requests where requester_user_id=$1", [U.cliente])).rows[0];
+  const inicio = new Date(Date.now() + 2 * 864e5); inicio.setUTCHours(12, 0, 0, 0);
+  const fim = new Date(inicio.valueOf() + 3600e3);
+  const conf = (chave, quando = p.updated_at) => como(U.owner, "select public.confirm_appointment_request_reservation($1::uuid,$2::timestamptz,$3,$4::jsonb) as r",
+    [p.id, quando, chave, JSON.stringify({ starts_at: inicio.toISOString(), ends_at: fim.toISOString(), room_id: null, notes: "" })])
+    .then((x) => ({ ok: true, r: x.rows[0].r }), (e) => ({ ok: false, code: e.code, message: e.message }));
+  const primeira = await conf("eeeeeeee-0000-4000-8000-000000000001");
+  assert.equal(primeira.ok, true, primeira.message);
+  const agendas = async () => Number((await db.query("select count(*) n from public.op_records where collection='schedule_items' and document->>'appointment_request_id'=$1", [p.id])).rows[0].n);
+  assert.equal(await agendas(), 1);
+
+  /* repetir com a mesma chave nao cria outra consulta */
+  await conf("eeeeeeee-0000-4000-8000-000000000001");
+  assert.equal(await agendas(), 1, "replay idempotente");
+  /* outra confirmacao (outra chave) do mesmo pedido e bloqueada */
+  const atual = (await db.query("select updated_at from public.appointment_requests where id=$1", [p.id])).rows[0].updated_at;
+  const segunda = await conf("eeeeeeee-0000-4000-8000-000000000002", atual);
+  assert.equal(segunda.ok, false, "segunda confirmacao recusada");
+  assert.equal(await agendas(), 1, "continua uma consulta");
+
+  /* o cliente ve a consulta com inicio/fim da agenda (futura => confirmada, nunca 'anterior') */
+  const meus = (await como(U.cliente, "select public.list_my_appointment_requests() as l")).rows[0].l;
+  assert.equal(meus.length, 1);
+  assert.equal(meus[0].status, "encerrada");
+  assert.ok(meus[0].reservation_schedule_id);
+  assert.equal(new Date(meus[0].starts_at).toISOString(), inicio.toISOString());
+  assert.equal(new Date(meus[0].ends_at).toISOString(), fim.toISOString());
+  /* outro cliente nao recebe nada disso */
+  assert.equal((await como(U.outro, "select public.list_my_appointment_requests() as l")).rows[0].l.length, 0);
+});
+
+test("rollback da 202611160004 volta ao comportamento anterior (sem datas da agenda)", async () => {
+  const { db, como, pedir } = await montar();
+  await pedir(U.cliente, "dddddddd-0000-0000-0000-000000000011", { oferta: "oferta" });
+  const p = (await db.query("select id, updated_at from public.appointment_requests")).rows[0];
+  const ini = new Date(Date.now() + 3 * 864e5); const fim = new Date(ini.valueOf() + 3600e3);
+  await como(U.owner, "select public.confirm_appointment_request_reservation($1::uuid,$2::timestamptz,$3,$4::jsonb)", [p.id, p.updated_at, "eeeeeeee-0000-4000-8000-000000000011", JSON.stringify({ starts_at: ini.toISOString(), ends_at: fim.toISOString() })]);
+  await db.exec(readFileSync(new URL("../../supabase/rollbacks/202611160004_rollback_consulta_sem_horario_na_lista.sql", import.meta.url), "utf8"));
+  assert.equal((await como(U.cliente, "select public.list_my_appointment_requests() as l")).rows[0].l[0].starts_at, null);
+});

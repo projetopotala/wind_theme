@@ -404,7 +404,11 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       const opcao = semHorario.querySelector("select[name='ofertaId']")?.selectedOptions?.[0];
       if (!campos.ofertaId || !opcao) { aviso.textContent = "Escolha o serviço."; return; }
       if (!/^\d{4}-\d{2}-\d{2}$/.test(String(campos.dataPreferida || ""))) { aviso.textContent = "Escolha o dia de preferência."; return; }
+      /* O minimo (amanha, fuso de Sao Paulo) vem do proprio campo; o formulario e novalidate, entao e conferido aqui. */
+      const minimo = semHorario.querySelector("input[name='dataPreferida']")?.getAttribute("min") || "";
+      if (minimo && String(campos.dataPreferida) < minimo) { aviso.textContent = "Escolha um dia a partir de amanhã."; return; }
       if (!["manha", "tarde", "noite"].includes(campos.periodoPreferido)) { aviso.textContent = "Escolha o período."; return; }
+      const diaEscolhido = String(campos.dataPreferida).split("-").reverse().join("/");
       if (!globalThis.crypto?.randomUUID) { aviso.textContent = "Seu navegador não oferece a proteção necessária para enviar agora."; return; }
       semHorario.dataset.idempotencia ||= globalThis.crypto.randomUUID();
       agir(semHorario.querySelector("[type='submit']"), async () => {
@@ -418,7 +422,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         delete semHorario.dataset.idempotencia;
         dados = null;
         dono = null;
-      }, "Solicitação recebida. A equipe vai escolher profissional e horário; ainda não é uma consulta confirmada.");
+      }, `Solicitação recebida para ${diaEscolhido}. A equipe vai escolher profissional e horário; ainda não é uma consulta confirmada.`);
       return;
     }
     const pedido = evento.target.closest?.("[data-form='atendimento']");
