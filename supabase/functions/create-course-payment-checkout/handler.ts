@@ -84,12 +84,18 @@ export function createCoursePaymentCheckoutHandler(deps: CheckoutDeps) {
         }),
       });
     } catch {
-      await deps.fail(data.id, "asaas_unavailable").catch(() => undefined);
-      return reply(502, { message: "O Asaas não respondeu. Nenhuma cobrança foi confirmada." }, headers);
+      // Timeout/falha de transporte e inconclusivo: o Asaas pode ter criado o
+      // Checkout sem que a resposta tenha chegado. Mantemos `creating` para o
+      // webhook reconciliar pelo externalReference, sem abrir uma nova tentativa.
+      return reply(502, { message: "O Asaas não respondeu. A tentativa está em conciliação segura." }, headers);
     }
     const json = await response.json().catch(() => null) as { id?: unknown } | null;
     if (!response.ok || typeof json?.id !== "string" || !json.id) {
-      await deps.fail(data.id, `asaas_http_${response.status}`).catch(() => undefined);
+      // 4xx e uma rejeição conclusiva. 5xx ou resposta 2xx malformada podem
+      // esconder uma criação efetivada e, por isso, ficam em conciliação.
+      if (response.status >= 400 && response.status < 500) {
+        await deps.fail(data.id, `asaas_http_${response.status}`).catch(() => undefined);
+      }
       return reply(502, { message: "Não foi possível criar a página de pagamento." }, headers);
     }
     const checkoutUrl = `https://asaas.com/checkoutSession/show?id=${encodeURIComponent(json.id)}`;

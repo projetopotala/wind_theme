@@ -45,6 +45,28 @@ test("falha antes do registro libera nova tentativa sem reutilizar referencia fi
   assert.notEqual(first.external_reference, second.external_reference);
 });
 
+test("webhook reconcilia checkout criado no Asaas antes do registro local", async () => {
+  const x = await montar();
+  await x.turmaAberta("reconcile", { preco: 5000 });
+  const id = (await x.pedir(U.a1, "reconcile")).r.id;
+  await x.decidir(id, "aprovar");
+  const prepared = (await x.como(U.a1,
+    "select public.prepare_course_payment_checkout($1::uuid,$2::uuid) r", [id, KEY])).rows[0].r;
+  const created = evento({ id: "evt_created_orphan", type: "CHECKOUT_CREATED", status: "ACTIVE",
+    checkout: "chk_ORPHAN", external: prepared.external_reference, value: 50 });
+  const result = (await x.como(null, "select public.process_course_payment_webhook($1::jsonb) r",
+    [JSON.stringify(created)], "service_role")).rows[0].r;
+  assert.equal(result.processed, true);
+  const saved = (await x.db.query("select status,provider_checkout_id,checkout_url from public.course_payment_checkouts where id=$1", [prepared.id])).rows[0];
+  assert.equal(saved.status, "active");
+  assert.equal(saved.provider_checkout_id, "chk_ORPHAN");
+  assert.match(saved.checkout_url, /id=chk_ORPHAN$/);
+  const replay = (await x.como(U.a1,
+    "select public.prepare_course_payment_checkout($1::uuid,$2::uuid) r", [id, KEY])).rows[0].r;
+  assert.equal(replay.id, prepared.id);
+  assert.equal(replay.status, "active");
+});
+
 test("CHECKOUT_PAID matricula uma vez; repeticao e evento atrasado nao duplicam", async () => {
   const x = await pagoPreparado();
   const first = (await x.como(null, "select public.process_course_payment_webhook($1::jsonb) r", [JSON.stringify(evento({ external: x.external }))], "service_role")).rows[0].r;

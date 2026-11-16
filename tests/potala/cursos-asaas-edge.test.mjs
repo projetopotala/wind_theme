@@ -39,7 +39,16 @@ test("sem JWT, ambiente nao-Sandbox e resposta ruim falham fechados", async () =
   assert.equal((await checkout({ env: (n) => n === "ASAAS_API_URL" ? "https://api.asaas.com/v3" : "x" }).handler(req({ request_id: REQUEST, idempotency_key: KEY }))).status, 503);
   const bad = checkout({ fetch: async () => new Response("{}", { status: 500 }) });
   assert.equal((await bad.handler(req({ request_id: REQUEST, idempotency_key: KEY }))).status, 502);
-  assert.equal(bad.deps.calls.at(-1)[0], "fail");
+  assert.equal(bad.deps.calls.some((call) => call[0] === "fail"), false, "5xx inconclusivo nao libera nova cobranca");
+  const rejected = checkout({ fetch: async () => new Response("{}", { status: 400 }) });
+  assert.equal((await rejected.handler(req({ request_id: REQUEST, idempotency_key: KEY }))).status, 502);
+  assert.equal(rejected.deps.calls.at(-1)[0], "fail", "4xx conclusivo libera nova tentativa");
+});
+
+test("timeout fica em conciliacao e nao libera cobranca duplicada", async () => {
+  const x = checkout({ fetch: async () => { throw new Error("timeout"); } });
+  assert.equal((await x.handler(req({ request_id: REQUEST, idempotency_key: KEY }))).status, 502);
+  assert.equal(x.deps.calls.some((call) => call[0] === "fail"), false);
 });
 
 test("repeticao devolve o mesmo checkout sem nova chamada ao Asaas", async () => {

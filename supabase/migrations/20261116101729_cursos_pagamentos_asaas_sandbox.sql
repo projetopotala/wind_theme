@@ -202,10 +202,11 @@ begin
 
   if v_checkout_id is not null then
     select * into c from public.course_payment_checkouts where provider_checkout_id=v_checkout_id for update;
-  elsif v_external ~ '^course:[0-9a-f-]{36}:[0-9a-f-]{36}$' then
+  end if;
+  if c.id is null and v_external ~ '^course:[0-9a-f-]{36}:[0-9a-f-]{36}$' then
     select * into c from public.course_payment_checkouts where external_reference=v_external order by created_at desc limit 1 for update;
   end if;
-  if not found then
+  if c.id is null then
     update public.course_payment_webhook_events set processing_status='failed',processing_error='checkout_not_found' where id=v_event;
     return jsonb_build_object('processed',false,'error','checkout_not_found','replayed',false);
   end if;
@@ -224,6 +225,22 @@ begin
   if v_amount_cents<>c.amount_cents then
     update public.course_payment_webhook_events set processing_status='failed',processing_error='amount_mismatch' where id=v_event;
     return jsonb_build_object('processed',false,'error','amount_mismatch','replayed',false);
+  end if;
+
+  -- Recupera com seguranca o caso em que o Asaas criou o Checkout, mas a
+  -- resposta nao chegou ou o registro local falhou. O externalReference unico
+  -- identifica a tentativa; nunca criamos outra cobranca para conciliar.
+  if c.provider_checkout_id is null and v_checkout_id is not null then
+    update public.course_payment_checkouts
+       set provider_checkout_id=v_checkout_id,
+           checkout_url='https://asaas.com/checkoutSession/show?id=' || v_checkout_id,
+           status=case when v_type='CHECKOUT_CREATED' and v_status='ACTIVE' then 'active' else status end,
+           provider_status=v_status,updated_at=clock_timestamp(),last_error=null
+     where id=c.id
+     returning * into c;
+  elsif c.provider_checkout_id is distinct from v_checkout_id and v_checkout_id is not null then
+    update public.course_payment_webhook_events set processing_status='failed',processing_error='checkout_id_mismatch' where id=v_event;
+    return jsonb_build_object('processed',false,'error','checkout_id_mismatch','replayed',false);
   end if;
 
   if v_type='CHECKOUT_PAID' and v_status='PAID' then
