@@ -23,6 +23,8 @@
 -- Compatibilidade Asaas (PR #79): nada aqui redefine course_enrollment_transition nem confirm_course_enrollment_payment.
 --   Pedido pago manualmente fica "matriculada", entao o webhook (que devolve "replayed" para matriculada) nao duplica nada
 --   e nenhuma cobranca nova nasce (a criacao exige "aguardando_pagamento").
+--   Mao dupla: se ja existe cobranca online aberta/paga (creating, active, paid, manual_review, disputed) o recebimento
+--   manual e recusado (PT409) ate o Owner resolver a cobranca; a checagem so roda se a tabela da #79 existir.
 -- Reversao: supabase/rollbacks/202611160008_rollback_cursos_recebimento_manual.sql (preserva a auditoria financeira).
 
 begin;
@@ -141,6 +143,7 @@ declare
   v_ref text := nullif(btrim(p_reference), '');
   v_hoje date := (clock_timestamp() at time zone 'America/Sao_Paulo')::date;
   v_ator uuid := (select auth.uid());
+  v_aberta boolean := false;
 begin
   if not public.course_payment_is_owner() then
     raise exception 'Somente o Owner registra recebimentos.' using errcode = '42501';
@@ -180,6 +183,15 @@ begin
   end if;
   if r.price_cents <= 0 then
     raise exception 'Inscrição gratuita não tem recebimento.' using errcode = '22023';
+  end if;
+  -- Cobranca online (Asaas, PR #79) aberta ou paga para este pedido: nao registrar recebimento manual por cima
+  -- (evita pagamento em duplicidade). A tabela so existe depois da migration da integracao; ate la nada a checar.
+  if to_regclass('public.course_payment_checkouts') is not null then
+    execute 'select exists (select 1 from public.course_payment_checkouts where request_id = $1 and status in (''creating'', ''active'', ''paid'', ''manual_review'', ''disputed''))'
+      into v_aberta using p_request_id;
+    if v_aberta then
+      raise exception 'Há uma cobrança online aberta ou paga para esta inscrição. Resolva-a antes de registrar um recebimento manual.' using errcode = 'PT409';
+    end if;
   end if;
   if p_amount_cents is distinct from r.price_cents then
     raise exception 'O valor informado difere do valor da inscrição.' using errcode = '22023';

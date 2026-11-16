@@ -322,6 +322,26 @@ test("regressao: fila antiga (aprovar, recusar, cancelar) e matricula gratuita s
   assert.equal(Number((await db.query("select count(*) n from public.course_enrollment_payments")).rows[0].n), 0);
 });
 
+test("cobranca online aberta ou paga (tabela da #79) bloqueia o recebimento manual; cancelada/expirada nao", async () => {
+  const { db, receber, q, status, id } = await pronto();
+  await db.exec("create table public.course_payment_checkouts (id uuid primary key default gen_random_uuid(), request_id uuid not null, status text not null)");
+  for (const aberto of ["creating", "active", "paid", "manual_review", "disputed"]) {
+    await db.query("delete from public.course_payment_checkouts");
+    await db.query("insert into public.course_payment_checkouts(request_id, status) values ($1,$2)", [id, aberto]);
+    const r = await receber();
+    assert.equal(r.code, "PT409", aberto);
+    assert.match(r.message, /cobrança online/);
+  }
+  assert.equal(await status(id), "aguardando_pagamento");
+  assert.equal((await q("select count(*)::int n from public.course_enrollment_payments"))[0].n, 0);
+  for (const fechado of ["canceled", "expired", "failed", "refunded"]) {
+    await db.query("delete from public.course_payment_checkouts");
+    await db.query("insert into public.course_payment_checkouts(request_id, status) values ($1,$2)", [id, fechado]);
+  }
+  const ok = await receber();
+  assert.equal(ok.ok, true, ok.message);
+});
+
 test("rollback: sem recebimentos remove tudo; com recebimentos preserva a auditoria", async () => {
   const a = await pronto();
   await a.db.exec(ROLLBACK);
