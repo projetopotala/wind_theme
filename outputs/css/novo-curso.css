@@ -67,3 +67,19 @@
 .op-avancado>summary small{font-weight:400;opacity:.65}
 .op-avancado-acoes{display:flex;flex-wrap:wrap;gap:.5rem;margin:.4rem 0 .8rem}
 @media (max-width:600px){.cp-curso-acoes{width:100%}.cp-curso-acoes .op-button{flex:1 1 calc(50% - .45rem)}}
+
+/* Recebimento manual de curso (Inscricoes de cursos) */
+.ic-aviso{margin:0;padding:.7rem .9rem;border-radius:.6rem;border:1px solid color-mix(in srgb,#d9a441 55%,transparent);background:color-mix(in srgb,#d9a441 12%,transparent)}
+.ic-resumo{display:grid;gap:.5rem;margin:0}
+.ic-resumo div{display:grid;gap:.1rem}
+.ic-resumo dt{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;opacity:.75}
+.ic-resumo dd{margin:0;overflow-wrap:anywhere}
+.ic-recebimento{font-size:.9rem;opacity:.9;overflow-wrap:anywhere}
+.ic-opcoes{display:grid;gap:.5rem;border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:.7rem;padding:.7rem .9rem;margin:0;min-width:0}
+.ic-recebimento-dialog form,.ic-recebimento-dialog .ic-corpo{max-width:36rem}
+.ic-recebimento-dialog textarea,.ic-recebimento-dialog select,.ic-recebimento-dialog input:not([type="checkbox"]):not([type="radio"]){width:100%;box-sizing:border-box;min-height:2.6rem}
+.ic-recebimento-dialog .ic-corpo{display:grid;gap:.85rem}
+.ic-recebimento-dialog label{display:grid;gap:.3rem}
+.ic-recebimento-dialog .op-check{display:flex;align-items:flex-start;gap:.5rem}
+.ic-recebimento-dialog .ic-acoes .op-button{min-height:2.75rem}
+@media (max-width:560px){.ic-recebimento-dialog .ic-acoes .op-button{flex:1 1 100%}}
