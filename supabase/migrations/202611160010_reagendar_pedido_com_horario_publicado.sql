@@ -7,9 +7,11 @@
 -- Correcao minima: so a funcao validate_appointment_schedule_slot_match (gatilho que roda ao criar o item da agenda da
 -- confirmacao). Sem tabela, politica RLS ou funcao de sala/LiveKit.
 --   * Horario IGUAL ao do slot: nada muda (o slot ja foi marcado booked pelo gatilho existente).
---   * Horario DIFERENTE: o slot e liberado (available se ainda futuro; cancelled se ja passou) e o pedido deixa de apontar
+--   * Horario DIFERENTE, SOMENTE na criacao do item da agenda (confirmacao): o slot e liberado (available se ainda futuro; cancelled se ja passou) e o pedido deixa de apontar
 --     para ele (appointment_slot_id = null). A sala passa a usar a janela da consulta da agenda, como nos pedidos sem horario.
---   * Continua recusando slot que nao pertence mais ao pedido (PT409) e horario invalido (22023).
+--   * Continua recusando slot que nao pertence mais ao pedido (PT409), horario invalido e QUALQUER alteracao posterior de
+--     horario de consulta que ainda esteja presa a um slot (22023, regra anterior). Mesmos atributos da funcao anterior
+--     (sem SECURITY DEFINER): as gravacoes acontecem dentro da RPC de confirmacao, que ja e SECURITY DEFINER.
 -- O pedido original continua o mesmo registro (encerrada, com reservation_schedule_id); nada e apagado.
 -- Reversao: supabase/rollbacks/202611160010_rollback_reagendar_pedido_com_horario_publicado.sql
 
@@ -18,7 +20,6 @@ begin;
 create or replace function public.validate_appointment_schedule_slot_match()
 returns trigger
 language plpgsql
-security definer
 set search_path = ''
 as $$
 declare
@@ -56,7 +57,10 @@ begin
     raise exception 'Horário da reserva inválido.' using errcode = '22023';
   end;
   if document_start is distinct from slot.starts_at or document_end is distinct from slot.ends_at then
-    /* Reagendamento do Owner: libera o horario publicado e desliga o pedido dele. */
+    if tg_op <> 'INSERT' then
+      raise exception 'O horário da reserva diverge do slot solicitado.' using errcode = '22023';
+    end if;
+    /* Reagendamento do Owner na confirmacao: libera o horario publicado e desliga o pedido dele. */
     update public.appointment_slots
       set status = case when starts_at > now() then 'available' else 'cancelled' end,
           held_by_request_id = null, updated_at = now()

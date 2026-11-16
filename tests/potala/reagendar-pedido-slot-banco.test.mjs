@@ -146,3 +146,30 @@ test("migration nao mexe em RLS, tabelas, LiveKit nem salas; rollback restaura o
   assert.match(ROLLBACK, /diverge do slot solicitado/);
   assert.doesNotMatch(ROLLBACK, /sync_appointment_slot_state/);
 });
+
+test("fora da confirmacao a regra anterior vale: consulta presa a slot nao muda de horario depois", async () => {
+  const ctx = await montar();
+  const [ini, fim] = FUT(3);
+  const { id } = await pedidoComSlot(ctx, { ini, fim });
+  await ctx.confirmar(id, ini, fim);
+  await assert.rejects(() => ctx.db.query("update public.op_records set document = document || jsonb_build_object('starts_at', $2::text, 'ends_at', $3::text) where collection='schedule_items' and document->>'appointment_request_id'=$1", [id, new Date(ini.valueOf() + 3600e3).toISOString(), new Date(fim.valueOf() + 3600e3).toISOString()]), /diverge do slot/);
+});
+
+test("rollback depois de reagendar: consulta ja reagendada continua valida e a sala continua abrindo", async () => {
+  const ctx = await montar();
+  const [ini, fim] = FUT(3);
+  const { id } = await pedidoComSlot(ctx, { ini, fim });
+  const novo = new Date(Date.now() + 10 * 60e3);
+  await ctx.confirmar(id, novo, new Date(novo.valueOf() + 1800e3));
+  await ctx.db.exec(ROLLBACK);
+  const p = await pedidoDe(ctx.db, id);
+  assert.equal(p.status, "encerrada");
+  assert.equal(p.appointment_slot_id, null);
+  assert.equal((await ctx.contexto(U.cliente, id)).state, "open");
+  assert.equal((await ctx.contexto(U.prof, id)).state, "open");
+  /* e voltando a regra antiga, um novo pedido com slot volta a exigir o horario exato */
+  const [i2, f2] = FUT(6);
+  const outro = await pedidoComSlot(ctx, { ini: i2, fim: f2 });
+  const [i3, f3] = FUT(7);
+  await assert.rejects(() => ctx.confirmar(outro.id, i3, f3), /diverge do slot/);
+});
