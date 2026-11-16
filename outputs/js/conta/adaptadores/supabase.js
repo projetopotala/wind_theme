@@ -36,7 +36,7 @@ const CAMPOS = Object.freeze({
   salvos: { id: "id", tipo: "item_type", ref: "item_ref", titulo: "title", href: "href", imagem: "image_url", salvoEm: "saved_at" },
   historico: { id: "id", tipo: "item_type", ref: "item_ref", titulo: "title", href: "href", progresso: "progress", visitadoEm: "visited_at" },
   acompanhando: { id: "id", tipo: "subject_type", ref: "subject_ref", rotulo: "label", desde: "followed_at" },
-  inscricoes: { id: "id", cursoRef: "course_ref", curso: "course_title", professor: "teacher_name", modalidade: "modality", status: "status", proximaAula: "next_session_at", linkAula: "join_url", conteudoHref: "content_href", imagem: "image_url", inscritoEm: "enrolled_at" },
+  inscricoes: { id: "id", cursoRef: "course_ref", curso: "course_title", professor: "teacher_name", modalidade: "modality", status: "status", proximaAula: "next_session_at", linkAula: "join_url", abreEm: "join_opens_at", salaEstado: "room_state", conteudoHref: "content_href", imagem: "image_url", inscritoEm: "enrolled_at" },
   progressos: { inscricaoId: "enrollment_id", total: "lessons_total", concluidas: "lessons_done", ultimaAulaRef: "last_lesson_ref", ultimoAcesso: "last_access_at" },
   agenda: { id: "id", tipo: "kind", titulo: "title", inicio: "starts_at", fim: "ends_at", local: "location", origem: "origin", fonteRef: "source_ref", fonteHref: "source_href" },
   atendimentos: { id: "id", servico: "service", modalidade: "modality", dataPreferida: "preferred_date", periodoPreferido: "preferred_period", status: "status", horarioId: "slot_id", inicio: "starts_at", fim: "ends_at", reservaId: "reservation_schedule_id", criadaEm: "created_at", atualizadaEm: "updated_at" },
@@ -404,6 +404,8 @@ export function criarDadosSupabase({ client } = {}) {
         modalidade: String(t.modality || ""),
         proximaAula: t.next_session_at || null,
         linkAula: typeof t.join_url === "string" ? t.join_url : null,
+        abreEm: t.join_opens_at || null,
+        salaEstado: typeof t.room_state === "string" ? t.room_state : null,
         alunos: Number.isInteger(t.students) ? t.students : null,
       }));
     },
