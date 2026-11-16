@@ -40,7 +40,14 @@ export function slotErrorMessage(error) {
 const profileName = (state, id) => (state.profiles || []).find((item) => item.id === id)?.display_name || "";
 const fmtTime = (iso) => String(iso || "").slice(11, 16);
 
-function whenOf(row, suggestedTime) {
+function whenOf(row, suggestedTime, operational = {}) {
+  /* Consulta confirmada de pedido sem slot: o horário exato está no item da agenda ligado ao pedido. */
+  const item = row.reservation_schedule_id ? (operational.schedule_items || []).find((s) => s.id === row.reservation_schedule_id) : null;
+  if (item?.starts_at) {
+    const f = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const h = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+    return `${f.format(new Date(item.starts_at)).replace(",", " às")}${item.ends_at ? ` - até ${h.format(new Date(item.ends_at))}` : ""}`;
+  }
   const time = suggestedTime(row);
   if (time.fromSlot) return `${dmy(time.start.slice(0, 10))} · ${fmtTime(time.start)}–${fmtTime(time.end)}`;
   return `${dmy(row.preferred_date)} · ${PERIODS[row.preferred_period] || row.preferred_period} (horário a definir)`;
@@ -50,7 +57,7 @@ function summary(row, state, suggestedTime) {
   const professional = profileName(state, row.professional_profile_id) || "A definir";
   return `<dl class="atend-resumo"><dt>Cliente</dt><dd>${esc(row.requester_name)}</dd>
     <dt>Profissional</dt><dd>${esc(professional)}</dd><dt>Serviço</dt><dd>${esc(row.service)}</dd>
-    <dt>Data e horário</dt><dd>${esc(whenOf(row, suggestedTime))}</dd>
+    <dt>Data e horário</dt><dd>${esc(whenOf(row, suggestedTime, state))}</dd>
     <dt>Modalidade</dt><dd>${esc(row.modality === "online" ? "Online" : row.modality === "presencial" ? "Presencial" : row.modality)}</dd></dl>`;
 }
 

@@ -13,7 +13,7 @@ test("sem horarios: cliente ainda pode solicitar o servico publicado", () => {
   assert.match(html, /data-form="atendimento-sem-horario"/);
   assert.match(html, /Solicitar atendimento/);
   assert.match(html, /value="of-1" data-modalidade="online"/);
-  assert.match(html, /name="dataPreferida" min="2026-11-17"/);
+  assert.match(html, /name="dataPreferida" min="2026-11-16"/);
   assert.doesNotMatch(html, /Nenhum horário de atendimento está disponível agora/);
   assert.doesNotMatch(html, /data-form="atendimento"[ >]/, "sem horario nao mostra o seletor de horario");
 });
@@ -56,7 +56,7 @@ test("REGRESSAO 16/11: consulta futura de pedido sem horario fica em Confirmadas
   assert.doesNotMatch(anteriores, /Meditação/);
 });
 
-test("envio sem horario confere o minimo (amanha) e mostra a data enviada", () => {
+test("envio sem horario confere o minimo (hoje) e mostra a data enviada", () => {
   const app = readFileSync(new URL("../../outputs/js/conta/spa/app.js", import.meta.url), "utf8");
   assert.match(app, /String\(campos\.dataPreferida\) < minimo/);
   assert.match(app, /Solicitação recebida para \$\{diaEscolhido\}/);

@@ -31,7 +31,7 @@ import historico from "./vistas/historico.js";
 import acompanhando from "./vistas/acompanhando.js";
 import notificacoes from "./vistas/notificacoes.js";
 import configuracoes from "./vistas/configuracoes.js";
-import atendimentos from "./vistas/atendimentos.js";
+import atendimentos, { periodoEncerrado } from "./vistas/atendimentos.js";
 import { APPOINTMENT_REQUESTS_ENABLED } from "../../appointments/config.js";
 import { erroDaUrl } from "../confirmar-conta.js";
 import { lerArtigosPublicados } from "../../blog/artigos-publicados.js";
@@ -424,10 +424,11 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       const opcao = semHorario.querySelector("select[name='ofertaId']")?.selectedOptions?.[0];
       if (!campos.ofertaId || !opcao) { aviso.textContent = "Escolha o serviço."; return; }
       if (!/^\d{4}-\d{2}-\d{2}$/.test(String(campos.dataPreferida || ""))) { aviso.textContent = "Escolha o dia de preferência."; return; }
-      /* O minimo (amanha, fuso de Sao Paulo) vem do proprio campo; o formulario e novalidate, entao e conferido aqui. */
+      /* O minimo (hoje, fuso de Sao Paulo) vem do proprio campo; o formulario e novalidate, entao e conferido aqui. */
       const minimo = semHorario.querySelector("input[name='dataPreferida']")?.getAttribute("min") || "";
-      if (minimo && String(campos.dataPreferida) < minimo) { aviso.textContent = "Escolha um dia a partir de amanhã."; return; }
+      if (minimo && String(campos.dataPreferida) < minimo) { aviso.textContent = "Escolha um dia a partir de hoje."; return; }
       if (!["manha", "tarde", "noite"].includes(campos.periodoPreferido)) { aviso.textContent = "Escolha o período."; return; }
+      if (periodoEncerrado(String(campos.dataPreferida), campos.periodoPreferido)) { aviso.textContent = "Esse período de hoje já terminou. Escolha outro período ou outro dia."; return; }
       const diaEscolhido = String(campos.dataPreferida).split("-").reverse().join("/");
       if (!globalThis.crypto?.randomUUID) { aviso.textContent = "Seu navegador não oferece a proteção necessária para enviar agora."; return; }
       semHorario.dataset.idempotencia ||= globalThis.crypto.randomUUID();

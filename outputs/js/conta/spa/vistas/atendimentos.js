@@ -7,11 +7,27 @@ import { caminhoDaSala } from "../../../sala/estado-sala.js";
  * O link existe só para consulta online confirmada e futura. Ele não prova
  * acesso: a página da sala pergunta ao banco quem é a pessoa e se a janela abriu.
  */
-export function ligacaoDaSala(pedido, tipo) {
+export function ligacaoDaSala(pedido, tipo, agora = new Date()) {
   if (tipo !== "confirmada" || pedido?.modalidade !== "online" || !pedido.id) return "";
+  const inicio = new Date(pedido.inicio || "");
+  const referencia = agora instanceof Date ? agora : new Date(agora);
+  /* Espelho da janela do banco, só para a tela: antes de abrir diz quando abre; o acesso real é decidido na sala. */
+  if (Number.isFinite(inicio.valueOf()) && referencia.valueOf() < inicio.valueOf() - 15 * 60 * 1000) {
+    const abre = new Date(inicio.valueOf() - 15 * 60 * 1000);
+    return `<p class="mp-atendimento-sala"><span class="mp-nota">A sala abre ${e(quandoAbre(abre, referencia))}, 15 minutos antes do horário. Atualize a página nesse horário.</span></p>`;
+  }
   try {
     return `<p class="mp-atendimento-sala"><a class="mp-botao" href="${e(caminhoDaSala(pedido.id))}">Entrar na sala</a> <span class="mp-nota">A sala abre 15 minutos antes do horário.</span></p>`;
   } catch { return ""; }
+}
+
+const diaSP = (data) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(data);
+function quandoAbre(abre, agora) {
+  const hora = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }).format(abre);
+  const dias = Math.round((Date.parse(`${diaSP(abre)}T00:00:00Z`) - Date.parse(`${diaSP(agora)}T00:00:00Z`)) / 86400000);
+  if (dias === 0) return `hoje às ${hora}`;
+  if (dias === 1) return `amanhã às ${hora}`;
+  return `em ${new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit" }).format(abre)} às ${hora}`;
 }
 
 const TOLERANCIA_DA_SALA_MS = 30 * 60 * 1000;
@@ -32,7 +48,7 @@ function horarioLegivel(valor) {
     : "Horário a confirmar";
 }
 
-function listaDePedidos(atendimentos, vazioTexto = "Você ainda não fez uma solicitação de atendimento.", tipo = "pedido") {
+function listaDePedidos(atendimentos, vazioTexto = "Você ainda não fez uma solicitação de atendimento.", tipo = "pedido", agora = new Date()) {
   if (!atendimentos.length) return vazio({ texto: vazioTexto });
   return `<ol class="mp-atendimentos-lista">${atendimentos.map((pedido) => `<li class="mp-atendimento">
     <div>
@@ -40,7 +56,7 @@ function listaDePedidos(atendimentos, vazioTexto = "Você ainda não fez uma sol
       <h3>${e(pedido.servico)}</h3>
       <p class="mp-cartao-detalhe">${e(MODALIDADES[pedido.modalidade])} · ${e(pedido.inicio ? horarioLegivel(pedido.inicio) : `${dataLegivel(pedido.dataPreferida)} · ${PERIODOS[pedido.periodoPreferido]}`)}</p>
     </div>
-    ${ligacaoDaSala(pedido, tipo)}
+    ${ligacaoDaSala(pedido, tipo, agora)}
     <p class="mp-atendimento-nota">${tipo === "confirmada"
       ? "Consulta confirmada. Os detalhes também estão disponíveis na sua Agenda."
       : tipo === "anterior"
@@ -160,6 +176,19 @@ function formularioHorario(opcoes, horarios, ofertaEscolhida = null) {
  * Usa submit_authenticated_appointment_request (identidade da sessao, RLS e limite no banco).
  * Nao reserva nada: a equipe escolhe profissional e horario e so entao a consulta e confirmada.
  */
+export function hojeISO(agora = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(agora);
+}
+
+/* Fim de cada período (hora cheia, America/Sao_Paulo): hoje só vale o período que ainda não terminou. */
+const FIM_DO_PERIODO = Object.freeze({ manha: 12, tarde: 18, noite: 24 });
+export function periodoEncerrado(dia, periodo, agora = new Date()) {
+  if (dia !== hojeISO(agora) || !FIM_DO_PERIODO[periodo]) return false;
+  const hora = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "America/Sao_Paulo", hour: "2-digit", hourCycle: "h23" }).format(agora));
+  const minutos = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "America/Sao_Paulo", minute: "2-digit" }).format(agora));
+  return hora + minutos / 60 >= FIM_DO_PERIODO[periodo];
+}
+
 export function amanhaISO(agora = new Date()) {
   const d = new Date(agora.valueOf() + 24 * 60 * 60 * 1000);
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(d);
@@ -167,7 +196,9 @@ export function amanhaISO(agora = new Date()) {
 
 function formularioSemHorario(opcoes, temHorarios, ofertaEscolhida, agora) {
   if (!opcoes.length) return `<p class="mp-aviso" role="status">Ainda não há serviços de atendimento publicados pelo Instituto.</p>`;
-  const minimo = amanhaISO(agora);
+  const minimo = hojeISO(agora);
+  const livres = Object.keys(PERIODOS).filter((periodo) => !periodoEncerrado(minimo, periodo, agora));
+  const diaInicial = livres.length ? minimo : amanhaISO(agora);
   const titulo = temHorarios ? "Prefere outro dia? Peça sem escolher horário" : "Peça seu atendimento";
   const nota = temHorarios
     ? "Se nenhum horário acima servir, diga sua preferência. A equipe responde com profissional e horário."
@@ -182,13 +213,11 @@ function formularioSemHorario(opcoes, temHorarios, ofertaEscolhida, agora) {
       </select>
     </label>
     <label>Dia de preferência
-      <input type="date" name="dataPreferida" min="${e(minimo)}" value="${e(minimo)}" required>
+      <input type="date" name="dataPreferida" min="${e(minimo)}" value="${e(diaInicial)}" required>
     </label>
     <label>Período de preferência
       <select name="periodoPreferido" required>
-        <option value="manha">Manhã</option>
-        <option value="tarde">Tarde</option>
-        <option value="noite">Noite</option>
+        ${Object.entries(PERIODOS).map(([valor, nome]) => `<option value="${valor}"${diaInicial === minimo && periodoEncerrado(minimo, valor, agora) ? " disabled" : ""}>${nome}</option>`).join("")}
       </select>
     </label>
     <p class="mp-nota">Isto é uma solicitação, não uma consulta marcada. Ela aparece abaixo em "Solicitações pendentes".</p>
@@ -241,7 +270,7 @@ const vista = {
       corpo: listaDePedidos(pendentes, "Nenhuma solicitação aguarda retorno da equipe."),
     })}${secao({
       id: "mp-atendimentos-confirmados", kicker: "Próximos atendimentos", titulo: "Consultas confirmadas",
-      corpo: listaDePedidos(confirmados, "Quando uma consulta futura for confirmada, ela aparecerá aqui e na sua Agenda.", "confirmada"),
+      corpo: listaDePedidos(confirmados, "Quando uma consulta futura for confirmada, ela aparecerá aqui e na sua Agenda.", "confirmada", referencia),
     })}${secao({
       id: "mp-atendimentos-historico", classe: "mp-secao-discreta", kicker: "Histórico", titulo: "Horários confirmados anteriores",
       corpo: listaDePedidos(anteriores, "Nenhum horário confirmado anterior.", "anterior"),

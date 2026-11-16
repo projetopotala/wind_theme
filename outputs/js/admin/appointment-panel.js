@@ -8,6 +8,8 @@ import { caminhoDaSala } from "../sala/estado-sala.js";
 import { renderAtendimentos, readSlotForm, syncSlotForm, computeEnd, slotErrorMessage } from "./atendimentos-view.js";
 
 const LABELS = { recebida: "Recebida", em_contato: "Em contato", encerrada: "Encerrada", cancelada: "Cancelada" };
+/* Pedido com reserva e a consulta confirmada; "Encerrada" sozinho parecia pedido fechado sem consulta. */
+const labelOf = row => (row.reservation_schedule_id && row.status === "encerrada" ? "Confirmada" : (LABELS[row.status] || row.status));
 const PERIODS = { manha: "Manhã", tarde: "Tarde", noite: "Noite" };
 const accessDenied = error => [error?.code, error?.status].some(value => ["401", "403", "42501", "PGRST301"].includes(String(value)));
 
@@ -22,7 +24,7 @@ function localDateTime(value) {
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
 
-export function suggestedTime(row) {
+export function suggestedTime(row, now = new Date()) {
   const slot = row.appointment_slot;
   if (row.appointment_slot_id && slot?.id === row.appointment_slot_id && slot.held_by_request_id === row.id) {
     const start = localDateTime(slot.starts_at);
@@ -30,7 +32,12 @@ export function suggestedTime(row) {
     if (start && end) return { start, end, fromSlot: true };
   }
   const hour = { manha: "09:00", tarde: "14:00", noite: "18:00" }[row.preferred_period] || "09:00";
-  const start = `${row.preferred_date}T${hour}`;
+  let start = `${row.preferred_date}T${hour}`;
+  /* Pedido para hoje: a sugestão nunca fica no passado; vai para a próxima hora cheia (o banco recusa horário passado). */
+  if (new Date(`${start}:00-03:00`).valueOf() <= now.valueOf() && localDateTime(now).slice(0, 10) === row.preferred_date) {
+    const proxima = new Date(Math.ceil((now.valueOf() + 60000) / 3600000) * 3600000);
+    start = localDateTime(proxima);
+  }
   const end = new Date(`${start}:00-03:00`);
   end.setHours(end.getHours() + 1);
   const localEnd = new Date(end.valueOf() - 3 * 3600000).toISOString().slice(0, 16);
@@ -97,7 +104,7 @@ export function renderAppointmentPanel({ rows, phase, message, busy, drafts, ope
       <dl><dt>Solicitante</dt><dd>${esc(row.requester_name)}</dd><dt>Modalidade</dt><dd>${esc(row.modality === "online" ? "Online" : row.modality === "presencial" ? "Presencial" : row.modality)}</dd>
       <dt>Preferências (sem reserva)</dt><dd>${esc(String(row.preferred_date).split("-").reverse().join("/"))} · ${esc(PERIODS[row.preferred_period] || row.preferred_period)}</dd>
       <dt>Contato (${esc(row.contact_type === "email" ? "e-mail" : "telefone")})</dt><dd style="overflow-wrap:anywhere">${esc(row.contact)}</dd>
-      <dt>Solicitada em</dt><dd>${esc(new Date(row.created_at).toLocaleString("pt-BR"))}</dd><dt>Estado atual</dt><dd>${esc(LABELS[row.status] || row.status)}</dd></dl>
+      <dt>Solicitada em</dt><dd>${esc(new Date(row.created_at).toLocaleString("pt-BR"))}</dd><dt>Estado atual</dt><dd>${esc(labelOf(row))}</dd></dl>
       <label>Estado de acompanhamento<select data-appointment-state="${esc(row.id)}" ${busy ? "disabled" : ""}>${STATES.map(state => `<option value="${state}" ${state === (drafts[row.id] || row.status) ? "selected" : ""}>${LABELS[state]}</option>`).join("")}</select></label>
       <button type="button" data-appointment-save="${esc(row.id)}" ${busy ? "disabled" : ""}>Salvar estado</button>
       ${controls && !busy && reservationsEnabled ? reservationForm(row, operationalState) : ""}</article>`).join("")}</section>`;
