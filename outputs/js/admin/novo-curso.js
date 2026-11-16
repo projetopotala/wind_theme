@@ -209,7 +209,12 @@ export function createNovoCurso({ root, operations, client = null, onSalvo = () 
     const botao = form.querySelector("[type='submit']");
     if (botao) botao.disabled = true;
     const r = await executarPlano({ operations, passos, idsAntes: idsPorColecao(s()) });
-    if (!r.ok) { desenhar({ erros: [`Não foi possível salvar: ${r.falha.motivo}. O que já foi gravado permanece; salve de novo para continuar.`] }); return; }
+    if (!r.ok) {
+      /* O que ja foi gravado fica ligado ao formulario: salvar de novo continua (atualiza), nunca cria outro curso. */
+      dados = { ...dados, cursoId: r.refs.curso || dados.cursoId, turmaId: r.refs.turma || dados.turmaId };
+      desenhar({ erros: [`Não foi possível salvar: ${r.falha.motivo}. O que já foi gravado permanece; salve de novo para continuar.`] });
+      return;
+    }
     dados = dadosDoCurso(s(), r.refs.curso || dados.cursoId);
     desenhar({ mensagem: dados.publicar ? "Curso salvo e publicado. Ele aparece no site se estiver completo." : "Curso salvo como rascunho." });
     onSalvo(r.refs);

@@ -105,3 +105,12 @@ test("registrar interesse: sem sessao pede login; com sessao usa a funcao do ban
   assert.deepEqual(await registrarInteresse("d1", { obterCliente: cliente({}, { data: { new: false } }) }), { estado: "ja-registrado" });
   assert.deepEqual(await registrarInteresse("d1", { obterCliente: cliente({}, { error: { code: "22023" } }) }), { estado: "erro" });
 });
+
+test("falha durante o salvamento guarda os ids gravados para continuar sem duplicar", () => {
+  const src = readFileSync(new URL("../../outputs/js/admin/novo-curso.js", import.meta.url), "utf8");
+  assert.match(src, /dados = \{ \.\.\.dados, cursoId: r\.refs\.curso \|\| dados\.cursoId, turmaId: r\.refs\.turma \|\| dados\.turmaId \}/);
+  /* com o id gravado, o plano seguinte atualiza (tem id) em vez de criar */
+  const dados = { ...novoFormulario(), cursoId: "d-yoga", nome: "Curso de Yoaga" };
+  assert.equal(montarPlanoNovoCurso(dados, S)[0].payload.id, "d-yoga");
+  assert.deepEqual(validarNovoCurso(dados, S), [], "nao acusa nome repetido do proprio curso");
+});

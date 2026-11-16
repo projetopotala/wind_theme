@@ -15,6 +15,9 @@
 -- 3. course_interests + register_course_interest: o aluno autenticado registra interesse num curso da lista 2
 --    (ou da 1). Identidade so por auth.uid(); um registro por pessoa e curso; RLS: cada um le apenas os seus.
 -- 4. admin_list_course_interests: somente o Owner/administrador (is_portal_admin) ve os interessados.
+-- 5. op_price_cents_guard: na GRAVACAO de curso ou turma, price_cents so pode ser nulo (sem valor) ou inteiro
+--    de 0 a 999999999 (centavos). Texto, fracao ou negativo sao recusados (22023). Preco ausente nunca vira gratuito:
+--    gratuito e o inteiro 0 explicito. Documentos existentes nao sao tocados (a regra vale para novas gravacoes).
 -- Reversao: supabase/rollbacks/202611160006_rollback_cursos_catalogo_simples.sql.
 
 begin;
@@ -90,6 +93,27 @@ as $$
       and coalesce(nullif(btrim(o.document ->> 'summary'), ''), nullif(btrim(d.document ->> 'summary'), '')) is not null
   ) c;
 $$;
+
+create or replace function public.op_price_cents_guard()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.collection in ('activity_definitions', 'activity_offerings')
+    and new.document ? 'price_cents'
+    and jsonb_typeof(new.document -> 'price_cents') <> 'null'
+    and not (jsonb_typeof(new.document -> 'price_cents') = 'number'
+      and (new.document ->> 'price_cents') ~ '^(0|[1-9][0-9]{0,8})$') then
+    raise exception 'Valor inválido: use centavos inteiros (0 a 999999999).' using errcode = '22023';
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.op_price_cents_guard() from public, anon, authenticated;
+drop trigger if exists op_price_cents_guard on public.op_records;
+create trigger op_price_cents_guard before insert or update on public.op_records
+  for each row execute function public.op_price_cents_guard();
 
 create or replace function public.list_public_course_definitions()
 returns jsonb

@@ -121,3 +121,30 @@ test("rollback volta ao catalogo anterior e remove apenas o que a migration crio
   assert.equal(Number((await db.query("select count(*) n from pg_proc where proname in ('list_public_course_definitions','register_course_interest','admin_list_course_interests')")).rows[0].n), 0);
   assert.equal(Number((await db.query("select count(*) n from pg_proc where proname='list_public_courses'")).rows[0].n), 1);
 });
+
+test("preco: so centavos inteiros sao gravados; ausente nao vira gratuito", async () => {
+  const { salvar, aula, abertas, como, db } = await montar();
+  const tenta = (preco) => salvar("definition.save", "activity_definitions", curso("p", { price_cents: preco })).then(() => true, (e) => e.code);
+  for (const ruim of ["15000", 150.5, -1, 1e10, "abc"]) assert.equal(await tenta(ruim), "22023", String(ruim));
+  for (const bom of [0, 1, 15000, null]) assert.equal(await tenta(bom), true, String(bom));
+  const tipo = (await db.query("select jsonb_typeof(document->'price_cents') t from public.op_records where id='p'")).rows[0].t;
+  assert.equal(tipo, "null");
+  /* turma sem valor (ausente) nao aparece como gratuita */
+  await salvar("definition.save", "activity_definitions", curso("c9", { price_cents: null }));
+  await salvar("offering.save", "activity_offerings", turma("t9", "c9", { price_cents: null }));
+  await aula("a9", "t9");
+  assert.equal((await abertas()).length, 0);
+  await salvar("offering.save", "activity_offerings", turma("t9", "c9", { price_cents: 4990 }));
+  const [aberta] = await abertas();
+  assert.equal(aberta.price_cents, 4990);
+  assert.equal(Number.isInteger(aberta.price_cents), true);
+  void como;
+});
+
+test("falha no meio do cadastro: curso publicado sem turma nao aparece como inscricao aberta; turma sem aula tambem nao", async () => {
+  const { salvar, abertas, outros } = await montar();
+  await salvar("definition.save", "activity_definitions", curso("parcial"));
+  await salvar("offering.save", "activity_offerings", turma("tp", "parcial"));
+  assert.equal((await abertas()).length, 0, "sem aula futura: nao abre inscricoes");
+  assert.deepEqual((await outros()).map((x) => x.id), ["parcial"], "aparece so como curso sem turma (sem preco)");
+});

@@ -67,6 +67,8 @@ $function$;
 
 revoke all on function public.list_public_courses() from public, anon, authenticated;
 grant execute on function public.list_public_courses() to anon, authenticated;
+drop trigger if exists op_price_cents_guard on public.op_records;
+drop function if exists public.op_price_cents_guard();
 drop function if exists public.admin_list_course_interests();
 drop function if exists public.register_course_interest(text);
 drop function if exists public.list_public_course_definitions();
