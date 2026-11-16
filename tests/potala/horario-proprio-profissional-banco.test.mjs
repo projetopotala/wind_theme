@@ -92,3 +92,19 @@ test("anonimo continua sem horarios; rollback restaura o comportamento anterior"
   assert.equal((await lista(U.prof)).length, 1, "rollback volta ao estado de Production");
   assert.equal((await pedir(U.prof, "aaaaaaaa-0000-0000-0000-000000000005")).ok, true);
 });
+
+test("profissional pode pedir horario de OUTRO profissional, nunca o proprio", async () => {
+  const { db, lista, pedir } = await montar();
+  await db.query("insert into public.op_records(collection,id,document) values ('profiles','perfil-outro','{\"id\":\"perfil-outro\",\"display_name\":\"TESTE INTERNO Outro\",\"roles\":[\"professional\"],\"active\":true,\"published\":true}'::jsonb)");
+  await db.query("insert into public.op_records(collection,id,document) values ('activity_offerings','oferta-outro','{\"id\":\"oferta-outro\",\"title\":\"TESTE INTERNO Outro servico\",\"definition_id\":\"def\",\"professional_id\":\"perfil-outro\",\"mode\":\"online\",\"capacity\":1}'::jsonb)");
+  await db.query("insert into public.appointment_slots(id, offering_id, professional_profile_id, starts_at, ends_at, status, created_by) values ('22222222-2222-2222-2222-222222222222','oferta-outro','perfil-outro', now() + interval '3 days', now() + interval '3 days 40 minutes','available',$1)", [U.owner]);
+  const vistos = (await lista(U.prof)).map((s) => s.id);
+  assert.deepEqual(vistos, ["22222222-2222-2222-2222-222222222222"], "ve so o horario do outro profissional");
+  const r = await db.exec(`set test.uid = '${U.prof}'; set role authenticated`).then(() =>
+    db.query("select public.submit_appointment_slot_request('aaaaaaaa-0000-0000-0000-000000000099'::uuid,'22222222-2222-2222-2222-222222222222') as r"))
+    .then((x) => ({ ok: true, r: x.rows[0].r }), (e) => ({ ok: false, message: e.message }))
+    .finally(() => db.exec("reset role; set test.uid = ''"));
+  assert.equal(r.ok, true, r.message);
+  assert.equal(r.r.status, "recebida");
+  assert.equal((await pedir(U.prof, "aaaaaaaa-0000-0000-0000-000000000098")).code, "42501", "o proprio continua bloqueado");
+});
