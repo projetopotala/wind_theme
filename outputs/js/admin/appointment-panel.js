@@ -167,6 +167,7 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     APPOINTMENT_LINK_LOCKED: "O vínculo desta reserva não pode ser alterado.",
     APPOINTMENT_NOT_READY: "A operação do Instituto ainda não está inicializada.",
     APPOINTMENT_INVALID: "Revise os dados da reserva: algum campo não confere com a solicitação.",
+    APPOINTMENT_OVERLAP: "Conflito de agenda: o profissional (ou a sala) já tem outro horário nesse período. Escolha outro horário.",
   });
   /* Qualquer falha descarta as linhas em memoria, entao o fallback precisa
      mandar recarregar: sem isso o painel fica vazio sem dizer o que fazer. */
@@ -186,6 +187,8 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
     } catch (error) {
       if (ticket !== epoch) return;
       if (accessDenied(error)) { clear(); return; }
+      /* Conflito de agenda: nada foi gravado; mantém a lista e o formulário aberto para escolher outro horário. */
+      if (error?.code === "APPOINTMENT_OVERLAP") { state.message = mensagemDaFalha(error); return; }
       // Não expor corpos HTTP/SQL nem conservar dados possivelmente obsoletos.
       state.rows = []; state.drafts = {}; state.phase = "error";
       state.message = mensagemDaFalha(error);
