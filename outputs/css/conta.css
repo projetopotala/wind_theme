@@ -949,6 +949,28 @@
 .mp-botao-aula { justify-self: start; margin-top: 6px; min-height: 44px; }
 .mp-aviso-aula { font-style: italic; }
 
+/* Aulas que voce ministra: cartao sem capa. O .mp-cartao base reserva uma coluna de 88px para a
+   imagem; aqui o unico filho (o corpo) caia nessa coluna e o texto ficava espremido. */
+.mp-cartao-professor { grid-template-columns: minmax(0, 1fr); align-items: start; gap: 0; padding: 16px 20px; }
+.mp-cartao-professor .mp-cartao-corpo { gap: 4px; }
+.mp-cartao-professor .mp-cartao-titulo { font-size: 1.3rem; line-height: 1.2; overflow-wrap: anywhere; }
+.mp-cartao-professor .mp-cartao-detalhe { font-size: .9rem; line-height: 1.4; }
+.mp-cartao-professor .mp-aula-quando { color: var(--conta-tinta); }
+.mp-cartao-professor .mp-aviso-aula {
+  margin-top: 8px;
+  padding: 9px 12px;
+  border-left: 3px solid var(--conta-ouro-texto);
+  border-radius: 0 10px 10px 0;
+  background: rgba(176, 138, 62, .12);
+  color: var(--conta-tinta);
+  font-style: normal;
+}
+.mp-cartao-professor .mp-botao-aula { margin-top: 10px; min-height: 46px; padding: 0 22px; font-size: .68rem; }
+@media (max-width: 620px) {
+  .mp-cartao-professor { grid-template-columns: minmax(0, 1fr); padding: 14px 16px; }
+  .mp-cartao-professor .mp-botao-aula { justify-self: stretch; text-align: center; justify-content: center; }
+}
+
 .mp-link {
   display: inline-flex;
   gap: 6px;

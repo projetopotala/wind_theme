@@ -49,12 +49,12 @@ export function aulasDoProfessor(aulas = [], agora = new Date()) {
   if (!lista.length) return "";
   const itens = lista.map((aula) => {
     const detalhe = [aula.modalidade, Number.isInteger(aula.alunos) ? `${aula.alunos} ${aula.alunos === 1 ? "aluno matriculado" : "alunos matriculados"}` : ""].filter(Boolean).join(" · ");
-    return `<li class="mp-cartao mp-cartao-curso" data-aula-professor="${e(aula.id)}">
+    return `<li class="mp-cartao mp-cartao-curso mp-cartao-professor" data-aula-professor="${e(aula.id)}">
     <div class="mp-cartao-corpo">
       <p class="mp-status" data-status="${e(aula.proximaAula ? "proximo_encontro" : "sem_aula")}">${aula.proximaAula ? "Próxima aula marcada" : "Nenhuma aula marcada"}</p>
       <h3 class="mp-cartao-titulo">${e(aula.curso)}</h3>
       ${detalhe ? `<p class="mp-cartao-detalhe">${e(detalhe)}</p>` : ""}
-      ${aula.proximaAula ? `<p class="mp-cartao-detalhe">Próxima aula: <strong>${e(quandoNoFuso(aula.proximaAula, agora))}</strong></p>` : ""}
+      ${aula.proximaAula ? `<p class="mp-cartao-detalhe mp-aula-quando">Próxima aula: <strong>${e(quandoNoFuso(aula.proximaAula, agora))}</strong></p>` : ""}
       ${acessoDaAulaDoProfessor(aula, agora)}
     </div>
   </li>`;
