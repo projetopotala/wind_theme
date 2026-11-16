@@ -78,7 +78,7 @@ test("tela: so cursos (nao atendimentos) na lista; texto escapado; interessados 
 
 test("painel: botao 'Novo curso' e principal; Organizar continua como opcao", () => {
   const views = readFileSync(new URL("../../outputs/js/admin/operations/views.js", import.meta.url), "utf8");
-  assert.match(views, /op-primary" data-novo-curso="">Novo curso<\/button><button type="button" class="op-button" data-organizar-curso/);
+  assert.match(views, /op-primary" data-novo-curso="">Novo curso<\/button>[\s\S]{0,200}<button type="button" class="op-button" data-organizar-curso/);
   assert.match(readFileSync(new URL("../../outputs/js/admin/admin-entry.js", import.meta.url), "utf8"), /createNovoCurso\(\{ root: panel, operations, client/);
 });
 

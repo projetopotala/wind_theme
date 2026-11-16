@@ -230,6 +230,16 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
       };
     },
 
+    async inscricoesCursos() {
+      exigirConta();
+      return aposUsarDados(await dados.inscricoesCursos());
+    },
+
+    async cancelarInscricaoCurso(id) {
+      exigirConta();
+      return aposUsarDados(await dados.cancelarInscricaoCurso(id));
+    },
+
     async opcoesAtendimento() {
       exigirConta();
       return aposUsarDados(await dados.opcoesAtendimento());

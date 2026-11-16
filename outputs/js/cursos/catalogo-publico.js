@@ -98,7 +98,17 @@ export function montarCartao(doc, curso, { hrefContato = "recepcao.html" } = {})
   detalhes.appendChild(linha(doc, "Próximo encontro", curso.proxima || "A combinar com o Instituto"));
   detalhes.appendChild(linha(doc, "Modalidade", curso.modalidade));
   detalhes.appendChild(linha(doc, "Valor", curso.valor || "Consulte o Instituto"));
-  const contato = elemento(doc, "a", "cp-contato", curso.esgotado ? "Falar com o Instituto sobre a próxima turma" : "Falar com o Instituto para se inscrever");
+  if (!curso.esgotado) {
+    const inscrever = elemento(doc, "button", "cp-interesse cp-inscrever", "Inscrever-se");
+    inscrever.setAttribute("type", "button");
+    inscrever.setAttribute("data-inscrever", curso.id);
+    detalhes.appendChild(inscrever);
+    const st = elemento(doc, "p", "cp-interesse-status");
+    st.setAttribute("role", "status");
+    st.setAttribute("data-inscrever-status", curso.id);
+    detalhes.appendChild(st);
+  }
+  const contato = elemento(doc, "a", "cp-contato", curso.esgotado ? "Falar com o Instituto sobre a próxima turma" : "Dúvidas? Fale com o Instituto");
   contato.setAttribute("href", hrefContato);
   detalhes.appendChild(contato);
   corpo.appendChild(detalhes);
@@ -217,6 +227,28 @@ export async function registrarInteresse(cursoId, { obterCliente = clienteDoPort
   return { estado: data?.new === false ? "ja-registrado" : "registrado" };
 }
 
+export async function pedirInscricao(turmaId, chave, { obterCliente = clienteDoPortal } = {}) {
+  const client = await obterCliente();
+  const { data: sessao } = await client.auth.getSession();
+  if (!sessao?.session) return { estado: "entrar" };
+  const { data, error } = await client.rpc("request_course_enrollment", { p_idempotency_key: chave, p_offering_id: turmaId });
+  if (error) {
+    const porCodigo = { 23514: "lotada", PT409: "ja-inscrito", 22023: "fechada", 42501: "confirmar-email" };
+    return { estado: porCodigo[error.code] || "erro" };
+  }
+  return { estado: data?.status === "solicitada" || data?.replayed ? "solicitada" : "erro" };
+}
+
+const MENSAGENS_INSCRICAO = {
+  entrar: "Entre na sua conta (Meu Potala) e volte aqui para se inscrever.",
+  solicitada: "Inscrição solicitada. Acompanhe em Meu Potala → Cursos. Ela ainda não é uma matrícula confirmada.",
+  "ja-inscrito": "Você já tem uma inscrição nesta turma. Veja em Meu Potala → Cursos.",
+  lotada: "A turma lotou. Fale com o Instituto sobre a próxima.",
+  fechada: "As inscrições desta turma não estão abertas agora.",
+  "confirmar-email": "Confirme seu e-mail para se inscrever.",
+  erro: "Não foi possível enviar agora. Tente de novo em instantes.",
+};
+
 const MENSAGENS_INTERESSE = {
   entrar: "Entre na sua conta (Meu Potala) e volte aqui para registrar o interesse.",
   registrado: "Interesse registrado. O Instituto avisa quando abrir uma turma.",
@@ -231,6 +263,23 @@ export async function iniciarCatalogoPublico(raiz = globalThis.document?.querySe
     return criarRestPublico({ config: SUPABASE_CONFIG });
   };
   await renderizarCatalogo(raiz, { buscar: async () => (await rest()).rpc("list_public_courses", {}) });
+  raiz.addEventListener("click", async (ev) => {
+    const botao = ev.target?.closest?.("[data-inscrever]");
+    if (!botao) return;
+    const id = botao.getAttribute("data-inscrever");
+    const status = raiz.querySelector(`[data-inscrever-status="${CSS.escape(id)}"]`);
+    botao.dataset.chave ||= globalThis.crypto?.randomUUID?.() || "";
+    if (!botao.dataset.chave) { if (status) status.textContent = MENSAGENS_INSCRICAO.erro; return; }
+    botao.disabled = true;
+    let r;
+    try { r = await pedirInscricao(id, botao.dataset.chave); } catch { r = { estado: "erro" }; }
+    if (status) {
+      status.textContent = MENSAGENS_INSCRICAO[r.estado];
+      if (r.estado === "entrar") { const a = document.createElement("a"); a.href = "/meu-potala.html"; a.textContent = " Entrar"; status.appendChild(a); }
+      if (r.estado === "solicitada" || r.estado === "ja-inscrito") { const a = document.createElement("a"); a.href = "/meu-potala.html#cursos"; a.textContent = " Ver em Meu Potala"; status.appendChild(a); }
+    }
+    botao.disabled = ["solicitada", "ja-inscrito", "lotada"].includes(r.estado);
+  });
   const outros = globalThis.document?.querySelector("[data-catalogo-outros]");
   if (!outros) return;
   await renderizarOutros(outros, { buscar: async () => (await rest()).rpc("list_public_course_definitions", {}) });
