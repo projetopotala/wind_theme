@@ -82,7 +82,12 @@ test("a seção mostra as três áreas, cliente, profissional, serviço, data e 
   await abrir(REQ);
   const slotCard = target.innerHTML.slice(target.innerHTML.indexOf(`data-appointment-row="${REQ}"`), target.innerHTML.indexOf(`data-appointment-row="${REQ_LEGACY}"`));
   assert.ok(!slotCard.includes("data-reservation-confirm"));
-  assert.match(slotCard, /Confirmar atendimento/);
+  assert.match(slotCard, /Confirmar agendamento/);
+  /* pedido com horario publicado: data, inicio e duracao EDITAVEIS (sem readonly) e aviso do horario escolhido */
+  assert.match(slotCard, /data-reservation-date type="date"/);
+  assert.match(slotCard, /data-reservation-start type="time"/);
+  assert.doesNotMatch(slotCard, /readonly/);
+  assert.match(slotCard, /data-reservation-aviso-slot/);
   await abrir(REQ_LEGACY);
   assert.equal(target.innerHTML.split("data-appointment-confirm=").length - 1, 1, "só um formulário aberto por vez");
   assert.match(target.innerHTML.slice(target.innerHTML.indexOf(`data-appointment-row="${REQ_LEGACY}"`)), /data-reservation-confirm/);
@@ -135,7 +140,7 @@ test("recusas do banco viram mensagens próprias e não apagam as solicitações
   assert.match(slotErrorMessage({}), /Não foi possível disponibilizar/);
 });
 
-test("confirma pedido com slot usando só os dados existentes, sem caixa de revisão", async () => {
+test("confirma pedido com slot pela Central: horário vai para a RPC e não exige igualdade ao slot", async () => {
   const { panel, handlers, calls } = setup();
   await panel.reload();
   const article = { querySelector: (sel) => ({
@@ -144,18 +149,20 @@ test("confirma pedido com slot usando só os dados existentes, sem caixa de revi
   await handlers.click({ target: { closest: (s) => (s === "[data-appointment-confirm]" ? button : null) } });
   assert.equal(calls.confirm.length, 1);
   assert.equal(calls.confirm[0].requestId, REQ);
-  assert.equal(calls.confirm[0].slotStartsAt, "2026-11-12T10:00");
-  assert.equal(calls.confirm[0].slotEndsAt, "2026-11-12T11:00");
+  assert.equal(calls.confirm[0].startsAt, "2026-11-12T10:00");
+  assert.equal(calls.confirm[0].slotStartsAt, "", "a Central permite reagendar; o banco decide liberar o slot");
 });
 
-test("horário diferente do slot solicitado não chega ao banco", async () => {
+test("Owner pode reagendar: horário diferente do slot chega ao banco pela RPC existente", async () => {
   const { panel, handlers, calls } = setup();
   await panel.reload();
   const article = { querySelector: (sel) => ({
     "[data-reservation-start]": { value: "2026-11-12T11:00" }, "[data-reservation-end]": { value: "2026-11-12T12:00" } }[sel] || null) };
   const button = { dataset: { appointmentConfirm: REQ }, closest: (s) => (s === "[data-appointment-row]" ? article : null) };
   await handlers.click({ target: { closest: (s) => (s === "[data-appointment-confirm]" ? button : null) } });
-  assert.equal(calls.confirm.length, 0);
+  assert.equal(calls.confirm.length, 1);
+  assert.equal(calls.confirm[0].startsAt, "2026-11-12T11:00");
+  assert.equal(calls.confirm[0].endsAt, "2026-11-12T12:00");
 });
 
 test("pedido legado continua exigindo a revisão marcada", async () => {
