@@ -16,5 +16,7 @@
 .cp-contato{display:inline-flex;align-items:center;min-height:2.75rem;margin-top:.5rem;font-weight:600}
 .cp-mensagem{grid-column:1/-1;padding:1.25rem;border:1px dashed color-mix(in srgb,currentColor 30%,transparent);border-radius:.9rem;max-width:42rem}
 .cp-mensagem p{margin:0 0 .75rem}
+.cp-interesse{min-height:2.75rem;padding:.5rem 1rem;font:inherit;font-weight:600;cursor:pointer;justify-self:start}
+.cp-interesse-status{margin:0;min-height:1.2em}
 .cp-tentar{min-height:2.75rem;padding:.5rem 1rem;font:inherit;cursor:pointer}
 @media (max-width:480px){.catalogo-publico{padding-inline:16px}.cp-lista{grid-template-columns:1fr}}

@@ -24,6 +24,14 @@ export function textoDeData(iso, fuso = "America/Sao_Paulo") {
   return `${dia}, às ${hora}`;
 }
 
+/* Valor oficial em centavos (inteiro). 0 = gratuito. Sem valor valido: vazio. */
+export function precoLegivel(c) {
+  const v = c?.price_cents;
+  if (!Number.isInteger(v) || v < 0) return "";
+  if (v === 0) return "Gratuito";
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v / 100);
+}
+
 /* Converte a linha do banco no que a tela mostra; nunca confia no formato. */
 export function prepararCurso(bruto, fuso) {
   const c = bruto && typeof bruto === "object" ? bruto : {};
@@ -46,7 +54,7 @@ export function prepararCurso(bruto, fuso) {
     modalidade: c.mode === "online" ? "Online" : "Presencial",
     disponibilidade,
     esgotado,
-    valor: String(c.price_text || "").trim(),
+    valor: precoLegivel(c),
     imagem: typeof c.image === "string" && IMAGEM_VALIDA.test(c.image) && !c.image.includes("..") ? c.image : "",
     professor: String(c.teacher_name || "").trim(),
     proxima: proxima ? textoDeData(proxima.starts_at, fuso) : "",
@@ -135,16 +143,115 @@ export async function renderizarCatalogo(raiz, { buscar, doc = raiz.ownerDocumen
   }
 }
 
+/* ---- Outros cursos do Instituto: aprovados, sem turma aberta. Sem preco e sem pagamento. ---- */
+export function prepararCursoSemTurma(bruto) {
+  const c = bruto && typeof bruto === "object" ? bruto : {};
+  const id = typeof c.id === "string" ? c.id : "";
+  const titulo = String(c.title || "").trim();
+  if (!id || !titulo) return null;
+  return {
+    id, titulo, tipo: TIPOS[c.kind] || "Curso", resumo: String(c.summary || "").trim(),
+    imagem: typeof c.image === "string" && IMAGEM_VALIDA.test(c.image) && !c.image.includes("..") ? c.image : "",
+  };
+}
+
+export function montarCartaoInteresse(doc, curso) {
+  const art = elemento(doc, "article", "cp-cartao cp-cartao--interesse");
+  art.setAttribute("data-curso-sem-turma", curso.id);
+  if (curso.imagem) {
+    const img = doc.createElement("img");
+    img.className = "cp-imagem"; img.setAttribute("src", curso.imagem); img.setAttribute("alt", ""); img.setAttribute("loading", "lazy");
+    art.appendChild(img);
+  }
+  const corpo = elemento(doc, "div", "cp-corpo");
+  corpo.appendChild(elemento(doc, "p", "cp-tipo", `${curso.tipo} · sem turma aberta`));
+  corpo.appendChild(elemento(doc, "h3", "cp-titulo", curso.titulo));
+  if (curso.resumo) corpo.appendChild(elemento(doc, "p", "cp-resumo", curso.resumo));
+  const botao = elemento(doc, "button", "cp-interesse", "Tenho interesse");
+  botao.setAttribute("type", "button");
+  botao.setAttribute("data-interesse", curso.id);
+  corpo.appendChild(botao);
+  const aviso = elemento(doc, "p", "cp-interesse-status");
+  aviso.setAttribute("role", "status");
+  aviso.setAttribute("data-interesse-status", curso.id);
+  corpo.appendChild(aviso);
+  art.appendChild(corpo);
+  return art;
+}
+
+export async function renderizarOutros(raiz, { buscar, doc = raiz.ownerDocument } = {}) {
+  const alvo = raiz.querySelector ? raiz.querySelector("[data-outros-lista]") || raiz : raiz;
+  const limpar = () => { while (alvo.firstChild) alvo.removeChild(alvo.firstChild); };
+  try {
+    const cursos = ((await buscar()) || []).map(prepararCursoSemTurma).filter(Boolean);
+    limpar();
+    raiz.hidden = cursos.length === 0;
+    cursos.forEach((c) => alvo.appendChild(montarCartaoInteresse(doc, c)));
+    return cursos.length;
+  } catch {
+    limpar();
+    raiz.hidden = true;
+    return -1;
+  }
+}
+
+/* Interesse: identidade da sessao do portal (mesmo dominio); a funcao do banco usa auth.uid(). */
+async function clienteDoPortal() {
+  if (!globalThis.supabase?.createClient) {
+    await new Promise((ok, falha) => {
+      const s = document.createElement("script");
+      s.src = "/vendor/supabase.js"; s.onload = ok; s.onerror = () => falha(new Error("sdk"));
+      document.head.appendChild(s);
+    });
+  }
+  const { getSupabaseClient } = await import("../supabase/client.js");
+  return getSupabaseClient();
+}
+
+export async function registrarInteresse(cursoId, { obterCliente = clienteDoPortal } = {}) {
+  const client = await obterCliente();
+  const { data: sessao } = await client.auth.getSession();
+  if (!sessao?.session) return { estado: "entrar" };
+  const { data, error } = await client.rpc("register_course_interest", { p_course_id: cursoId });
+  if (error) return { estado: "erro" };
+  return { estado: data?.new === false ? "ja-registrado" : "registrado" };
+}
+
+const MENSAGENS_INTERESSE = {
+  entrar: "Entre na sua conta (Meu Potala) e volte aqui para registrar o interesse.",
+  registrado: "Interesse registrado. O Instituto avisa quando abrir uma turma.",
+  "ja-registrado": "Seu interesse já estava registrado.",
+  erro: "Não foi possível registrar agora. Tente de novo em instantes.",
+};
+
 export async function iniciarCatalogoPublico(raiz = globalThis.document?.querySelector("[data-catalogo-publico]")) {
   if (!raiz) return;
-  const buscar = async () => {
-    const [{ SUPABASE_CONFIG }, { criarRestPublico }] = await Promise.all([
-      import("../supabase/config.js"),
-      import("../supabase/rest.js"),
-    ]);
-    return criarRestPublico({ config: SUPABASE_CONFIG }).rpc("list_public_courses", {});
+  const rest = async () => {
+    const [{ SUPABASE_CONFIG }, { criarRestPublico }] = await Promise.all([import("../supabase/config.js"), import("../supabase/rest.js")]);
+    return criarRestPublico({ config: SUPABASE_CONFIG });
   };
-  await renderizarCatalogo(raiz, { buscar });
+  await renderizarCatalogo(raiz, { buscar: async () => (await rest()).rpc("list_public_courses", {}) });
+  const outros = globalThis.document?.querySelector("[data-catalogo-outros]");
+  if (!outros) return;
+  await renderizarOutros(outros, { buscar: async () => (await rest()).rpc("list_public_course_definitions", {}) });
+  outros.addEventListener("click", async (ev) => {
+    const botao = ev.target?.closest?.("[data-interesse]");
+    if (!botao) return;
+    const id = botao.getAttribute("data-interesse");
+    const status = outros.querySelector(`[data-interesse-status="${CSS.escape(id)}"]`);
+    botao.disabled = true;
+    let r;
+    try { r = await registrarInteresse(id); } catch { r = { estado: "erro" }; }
+    if (status) {
+      status.textContent = MENSAGENS_INTERESSE[r.estado];
+      if (r.estado === "entrar") {
+        const link = document.createElement("a");
+        link.href = "/meu-potala.html"; link.textContent = " Entrar";
+        status.appendChild(link);
+      }
+    }
+    botao.disabled = r.estado === "registrado" || r.estado === "ja-registrado";
+  });
 }
 
 if (typeof document !== "undefined") iniciarCatalogoPublico();
