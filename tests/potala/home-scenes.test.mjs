@@ -88,7 +88,10 @@ test("bloco editorial sem catálogo mantém imagem opcional nos detalhes sob dem
 
   const summary = markup.match(/<button class="region-summary"[\s\S]*?<\/button>/)?.[0] ?? "";
   const details = markup.match(/<div class="region-details"[\s\S]*?<\/div>/)?.[0] ?? "";
-  assert.doesNotMatch(summary, /<img|region-icon/);
+  /* O cartão fechado mostra a fotografia do bloco como faixa decorativa e preguiçosa;
+     o ícone e a figura completa continuam só nos detalhes, sob demanda. */
+  assert.doesNotMatch(summary, /region-icon|region-media/);
+  assert.match(summary, /<span class="region-thumb" aria-hidden="true"><img src="media\/journey-cultura\.webp" alt="" loading="lazy" decoding="async"><\/span>/);
   assert.match(details, /<figure class="region-media">/);
   assert.match(details, /<img src="media\/journey-cultura\.webp" alt="" loading="lazy" decoding="async">/);
   assert.match(details, /<span class="region-icon" aria-hidden="true">C<\/span>/);

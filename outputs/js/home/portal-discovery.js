@@ -66,6 +66,7 @@ export function renderPortalDiscovery() {
     <div class="discovery-tabs" role="tablist" aria-label="Escolha um caminho">${DISCOVERY_PATHS.map((path, index) => `<button type="button" role="tab" id="discovery-tab-${path.id}" aria-controls="discovery-panel-${path.id}" aria-selected="${!index}" tabindex="${index ? -1 : 0}" data-discovery-tab="${index}"><span aria-hidden="true">0${index + 1}</span>${path.label}</button>`).join("")}</div>
     <div class="discovery-panels">${DISCOVERY_PATHS.map(panel).join("")}</div>
     <p class="discovery-footnote"><span aria-hidden="true">✧</span> Você pode mudar de caminho a qualquer momento.</p>
+    <p class="discovery-matter">Prefere ler com calma sobre o cuidado? <a href="transcendido.html">Ler a matéria de Atendimentos <span aria-hidden="true">→</span></a></p>
   </section>`;
 }
 
