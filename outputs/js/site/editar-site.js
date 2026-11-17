@@ -11,13 +11,13 @@
 import { criarApiEditarSite, ErroEditarSite } from "./api.js";
 import { aplicarConteudo, definirTexto, valorEfetivo } from "./aplicar.js";
 import { criarEstadoEditor, limparConteudo } from "./estado.js";
-import { DESTINOS_DO_PORTAL, PAGINAS_EDITAVEIS, carregarManifesto } from "./paginas.js";
+import { DESTINOS_DO_PORTAL, PAGINAS_EDITAVEIS, PAGINAS_EM_OUTRO_MODULO, carregarManifesto, paginaEmOutroModulo } from "./paginas.js";
 import {
   LIMITE_ALT, LIMITE_TEXTO, POSICOES, descreverDestino, validarAlt, validarArquivoImagem, validarConteudo, validarLink, validarTexto,
 } from "./validar.js";
 
 const ESTILO_PREVIA = `
-[data-es-chave]{cursor:pointer !important;outline:2px dashed transparent;outline-offset:3px;transition:outline-color .12s}
+[data-es-chave]{cursor:pointer !important;pointer-events:auto !important;outline:2px dashed transparent;outline-offset:3px;transition:outline-color .12s}
 [data-es-chave]:hover{outline-color:rgba(216,178,106,.95)}
 [data-es-chave].es-selecionado{outline:3px solid #d8b26a !important;outline-offset:3px;background-image:linear-gradient(rgba(216,178,106,.16),rgba(216,178,106,.16))}
 html[data-editor-site] *{scroll-behavior:auto !important}
@@ -45,7 +45,7 @@ function dataCurta(iso) {
 }
 const resumir = (texto, n = 54) => { const t = String(texto || "").replace(/\s+/g, " ").trim(); return t.length > n ? `${t.slice(0, n - 1)}…` : t; };
 
-export function createEditarSite({ root, client, api = criarApiEditarSite({ client }), janela = window, armazenamento } = {}) {
+export function createEditarSite({ root, client, api = criarApiEditarSite({ client }), janela = window, armazenamento, abrirModulo } = {}) {
   if (!root) throw new TypeError("root é obrigatório para montar o editor do site.");
   const memoria = armazenamento ?? (() => { try { return janela.localStorage; } catch { return null; } })();
 
@@ -62,7 +62,9 @@ export function createEditarSite({ root, client, api = criarApiEditarSite({ clie
 
   /* ---------- peças fixas ---------- */
   const seletorPagina = h("select", { id: "es-pagina", "aria-label": "Escolher página" },
-    PAGINAS_EDITAVEIS.map((p) => h("option", { value: p.slug, text: p.titulo })));
+    PAGINAS_EDITAVEIS.map((p) => h("option", { value: p.slug, text: p.titulo })),
+    h("optgroup", { label: "Editadas em outro módulo" }, PAGINAS_EM_OUTRO_MODULO.map((p) => h("option", { value: p.slug, text: `${p.titulo} — na ${p.modulo}`, "data-es-modulo": p.secaoAdmin }))));
+  seletorPagina.value = "quem-somos"; // abre numa página com bastante conteúdo; a Owner troca pelo seletor
   const chip = h("span", { class: "es-chip", "data-es-chip": "", role: "status" });
   const botoesDispositivo = ["desktop", "celular"].map((d) => h("button", {
     type: "button", class: "es-seg", "data-es-dispositivo": d, "aria-pressed": d === "desktop" ? "true" : "false",
@@ -198,7 +200,11 @@ export function createEditarSite({ root, client, api = criarApiEditarSite({ clie
     estilo.textContent = ESTILO_PREVIA;
     iframeDoc.head.append(estilo);
     iframeDoc.addEventListener("click", (evento) => {
-      const alvo = evento.target?.closest?.("[data-es-chave]");
+      // Textos de capas e bancos de imagem costumam ficar sob uma camada sobreposta: acha o item editavel na pilha do ponto clicado.
+      const direto = evento.target?.closest?.("[data-es-chave]");
+      const ehLink = Boolean(evento.target?.closest?.("a[href], button, form"));
+      const sob = direto || ehLink ? null : (iframeDoc.elementsFromPoint?.(evento.clientX, evento.clientY) ?? []).map((e) => e.closest?.("[data-es-chave]")).find(Boolean);
+      const alvo = direto || sob || null;
       const link = evento.target?.closest?.("a[href], button[type=submit], form");
       if (alvo) { evento.preventDefault(); evento.stopPropagation(); if (!visualizando) selecionar(alvo.getAttribute("data-es-chave"), { rolar: false }); return; }
       if (link) { evento.preventDefault(); avisar("Os links ficam desativados durante a edição. Clique no texto, na imagem ou no botão que você quer mudar.", "info"); }
@@ -297,7 +303,13 @@ export function createEditarSite({ root, client, api = criarApiEditarSite({ clie
       });
       let campoLink = null, destino = null;
       const partes = [h("label", { for: "es-campo-texto", class: "es-rotulo", text: rotuloCampo }), campo, contador];
-      if (item.tipo === "botao") {
+      const linkTravado = item.tipo === "botao" && Array.isArray(item.fixo) && item.fixo.includes("href");
+      if (linkTravado) {
+        partes.push(h("p", { class: "es-ajuda", "data-es-link-fixo": "", text: "O destino deste botão faz parte de um fluxo do Portal (solicitação, âncora ou página interna) e não pode ser mudado aqui. Só o texto." }),
+          h("div", { class: "es-previa-botao" }, h("span", { text: "Como o botão fica:" }), h("a", { class: "es-botao-amostra", href: "#", tabIndex: -1, onclick: (e) => e.preventDefault(), "data-es-amostra": "", text: atual.text })));
+        campo.addEventListener("input", () => { const a = painel.querySelector("[data-es-amostra]"); if (a) a.textContent = campo.value || " "; });
+      }
+      if (item.tipo === "botao" && !linkTravado) {
         campoLink = h("input", { id: "es-campo-link", class: "es-campo", type: "text", value: atual.href, "data-es-campo": "href", autocomplete: "off", inputMode: "url", spellcheck: false });
         destino = h("p", { class: "es-destino", "data-es-destino": "" });
         const aoLink = () => {
@@ -593,6 +605,18 @@ export function createEditarSite({ root, client, api = criarApiEditarSite({ clie
 
   seletorPagina.addEventListener("change", async () => {
     const novo = seletorPagina.value;
+    const outro = paginaEmOutroModulo(novo);
+    if (outro) {
+      /* Conteúdo administrado por outro módulo da Central: não há edição paralela aqui, só o caminho até lá. */
+      seletorPagina.value = pagina?.slug || PAGINAS_EDITAVEIS[0].slug;
+      const r = await perguntar({
+        titulo: `${outro.titulo} é editada na ${outro.modulo}`,
+        texto: `O conteúdo desta página já é administrado pelo módulo ${outro.modulo} da Central. Para não haver dois lugares mexendo na mesma coisa, a edição fica lá.${estado?.naoSalvo ? " Você tem alterações não salvas nesta página: salve o rascunho antes de sair." : ""}`,
+        botoes: [...(typeof abrirModulo === "function" ? [{ valor: "abrir", rotulo: `Abrir a ${outro.modulo}`, classe: "es-btn-ouro" }] : []), { valor: "ficar", rotulo: "Continuar aqui" }],
+      });
+      if (r === "abrir") abrirModulo(outro.secaoAdmin);
+      return;
+    }
     if (estado?.naoSalvo) {
       const r = await perguntar({
         titulo: "Há alterações não salvas",

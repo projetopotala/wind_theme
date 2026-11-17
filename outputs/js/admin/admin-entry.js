@@ -149,7 +149,12 @@ try {
       });
       /* Editar site: só a conta Owner monta o editor; o banco confere de novo em cada chamada. */
       if (access.role === "owner" && !editarSite) {
-        editarSite = createEditarSite({ root: panel.querySelector("[data-editar-site]"), client });
+        editarSite = createEditarSite({
+          root: panel.querySelector("[data-editar-site]"),
+          client,
+          /* Páginas cujo conteúdo é de outro módulo (ex.: a Travessia, na Jornada): o editor só leva até lá. */
+          abrirModulo: (secao) => panel.querySelector(`[data-admin-nav] [data-section="${secao}"]`)?.click(),
+        });
         panel.addEventListener("click", (evento) => {
           if (evento.target?.closest?.('[data-admin-nav] [data-section="editar-site"]')) void editarSite?.abrir();
         });
