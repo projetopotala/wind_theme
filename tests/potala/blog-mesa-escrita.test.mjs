@@ -185,3 +185,18 @@ test("jornada do escritor: mostra os quatro estados e esconde controles editoria
   assert.match(app, /item\.hidden = !podePublicar\(ctx\.permissoes\)/);
   assert.match(app, /\["comentarios", "configuracoes"\]\.includes\(rota\.tela\)/);
 });
+
+test("editor profissional preserva largura da folha e abre configuracoes sem comprimir o artigo", () => {
+  const css = fonte("css/blog-admin.css");
+  assert.match(css, /Editor profissional: folha ampla/);
+  assert.match(css, /\.mesa-editor__meio,[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(css, /\.mesa-painel\s*\{[\s\S]*position:\s*fixed/);
+  assert.match(css, /width:\s*min\(410px, calc\(100vw - 24px\)\)/);
+  assert.match(css, /\.mesa-folha\s*\{[\s\S]*width:\s*min\(100%, 900px\)/);
+  assert.match(css, /\.mesa-texto\s*\{[^}]*text-align:\s*left/);
+  assert.match(css, /overflow-x:\s*hidden;\s*overflow-y:\s*auto/);
+});
+
+test("criacao de categoria fica restrita a quem pode publicar", () => {
+  assert.match(editor, /publica\(\)\s*\?\s*`<button[^`]+data-editor-nova-categoria/);
+});
