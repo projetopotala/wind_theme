@@ -13,6 +13,7 @@ import { createOrganizarCurso } from "./organizar-curso.js";
 import { createNovoCurso } from "./novo-curso.js";
 import { createInscricoesCursos } from "./inscricoes-cursos.js";
 import { createCursosPainel } from "./cursos-painel.js";
+import { createServicosAtendimento } from "./servicos-atendimento.js";
 import { createOperationsClient } from "./operations/client.js";
 import { createOperationsController } from "./operations/controller.js";
 import { carregarRecebidos } from "./recebidos.js";
@@ -107,6 +108,12 @@ async function abrirOperacao(client, access) {
     onSalvo() { operationsController?.render(); },
     onNavegar(section) { panel.querySelector(`[data-admin-nav] [data-section="${section}"]`)?.click(); },
     abrirCadastroProfissional() { cadastroGuiado?.abrir(); return panel.querySelector("[data-cg-dialog]"); },
+  });
+  /* Serviços de atendimento: cadastro simples (mesmo motor do Novo curso); só a administração grava, o banco audita. */
+  createServicosAtendimento({
+    root: panel.querySelector("[data-servicos-atendimento]"),
+    operations,
+    onSalvo() { operationsController?.render(); void atendimentosPanel?.reload(); },
   });
   carregarRecebidos(client)
     .then((dados) => operationsController?.definirRecebidos(dados))

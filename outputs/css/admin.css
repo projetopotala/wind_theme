@@ -1583,3 +1583,16 @@ button {
 [data-access-view] .op-badge + .op-badge { margin-left: 4px; }
 [data-access-view] .op-muted { text-align: left; margin: 0 0 8px; }
 
+
+/* Serviços de atendimento (cadastro simples) */
+.serv-corpo { padding: 0 16px 16px; }
+.serv-form { display: grid; gap: 10px; margin: 12px 0; padding: 12px; border: 1px solid var(--admin-line); border-radius: 10px; }
+.serv-form label { display: grid; gap: 4px; }
+.serv-form fieldset { border: 1px solid var(--admin-line); border-radius: 8px; padding: 8px 12px; display: grid; gap: 6px; }
+.serv-check { display: flex !important; align-items: flex-start; gap: 8px; }
+.serv-erros { margin: 0; padding: 8px 8px 8px 24px; border-radius: 8px; background: rgba(180, 40, 40, .15); }
+.serv-mensagem { min-height: 1.2em; margin: 8px 0; }
+.serv-lista { display: grid; gap: 10px; margin-top: 8px; }
+.serv-item { padding: 12px; border: 1px solid var(--admin-line); border-radius: 10px; }
+.serv-item-topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.serv-form input:not([type="checkbox"]), .serv-form select, .serv-form textarea { background: #12100e; color: inherit; border: 1px solid var(--admin-line); border-radius: 8px; padding: 10px; font: inherit; width: 100%; box-sizing: border-box; }
