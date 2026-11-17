@@ -42,7 +42,8 @@ const fotografia = async () => {
     where n.nspname = 'public' and p.proname in ('has_portal_permission', 'save_blog_post') order by 1`)).rows;
   const pols = (await db.query(`select tablename, policyname, cmd, qual, with_check from pg_policies
     where schemaname = 'public' and tablename in ('blog_posts', 'blog_settings', 'blog_comments') order by 1, 2`)).rows;
-  return JSON.stringify({ funcs, pols });
+  /* Fim de linha nao e semantica: a Production foi criada com CRLF; o arquivo no Git pode vir com LF ou CRLF. */
+  return JSON.stringify({ funcs, pols }).replace(/\\r/g, "");
 };
 
 before(async () => {

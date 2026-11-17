@@ -14,7 +14,7 @@ import { icone } from "../admin/icones.js";
 import { validarDocumento } from "../blog/blog-conteudo.js";
 import { BLOG_BLOCK_TYPES, estimateReadingMinutes, normalizePost, normalizePosts } from "../blog/blog-model.js";
 import {
-  TIPOS_DE_BLOCO, atualizarVisual, aceitaMarcas, aplicarCampo, blocoHtml, blocoNovo, converterBloco, corpoHtml, duplicarBloco, formatarSelecao, insercaoHtml, menuDeBlocosHtml,
+  TIPOS_DE_BLOCO, atualizarVisual, aceitaMarcas, aplicarCampo, blocoHtml, blocoNovo, converterBloco, corpoHtml, duplicarBloco, formatarSelecao, insercaoHtml,
 } from "./mesa-blocos.js";
 import {
   SECOES_DO_PORTAL, autoresDe, enderecoLivre, fraseDoAgendamento, fraseDoStatus, hojeNoInstituto, horaDe, instanteDe,
@@ -44,7 +44,7 @@ export function dataAoPublicar(registro, dataAtual, hoje) {
 export function createBlankPost(now = new Date().toISOString()) {
   const stamp = String(now || new Date().toISOString());
   const id = `post-${stamp.replace(/\D/g, "").slice(0, 14) || Date.now()}`;
-  return normalizePost({ id, slug: `novo-texto-${id.slice(-6)}`, title: "Novo texto", subtitle: "", excerpt: "", category: "reflexao", author: "Instituto Potala", publishedAt: stamp.slice(0, 10), readingMinutes: 1, cover: "", coverAlt: "", featured: false, status: "draft", content: [], updatedAt: stamp });
+  return normalizePost({ id, slug: `novo-texto-${id.slice(-6)}`, title: "Novo texto", subtitle: "", excerpt: "", category: "reflexao", author: "Instituto Potala", publishedAt: stamp.slice(0, 10), readingMinutes: 1, cover: "", coverAlt: "", featured: false, status: "draft", content: [blocoNovo("paragraph")], updatedAt: stamp });
 }
 
 export function addContentBlock(post, type) {
@@ -158,6 +158,8 @@ export function createBlogEditor({ root, ctx } = {}) {
     <div class="mesa-editor__meio">
       <div class="mesa-editor__area" data-editor-area>
         <div class="mesa-barra-texto" data-editor-barra role="toolbar" aria-label="Formatação do texto">
+          <button type="button" class="mesa-barra-texto__inserir" data-editor-adicionar-barra aria-haspopup="menu" aria-expanded="false" title="Inserir conteúdo">${i("plus")}<span>Inserir</span></button>
+          <span class="mesa-barra-texto__sep" aria-hidden="true"></span>
           <span class="mesa-barra-texto__rotulo" aria-hidden="true">Formatar</span>
           <button type="button" data-barra="negrito" title="Negrito (Ctrl+B)">${i("bold")}<span class="sr-only">Negrito</span></button>
           <button type="button" data-barra="italico" title="Itálico (Ctrl+I)">${i("italic")}<span class="sr-only">Itálico</span></button>
@@ -231,7 +233,15 @@ export function createBlogEditor({ root, ctx } = {}) {
   function assinatura() {
     return JSON.stringify({ ...paraGravar(), updatedAt: "" });
   }
-  const textoVazio = () => !String(post.title || "").trim() && !String(post.subtitle || "").trim() && !post.content.length && !post.cover;
+  const blocoVazio = (bloco) => {
+    if (["paragraph", "heading", "quote", "callout"].includes(bloco?.type)) return !String(bloco.text || "").trim();
+    if (bloco?.type === "list") return !(bloco.items || []).some((item) => String(item || "").trim());
+    if (bloco?.type === "gallery") return !(bloco.images || []).length;
+    if (bloco?.type === "image") return !bloco.src;
+    if (bloco?.type === "video") return !String(bloco.url || "").trim();
+    return bloco?.type !== "divider";
+  };
+  const textoVazio = () => !String(post.title || "").trim() && !String(post.subtitle || "").trim() && (post.content || []).every(blocoVazio) && !post.cover;
   const noAr = () => ["published", "scheduled"].includes(registro?.status);
   const nuncaPublicado = () => !registro || (["draft", "review"].includes(registro.status) && !registro.publicarEm);
 
@@ -557,7 +567,7 @@ export function createBlogEditor({ root, ctx } = {}) {
           </div>
         </figure>
         <label class="mesa-capa__alt">${i("type")}<span class="sr-only">Descrição da capa</span><input data-editor-campo="coverAlt" value="${esc(post.coverAlt)}" maxlength="200" placeholder="Descreva a capa para quem usa leitor de tela"></label>`
-      : `<button type="button" class="mesa-capa mesa-capa--vazia" data-capa-acao="trocar">${i("image")}<strong>Adicionar imagem de capa</strong><small>Abre o artigo e aparece nos cartões do Blog. Você também pode arrastar uma foto para cá.</small></button>`;
+      : `<div class="mesa-capa-vazia"><button type="button" class="mesa-capa mesa-capa--vazia" data-capa-acao="trocar">${i("image")}<span><strong>Adicionar capa</strong><small>Opcional · aparece no Blog e nos cartões</small></span></button></div>`;
   }
 
   /* Pedido de correções do Owner: aparece no topo da folha enquanto o texto não for enviado de novo. */
@@ -634,7 +644,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     const blocos = post.content;
     alvo.innerHTML = blocos.length
       ? blocos.map((bloco, indice) => blocoHtml(bloco, { indice, total: blocos.length }) + (indice < blocos.length - 1 ? insercaoHtml(bloco.id) : "")).join("")
-      : `<div class="mesa-comecar"><p>Escolha o primeiro bloco do texto:</p>${menuDeBlocosHtml()}</div>`;
+      : `<button type="button" class="mesa-comecar" data-editor-comecar>${i("type")}<span><strong>Começar a escrever</strong><small>Cria um parágrafo sem alterar o formato dos artigos existentes.</small></span></button>`;
     $("[data-editor-adicionar]").parentElement.hidden = !blocos.length;
     marcarSelecao();
     crescerTodos(alvo);
@@ -1177,6 +1187,7 @@ export function createBlogEditor({ root, ctx } = {}) {
     if (adicionar) { abrirMenuDeBlocos(adicionar, post.content.at(-1)?.id || ""); return; }
     const novo = alvo.closest("[data-novo-bloco]");
     if (novo) { await novoBloco(novo.dataset.novoBloco, post.content.at(-1)?.id || ""); return; }
+    if (alvo.closest("[data-editor-comecar]")) { await novoBloco("paragraph", ""); return; }
     const capa = alvo.closest("[data-capa-acao]");
     if (capa) { await acaoDaCapa(capa.dataset.capaAcao); return; }
     if (alvo.closest("[data-editor-categoria]")) {
@@ -1303,6 +1314,8 @@ export function createBlogEditor({ root, ctx } = {}) {
   /* A barra não tira o cursor do texto: o mousedown não move o foco. */
   $("[data-editor-barra]").addEventListener("mousedown", (evento) => { if (evento.target.closest("button")) evento.preventDefault(); });
   $("[data-editor-barra]").addEventListener("click", async (evento) => {
+    const inserir = evento.target.closest("[data-editor-adicionar-barra]");
+    if (inserir && post) { abrirMenuDeBlocos(inserir, selecionado || ultimoBlocoDeTexto || post.content.at(-1)?.id || ""); return; }
     const botao = evento.target.closest("[data-barra]");
     if (botao && post) await acaoDaBarra(botao.dataset.barra);
   });

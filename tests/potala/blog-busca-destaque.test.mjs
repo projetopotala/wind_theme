@@ -153,6 +153,9 @@ test("o acesso de teste da mesa nasce oculto e some em Production, sem parâmetr
   assert.doesNotMatch(entrada, /dataset\.blogDemo/, "a demonstração não depende de atributo do DOM");
   assert.match(entrada, /const atual = \(\) => \(emDemo \|\| !remoto \? demonstracao : remoto\);/);
   assert.match(entrada, /abrirMesa\(\{ demo: true \}\)/, "a demonstração continua existindo");
+  assert.match(entrada, /PERMISSOES_DA_DEMONSTRACAO_WRITER/);
+  assert.match(entrada, /publicar: false/);
+  assert.match(entrada, /DEMONSTRAÇÃO LOCAL — WRITER · Sem conexão com o Blog real\./);
 });
 
 test("em Production nenhum parametro de URL muda a origem classificada; LAB e local seguem liberados", async () => {

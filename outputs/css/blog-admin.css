@@ -821,3 +821,180 @@ option { background: var(--painel); color: var(--marfim); }
   .mesa-painel { top: 0; width: 100vw; border-left: 0; border-radius: 0; }
   .mesa-editor[data-painel="aberto"] .mesa-painel__veu { inset: 0; }
 }
+
+/* ------------------------------------------------------------------
+ * Editor profissional 2.0: o artigo e a escrita passam a ser o centro.
+ * O canvas e amplo, a coluna de leitura continua confortavel e os recursos
+ * de capa/blocos aparecem como ferramentas, nao como uma etapa obrigatoria.
+ * ------------------------------------------------------------------ */
+.mesa-editor__area {
+  padding: 18px clamp(20px, 3.6vw, 68px) 128px;
+  background:
+    radial-gradient(circle at 50% 0, rgba(216, 178, 106, .055), transparent 34rem),
+    linear-gradient(180deg, rgba(255, 255, 255, .012), transparent 20rem);
+}
+.mesa-barra-texto {
+  width: min(100%, 1180px);
+  max-width: 1180px;
+  justify-content: center;
+  margin-bottom: 12px;
+  border-radius: 14px;
+}
+.mesa-barra-texto__inserir {
+  display: inline-flex !important;
+  grid-auto-flow: column;
+  gap: 7px;
+  width: auto !important;
+  padding-inline: 11px !important;
+  color: var(--ouro) !important;
+}
+.mesa-barra-texto__inserir span { font-size: .76rem; }
+.mesa-folha {
+  width: min(100%, 1180px);
+  max-width: 1180px;
+  min-height: min(780px, calc(100vh - 150px));
+  overflow: visible;
+  border-color: rgba(216, 178, 106, .12);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .018), transparent 18rem),
+    var(--papel);
+  box-shadow: 0 26px 90px rgba(0, 0, 0, .28), 0 1px 0 rgba(255, 255, 255, .025) inset;
+}
+.mesa-folha__texto {
+  width: min(100%, 860px);
+  margin-inline: auto;
+  padding: 34px 30px 112px;
+}
+.mesa-capa-vazia {
+  width: min(100%, 860px);
+  margin: 0 auto;
+  padding: 24px 30px 0;
+}
+.mesa-capa--vazia {
+  display: inline-flex;
+  width: auto;
+  max-width: 100%;
+  align-items: center;
+  justify-items: initial;
+  gap: 10px;
+  padding: 8px 13px;
+  border: 1px solid var(--linha-forte);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .018);
+  color: var(--suave);
+  text-align: left;
+}
+.mesa-capa--vazia .mesa-icone { width: 17px; height: 17px; }
+.mesa-capa--vazia span { display: inline-flex; align-items: baseline; gap: 7px; min-width: 0; }
+.mesa-capa--vazia strong { font-size: .78rem; }
+.mesa-capa--vazia small { overflow: hidden; font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+.mesa-capa:not(.mesa-capa--vazia) { margin: 24px 24px 0; border-radius: 14px; }
+.mesa-capa:not(.mesa-capa--vazia) img,
+.mesa-folha__capa img { height: clamp(190px, 21vw, 270px); }
+.mesa-capa__alt { width: min(calc(100% - 60px), 800px); margin: 0 auto; }
+.mesa-folha__categoria { margin-bottom: 18px; opacity: .82; }
+.mesa-folha__titulo {
+  color: var(--marfim);
+  font-size: clamp(2.9rem, 5.4vw, 4.75rem);
+  line-height: .99;
+  letter-spacing: -.035em;
+}
+.mesa-folha__titulo::placeholder { color: rgba(242, 233, 217, .34); }
+.mesa-folha__subtitulo {
+  max-width: 34em;
+  margin-top: 18px;
+  color: rgba(242, 233, 217, .62);
+  font-size: clamp(1.15rem, 1.7vw, 1.42rem);
+  line-height: 1.45;
+}
+.mesa-folha__subtitulo::placeholder { color: rgba(242, 233, 217, .28); }
+.mesa-blocos { margin-top: 46px; }
+.mesa-bloco { margin-inline: -18px; padding: 9px 18px; }
+.mesa-bloco.is-selecionado { background: rgba(216, 178, 106, .025); box-shadow: inset 2px 0 0 rgba(216, 178, 106, .52); }
+.mesa-texto { font-size: 1.18rem; line-height: 1.86; }
+.mesa-bloco__opcoes { margin-top: 14px; border-color: rgba(216, 178, 106, .16); background: rgba(15, 19, 18, .82); }
+.mesa-comecar {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 0;
+  border: 0;
+  border-top: 1px solid var(--linha);
+  border-radius: 0;
+  background: none;
+  color: var(--suave);
+  text-align: left;
+}
+.mesa-comecar .mesa-icone { flex: none; color: var(--ouro); }
+.mesa-comecar span { display: grid; gap: 2px; }
+.mesa-comecar strong { color: var(--marfim); font-size: .96rem; }
+.mesa-comecar small { color: var(--fraco); }
+.mesa-adicionar { justify-content: flex-start; margin-top: 32px; }
+.mesa-adicionar__botao { padding: 7px 12px; border-style: solid; background: rgba(255, 255, 255, .014); font-size: .76rem; }
+.mesa-inserir button { opacity: .26; }
+.mesa-atalhos { max-width: 1180px; }
+.mesa-editor[data-foco="on"] .mesa-folha { width: min(100%, 1320px); max-width: 1320px; }
+.mesa-editor[data-foco="on"] .mesa-folha__texto { width: min(100%, 900px); }
+
+@media (max-width: 1024px) {
+  .mesa-editor__area { padding-inline: clamp(16px, 3vw, 32px); }
+  .mesa-folha__texto { width: min(100%, 800px); padding-inline: 34px; }
+  .mesa-capa-vazia { width: min(100%, 800px); padding-inline: 34px; }
+}
+@media (max-width: 720px) {
+  .mesa-editor__area { padding: 0 0 88px; background: var(--papel); }
+  .mesa-barra-texto { justify-content: flex-start; margin: 0; border-radius: 0; }
+  .mesa-barra-texto__inserir span { display: none; }
+  .mesa-folha { min-height: calc(100vh - 120px); border: 0; border-radius: 0; background: var(--papel); }
+  .mesa-capa-vazia { padding: 18px 20px 0; }
+  .mesa-capa--vazia small { display: none; }
+  .mesa-capa:not(.mesa-capa--vazia) { margin: 12px 12px 0; }
+  .mesa-capa:not(.mesa-capa--vazia) img,
+  .mesa-folha__capa img { height: min(48vw, 220px); }
+  .mesa-capa__alt { width: calc(100% - 40px); }
+  .mesa-folha__texto { padding: 24px 20px 72px; }
+  .mesa-folha__titulo { font-size: clamp(2.35rem, 12vw, 3.35rem); }
+  .mesa-folha__subtitulo { font-size: 1.08rem; }
+  .mesa-blocos { margin-top: 36px; }
+  .mesa-bloco { margin-inline: -8px; padding-inline: 8px; }
+  .mesa-texto { font-size: 1.08rem; line-height: 1.78; }
+  .mesa-bloco__alca { left: -7px; }
+  .mesa-bloco__barra { right: 0; max-width: calc(100vw - 28px); overflow-x: auto; }
+}
+@media (max-width: 390px) {
+  .mesa-editor__topo { gap: 8px; padding-inline: 10px; }
+  .mesa-voltar span, .mesa-editor__divisor, .mesa-editor__nome { display: none; }
+  .mesa-editor__acoes { gap: 4px; }
+  .mesa-editor__acoes .mesa-botao { padding-inline: 9px; }
+  .mesa-folha__texto { padding-inline: 16px; }
+  .mesa-capa-vazia { padding-inline: 16px; }
+}
+
+/* A demonstração não é uma sessão autenticada: o papel simulado fica visível o tempo todo. */
+.mesa-demo-writer-aviso {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 80;
+  max-width: min(390px, calc(100vw - 32px));
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(201, 164, 101, 0.72);
+  border-radius: 12px;
+  background: rgba(24, 19, 14, 0.96);
+  color: #f3e7d1;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38);
+  font: 700 0.75rem/1.45 var(--fonte-sans, system-ui, sans-serif);
+  letter-spacing: 0.045em;
+  text-transform: none;
+}
+
+@media (max-width: 720px) {
+  .mesa-demo-writer-aviso {
+    right: 10px;
+    bottom: 10px;
+    max-width: calc(100vw - 20px);
+  }
+}

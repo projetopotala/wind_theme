@@ -197,6 +197,25 @@ test("editor profissional preserva largura da folha e abre configuracoes sem com
   assert.match(css, /overflow-x:\s*hidden;\s*overflow-y:\s*auto/);
 });
 
+test("editor 2.0 abre pronto para escrever e deixa a grade de blocos sob demanda", () => {
+  const css = fonte("css/blog-admin.css");
+  assert.match(editor, /content:\s*\[blocoNovo\("paragraph"\)\]/);
+  assert.doesNotMatch(editor, /Escolha o primeiro bloco do texto/);
+  assert.match(editor, /data-editor-adicionar-barra/);
+  assert.match(editor, /data-editor-comecar/);
+  assert.match(css, /Editor profissional 2\.0/);
+  assert.match(css, /\.mesa-folha\s*\{[\s\S]*?width:\s*min\(100%, 1180px\)/);
+  assert.match(css, /\.mesa-folha__texto\s*\{[\s\S]*?width:\s*min\(100%, 860px\)/);
+  assert.match(css, /\.mesa-capa-vazia\s*\{[\s\S]*?padding:\s*24px 30px 0/);
+});
+
+test("editor 2.0 preserva os nove blocos e nao altera o modelo persistido", async () => {
+  const { TIPOS_DE_BLOCO } = await import("../../outputs/js/blog-admin/mesa-blocos.js");
+  assert.deepEqual(TIPOS_DE_BLOCO.map(({ tipo }) => tipo), ["paragraph", "heading", "image", "gallery", "quote", "callout", "video", "list", "divider"]);
+  assert.match(editor, /TIPOS_DE_BLOCO\.map/);
+  assert.doesNotMatch(editor, /create table|alter table|supabase\.rpc\("[^"]*migration/i);
+});
+
 test("criacao de categoria fica restrita a quem pode publicar", () => {
   assert.match(editor, /publica\(\)\s*\?\s*`<button[^`]+data-editor-nova-categoria/);
 });

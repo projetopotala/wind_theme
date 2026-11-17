@@ -78,17 +78,43 @@ function mostrarLogin(aviso = "") {
 }
 
 const demoPermitida = demonstracaoPermitida({ ambiente: AMBIENTE_SUPABASE, origem: globalThis.location?.origin });
+const PERMISSOES_DA_DEMONSTRACAO_WRITER = Object.freeze({
+  ler: true,
+  editar: true,
+  publicar: false,
+  somenteProprios: true,
+});
+
+function atualizarAvisoDaDemonstracao(ativo) {
+  let aviso = panel?.querySelector("[data-demo-writer-aviso]");
+  if (!ativo) {
+    aviso?.remove();
+    return;
+  }
+  if (aviso) return;
+  aviso = document.createElement("p");
+  aviso.className = "mesa-demo-writer-aviso";
+  aviso.dataset.demoWriterAviso = "";
+  aviso.setAttribute("role", "status");
+  aviso.textContent = "DEMONSTRAÇÃO LOCAL — WRITER · Sem conexão com o Blog real.";
+  panel?.append(aviso);
+}
 
 function abrirMesa({ demo = false } = {}) {
   // A demonstração só abre onde a lista de permissão deixa, nem se o botão for reexibido à mão.
   if (demo && !demoPermitida) return;
   root.dataset.blogGate = "mesa";
   emDemo = demo;
+  atualizarAvisoDaDemonstracao(demo);
   if (loginView) loginView.hidden = true;
   if (panel) panel.hidden = false;
   mesa ||= criarMesa({ raiz: panel, repositorio, permissoes });
   /* As permissoes seguem a sessao atual a cada entrada: troca de conta nao exige F5. */
-  mesa.entrar({ usuario: demo ? null : usuario, permissoes: demo ? {} : permissoes, identidade: demo ? "demonstracao" : identidadeAtual });
+  mesa.entrar({
+    usuario: demo ? null : usuario,
+    permissoes: demo ? PERMISSOES_DA_DEMONSTRACAO_WRITER : permissoes,
+    identidade: demo ? "demonstracao-writer" : identidadeAtual,
+  });
 }
 
 /*
