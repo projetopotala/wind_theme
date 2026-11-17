@@ -49,6 +49,7 @@ const MENSAGENS = new Map([
   ["ATENDIMENTO_SEM_RECIBO", "Não conseguimos confirmar o recebimento da solicitação. Tente enviar de novo: o mesmo pedido não é duplicado. Nenhuma consulta foi confirmada."],
   ["ATENDIMENTO_ALTERADO", "A solicitação mudou desde a última tentativa. Revise os dados e envie de novo."],
   ["ATENDIMENTO_LIMITE", "Recebemos muitas solicitações agora. Tente de novo em instantes: o mesmo pedido não é duplicado."],
+  ["ATENDIMENTO_LIMITE_DIA", "Você já enviou o máximo de solicitações ainda não atendidas nas últimas 24 horas. Aguarde a resposta da equipe ou tente de novo mais tarde."],
   ["ATENDIMENTO_SEM_PERMISSAO", "Para solicitar atendimento, entre na sua conta com o e-mail já confirmado."],
   ["ATENDIMENTO_RECUSADO", "Esta solicitação não pôde ser registrada. Revise o serviço, a modalidade e a data, ou fale com a Recepção."],
   ["invalid_credentials", "E-mail ou senha não conferem."],

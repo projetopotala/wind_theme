@@ -468,7 +468,8 @@ export function criarDadosSupabase({ client } = {}) {
         if (error.code === "22023") throw new ErroDeConta("ATENDIMENTO_RECUSADO", error);
         /* A RPC chama submit_appointment_request, que limita e serializa (PT429), e
          * exige sessão com e-mail confirmado (42501). */
-        if (error.code === "PT429") throw new ErroDeConta("ATENDIMENTO_LIMITE", error);
+        /* "Limite de recebimento atingido" = teto de pedidos ainda nao atendidos em 24h; "Recebimento ocupado" = carga momentanea. */
+        if (error.code === "PT429") throw new ErroDeConta(/Limite de recebimento/i.test(String(error.message || "")) ? "ATENDIMENTO_LIMITE_DIA" : "ATENDIMENTO_LIMITE", error);
         if (error.code === "42501") throw new ErroDeConta("ATENDIMENTO_SEM_PERMISSAO", error);
         throw falhouDados(error);
       }
