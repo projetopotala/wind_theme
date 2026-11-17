@@ -66,7 +66,9 @@ export function aplicarConteudo(doc, manifesto, conteudo = {}, { marcar = false,
     } else {
       definirTexto(el, typeof valor.text === "string" && valor.text.trim() ? valor.text : item.original.text);
       if (item.tipo === "botao") {
-        const destino = typeof valor.href === "string" && !validarLink(valor.href, { paginasConhecidas }) ? valor.href : item.original.href;
+        /* Botão ligado a um fluxo do Portal: o link é sempre o original, mesmo que o banco traga outro. */
+        const linkTravado = Array.isArray(item.fixo) && item.fixo.includes("href");
+        const destino = !linkTravado && typeof valor.href === "string" && !validarLink(valor.href, { paginasConhecidas }) ? valor.href : item.original.href;
         if (el.getAttribute("href") !== destino) el.setAttribute("href", destino);
         if (/^https:/i.test(destino)) el.setAttribute("rel", "noopener noreferrer");
       }

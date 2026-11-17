@@ -205,7 +205,11 @@ test("api: chama as funções do Owner com os parâmetros certos e rejeita uploa
 const decodificar = (s) => s.replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, "\"").replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ");
 
 test("cada página editável existe, carrega o script do conteúdo publicado e tem manifesto coerente com o HTML", async () => {
-  assert.deepEqual(PAGINAS_EDITAVEIS.map((p) => p.slug), ["quem-somos", "saude-integrativa", "inspiracao", "cultura"]);
+  assert.deepEqual(PAGINAS_EDITAVEIS.map((p) => p.slug), [
+    "pagina-inicial", "quem-somos", "atendimentos", "cursos", "eventos", "blog", "marketplace", "mentorias", "workshops", "grupos-de-estudo",
+    "programacao", "atividades", "profissionais", "especialistas", "recepcao", "saude-integrativa", "inspiracao", "cultura",
+    "experiencias-culturais", "revista",
+  ]);
   for (const pagina of PAGINAS_EDITAVEIS) {
     assert.ok(existsSync(new URL(pagina.arquivo, RAIZ)), pagina.arquivo);
     const html = lerArquivo(pagina.arquivo);
@@ -214,10 +218,13 @@ test("cada página editável existe, carrega o script do conteúdo publicado e t
     const manifesto = await carregarManifesto(pagina.slug);
     assert.equal(manifesto.slug, pagina.slug);
     assert.equal(manifesto.arquivo, pagina.arquivo);
-    assert.ok(manifesto.elementos.length >= 6, `${pagina.slug}: elementos suficientes`);
+    assert.ok(manifesto.elementos.length >= 3, `${pagina.slug}: elementos suficientes`);
     const plano = decodificar(html);
     const chaves = new Set();
+    const seletores = new Set();
     for (const el of manifesto.elementos) {
+      assert.ok(!seletores.has(el.seletor), `seletor repetido ${el.seletor}`);
+      seletores.add(el.seletor);
       assert.match(el.chave, /^[a-z0-9][a-z0-9-]{0,63}$/);
       assert.ok(!chaves.has(el.chave), `chave repetida ${el.chave}`);
       chaves.add(el.chave);
@@ -230,8 +237,8 @@ test("cada página editável existe, carrega o script do conteúdo publicado e t
   }
 });
 
-test("só páginas institucionais entram; áreas transacionais e a Home ficam de fora", async () => {
-  for (const fora of ["index", "atendimentos", "cursos", "blog", "marketplace", "meu-potala", "admin", "travessia", "recepcao"]) {
+test("só páginas institucionais entram; áreas transacionais e de outros módulos ficam de fora", async () => {
+  for (const fora of ["index", "meu-potala", "admin", "blog-admin", "escritor", "artigo", "sala-atendimento", "confirmar-conta", "redefinir-senha", "travessia", "palacio", "transcendido", "atendimentos-conceito"]) {
     assert.equal(paginaPorSlug(fora), null, fora);
     await assert.rejects(carregarManifesto(fora), RangeError);
   }
