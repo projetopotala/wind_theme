@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Protótipo da Travessia Guiada do Instituto Potala.">
+  <title>Travessia Guiada — Instituto Potala</title>
+  <link rel="stylesheet" href="css/ux02-travessia.css">
+  <script type="module" src="/js/assistente/assistente-boot.js"></script>
+</head>
+<body>
+  <main class="guided" id="guided-root">
+    <div class="guided__landscape" aria-hidden="true"></div>
+    <header class="guided__topbar">
+      <a class="guided__brand" href="transcender.html">Instituto Potala</a>
+      <button class="guided__help" type="button" data-abrir-assistente>Precisa de ajuda?</button>
+    </header>
+
+    <section class="guided__welcome" aria-labelledby="welcome-title" data-welcome>
+      <p class="guided__eyebrow">Uma entrada mais simples</p>
+      <h1 id="welcome-title">Bem-vindo ao Instituto Potala.</h1>
+      <p class="guided__lead">Um espaço de cuidado, aprendizado, cultura e encontro. Você pode conhecer os serviços, explorar a história do Instituto ou pedir orientação.</p>
+      <div class="guided__choice" role="group" aria-label="Escolha como começar">
+        <button class="guided__choice-button guided__choice-button--primary" type="button" data-start="guided">
+          <span>Quero encontrar algo</span><small>Receber orientação prática</small>
+        </button>
+        <button class="guided__choice-button" type="button" data-start="free">
+          <span>Quero explorar</span><small>Percorrer a paisagem com calma</small>
+        </button>
+      </div>
+    </section>
+
+    <section class="guided__journey" aria-labelledby="journey-title" data-journey hidden>
+      <div class="guided__journey-heading">
+        <p class="guided__eyebrow">Escolha um caminho</p>
+        <h2 id="journey-title">O que você procura hoje?</h2>
+        <p>Toque em um ponto da paisagem para saber o que encontrará ali.</p>
+      </div>
+      <div class="guided__waypoints" role="group" aria-label="Caminhos do Instituto">
+        <button class="waypoint waypoint--care" type="button" data-region="care"><span>Quero cuidar de mim</span><small>Atendimentos e profissionais</small></button>
+        <button class="waypoint waypoint--learn" type="button" data-region="learn"><span>Quero aprender</span><small>Cursos e atividades</small></button>
+        <button class="waypoint waypoint--move" type="button" data-region="move"><span>Quero participar</span><small>Práticas e encontros</small></button>
+      </div>
+      <aside class="guided__context" aria-live="polite" data-context>
+        <p class="guided__context-kicker">Escolha um ponto para começar</p>
+        <h3>Você não precisa conhecer os nomes do Potala.</h3>
+        <p>Eu explico o que existe em cada caminho e levo você à página certa.</p>
+      </aside>
+      <div class="guided__secondary-actions">
+        <a href="quem-somos.html">Conhecer o Potala</a>
+        <a href="recepcao.html">Pedir orientação</a>
+        <a href="travessia.html">Ver a Travessia original</a>
+      </div>
+    </section>
+
+    <div class="guided__status" role="status" aria-live="polite" data-status></div>
+  </main>
+  <script type="module" src="js/ux02-travessia.js"></script>
+</body>
+</html>
