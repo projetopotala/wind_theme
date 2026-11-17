@@ -1,5 +1,6 @@
 -- Reverte somente a exclusividade Owner da migration 20261117130357.
 -- Restaura a semântica anterior: owner/admin e blog_editor com can_publish.
+-- As definições das duas funções são cópia literal das migrations originais (202610280001 e 202609170002).
 begin;
 
 create or replace function public.has_portal_permission(p_module text, p_action text)
@@ -13,10 +14,14 @@ begin
   if p_module is null or p_action is null or p_action not in ('read', 'edit', 'publish') then return false; end if;
   select u.role into papel from public.users u
     where u.id = (select auth.uid()) and u.active = true;
-  if papel in ('owner', 'admin') then return true; end if;
-  if papel is distinct from 'blog_editor' or p_module <> 'blog' then return false; end if;
+  if papel in ('owner', 'admin') then
+    return true;
+  end if;
+  if papel is distinct from 'blog_editor' or p_module <> 'blog' then return false;
+  end if;
   select case p_action when 'read' then can_read when 'edit' then can_edit when 'publish' then can_publish end
-    into permitido from public.portal_module_permissions
+    into permitido
+    from public.portal_module_permissions
     where user_id = (select auth.uid()) and module = p_module and active = true;
   return coalesce(permitido, false);
 end;
@@ -26,7 +31,10 @@ grant execute on function public.has_portal_permission(text, text) to authentica
 
 create or replace function public.save_blog_post(post jsonb)
 returns public.blog_posts
-language plpgsql volatile security definer set search_path = ''
+language plpgsql
+volatile
+security definer
+set search_path = ''
 as $$
 declare
   salvo public.blog_posts;
@@ -45,11 +53,21 @@ begin
   end if;
 
   insert into public.blog_posts (id, slug, status, featured, published_at, document, updated_at)
-  values (post ->> 'id', post ->> 'slug', coalesce(post ->> 'status', 'draft'),
-          destaque, coalesce(post ->> 'publishedAt', ''), post, now())
+  values (
+    post ->> 'id',
+    post ->> 'slug',
+    coalesce(post ->> 'status', 'draft'),
+    destaque,
+    coalesce(post ->> 'publishedAt', ''),
+    post,
+    now()
+  )
   on conflict (id) do update set
-    slug = excluded.slug, status = excluded.status, featured = excluded.featured,
-    published_at = excluded.published_at, document = excluded.document,
+    slug = excluded.slug,
+    status = excluded.status,
+    featured = excluded.featured,
+    published_at = excluded.published_at,
+    document = excluded.document,
     updated_at = excluded.updated_at
   returning * into salvo;
 

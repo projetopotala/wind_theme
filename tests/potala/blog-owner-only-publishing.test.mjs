@@ -9,7 +9,7 @@ const rollback = ler("supabase/rollbacks/20261117130357_rollback_blog_owner_only
 
 test("migration reserva publicacao ao Owner ativo e fecha o caminho legado", () => {
   assert.match(migration, /where u\.id = \(select auth\.uid\(\)\) and u\.active = true/);
-  assert.match(migration, /p_module = 'blog' and p_action = 'publish'[\s\S]*return papel = 'owner'/);
+  assert.match(migration, /p_module = 'blog' and p_action = 'publish'[\s\S]*return coalesce\(papel = 'owner', false\)/);
   assert.match(migration, /save_blog_post[\s\S]*has_portal_permission\('blog', 'publish'\)/);
   assert.match(migration, /Somente o Owner pode publicar no Blog/);
   assert.doesNotMatch(migration, /insert into public\.users|update public\.users|delete from public\.users/);

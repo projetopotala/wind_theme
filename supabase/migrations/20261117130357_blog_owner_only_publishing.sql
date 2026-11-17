@@ -26,7 +26,8 @@ begin
 
   -- Regra institucional: publicar e administrar o Blog é exclusivo do Owner.
   if p_module = 'blog' and p_action = 'publish' then
-    return papel = 'owner';
+    -- coalesce: sem sessao, sem linha em public.users ou conta inativa = false (nunca NULL, que "if not" deixaria passar).
+    return coalesce(papel = 'owner', false);
   end if;
 
   if papel in ('owner', 'admin') then
