@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="/css/cadastro-profissional.css">
 <link rel="stylesheet" href="/css/organizar-curso.css">
 <link rel="stylesheet" href="/css/novo-curso.css">
+  <link rel="stylesheet" href="/css/editar-site.css">
   <script src="/vendor/supabase.js"></script>
   <script type="module" src="/js/admin/admin-entry.js"></script>
 </head>
@@ -100,6 +101,7 @@
         <p class="admin-nav-group">Conteúdo do portal</p>
         <ul>
           <li><button type="button" data-section="jornada" data-dica="Jornada"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#route"></use></svg><span>Jornada</span></button></li>
+          <li><button type="button" data-section="editar-site" data-dica="Editar site" hidden aria-hidden="true"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#pencil"></use></svg><span>Editar site</span></button></li>
           <li><button type="button" data-section="blog" data-dica="Blog"><svg class="admin-icone" aria-hidden="true" focusable="false"><use href="/media/icones-admin.svg#pen-line"></use></svg><span>Blog</span></button></li>
         </ul>
         </div>
@@ -422,6 +424,11 @@
         </aside>
       </div>
 
+      <section class="admin-workspace es-workspace" data-admin-workspace="editar-site" hidden aria-labelledby="editar-site-titulo">
+        <header class="admin-head"><h2 id="editar-site-titulo" tabindex="-1">Editar site</h2>
+        <p class="op-muted">Escolha uma página, clique no que quer mudar e veja o resultado na hora. Nada vai para o ar até você publicar.</p></header>
+        <div data-editar-site></div>
+      </section>
       <section class="admin-workspace" data-admin-workspace="blog" hidden aria-labelledby="admin-blog-title">
         <header class="admin-workspace-head">
           <h2 id="admin-blog-title">Blog</h2>
