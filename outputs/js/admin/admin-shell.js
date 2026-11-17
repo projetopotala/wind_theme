@@ -206,7 +206,9 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
       if (root.dataset) root.dataset.adminRole = accessRole;
       const somenteBlog = accessRole === "blog_editor";
       for (const item of nav?.querySelectorAll?.("[data-section]") || []) {
-        const permitido = !somenteBlog || item.getAttribute("data-section") === "blog";
+        /* "Editar site" é só do Owner: o botão some para qualquer outra conta (o banco recusa de qualquer forma). */
+        const secaoDoItem = item.getAttribute("data-section");
+        const permitido = (!somenteBlog || secaoDoItem === "blog") && (secaoDoItem !== "editar-site" || accessRole === "owner");
         item.hidden = !permitido;
         item.setAttribute("aria-hidden", permitido ? "false" : "true");
       }
