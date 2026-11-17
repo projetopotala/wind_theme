@@ -39,15 +39,16 @@ const normalizar = (texto) => String(texto ?? "").normalize("NFD").replace(/[̀-
 /* O texto que a mesa mostra e edita: as alterações pendentes, quando houver. */
 export const textoAtual = (registro) => registro?.pendente || registro?.post;
 
-/* Escritor (publicar === false) nao ve Publicar, Agendar nem Arquivar: o banco recusaria de qualquer forma. */
-export const podePublicar = (permissoes) => permissoes?.publicar !== false;
+/* Publicar e sempre opt-in. Permissao ausente, vazia ou incompleta nunca libera controles privilegiados. */
+export const podePublicar = (permissoes) => permissoes?.publicar === true;
 
 /* Permissoes da sessao atual. Sempre parte do padrao: nunca herda nada de uma sessao anterior. */
-export const permissoesDaMesa = (permissoes = {}) => ({ ler: true, editar: true, publicar: true, ...permissoes });
+export const permissoesDaMesa = (permissoes = {}) => ({ ler: false, editar: false, publicar: false, ...permissoes });
 
 /* Do acesso devolvido pelo login para as permissoes da Mesa (so leitura da concessao; o banco segue decidindo). */
 export function permissoesDaSessao(acesso) {
-  if (acesso?.role !== "blog_editor") return permissoesDaMesa();
+  /* Owner/admin sao autorizados pelo backend e entram explicitamente com o conjunto completo. */
+  if (acesso?.role !== "blog_editor") return permissoesDaMesa({ ler: true, editar: true, publicar: true });
   const p = acesso.permissions || {};
   return permissoesDaMesa({
     ler: p.read === true,

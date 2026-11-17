@@ -17,8 +17,8 @@ test("Escritor: o menu da lista nao oferece Agendar nem Arquivar; Editar, Duplic
   }
 });
 
-test("Editor, Owner e quem nao informa permissoes continuam vendo Agendar e Arquivar", () => {
-  for (const permissoes of [editor, undefined, {}]) {
+test("Editor e Owner explicitos continuam vendo Agendar e Arquivar", () => {
+  for (const permissoes of [editor, { ...editor, papel: "owner" }]) {
     const lista = ids({ status: "draft" }, permissoes);
     assert.ok(lista.includes("agendar") && lista.includes("arquivar"));
   }
@@ -26,11 +26,15 @@ test("Editor, Owner e quem nao informa permissoes continuam vendo Agendar e Arqu
   assert.ok(ids({ status: "archived" }, editor).includes("restaurar"));
 });
 
-test("podePublicar so e falso quando publicar === false", () => {
+test("publicacao e opt-in: permissao ausente, vazia ou falsa nunca libera controles", () => {
   assert.equal(podePublicar({ publicar: false }), false);
   assert.equal(podePublicar({ publicar: true }), true);
-  assert.equal(podePublicar(undefined), true);
-  assert.equal(podePublicar({}), true);
+  assert.equal(podePublicar(undefined), false);
+  assert.equal(podePublicar({}), false);
+  for (const permissoes of [undefined, {}]) {
+    const lista = ids({ status: "draft" }, permissoes);
+    assert.ok(!lista.includes("agendar") && !lista.includes("arquivar"));
+  }
 });
 
 test("editor de texto: Escritor so envia para revisao; Publicar, Agendar e Arquivar saem da tela", () => {
@@ -41,5 +45,5 @@ test("editor de texto: Escritor so envia para revisao; Publicar, Agendar e Arqui
   assert.match(fonte, /publica\(\) \? `<button[^`]*data-editor-acao="publicar"/);
   assert.match(fonte, /publica\(\) \? `<button[^`]*data-editor-acao="arquivar"/);
   /* a trava do backend e a do mudarStatus continuam */
-  assert.match(fonte, /ctx\.permissoes\?\.publicar === false/);
+  assert.match(fonte, /\["publicar", "agendar", "despublicar", "arquivar"\]\.includes\(acao\) && !podePublicar\(ctx\.permissoes\)/);
 });

@@ -971,3 +971,30 @@ option { background: var(--painel); color: var(--marfim); }
   .mesa-folha__texto { padding-inline: 16px; }
   .mesa-capa-vazia { padding-inline: 16px; }
 }
+
+/* A demonstração não é uma sessão autenticada: o papel simulado fica visível o tempo todo. */
+.mesa-demo-writer-aviso {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 80;
+  max-width: min(390px, calc(100vw - 32px));
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(201, 164, 101, 0.72);
+  border-radius: 12px;
+  background: rgba(24, 19, 14, 0.96);
+  color: #f3e7d1;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38);
+  font: 700 0.75rem/1.45 var(--fonte-sans, system-ui, sans-serif);
+  letter-spacing: 0.045em;
+  text-transform: none;
+}
+
+@media (max-width: 720px) {
+  .mesa-demo-writer-aviso {
+    right: 10px;
+    bottom: 10px;
+    max-width: calc(100vw - 20px);
+  }
+}

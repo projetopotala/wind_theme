@@ -193,7 +193,10 @@ test("fiacao da entrada: logout grava antes, troca em outra aba isola, sessao re
   assert.match(src, /identidadeMudou\(identidadeAtual,/);
   assert.match(src, /mesa\.prepararSaida\(\)/);
   assert.match(src, /saidaLiberada = true;\s+botao\.click\(\)/);
-  assert.match(src, /identidade: demo \? "demonstracao" : identidadeAtual/);
+  assert.match(src, /identidade: demo \? "demonstracao-writer" : identidadeAtual/);
+  assert.match(src, /PERMISSOES_DA_DEMONSTRACAO_WRITER/);
+  assert.match(src, /publicar: false/);
+  assert.match(src, /DEMONSTRAÇÃO LOCAL — WRITER · Sem conexão com o Blog real\./);
   /* a renovacao da mesma conta segue pela decisao de entrada, sem reabrir */
   assert.match(src, /entradaAoAutorizar\(/);
 });

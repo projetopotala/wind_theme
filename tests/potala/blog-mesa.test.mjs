@@ -144,7 +144,7 @@ test("o histórico descreve a mudança em palavras", () => {
 });
 
 test("o menu \"⋯\" só oferece o que o status permite", () => {
-  const ids = (status) => itensDoMenu({ status }).filter((item) => item !== "separador").map(({ id }) => id);
+  const ids = (status) => itensDoMenu({ status }, { publicar: true }).filter((item) => item !== "separador").map(({ id }) => id);
   assert.deepEqual(ids("published"), ["editar", "visualizar", "duplicar", "despublicar", "arquivar", "excluir"]);
   assert.deepEqual(ids("draft"), ["editar", "visualizar", "duplicar", "agendar", "arquivar", "excluir"]);
   assert.ok(ids("scheduled").includes("despublicar"));

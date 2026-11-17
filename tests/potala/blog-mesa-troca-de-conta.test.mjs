@@ -98,5 +98,6 @@ test("fiacao: entrar() troca as permissoes, sair() limpa dados, a entrada reabre
   const entry = readFileSync(new URL("../../outputs/js/blog-admin/blog-admin-entry.js", import.meta.url), "utf8");
   assert.match(entry, /permissoes = permissoesDaSessao\(access\)/);
   assert.match(entry, /entradaAoAutorizar\(/);
-  assert.match(entry, /mesa\.entrar\(\{ usuario: demo \? null : usuario, permissoes: demo \? \{\} : permissoes, identidade: /);
+  assert.match(entry, /permissoes: demo \? PERMISSOES_DA_DEMONSTRACAO_WRITER : permissoes/);
+  assert.match(entry, /identidade: demo \? "demonstracao-writer" : identidadeAtual/);
 });
