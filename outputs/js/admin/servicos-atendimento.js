@@ -34,7 +34,7 @@ export function servicosDeAtendimento(s) {
     const profissionais = [...new Set([...vinculos.map((l) => l.professional_id), ...ofertas.map((o) => o.professional_id).filter(Boolean)])];
     return {
       id: d.id, nome: d.title || "", descricao: d.summary || "", duracao: Number(d.duration_minutes) || 0,
-      ofertas, ativo: ativas.length > 0, modalidades: [...new Set(ativas.map((o) => o.mode || "presencial"))], profissionais,
+      ofertas, ativo: ativas.length > 0, modalidades: [...new Set((ativas.length ? ativas : ofertas.filter((o) => o.active === false)).map((o) => o.mode || "presencial"))], profissionais,
     };
   });
 }

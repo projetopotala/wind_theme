@@ -1595,3 +1595,4 @@ button {
 .serv-lista { display: grid; gap: 10px; margin-top: 8px; }
 .serv-item { padding: 12px; border: 1px solid var(--admin-line); border-radius: 10px; }
 .serv-item-topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.serv-form input:not([type="checkbox"]), .serv-form select, .serv-form textarea { background: #12100e; color: inherit; border: 1px solid var(--admin-line); border-radius: 8px; padding: 10px; font: inherit; width: 100%; box-sizing: border-box; }

@@ -90,6 +90,7 @@ test("Owner cadastra serviço online+presencial sem SQL: cliente vê as duas ofe
   const lista = await publicos(como);
   assert.equal(lista.length, 2);
   assert.ok(lista.every((s) => s.title?.includes?.("Acolhimento") || JSON.stringify(s).includes("Acolhimento")));
+  assert.equal(Number((await db.query("select count(*) n from public.users")).rows[0].n), 1, "nenhuma conta administrativa criada");
   assert.ok((await registros(db, "audit_events")).length >= 7, "cada gravação gera evento de auditoria");
 });
 

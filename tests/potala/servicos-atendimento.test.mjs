@@ -62,6 +62,13 @@ test("alternar exige profissional ativo para ativar e só toca nas ofertas neces
   assert.deepEqual(montarPlanoAlternar(s, "d", false).passos, []);
 });
 
+test("serviço inativo mostra a modalidade na lista", () => {
+  const s = estado();
+  s.activity_definitions.push({ id: "d", title: "X", kind: "appointment" });
+  s.activity_offerings.push({ id: "o", title: "X", definition_id: "d", mode: "online", active: false });
+  assert.match(renderizarServicos(s), /Online · /);
+});
+
 test("validação básica", () => {
   assert.ok(validarServico(form({ nome: "" }), estado()).length);
   assert.deepEqual(validarServico(form(), estado()), []);
