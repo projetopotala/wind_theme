@@ -368,8 +368,8 @@ export function createBlogEditor({ root, ctx } = {}) {
 
   async function mudarStatus(acao) {
     if (ocupado || !post) return;
-    if ((acao === "publicar" || acao === "agendar") && ctx.permissoes?.publicar === false) {
-      ctx.avisos.mostrar("Sua conta pode editar o Blog, mas não publicar ou agendar textos.", { tipo: "erro", duracao: 6000 });
+    if (["publicar", "agendar", "despublicar", "arquivar"].includes(acao) && !podePublicar(ctx.permissoes)) {
+      ctx.avisos.mostrar("Somente o Owner pode executar ações de publicação.", { tipo: "erro", duracao: 6000 });
       return;
     }
     clearTimeout(espera);

@@ -21,6 +21,7 @@ const sql = (f) => readFileSync(new URL(f, dir), "utf8");
 const OWNER = "00000000-0000-4000-8000-0000000000a1";
 const ANA = "00000000-0000-4000-8000-0000000000b1";
 const BIA = "00000000-0000-4000-8000-0000000000b2";
+const EDITOR = "00000000-0000-4000-8000-0000000000c1";
 const SEM_ACESSO = "00000000-0000-4000-8000-0000000000d1";
 
 let db;
@@ -55,18 +56,20 @@ before(async () => {
     create function storage.foldername(n text) returns text[] language sql as $$ select string_to_array(n,'/') $$;
   `);
   for (const f of todas.filter((nome) => versao(nome) < "202611060001")) await db.exec(sql(f));
-  for (const v of ["202611120002", "202611060003", "202611060005", "202611150001"]) await db.exec(sql(arquivo(v)));
+  for (const v of ["202611120002", "202611060003", "202611060005", "202611150001", "202611171303"]) await db.exec(sql(arquivo(v)));
   await db.exec(`
     insert into auth.users (id, email, aud, role) values
       ('${OWNER}', 'owner-sintetico@example.invalid', 'authenticated', 'authenticated'),
       ('${ANA}', 'ana-sintetica@example.invalid', 'authenticated', 'authenticated'),
       ('${BIA}', 'bia-sintetica@example.invalid', 'authenticated', 'authenticated'),
+      ('${EDITOR}', 'editor-sintetico@example.invalid', 'authenticated', 'authenticated'),
       ('${SEM_ACESSO}', 'sem-acesso@example.invalid', 'authenticated', 'authenticated');
     insert into public.users (id, email, name, role, active) values ('${OWNER}', 'owner-sintetico@example.invalid', 'Owner sintetico', 'owner', true);
   `);
   await como(OWNER);
   await db.query("select public.admin_set_blog_access($1, 'writer')", [ANA]);
   await db.query("select public.admin_set_blog_access($1, 'writer')", [BIA]);
+  await db.query("select public.admin_set_blog_access($1, 'editor')", [EDITOR]);
 });
 after(async () => { await db?.close(); });
 
@@ -92,10 +95,23 @@ test("escritora envia para revisao, mas nao publica, agenda, arquiva nem devolve
   assert.equal((await salvar(documento({ title: "Texto do fluxo (ajustado)" }), "rascunho")).status, "review");
 });
 
+test("Editor legado conserva escrita, mas nao aprova, publica nem altera texto alheio", async () => {
+  await como(EDITOR);
+  const proprio = documento({ id: "texto-do-editor", slug: "texto-do-editor", title: "Texto do editor" });
+  assert.equal((await salvar(proprio, "rascunho")).status, "draft");
+  assert.equal((await salvar(proprio, "revisao")).status, "review");
+  for (const acao of ["publicar", "agendar", "despublicar", "arquivar"]) {
+    assert.equal(await tenta(() => salvar(proprio, acao)), "42501", acao);
+  }
+  assert.equal(await tenta(() => salvar(documento({ title: "Tentativa do editor" }), "rascunho")), "42501");
+  assert.equal((await reservados()).some((r) => r.id === "texto-do-fluxo"), false, "Editor nao recebe a fila do Owner");
+});
+
 test("Owner unico enxerga o texto em revisao e devolve com correcoes; a escritora le a nota no proprio texto", async () => {
   await como(OWNER);
   const fila = (await listar()).filter((r) => r.status === "review");
-  assert.equal(fila.length, 1, "o Owner ve a fila de revisao");
+  assert.equal(fila.length, 2, "o Owner ve a fila de revisao de Writer e Editor legado");
+  assert.ok(fila.some((r) => r.id === "texto-do-fluxo"));
   const nota = { texto: "Revisar o segundo paragrafo e citar a fonte.", por: "Owner sintetico", em: "2026-11-14T12:00:00Z" };
   const devolvido = await salvar(documento({ title: "Texto do fluxo (ajustado)", correcao: nota }), "despublicar", "Correcoes pedidas: revisar");
   assert.equal(devolvido.status, "draft");
@@ -134,8 +150,8 @@ test("depois de publicado: escritora so grava pendencia, nao altera o que esta n
   assert.equal((await db.query("select document from public.blog_posts where id = 'texto-do-fluxo'")).rows[0].document.content[0].text, "Corpo corrigido, com fonte.");
   await db.exec("reset role");
   assert.equal((await db.query("select count(*)::int n from public.users where role in ('owner','admin')")).rows[0].n, 1, "so o Owner e administrativo");
-  assert.equal((await db.query("select count(*)::int n from public.users where role = 'blog_editor'")).rows[0].n, 2, "so as duas escritoras tem papel de blog");
-  assert.equal((await db.query("select count(*)::int n from public.portal_module_permissions where module = 'blog' and can_publish")).rows[0].n, 0, "ninguem alem do Owner publica");
+  assert.equal((await db.query("select count(*)::int n from public.users where role = 'blog_editor'")).rows[0].n, 3, "as contas editoriais nao viram administradoras");
+  assert.equal((await db.query("select count(*)::int n from public.portal_module_permissions where module = 'blog' and can_publish")).rows[0].n, 1, "o grant legado e preservado, mas nao autoriza publicacao");
 });
 
 test("revogar o acesso da escritora vale na proxima chamada e nao apaga o texto dela", async () => {

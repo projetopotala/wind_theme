@@ -34,7 +34,11 @@ export async function getAdminAccess(client) {
   const role = user?.active === true && ["owner", "admin", "blog_editor"].includes(user.role)
     ? user.role
     : null;
-  let permissions = role === "blog_editor" ? { read: false, edit: false, publish: false } : { read: true, edit: true, publish: true };
+  /* A publicação institucional é exclusiva do Owner ativo. Admin e Editor podem
+     conservar leitura/edição, mas nunca recebem a ação final pelo cliente. */
+  let permissions = role
+    ? { read: true, edit: true, publish: role === "owner" }
+    : { read: false, edit: false, publish: false };
   if (role === "blog_editor") {
     const { data: grant, error: grantError } = await client
       .from("portal_module_permissions")
@@ -43,7 +47,7 @@ export async function getAdminAccess(client) {
       .eq("module", "blog")
       .maybeSingle();
     if (grantError) throw new AdminAuthError("getPermissions", grantError);
-    if (grant?.active === true) permissions = { read: grant.can_read === true, edit: grant.can_edit === true, publish: grant.can_publish === true };
+    if (grant?.active === true) permissions = { read: grant.can_read === true, edit: grant.can_edit === true, publish: false };
   }
   return {
     state: role ? "authorized" : "forbidden",
