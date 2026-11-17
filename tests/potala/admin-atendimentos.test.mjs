@@ -236,3 +236,64 @@ test("a camada nova não toca o banco além das funções existentes", () => {
   const src = readFileSync(new URL("../../outputs/js/admin/atendimentos-view.js", import.meta.url), "utf8");
   assert.ok(!/\.rpc\(|\.from\(|supabase/i.test(src));
 });
+
+/* Falha da confirmacao: nada e gravado e a Central continua mostrando a lista (defeito de 16/11: ficava com zero registros). */
+const clicarConfirmar = (handlers, id = REQ, valores = {}) => {
+  const campos = { "[data-reservation-date]": "2099-11-12", "[data-reservation-start]": "10:00", "[data-reservation-duration]": "60", "[data-reservation-professional]": "p1", ...valores };
+  const article = { querySelector: (sel) => (sel in campos ? { value: campos[sel] } : null) };
+  const button = { dataset: { appointmentConfirm: id }, closest: (s) => (s === "[data-appointment-row]" ? article : null) };
+  return handlers.click({ target: { closest: (s) => (s === "[data-appointment-confirm]" ? button : null) } });
+};
+const comCodigo = (code) => Object.assign(new Error("interno"), { code });
+
+for (const [rotulo, erro, mensagem] of [
+  ["vinculo operacional (PT422)", comCodigo("APPOINTMENT_CLIENT_LINK"), /vínculo operacional/],
+  ["conflito de agenda (23P01)", comCodigo("APPOINTMENT_OVERLAP"), /Conflito de agenda/],
+  ["falha generica do servidor", comCodigo("APPOINTMENT_FAILED"), /Nada foi gravado/],
+  ["erro sem codigo (rede)", new Error("Failed to fetch"), /Nada foi gravado/],
+]) {
+  test(`falha da confirmacao (${rotulo}): lista, pedido pendente e secoes permanecem; so a mensagem aparece`, async () => {
+    const { panel, handlers, target, calls } = setup({ confirmReservation: async () => { throw erro; } });
+    await panel.reload();
+    const antes = target.innerHTML.match(/data-appointment-row="/g).length;
+    await clicarConfirmar(handlers);
+    const html = target.innerHTML;
+    assert.equal(html.match(/data-appointment-row="/g).length, antes, "nenhum pedido some");
+    assert.ok(html.includes("Cliente Sintético"), "o pedido pendente continua na lista");
+    assert.match(html, /Solicitações pendentes/);
+    assert.doesNotMatch(html, /Nenhuma solicitação aguardando|Carregue as solicitações/);
+    assert.match(html, mensagem);
+    assert.doesNotMatch(html, /Failed to fetch|interno/, "nada vindo do banco/rede aparece");
+    assert.equal(calls.confirm.length, 0);
+  });
+}
+
+test("falha de confirmacao nao mostra sucesso nem fecha o formulario aberto", async () => {
+  const { panel, handlers, target } = setup({ confirmReservation: async () => { throw comCodigo("APPOINTMENT_CLIENT_LINK"); } });
+  await panel.reload();
+  await handlers.click({ target: { closest: (sel) => (sel === "[data-atendimentos-agendar]" ? { dataset: { atendimentosAgendar: REQ } } : null) } });
+  await clicarConfirmar(handlers);
+  assert.doesNotMatch(target.innerHTML, /Agendamento confirmado/);
+  assert.match(target.innerHTML, /data-appointment-confirm=/, "formulario continua aberto");
+});
+
+test("sessao expirada ou sem permissao continua limpando o painel (comportamento de seguranca preservado)", async () => {
+  const { panel, handlers, target } = setup({ confirmReservation: async () => { throw comCodigo("42501"); } });
+  await panel.reload();
+  await clicarConfirmar(handlers);
+  assert.doesNotMatch(target.innerHTML, /Cliente Sintético/);
+});
+
+test("pedido alterado por outra pessoa (PT409): mantem a lista e a atualiza, sem recarregar a mao", async () => {
+  let leituras = 0;
+  const { panel, handlers, target } = setup({ confirmReservation: async () => { throw comCodigo("APPOINTMENT_CONFLICT"); } });
+  const original = fakeClient.from;
+  fakeClient.from = (t) => { if (t === "appointment_requests") leituras += 1; return original(t); };
+  try {
+    await panel.reload();
+    const antes = leituras;
+    await clicarConfirmar(handlers);
+    assert.equal(leituras, antes + 1, "lista atualizada automaticamente");
+    assert.ok(target.innerHTML.includes("Cliente Sintético"));
+  } finally { fakeClient.from = original; }
+});
