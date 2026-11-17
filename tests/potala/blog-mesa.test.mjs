@@ -144,12 +144,12 @@ test("o histórico descreve a mudança em palavras", () => {
 });
 
 test("o menu \"⋯\" só oferece o que o status permite", () => {
-  const ids = (status) => itensDoMenu({ status }).filter((item) => item !== "separador").map(({ id }) => id);
+  const ids = (status) => itensDoMenu({ status }, { publicar: true }).filter((item) => item !== "separador").map(({ id }) => id);
   assert.deepEqual(ids("published"), ["editar", "visualizar", "duplicar", "despublicar", "arquivar", "excluir"]);
   assert.deepEqual(ids("draft"), ["editar", "visualizar", "duplicar", "agendar", "arquivar", "excluir"]);
   assert.ok(ids("scheduled").includes("despublicar"));
   assert.deepEqual(ids("archived"), ["editar", "visualizar", "duplicar", "restaurar", "excluir"]);
-  assert.equal(itensDoMenu({ status: "draft" }).at(-1).perigo, true, "excluir por último, marcado como perigoso");
+  assert.equal(itensDoMenu({ status: "draft" }, { publicar: true }).at(-1).perigo, true, "excluir por último, marcado como perigoso");
 });
 
 test("as rotas da mesa vivem no endereço", () => {

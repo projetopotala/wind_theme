@@ -37,7 +37,7 @@ test("autenticação reconhece blog_editor e painel geral não inicializa módul
 });
 
 test("editor do Blog bloqueia publicação e agendamento sem concessão explícita", () => {
-  assert.match(editor, /ctx\.permissoes\?\.publicar === false/);
-  assert.match(editor, /não publicar ou agendar textos/);
+  assert.match(editor, /\["publicar", "agendar", "despublicar", "arquivar"\]\.includes\(acao\) && !podePublicar\(ctx\.permissoes\)/);
+  assert.match(editor, /Somente o Owner pode executar ações de publicação/);
 });
 
