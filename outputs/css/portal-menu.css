@@ -44,8 +44,7 @@ body[data-story-page] .potala-menu__trigger { left: calc(max(18px, env(safe-area
 .potala-menu__trigger--inline:hover { background: color-mix(in srgb, currentColor 9%, transparent); border-color: color-mix(in srgb, currentColor 55%, transparent); }
 
 @media (max-width: 560px) {
-  .potala-menu__trigger { padding: 0; width: 44px; justify-content: center; }
-  .potala-menu__trigger-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .potala-menu__trigger { min-width: 88px; padding: 0 11px; justify-content: center; gap: 6px; }
 }
 
 /* ---------- Diálogo ---------- */

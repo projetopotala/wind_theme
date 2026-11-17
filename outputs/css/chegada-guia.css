@@ -1,0 +1,43 @@
+.arrival-guide {
+  position: absolute;
+  z-index: 20;
+  top: max(72px, env(safe-area-inset-top) + 64px);
+  left: clamp(16px, 5vw, 76px);
+  width: min(540px, calc(100% - 32px));
+  max-height: calc(100svh - 170px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(18px, 3vw, 32px);
+  border: 1px solid rgba(239, 232, 216, .35);
+  border-radius: 18px;
+  background: rgba(22, 26, 24, .88);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, .3);
+  backdrop-filter: blur(14px);
+  color: #efe8d8;
+}
+html.arrival-exploring .arrival-guide { visibility: hidden; pointer-events: none; }
+.arrival-guide__eyebrow { margin: 0 0 8px; color: #dfc38f; font: 700 .72rem/1.4 Arial, sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+.arrival-guide h2 { margin: 0 0 10px; font: 400 clamp(1.7rem, 4vw, 2.7rem)/1.08 Georgia, serif; }
+.arrival-guide p:not(.arrival-guide__eyebrow) { margin: 0 0 18px; font: 400 1rem/1.5 Arial, sans-serif; }
+.arrival-guide nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.arrival-guide nav a, .arrival-guide__journey { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 10px 13px; border: 1px solid rgba(239, 232, 216, .38); border-radius: 8px; color: inherit; background: rgba(255,255,255,.06); font: 600 .88rem/1.25 Arial, sans-serif; text-decoration: none; }
+.arrival-guide nav a:hover, .arrival-guide__journey:hover { background: rgba(203,180,139,.2); }
+.arrival-guide a:focus-visible { outline: 3px solid #dfc38f; outline-offset: 2px; }
+.arrival-guide__journey { margin-top: 9px; background: transparent; }
+@media (max-width: 600px) {
+  .arrival-guide { top: max(66px, env(safe-area-inset-top) + 56px); left: 12px; width: calc(100% - 24px); max-height: calc(100svh - 160px); padding: 16px; }
+  .arrival-guide h2 { font-size: 1.55rem; }
+  .arrival-guide p:not(.arrival-guide__eyebrow) { font-size: .91rem; margin-bottom: 12px; }
+  .arrival-guide nav { grid-template-columns: 1fr; gap: 5px; }
+  .arrival-guide nav a, .arrival-guide__journey { min-height: 44px; padding: 8px 11px; }
+}
+@media (max-height: 480px) and (min-width: 480px) {
+  .arrival-guide { top: 70px; left: 12px; width: calc(100% - 24px); max-height: calc(100svh - 145px); padding: 12px; display: grid; grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr); grid-template-areas: "eyebrow links" "heading links" "intro links" ". journey"; gap: 3px 16px; }
+  .arrival-guide__eyebrow { grid-area: eyebrow; margin: 0; }
+  .arrival-guide h2 { grid-area: heading; margin: 0; font-size: 1.35rem; }
+  .arrival-guide p:not(.arrival-guide__eyebrow) { grid-area: intro; margin: 0; font-size: .8rem; }
+  .arrival-guide nav { grid-area: links; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .arrival-guide nav a { min-height: 44px; padding: 6px; font-size: .78rem; }
+  .arrival-guide__journey { grid-area: journey; min-height: 44px; margin: 0; padding: 6px 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .arrival-guide { scroll-behavior: auto; } }

@@ -46,7 +46,7 @@ export function montarAssistente({ doc = document, transporte, base = new URL(".
   const indisponivel = transporte.modo === "indisponivel";
 
   const marca = el(doc, "img", { src: new URL("media/potala-mark-transparent.png", base).href, alt: "", width: 34, height: 28, decoding: "async" });
-  const bolinha = el(doc, "button", { type: "button", classe: "pa-bolinha", "aria-expanded": "false", "aria-controls": "pa-janela", "aria-label": "Abrir o Assistente Potala", "data-pa-bolinha": true }, [marca, el(doc, "span", { classe: "pa-bolinha__ponto", "aria-hidden": "true", hidden: true })]);
+  const bolinha = el(doc, "button", { type: "button", classe: "pa-bolinha", "aria-expanded": "false", "aria-controls": "pa-janela", "aria-label": "Abrir o Assistente Potala", "data-pa-bolinha": true }, [marca, el(doc, "span", { classe: "pa-bolinha__texto", texto: "Ajuda" }), el(doc, "span", { classe: "pa-bolinha__ponto", "aria-hidden": "true", hidden: true })]);
 
   const titulo = el(doc, "h2", { id: "pa-titulo", classe: "pa-titulo", texto: "Assistente Potala" });
   const subtitulo = el(doc, "p", { classe: "pa-subtitulo", texto: indisponivel ? AVISO_INDISPONIVEL : simulado ? AVISO_SIMULADO : "Inteligência artificial · conteúdo público do portal" });

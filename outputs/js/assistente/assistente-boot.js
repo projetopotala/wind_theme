@@ -38,15 +38,39 @@ function carregarEstilo(doc) {
   return pronto;
 }
 
-export async function iniciarAssistente(doc = document) {
-  if (doc.documentElement.hasAttribute("data-sem-assistente")) return null;
-  const transporte = await decidirModo();
-  if (!transporte) return null;
-  await carregarEstilo(doc);
-  return montarAssistente({ doc, transporte });
+const montagens = new WeakMap();
+
+export function iniciarAssistente(doc = document) {
+  if (doc.documentElement.hasAttribute("data-sem-assistente")) return Promise.resolve(null);
+  if (!montagens.has(doc)) {
+    const montagem = (async () => {
+      const transporte = await decidirModo();
+      if (!transporte) return null;
+      await carregarEstilo(doc);
+      return montarAssistente({ doc, transporte });
+    })();
+    montagens.set(doc, montagem);
+    montagem.catch(() => { if (montagens.get(doc) === montagem) montagens.delete(doc); });
+  }
+  return montagens.get(doc);
+}
+
+export function conectarConvites(doc = document, iniciar = iniciarAssistente) {
+  const aoClicar = (evento) => {
+    const convite = evento.target?.closest?.("[data-abrir-assistente]");
+    if (!convite) return;
+    evento.preventDefault();
+    Promise.resolve().then(() => iniciar(doc)).then((assistente) => {
+      if (assistente) assistente.abrir();
+      else doc.defaultView?.location?.assign(convite.href);
+    }).catch(() => doc.defaultView?.location?.assign(convite.href));
+  };
+  doc.addEventListener("click", aoClicar);
+  return () => doc.removeEventListener("click", aoClicar);
 }
 
 if (typeof document !== "undefined" && !globalThis.__POTALA_TESTE__) {
+  conectarConvites(document);
   const iniciar = () => { iniciarAssistente(document).catch(() => { /* sem assistente: a página segue normal */ }); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar, { once: true });
   else iniciar();

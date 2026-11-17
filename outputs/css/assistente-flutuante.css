@@ -34,6 +34,8 @@
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 .pa-bolinha img { width: 30px; height: auto; pointer-events: none; }
+.pa-bolinha__texto { position: absolute; right: 62px; padding: 7px 10px; border: 1px solid var(--pa-linha); border-radius: 999px; background: var(--pa-fundo); color: var(--pa-marfim); font: 600 13px/1 var(--pa-sans); white-space: nowrap; }
+.pa-raiz[data-aberto] .pa-bolinha__texto { display: none; }
 .pa-bolinha:hover { transform: translateY(-2px); border-color: rgba(216, 178, 106, .5); box-shadow: 0 14px 32px rgba(0, 0, 0, .45); }
 .pa-bolinha:focus-visible, .pa-raiz button:focus-visible, .pa-raiz a:focus-visible, .pa-campo:focus-visible, .pa-mensagens:focus-visible { outline: 2px solid var(--pa-ouro-forte); outline-offset: 3px; }
 .pa-raiz[data-aberto] .pa-bolinha { border-color: rgba(216, 178, 106, .55); }

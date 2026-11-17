@@ -1,26 +1,6 @@
 import { enviarInteresse } from "./shared/participacao.js";
 
-const assistant = document.querySelector("[data-assistant-preview]");
 const feedback = document.querySelector("[data-feedback-preview]");
-
-if (assistant) {
-  const input = assistant.querySelector("input");
-  const status = assistant.querySelector("[data-assistant-status]");
-
-  assistant.querySelectorAll("[data-suggestion]").forEach((button) => {
-    button.addEventListener("click", () => {
-      input.value = button.dataset.suggestion || "";
-      input.focus();
-    });
-  });
-
-  assistant.addEventListener("submit", (event) => {
-    event.preventDefault();
-    status.textContent = input.value.trim()
-      ? "A interface está pronta. A conversa inteligente será conectada na próxima etapa."
-      : "Escreva uma pergunta ou escolha uma das sugestões para visualizar o fluxo.";
-  });
-}
 
 /*
  * "Você encontrou o que procurava?" chega ao Instituto como retorno anônimo.

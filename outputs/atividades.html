@@ -8,9 +8,9 @@
   <title>Atividades — Instituto Potala</title>
   <script>document.documentElement.classList.add("js");</script>
   <link rel="preload" href="media/atividades-pratica.webp" as="image" type="image/webp" fetchpriority="high">
+  <link rel="stylesheet" href="css/assistente.css">
   <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/section-photographic.css">
-  <link rel="stylesheet" href="css/assistente.css">
   <link rel="stylesheet" href="css/atividades-redesign.css">
   <link rel="stylesheet" href="css/section-transition.css">
   <script type="module" src="js/secoes.js"></script>
@@ -238,38 +238,16 @@
       <div class="photo-dark-copy" data-reveal><p>Consulte as turmas abertas e pergunte sobre uma aula experimental. O mais importante é perceber como a prática encontra você.</p><a class="photo-link" href="https://www.institutopotala.com/atividadescorporais" rel="noreferrer">Ver atividades atuais ↗</a></div>
     </section>
 
-    <!--
-      A prévia do assistente, a mesma ideia que a Recepção tem.
-
-      Ela entra ANTES do encerramento: quem chegou até aqui já leu as famílias
-      de práticas e o convite para agendar, e é nesse ponto que a dúvida
-      específica aparece — "serve para quem nunca praticou?", "tem turma de
-      manhã?". Depois do encerramento, ela viria quando a pessoa já está de
-      saída.
-
-      Nada é enviado nem guardado, e o texto diz isso. Um campo que aceita a
-      pergunta de alguém e a descarta em silêncio é pior do que campo nenhum:
-      a pessoa vai embora achando que perguntou.
-    -->
     <section class="assistente" id="assistente" data-capitulo="assistente" aria-labelledby="activities-assistant-title">
       <div class="assistente-copy">
-        <p class="assistente-kicker">Prévia do assistente</p>
+        <p class="assistente-kicker">Orientação</p>
         <h2 id="activities-assistant-title">Posso ajudar você?</h2>
-        <p>Esta é a interface visual da futura conversa inteligente do Portal. A integração será feita em uma próxima etapa; por enquanto, nenhuma mensagem é enviada ou armazenada.</p>
+        <p>O Assistente Potala ajuda a encontrar caminhos no portal. As respostas inteligentes podem estar indisponíveis; os links abaixo continuam disponíveis.</p>
       </div>
-      <form class="assistente-forma" data-assistente>
-        <label for="activities-question">O que você gostaria de praticar?</label>
-        <div class="assistente-campo">
-          <input id="activities-question" name="question" type="text" autocomplete="off" placeholder="Escreva sua pergunta...">
-          <button type="submit">Continuar</button>
-        </div>
-        <div class="assistente-sugestoes" aria-label="Perguntas sugeridas">
-          <button type="button" data-sugestao="Nunca pratiquei nada parecido. Por onde começo?">Nunca pratiquei</button>
-          <button type="button" data-sugestao="Quero uma prática mais calma, para o fim do dia.">Procuro algo calmo</button>
-          <button type="button" data-sugestao="Quero aprender um instrumento ou desenhar.">Quero aprender uma arte</button>
-        </div>
-        <p class="assistente-aviso" data-assistente-aviso role="status" aria-live="polite"></p>
-      </form>
+      <div class="assistente-forma">
+        <a class="assistente-abrir" href="recepcao.html#fale-conosco" data-abrir-assistente>Conversar com o Assistente Potala</a>
+        <p><a href="cursos.html">Conhecer cursos</a> · <a href="recepcao.html">Falar com a Recepção</a></p>
+      </div>
     </section>
 
     <section class="photo-closing" id="continuar" data-capitulo="continuar" aria-labelledby="activities-closing-title"><div data-fio-alvo data-revelar="0"><p class="photo-kicker">Outros caminhos</p><h2 id="activities-closing-title">Uma prática pode abrir novas curiosidades.</h2></div><div class="photo-closing-copy" data-reveal><p>Conheça também os cursos e os acontecimentos que ampliam a experiência.</p><div class="photo-connections"><a class="photo-link" href="cursos.html">Cursos ↗</a><a class="photo-link" href="programacao.html">Programação ↗</a></div></div></section>

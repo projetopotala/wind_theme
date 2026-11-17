@@ -9,6 +9,7 @@
   <link rel="preload" href="media/chegada-v2-master.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/respiracao.css">
   <link rel="stylesheet" href="css/chegada-scene.css">
+  <link rel="stylesheet" href="css/chegada-guia.css">
   <script>
     // O palácio fecha o véu antes de sair, mas esta página abria em brilho
     // cheio: a volta ao começo virava corte. Marcada antes da primeira pintura,
@@ -29,6 +30,9 @@
   </script>
   <script type="module" src="js/chegada/respiracao.js"></script>
   <script type="module" src="js/chegada/arrival-controller.js"></script>
+  <script>
+    addEventListener("scroll", () => document.documentElement.classList.toggle("arrival-exploring", scrollY > 40 && !document.querySelector(".arrival-guide")?.contains(document.activeElement)), { passive: true });
+  </script>
 <link rel="stylesheet" href="css/portal-menu.css">
 <link rel="stylesheet" href="css/portal-cinema.css">
   <script type="module" src="js/conta/redirecionar-link.js"></script>
@@ -105,6 +109,19 @@
         <span class="cine-title__line" aria-hidden="true"></span>
       </div>
       <div class="cine-dawn" aria-hidden="true"></div>
+    <section class="arrival-guide" aria-labelledby="arrival-guide-title">
+      <p class="arrival-guide__eyebrow">Bem-vindo ao Instituto Potala</p>
+      <h2 id="arrival-guide-title">Cuidado, aprendizado e encontro em um só lugar.</h2>
+      <p>Conheça atendimentos, cursos e atividades de saúde integrativa e cultura. Explore livremente; a conta só é necessária ao solicitar serviços que pedem identificação.</p>
+      <nav aria-label="Escolha seu caminho no Instituto">
+        <a href="atendimentos.html">Receber atendimento <span aria-hidden="true">↗</span></a>
+        <a href="cursos.html">Conhecer cursos <span aria-hidden="true">↗</span></a>
+        <a href="atividades.html">Participar de atividades <span aria-hidden="true">↗</span></a>
+        <a href="quem-somos.html">Conhecer o Instituto <span aria-hidden="true">↗</span></a>
+        <a href="recepcao.html">Não sei por onde começar <span aria-hidden="true">↗</span></a>
+      </nav>
+      <a class="arrival-guide__journey" href="travessia.html">Percorrer a Travessia <span aria-hidden="true">→</span></a>
+    </section>
     </section>
   </main>
 
