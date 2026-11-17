@@ -182,3 +182,41 @@ test("migration so troca a funcao de confirmacao; rollback restaura a regra ante
   const [i, f] = FUT(2);
   await assert.rejects(() => ctx.confirmar(id, i, f), (e) => e.code === "PT422");
 });
+
+/* Defeito de 16/11 (horario): o que o Owner envia (America/Sao_Paulo -> UTC) e exatamente o que fica na agenda, no pedido e na janela da sala. */
+const SP = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+
+test("horario gravado = horario enviado: 19:00, 23:30 e 00:00 do dia seguinte (America/Sao_Paulo); item, pedido e janela da sala iguais", async () => {
+  const ctx = await montar();
+  await perfil(ctx, U.cliente); await vincular(ctx, U.cliente, U.cliente);
+  const dia = (n) => new Date(Date.now() + (8 + n) * 864e5).toISOString().slice(0, 10);
+  const casos = [[`${dia(0)}T19:00:00-03:00`, "T22:00:00", 0], [`${dia(1)}T23:30:00-03:00`, "T02:30:00", 1], [`${dia(3)}T00:00:00-03:00`, "T03:00:00", 0]];
+  for (const [texto, utc, mais] of casos) {
+    const inicio = new Date(texto);
+    const fim = new Date(inicio.valueOf() + 3600e3);
+    const id = await ctx.pedir();
+    const r = await ctx.confirmar(id, inicio, fim);
+    const sid = r.result.schedule_id;
+    const item = (await ctx.db.query("select document->>'starts_at' s, document->>'ends_at' e from public.op_records where collection='schedule_items' and id=$1", [sid])).rows[0];
+    assert.equal(Date.parse(item.s), inicio.valueOf(), "item da agenda");
+    assert.equal(Date.parse(item.e), fim.valueOf());
+    assert.ok(item.s.includes(utc), `UTC esperado ${utc} em ${item.s}`);
+    assert.ok(mais >= 0);
+    const janela = (await ctx.db.query("select starts_at, ends_at from public.appointment_request_booked_window($1::uuid)", [id])).rows[0];
+    assert.equal(new Date(janela.starts_at).valueOf(), inicio.valueOf(), "janela da sala (LiveKit) = horario da agenda");
+    assert.equal(new Date(janela.ends_at).valueOf(), fim.valueOf());
+    const exibido = SP.format(inicio);
+    assert.ok(exibido.endsWith(texto.slice(11, 16)), `exibicao em Sao Paulo: ${exibido}`);
+    const ctxCliente = await ctx.contexto(U.cliente, id);
+    assert.notEqual(ctxCliente.state, "open", "horario futuro: sala ainda fechada");
+  }
+});
+
+test("horario ja passado nao e aceito pelo banco e o pedido continua recebida", async () => {
+  const ctx = await montar();
+  await perfil(ctx, U.cliente); await vincular(ctx, U.cliente, U.cliente);
+  const id = await ctx.pedir();
+  const passado = new Date(Date.now() - 3 * 3600e3);
+  await assert.rejects(() => ctx.confirmar(id, passado, new Date(passado.valueOf() + 3600e3)));
+  assert.equal((await ctx.db.query("select status from public.appointment_requests where id=$1", [id])).rows[0].status, "recebida");
+});
