@@ -12,16 +12,16 @@ const editor = { role: "blog_editor", user: { id: "u-editor" }, permissions: { r
 const owner = { role: "owner", user: { id: "u-owner" }, permissions: { read: true, edit: true, publish: true } };
 const admin = { role: "admin", user: { id: "u-admin" } };
 
-test("permissoes por perfil refletem a sessao: Escritor nao publica, Editor e Owner publicam", () => {
+test("permissoes por perfil refletem a sessao: somente Owner publica", () => {
   const e = permissoesDaSessao(escritor);
   assert.deepEqual(e, { ler: true, editar: true, publicar: false, somenteProprios: true, usuarioId: "u-escritor" });
   assert.equal(podePublicar(e), false);
   const ed = permissoesDaSessao(editor);
-  assert.equal(ed.publicar, true);
-  assert.equal(ed.somenteProprios, false);
-  assert.equal(podePublicar(ed), true);
+  assert.equal(ed.publicar, false);
+  assert.equal(ed.somenteProprios, true);
+  assert.equal(podePublicar(ed), false);
   assert.deepEqual(permissoesDaSessao(owner), { ler: true, editar: true, publicar: true });
-  assert.deepEqual(permissoesDaSessao(admin), { ler: true, editar: true, publicar: true });
+  assert.deepEqual(permissoesDaSessao(admin), { ler: true, editar: true, publicar: false });
 });
 
 test("concessao ausente ou inativa nao libera nada para blog_editor", () => {
@@ -39,8 +39,8 @@ test("troca Escritor -> Editor -> Owner -> Escritor: cada sessao vale por si, se
   assert.equal(ctx.somenteProprios, true);
 
   ctx = permissoesDaMesa(permissoesDaSessao(editor));
-  assert.equal(podePublicar(ctx), true);
-  assert.equal(ctx.somenteProprios, false, "Editor nao pode herdar somenteProprios do Escritor");
+  assert.equal(podePublicar(ctx), false);
+  assert.equal(ctx.somenteProprios, true, "Editor legado continua limitado aos proprios textos");
   assert.equal(ctx.usuarioId, "u-editor");
 
   ctx = permissoesDaMesa(permissoesDaSessao(owner));
@@ -53,18 +53,18 @@ test("troca Escritor -> Editor -> Owner -> Escritor: cada sessao vale por si, se
   assert.equal(ctx.somenteProprios, true);
 });
 
-test("menu da Mesa acompanha a troca: Escritor sem itens de publicacao, Editor/Owner com", () => {
+test("menu da Mesa acompanha a troca: Escritor e Editor sem publicacao, somente Owner com", () => {
   const rotulos = (p) => JSON.stringify(itensDoMenu({ id: "x", status: "published", post: {} }, p).filter((i) => i !== "separador").map((i) => i.id));
-  assert.notEqual(rotulos(permissoesDaMesa(permissoesDaSessao(escritor))), rotulos(permissoesDaMesa(permissoesDaSessao(editor))));
-  assert.equal(rotulos(permissoesDaMesa(permissoesDaSessao(editor))), rotulos(permissoesDaMesa(permissoesDaSessao(owner))));
+  assert.equal(rotulos(permissoesDaMesa(permissoesDaSessao(escritor))), rotulos(permissoesDaMesa(permissoesDaSessao(editor))));
+  assert.notEqual(rotulos(permissoesDaMesa(permissoesDaSessao(editor))), rotulos(permissoesDaMesa(permissoesDaSessao(owner))));
 });
 
-test("assinatura muda com a conta e com as permissoes, nao com a renovacao do mesmo login", () => {
+test("assinatura muda com a conta e com permissoes efetivas, nao com grant legado ineficaz", () => {
   assert.equal(assinaturaDaSessao(editor), assinaturaDaSessao({ ...editor }));
   assert.notEqual(assinaturaDaSessao(escritor), assinaturaDaSessao(editor));
   assert.notEqual(assinaturaDaSessao(editor), assinaturaDaSessao(owner));
   const editorRebaixado = { ...editor, permissions: { read: true, edit: true, publish: false } };
-  assert.notEqual(assinaturaDaSessao(editor), assinaturaDaSessao(editorRebaixado), "mesma conta, outra permissao");
+  assert.equal(assinaturaDaSessao(editor), assinaturaDaSessao(editorRebaixado), "can_publish legado nao altera a autorizacao efetiva");
 });
 
 test("entradaAoAutorizar: login novo abre, troca de conta com a Mesa aberta reabre, renovacao nao mexe", () => {

@@ -149,7 +149,7 @@ test("o menu \"⋯\" só oferece o que o status permite", () => {
   assert.deepEqual(ids("draft"), ["editar", "visualizar", "duplicar", "agendar", "arquivar", "excluir"]);
   assert.ok(ids("scheduled").includes("despublicar"));
   assert.deepEqual(ids("archived"), ["editar", "visualizar", "duplicar", "restaurar", "excluir"]);
-  assert.equal(itensDoMenu({ status: "draft" }).at(-1).perigo, true, "excluir por último, marcado como perigoso");
+  assert.equal(itensDoMenu({ status: "draft" }, { publicar: true }).at(-1).perigo, true, "excluir por último, marcado como perigoso");
 });
 
 test("as rotas da mesa vivem no endereço", () => {

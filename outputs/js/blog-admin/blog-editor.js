@@ -379,7 +379,7 @@ export function createBlogEditor({ root, ctx } = {}) {
   async function mudarStatus(acao) {
     if (ocupado || !post) return;
     if (["publicar", "agendar", "despublicar", "arquivar"].includes(acao) && !podePublicar(ctx.permissoes)) {
-      ctx.avisos.mostrar("Sua conta pode editar o Blog, mas não executar ações de publicação.", { tipo: "erro", duracao: 6000 });
+      ctx.avisos.mostrar("Somente o Owner pode executar ações de publicação.", { tipo: "erro", duracao: 6000 });
       return;
     }
     clearTimeout(espera);

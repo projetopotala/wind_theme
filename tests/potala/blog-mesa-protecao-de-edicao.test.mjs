@@ -35,14 +35,19 @@ test("menu: Escritor mantem as acoes permitidas (editar, ver/pre-visualizar, dup
   }
 });
 
-test("menu: Editor e Owner continuam com todas as acoes de publicacao", () => {
-  for (const perfil of [editor, owner]) {
+test("menu: somente Owner continua com todas as acoes de publicacao", () => {
+  for (const perfil of [owner]) {
     assert.ok(ids("published", perfil).includes("despublicar"));
     assert.ok(ids("published", perfil).includes("arquivar"));
     assert.ok(rotulos("scheduled", perfil).includes("Cancelar agendamento"));
     assert.ok(ids("scheduled", perfil).includes("agendar"));
     assert.ok(ids("draft", perfil).includes("agendar"));
     assert.ok(ids("archived", perfil).includes("restaurar"));
+  }
+  for (const status of ["published", "scheduled", "draft", "archived"]) {
+    for (const proibido of ["despublicar", "restaurar", "agendar", "arquivar"]) {
+      assert.ok(!ids(status, editor).includes(proibido), `${status}: Editor comum nao pode ver ${proibido}`);
+    }
   }
 });
 

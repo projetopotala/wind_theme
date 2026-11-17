@@ -6,7 +6,8 @@ import { podePublicar } from "../../outputs/js/blog-admin/mesa-modelo.js";
 
 const ids = (registro, permissoes) => itensDoMenu(registro, permissoes).filter((i) => i !== "separador").map((i) => i.id);
 const escritor = { ler: true, editar: true, publicar: false, somenteProprios: true };
-const editor = { ler: true, editar: true, publicar: true };
+const editor = { ler: true, editar: true, publicar: false, somenteProprios: true };
+const owner = { ler: true, editar: true, publicar: true };
 
 test("Escritor: o menu da lista nao oferece Agendar nem Arquivar; Editar, Duplicar e Excluir continuam", () => {
   for (const status of ["draft", "review"]) {
@@ -17,24 +18,22 @@ test("Escritor: o menu da lista nao oferece Agendar nem Arquivar; Editar, Duplic
   }
 });
 
-test("Editor e Owner explicitos continuam vendo Agendar e Arquivar", () => {
-  for (const permissoes of [editor, { ...editor, papel: "owner" }]) {
-    const lista = ids({ status: "draft" }, permissoes);
-    assert.ok(lista.includes("agendar") && lista.includes("arquivar"));
+test("somente Owner ve Agendar e Arquivar; ausencia de permissoes falha fechada", () => {
+  const lista = ids({ status: "draft" }, owner);
+  assert.ok(lista.includes("agendar") && lista.includes("arquivar"));
+  for (const permissoes of [editor, undefined, {}]) {
+    const restrita = ids({ status: "draft" }, permissoes);
+    assert.ok(!restrita.includes("agendar") && !restrita.includes("arquivar"));
   }
-  assert.ok(ids({ status: "scheduled" }, editor).includes("arquivar"));
-  assert.ok(ids({ status: "archived" }, editor).includes("restaurar"));
+  assert.ok(ids({ status: "scheduled" }, owner).includes("arquivar"));
+  assert.ok(ids({ status: "archived" }, owner).includes("restaurar"));
 });
 
-test("publicacao e opt-in: permissao ausente, vazia ou falsa nunca libera controles", () => {
+test("podePublicar exige autorizacao positiva explicita", () => {
   assert.equal(podePublicar({ publicar: false }), false);
   assert.equal(podePublicar({ publicar: true }), true);
   assert.equal(podePublicar(undefined), false);
   assert.equal(podePublicar({}), false);
-  for (const permissoes of [undefined, {}]) {
-    const lista = ids({ status: "draft" }, permissoes);
-    assert.ok(!lista.includes("agendar") && !lista.includes("arquivar"));
-  }
 });
 
 test("editor de texto: Escritor so envia para revisao; Publicar, Agendar e Arquivar saem da tela", () => {

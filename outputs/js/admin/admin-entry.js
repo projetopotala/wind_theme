@@ -19,6 +19,7 @@ import { createOperationsController } from "./operations/controller.js";
 import { carregarRecebidos } from "./recebidos.js";
 import { createAppointmentPanel } from "./appointment-panel.js";
 import { createAccessPanel } from "./access-panel.js";
+import { createEditarSite } from "../site/editar-site.js";
 import { DEFAULT_HOME_BLOCKS } from "../home/journey-data.js";
 import { withRequiredDefaultSections } from "../home/default-section-bridge.js";
 import { createSupabaseContentRepository } from "../home/supabase-content-repository.js";
@@ -35,6 +36,7 @@ let appointmentPanel = null;
 let atendimentosPanel = null;
 let accessPanel = null;
 let cadastroGuiado = null;
+let editarSite = null;
 let organizarCurso = null;
 let cursosPainel = null;
 let usuarioAtual = null;
@@ -131,7 +133,7 @@ try {
     client,
     root,
     onState(state) {
-      if (state !== "authorized") { appointmentPanel?.clear(); atendimentosPanel?.clear(); accessPanel?.clear(); cadastroGuiado?.limpar(); organizarCurso?.limpar(); }
+      if (state !== "authorized") { editarSite?.limpar(); appointmentPanel?.clear(); atendimentosPanel?.clear(); accessPanel?.clear(); cadastroGuiado?.limpar(); organizarCurso?.limpar(); }
       else if (appointmentPanel) { void appointmentPanel.reload(); void atendimentosPanel?.reload(); }
     },
     async onAuthorized(access) {
@@ -145,6 +147,18 @@ try {
         blogNivel: nivelDoBlog(access),
         accessRole: access.role,
       });
+      /* Editar site: só a conta Owner monta o editor; o banco confere de novo em cada chamada. */
+      if (access.role === "owner" && !editarSite) {
+        editarSite = createEditarSite({
+          root: panel.querySelector("[data-editar-site]"),
+          client,
+          /* Páginas cujo conteúdo é de outro módulo (ex.: a Travessia, na Jornada): o editor só leva até lá. */
+          abrirModulo: (secao) => panel.querySelector(`[data-admin-nav] [data-section="${secao}"]`)?.click(),
+        });
+        panel.addEventListener("click", (evento) => {
+          if (evento.target?.closest?.('[data-admin-nav] [data-section="editar-site"]')) void editarSite?.abrir();
+        });
+      } else if (access.role !== "owner") { editarSite?.limpar(); }
       /* Os atalhos seguem o menu: só aparecem os das seções que esta conta pode abrir. */
       tarefas?.atualizar();
       if (!passwordSetup) {

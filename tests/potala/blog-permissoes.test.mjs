@@ -184,9 +184,11 @@ test("registro remoto carrega a autoria para a Mesa", () => {
   assert.equal(comoRegistro({ document: { id: "p2", slug: "p2", title: "T" } }).criadoPor, null);
 });
 
-test("Mesa: permissoes do escritor limitam a textos proprios; owner/editor nao", () => {
+test("Mesa: Writer e Editor comum ficam nos proprios textos; somente Owner publica", () => {
   const modelo = readFileSync(new URL("../../outputs/js/blog-admin/mesa-modelo.js", import.meta.url), "utf8");
-  assert.match(modelo, /somenteProprios: p\.publish !== true/);
+  assert.match(modelo, /if \(acesso\?\.role === "owner"\)[^\n]*publicar: true/);
+  assert.match(modelo, /if \(acesso\?\.role === "admin"\)[^\n]*publicar: false/);
+  assert.match(modelo, /publicar: false,[\s\S]{0,80}somenteProprios: true/);
   assert.match(readFileSync(new URL("../../outputs/js/blog-admin/blog-admin-entry.js", import.meta.url), "utf8"), /permissoes = permissoesDaSessao\(access\)/);
   const app = readFileSync(new URL("../../outputs/js/blog-admin/mesa-app.js", import.meta.url), "utf8");
   assert.match(app, /if \(ctx\.permissoes\.somenteProprios\)/);
