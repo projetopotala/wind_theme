@@ -778,3 +778,46 @@ option { background: var(--painel); color: var(--marfim); }
 .mesa-campo-visual:not(:focus-within) > .mesa-ao-vivo, .mesa-campo-visual.is-vazio > .mesa-ao-vivo { display: none; }
 .mesa-ao-vivo { margin-top: 10px; padding: 8px 12px; border-left: 2px solid var(--ouro); background: var(--ouro-veu); color: var(--suave); font: 1rem/1.6 var(--serifa); }
 .mesa-ao-vivo::before { content: "Como fica"; display: block; margin-bottom: 2px; color: var(--fraco); font: 700 .64rem var(--sans); letter-spacing: .1em; text-transform: uppercase; }
+
+/* ------------------------------------------------------------------
+ * Editor profissional: folha ampla, ferramentas discretas e painel
+ * sobreposto. O painel não reduz mais a largura útil do artigo.
+ * ------------------------------------------------------------------ */
+.mesa-editor__meio,
+.mesa-editor[data-painel="fechado"] .mesa-editor__meio { grid-template-columns: minmax(0, 1fr); }
+.mesa-editor__area { padding: 22px clamp(18px, 4vw, 72px) 120px; scrollbar-gutter: stable; }
+.mesa-folha { width: min(100%, 900px); max-width: 900px; overflow: clip; border: 1px solid rgba(216, 178, 106, .14); border-radius: 16px; box-shadow: 0 22px 72px rgba(0, 0, 0, .24); }
+.mesa-folha__capa img { height: clamp(210px, 27vw, 300px); }
+.mesa-folha__texto { width: min(100%, 760px); margin-inline: auto; padding: 42px 40px 72px; }
+.mesa-folha__titulo { font-size: clamp(2.25rem, 5vw, 3.45rem); line-height: 1.04; text-align: left; text-wrap: balance; }
+.mesa-folha__subtitulo { margin-top: 12px; color: var(--fraco); font-style: normal; line-height: 1.5; text-align: left; }
+.mesa-texto { line-height: 1.82; text-align: left; }
+.mesa-texto.is-centro { text-align: center; }
+.mesa-atalhos { max-width: 900px; }
+.mesa-barra-texto { width: min(100%, 900px); margin-bottom: 14px; padding: 5px 8px; border-color: rgba(216, 178, 106, .22); border-radius: 12px; background: rgba(20, 25, 23, .94); box-shadow: 0 10px 30px rgba(0, 0, 0, .24); backdrop-filter: blur(14px); }
+.mesa-barra-texto__rotulo { flex: none; margin: 0 7px 0 3px; color: var(--fraco); font: 700 .64rem var(--sans); letter-spacing: .12em; text-transform: uppercase; }
+.mesa-barra-texto button { min-width: 36px; height: 34px; }
+.mesa-bloco { border-radius: 9px; transition: background .18s ease, box-shadow .18s ease; }
+.mesa-bloco:hover { background: rgba(255, 255, 255, .018); }
+.mesa-bloco.is-selecionado { background: rgba(216, 178, 106, .035); box-shadow: inset 3px 0 0 rgba(216, 178, 106, .58); }
+.mesa-bloco__acoes { border-color: rgba(216, 178, 106, .18); background: rgba(20, 25, 23, .94); box-shadow: 0 8px 24px rgba(0, 0, 0, .24); }
+.mesa-painel { position: fixed; z-index: 60; top: 64px; right: 0; bottom: 0; display: flex; width: min(410px, calc(100vw - 24px)); min-width: 0; max-width: 100%; overflow: hidden; border-left: 1px solid var(--linha-forte); border-radius: 18px 0 0 0; background: var(--painel); box-shadow: -22px 0 70px rgba(0, 0, 0, .42); transform: translateX(0); transition: transform .22s ease, visibility .22s ease; }
+.mesa-editor[data-painel="fechado"] .mesa-painel { display: flex; visibility: hidden; transform: translateX(102%); }
+.mesa-editor[data-painel="aberto"] .mesa-painel__veu { position: fixed; z-index: 55; inset: 64px 0 0; display: block; background: rgba(4, 7, 6, .38); backdrop-filter: blur(1px); }
+.mesa-painel__topo, .mesa-painel__corpo, .mesa-painel__rodape, .mesa-painel__secao, .mesa-campo { min-width: 0; max-width: 100%; }
+.mesa-painel__corpo { overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+.mesa-abas--painel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mesa-abas--painel button { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.mesa-painel .mesa-linha { min-width: 0; flex-wrap: wrap; }
+.mesa-painel input, .mesa-painel select, .mesa-painel textarea { min-width: 0; max-width: 100%; }
+@media (max-width: 720px) {
+  .mesa-editor__area { padding: 0 0 88px; }
+  .mesa-barra-texto { top: 0; width: 100%; padding-inline: 10px; }
+  .mesa-barra-texto__rotulo { display: none; }
+  .mesa-folha { width: 100%; border-inline: 0; border-radius: 0; box-shadow: none; }
+  .mesa-folha__texto { padding: 26px 20px 52px; }
+  .mesa-folha__titulo { font-size: clamp(2rem, 11vw, 2.8rem); }
+  .mesa-folha__capa img { height: min(58vw, 260px); }
+  .mesa-painel { top: 0; width: 100vw; border-left: 0; border-radius: 0; }
+  .mesa-editor[data-painel="aberto"] .mesa-painel__veu { inset: 0; }
+}
