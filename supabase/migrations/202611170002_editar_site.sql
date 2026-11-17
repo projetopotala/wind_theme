@@ -55,7 +55,8 @@ alter table public.site_edit_events enable row level security;
 revoke all on public.site_pages_published, public.site_page_drafts, public.site_page_revisions, public.site_edit_events
   from public, anon, authenticated;
 -- O publico le somente o publicado. Rascunho, historico e auditoria nao tem concessao nem politica.
-grant select on public.site_pages_published to anon, authenticated;
+-- Somente as colunas necessarias: quem publicou (published_by) nao e exposto ao publico.
+grant select (page_slug, version, content, published_at) on public.site_pages_published to anon, authenticated;
 drop policy if exists "todos leem o site publicado" on public.site_pages_published;
 create policy "todos leem o site publicado" on public.site_pages_published
   for select to anon, authenticated using (true);

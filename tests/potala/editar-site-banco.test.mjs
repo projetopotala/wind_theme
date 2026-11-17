@@ -84,7 +84,7 @@ test("o publico le somente o publicado, nunca o rascunho", async () => {
   const { db, como, rpc } = await montar();
   const r1 = await rpc("owner", "site_save_draft", PAGE, JSON.stringify(C1), 0);
   assert.deepEqual(r1, { revision: 1, base_version: 0 });
-  assert.equal((await como("anon", () => db.query("select * from public.site_pages_published"))).rows.length, 0);
+  assert.equal((await como("anon", () => db.query("select page_slug, version, content from public.site_pages_published"))).rows.length, 0);
   await rpc("owner", "site_publish", PAGE, 0, 1);
   const lido = (await como("anon", () => db.query("select page_slug, version, content from public.site_pages_published"))).rows;
   assert.equal(lido.length, 1);
@@ -195,4 +195,33 @@ test("so o Owner envia imagens ao bucket do editor; o bucket e restrito a imagen
   const enviar = (quem) => como(quem, () => db.query("insert into storage.objects(bucket_id, name) values ('site-editor-media', 'quem-somos/a.webp')"));
   await enviar("owner");
   for (const quem of ["admin", "cliente", "anon"]) assert.match(String(await codigo(enviar(quem))), /42501|row-level security|permission denied/i, quem);
+});
+
+test("o publico nao enxerga quem publicou (colunas restritas) e o rollback remove tudo e permite reaplicar", async () => {
+  const { db, como, rpc } = await montar();
+  await rpc("owner", "site_save_draft", PAGE, JSON.stringify(C1), 0);
+  await rpc("owner", "site_publish", PAGE, 0, 1);
+  for (const quem of ["anon", "cliente", "admin"]) {
+    const lido = await como(quem, () => db.query("select version, content, published_at from public.site_pages_published where page_slug = $1", [PAGE]));
+    assert.equal(lido.rows.length, 1, `${quem} le o publicado`);
+    assert.match(String(await codigo(como(quem, () => db.query("select published_by from public.site_pages_published")))), /42501|permission/, `${quem} nao le published_by`);
+    assert.match(String(await codigo(como(quem, () => db.query("select * from public.site_pages_published")))), /42501|permission/, `${quem} nao usa select *`);
+  }
+
+  const rollback = readFileSync(new URL("../../supabase/rollbacks/202611170002_rollback_editar_site.sql", import.meta.url), "utf8");
+  await db.exec(rollback);
+  const resto = await db.query(`select
+    (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname like 'site\\_%') as funcoes,
+    (select count(*)::int from pg_tables where schemaname = 'public' and tablename in ('site_pages_published','site_page_drafts','site_page_revisions','site_edit_events')) as tabelas,
+    (select count(*)::int from pg_policies where policyname = 'owner envia imagens do site') as politicas`);
+  assert.deepEqual(resto.rows[0], { funcoes: 0, tabelas: 0, politicas: 0 });
+  // rollback e idempotente
+  await db.exec(rollback);
+  // outras estruturas continuam intactas
+  assert.equal((await db.query("select count(*)::int as n from public.users")).rows[0].n >= 3, true);
+
+  // e a migration pode ser reaplicada do zero
+  await db.exec(readFileSync(new URL("202611170002_editar_site.sql", DIR), "utf8"));
+  await rpc("owner", "site_save_draft", PAGE, JSON.stringify(C1), 0);
+  assert.equal((await rpc("owner", "site_publish", PAGE, 0, 1)).version, 1);
 });

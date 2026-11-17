@@ -6,6 +6,9 @@
 
 begin;
 
+-- A policy do Storage depende de site_is_owner(): sai primeiro.
+drop policy if exists "owner envia imagens do site" on storage.objects;
+
 drop function if exists public.site_restore(text, integer, integer, boolean);
 drop function if exists public.site_publish(text, integer, integer);
 drop function if exists public.site_discard_draft(text, integer);
@@ -16,8 +19,6 @@ drop function if exists public.site_check_page(text);
 drop function if exists public.site_require_owner();
 drop function if exists public.site_validate_content(jsonb);
 drop function if exists public.site_is_owner();
-
-drop policy if exists "owner envia imagens do site" on storage.objects;
 
 drop table if exists public.site_edit_events;
 drop table if exists public.site_page_revisions;
