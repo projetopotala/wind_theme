@@ -64,11 +64,13 @@ async function abrirOperacao(client, access) {
     if (operationsStatus) operationsStatus.textContent = error.message;
     return;
   }
-  appointmentPanel = createAppointmentPanel({ root: panel, client, getOperationalState: () => operations.snapshot });
+  /* Depois de confirmar um atendimento o item da agenda existe só no servidor: recarrega o estado operacional e redesenha. */
+  const refreshOperational = async () => { await operations.refresh(); operationsController?.render(); };
+  appointmentPanel = createAppointmentPanel({ root: panel, client, getOperationalState: () => operations.snapshot, refreshOperational });
   /* Seção Atendimentos: mesmo motor do cartão da Visão geral (que segue como caminho alternativo), montado na sua própria área. */
   const atendimentosRoot = panel.querySelector("[data-admin-workspace=\"atendimentos\"]");
   atendimentosPanel = atendimentosRoot
-    ? createAppointmentPanel({ root: atendimentosRoot, client, getOperationalState: () => operations.snapshot,
+    ? createAppointmentPanel({ root: atendimentosRoot, client, getOperationalState: () => operations.snapshot, refreshOperational,
       selector: "[data-atendimentos-admin]", view: "atendimentos" })
     : null;
   atendimentosRoot?.addEventListener("click", (evento) => {

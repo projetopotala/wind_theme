@@ -159,7 +159,8 @@ test("pedido com horario publicado (slot passado): formulario compacto editavel,
   const row = { ...rows[0], appointment_slot_id: "sl1", appointment_slot: slot }; // slot 11:00-12:00 SP; agora 12:00 SP
   const html = reservationForm(row, operacional, { simple: true, agora: AGORA });
   assert.match(html, /data-reservation-date type="date" min="2026-11-16" value="2026-11-16"/);
-  assert.match(html, /data-reservation-start type="time" value="13:00"/, "slot passado: sugere a proxima hora cheia");
+  assert.match(html, /data-reservation-start type="time" value=""/, "slot passado: nao troca o horario em silencio, o inicio fica vazio");
+  assert.match(html, /data-reservation-aviso-passou/);
   assert.doesNotMatch(html, /readonly|disabled|datetime-local/);
   assert.match(html, /data-reservation-aviso-slot[^>]*>O cliente escolheu o horário publicado de 16\/11\/2026, 11:00 às 12:00 \(já passou\)/);
 });
@@ -177,7 +178,8 @@ test("pedido com horario publicado ainda futuro: sugere o proprio horario, tambe
 test("preferencia vencida: o formulario nao comeca no passado e continua editavel", () => {
   const html = reservationForm(rows[1], operacional, { simple: true, agora: AGORA });
   assert.match(html, /data-reservation-date type="date" min="2026-11-16" value="2026-11-16"/);
-  assert.match(html, /data-reservation-start type="time" value="13:00"/);
+  assert.match(html, /data-reservation-start type="time" value=""/);
+  assert.match(html, /data-reservation-aviso-passou/);
   assert.doesNotMatch(html, /readonly|disabled/);
 });
 

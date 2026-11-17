@@ -1080,3 +1080,8 @@
 @media (min-width: 820px) and (max-width: 1023px) {
   .ag-tipos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Atividades fora da janela da grade (07h–23h): listadas abaixo dela, nunca invisíveis. */
+.ag-fora-janela { margin-top: 12px; padding: 10px 12px; border: 1px dashed rgba(127, 127, 127, .55); border-radius: 8px; }
+.ag-fora-janela h3 { margin: 0 0 6px; font-size: .875rem; }
+.ag-fora-janela ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }

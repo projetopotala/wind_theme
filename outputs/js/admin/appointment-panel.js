@@ -24,7 +24,7 @@ function localDateTime(value) {
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
 
-export function suggestedTime(row, now = new Date()) {
+export function suggestedTime(row, now = new Date(), rolarParaAProximaHora = true) {
   const slot = row.appointment_slot;
   if (row.appointment_slot_id && slot?.id === row.appointment_slot_id && slot.held_by_request_id === row.id) {
     const start = localDateTime(slot.starts_at);
@@ -34,7 +34,7 @@ export function suggestedTime(row, now = new Date()) {
   const hour = { manha: "09:00", tarde: "14:00", noite: "18:00" }[row.preferred_period] || "09:00";
   let start = `${row.preferred_date}T${hour}`;
   /* Pedido para hoje: a sugestão nunca fica no passado; vai para a próxima hora cheia (o banco recusa horário passado). */
-  if (new Date(`${start}:00-03:00`).valueOf() <= now.valueOf() && localDateTime(now).slice(0, 10) === row.preferred_date) {
+  if (rolarParaAProximaHora && new Date(`${start}:00-03:00`).valueOf() <= now.valueOf() && localDateTime(now).slice(0, 10) === row.preferred_date) {
     const proxima = new Date(Math.ceil((now.valueOf() + 60000) / 3600000) * 3600000);
     start = localDateTime(proxima);
   }
@@ -60,23 +60,26 @@ export function reservationForm(row, operational = {}, { simple = false, agora =
   const vinculados = new Set((operational.offering_professionals || [])
     .filter(link => link.offering_id === row.offering_id && link.active !== false).map(link => link.professional_id));
   const daOferta = professionals.filter(item => oferta?.professional_id ? item.id === oferta.professional_id : vinculados.has(item.id));
-  const time = suggestedTime(row, agora);
+  /* O formulário mostra o horário pedido como ele é; se já passou, o Owner vê e escolhe outro (nunca é trocado em silêncio). */
+  const time = suggestedTime(row, agora, false);
   if (simple && !legacy) {
     /* Formulário compacto: profissional, data, início, duração, sala (presencial) e observações. A confirmação é a mesma RPC.
      * Pedido que escolheu um horário publicado também é editável: o Owner pode reagendar (o horário publicado é liberado).
-     * Início já passado (preferência vencida ou slot antigo) nunca vira valor padrão: sugere a próxima hora cheia. */
+     * Início já passado (preferência vencida ou slot antigo) nunca vira valor padrão e nunca é trocado em silêncio: a data sugerida é hoje e o início fica vazio para o Owner escolher. */
     const passou = new Date(`${time.start}:00-03:00`).valueOf() <= agora.valueOf();
-    const proxima = new Date(Math.ceil((agora.valueOf() + 60000) / 3600000) * 3600000);
-    const base = passou ? { start: localDateTime(proxima), end: localDateTime(new Date(proxima.valueOf() + 3600000)) } : time;
-    const [dia, hora] = base.start.split("T");
-    const minutos = Math.round((Date.parse(`${base.end}:00-03:00`) - Date.parse(`${base.start}:00-03:00`)) / 60000);
+    /* A próxima hora cheia como padrão virava 00:00 do dia seguinte na virada do dia, e o Owner confirmava sem perceber.
+     * Horário vencido: data de hoje e início vazio (obrigatório); a duração segue a do pedido ou do horário publicado. */
+    const dia = passou ? localDateTime(agora).slice(0, 10) : time.start.slice(0, 10);
+    const hora = passou ? "" : time.start.slice(11, 16);
+    const minutos = Math.round((Date.parse(`${time.end}:00-03:00`) - Date.parse(`${time.start}:00-03:00`)) / 60000);
     const duracao = DURATIONS.includes(minutos) ? minutos : 60;
     const dmy = (iso) => iso.slice(0, 10).split("-").reverse().join("/");
     const avisoSlot = time.fromSlot ? `<p class="appointment-reservation-wide op-muted" data-reservation-aviso-slot>O cliente escolheu o horário publicado de ${esc(dmy(time.start))}, ${esc(time.start.slice(11))} às ${esc(time.end.slice(11))}${passou ? " (já passou)" : ""}. Você pode manter ou escolher outro: ao mudar, o horário publicado é liberado.</p>` : "";
+    const avisoPassou = passou ? `<p class="appointment-reservation-wide" data-reservation-aviso-passou role="status">O horário pedido já passou. Escolha a data e o horário do atendimento (horário de Brasília).</p>` : "";
     const fixo = professionals.find(item => item.id === row.professional_profile_id)?.display_name || row.professional_profile_id || "";
     const sala = row.modality === "presencial" ? `<label>Sala<select data-reservation-room required><option value="">Escolha uma sala</option>${rooms.map(item => `<option value="${esc(item.id)}">${esc(item.name)}</option>`).join("")}</select></label>` : "";
     return `<fieldset data-appointment-reservation class="atend-agendar-form"><legend>Agendar atendimento</legend>
-      <p class="appointment-reservation-wide op-muted">${esc(row.service)} · ${row.modality === "online" ? "Online (a sala privada é criada automaticamente)" : "Presencial"}</p>${avisoSlot}
+      <p class="appointment-reservation-wide op-muted">${esc(row.service)} · ${row.modality === "online" ? "Online (a sala privada é criada automaticamente)" : "Presencial"}</p>${avisoSlot}${avisoPassou}
       ${escolherProfissional ? `<p class="appointment-reservation-wide op-muted">Escolha quem vai atender e o horário.</p>
       <label>Profissional responsável<select data-reservation-professional required>${daOferta.length === 1 ? "" : '<option value="">Escolha o profissional</option>'}${daOferta.map(item => option(item, "display_name", daOferta.length === 1)).join("")}</select></label>
       ${daOferta.length ? "" : `<p class="appointment-reservation-wide op-muted" data-reservation-sem-profissional>Nenhum profissional está ligado a este serviço. Ligue um profissional ao serviço em Operação antes de confirmar.</p>`}` : `<p class="appointment-reservation-wide">Profissional responsável: <strong>${esc(fixo)}</strong> <span class="op-muted">(definido pelo serviço)</span></p>`}
@@ -138,7 +141,7 @@ export function renderAppointmentPanel({ rows, phase, message, busy, drafts, ope
 
 // Defesa de interface e sessão; a autorização efetiva continua nas políticas RLS.
 export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADMIN_ENABLED, access = getAdminAccess,
-  reservationsEnabled = APPOINTMENT_RESERVATIONS_ENABLED, getOperationalState = () => null, selector = "[data-appointment-admin]", view = "legacy",
+  reservationsEnabled = APPOINTMENT_RESERVATIONS_ENABLED, getOperationalState = () => null, refreshOperational = null, selector = "[data-appointment-admin]", view = "legacy",
   confirmReservation = confirmAppointmentReservation, createSlot = createAppointmentSlot, id = () => globalThis.crypto.randomUUID() } = {}) {
   let epoch = 0;
   const state = { slotDraft: {}, abertas: {}, agendando: null, rows: [], drafts: {}, phase: enabled === true ? "idle" : "disabled", busy: false,
@@ -292,7 +295,14 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
       if (ticket !== epoch) return;
       state.rows = rows; state.drafts = {};
       state.agendando = null;
-      state.message = "Agendamento confirmado. A consulta já está na agenda do cliente e do profissional; a sala online abre 15 minutos antes.";
+      /* A mensagem mostra o horário que foi de fato enviado (data e hora de Brasília), para qualquer divergência aparecer na hora. */
+      const quando = `${String(fields.start).slice(8, 10)}/${String(fields.start).slice(5, 7)}/${String(fields.start).slice(0, 4)} às ${String(fields.start).slice(11, 16)} – ${String(fields.end).slice(11, 16)}`;
+      state.message = `Agendamento confirmado para ${quando} (horário de Brasília). A consulta já está na agenda do cliente e do profissional; a sala online abre 15 minutos antes.`;
+      /* A RPC cria o item da agenda no servidor: sem recarregar o estado operacional, a Central e a Agenda não o enxergam. */
+      if (typeof refreshOperational === "function") {
+        try { await refreshOperational(); } catch { state.message += " Não foi possível atualizar a Agenda agora; recarregue a página para ver o horário nela."; }
+        if (ticket !== epoch) return;
+      }
     }, "Confirmando reserva…");
   }
   function click(event) {
@@ -327,19 +337,21 @@ export function createAppointmentPanel({ root, client, enabled = APPOINTMENT_ADM
       const article = confirmButton.closest("[data-appointment-row]");
       const box = article?.querySelector("[data-reservation-confirm]");
       if (view !== "atendimentos" ? !box?.checked : box && !box.checked) { state.message = "Confirme que revisou os dados da reserva."; render(true); return; }
+      /* O que foi digitado é guardado antes de qualquer validação: erro de horário não apaga o formulário. */
+      state.rascunhos ||= {};
+      state.rascunhos[confirmButton.dataset.appointmentConfirm] = Object.fromEntries(CAMPOS_DO_FORMULARIO
+        .map(seletor => [seletor, article.querySelector(seletor)?.value]).filter(([, valor]) => valor !== undefined));
       let start = article.querySelector("[data-reservation-start]")?.value;
       let end = article.querySelector("[data-reservation-end]")?.value;
       const dia = article.querySelector("[data-reservation-date]")?.value;
       if (dia !== undefined) {
         /* Formulário compacto: data + início + duração. Horário passado nunca chega ao banco. */
+        if (!start) { state.message = "Escolha o horário de início do atendimento."; render(true); return; }
         end = computeEnd(dia, start, article.querySelector("[data-reservation-duration]")?.value);
         start = `${dia}T${start}`;
         if (!end) { state.message = "Informe data, início e duração."; render(true); return; }
         if (new Date(`${start}:00-03:00`).valueOf() <= Date.now()) { state.message = "Escolha um horário futuro."; render(true); return; }
       }
-      state.rascunhos ||= {};
-      state.rascunhos[confirmButton.dataset.appointmentConfirm] = Object.fromEntries(CAMPOS_DO_FORMULARIO
-        .map(seletor => [seletor, article.querySelector(seletor)?.value]).filter(([, valor]) => valor !== undefined));
       return confirm(confirmButton.dataset.appointmentConfirm, {
         start,
         end,

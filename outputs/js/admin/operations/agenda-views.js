@@ -148,6 +148,18 @@ function eventoNaGrade(s, bloco, contexto) {
   </article>`;
 }
 
+/* A grade só desenha JANELA (07h–23h): uma consulta fora dela não vira bloco. Fica listada abaixo da grade, nunca invisível. */
+function foraDaGrade(dias, itens) {
+  const fora = itens
+    .filter((item) => item.status !== "cancelled" && dias.includes(diaDe(item.starts_at)) && !distribuir([item]).length)
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  if (!fora.length) return "";
+  return `<section class="ag-fora-janela" data-agenda-fora-janela aria-label="Atividades fora do horário exibido na grade">
+    <h3>Fora do horário exibido na grade (${JANELA.inicio / 60}h às ${JANELA.fim / 60}h)</h3>
+    <ul>${fora.map((item) => `<li><button type="button" class="ag-mes-evento" data-familia="${familiaDe(item)}" data-op-action="detalhes" data-id="${esc(item.id)}"><time>${esc(diaCurto(diaDe(item.starts_at)))}, ${Number(diaDe(item.starts_at).slice(8))} ${esc(horaDe(item.starts_at))}–${esc(horaDe(item.ends_at))}</time> ${esc(item.title)}</button></li>`).join("")}</ul>
+  </section>`;
+}
+
 function gradeDeHoras(s, dias, itens, contexto) {
   const horas = Array.from({ length: (JANELA.fim - JANELA.inicio) / 60 }, (_, indice) => JANELA.inicio / 60 + indice);
   const { abre, fecha } = faixaDeFuncionamento(s);
@@ -179,13 +191,14 @@ function gradeDeHoras(s, dias, itens, contexto) {
     </div>`;
   }).join("");
 
-  return `<div class="ag-grade" data-dias="${dias.length}" style="--linhas:${horas.length};--dias:${dias.length}">
+  const grade = `<div class="ag-grade" data-dias="${dias.length}" style="--linhas:${horas.length};--dias:${dias.length}">
     <div class="ag-grade-cab"><span class="ag-grade-canto" aria-hidden="true"></span>${cabecalhos}</div>
     <div class="ag-grade-corpo">
       <div class="ag-horas" aria-hidden="true">${horas.map((h) => `<span style="--topo:${h * 60 - JANELA.inicio}">${horaInteira(h)}</span>`).join("")}</div>
       ${colunas}
     </div>
   </div>`;
+  return grade + foraDaGrade(dias, itens);
 }
 
 function faixaDaSemana(s, dia, itens, contexto) {
