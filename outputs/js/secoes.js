@@ -87,22 +87,23 @@ import { mountPortalHeader } from "./shared/portal-header.js";
           storage: null,
         });
         let repository = snapshot;
-        try {
-          if (!origemConhecida) throw new Error("Preview sem banco configurado");
-          const { getSupabaseClient } = await import("./supabase/client.js");
-          const remote = withRequiredDefaultSections(createSupabaseContentRepository({
-            client: getSupabaseClient(),
-            defaults: DEFAULT_HOME_BLOCKS,
-          }), DEFAULT_HOME_BLOCKS, ["revista"]);
-          repository = createHomeContentSource({
-            remote,
-            fallback: snapshot,
-            onRemoteError(error) {
-              console.warn("Conteúdo remoto indisponível; usando snapshot empacotado.", error);
-            },
-          });
-        } catch (error) {
-          console.warn("Supabase indisponível; usando snapshot empacotado.", error);
+        if (origemConhecida) {
+          try {
+            const { getSupabaseClient } = await import("./supabase/client.js");
+            const remote = withRequiredDefaultSections(createSupabaseContentRepository({
+              client: getSupabaseClient(),
+              defaults: DEFAULT_HOME_BLOCKS,
+            }), DEFAULT_HOME_BLOCKS, ["revista"]);
+            repository = createHomeContentSource({
+              remote,
+              fallback: snapshot,
+              onRemoteError(error) {
+                console.warn("Conteúdo remoto indisponível; usando snapshot empacotado.", error);
+              },
+            });
+          } catch (error) {
+            console.warn("Supabase indisponível; usando snapshot empacotado.", error);
+          }
         }
         /* Cartão de artigo do Blog só com o texto confirmado no ar pelo banco. */
         if (!origemConhecida) return mountHomeJourney({ repository });

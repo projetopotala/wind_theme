@@ -23,7 +23,8 @@ export async function iniciarConteudoPublico({ doc = document, localizacao = loc
     const manifesto = await carregarManifesto(slug);
     aplicarConteudo(doc, manifesto, publicado.content);
     return publicado.version;
-  } catch {
+  } catch (error) {
+    console.warn("Conteúdo publicado indisponível; mantendo o HTML da página.", error);
     return null;
   }
 }

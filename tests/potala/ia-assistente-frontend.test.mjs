@@ -8,11 +8,101 @@ import {
   ErroDoAssistente, criarTransporteReal, criarTransporteSimulado, lerSessao, linksSeguros, mensagensParaEnvio, resolverBackend, salvarSessao,
 } from "../../outputs/js/assistente/assistente-cliente.js";
 import { montarConhecimento } from "../../scripts/prepare-ia-conhecimento.mjs";
+import { montarAssistente, textoInicialDoAssistente } from "../../outputs/js/assistente/assistente-ui.js";
 
 globalThis.__POTALA_TESTE__ = true;
 const { decidirModo } = await import("../../outputs/js/assistente/assistente-boot.js");
 const ler = (rel) => readFileSync(new URL(`../../${rel}`, import.meta.url), "utf8");
 const BASE = JSON.parse(ler("outputs/ia/conhecimento.json"));
+
+test("saudação corresponde ao modo operacional e oferece orientação humana quando indisponível", () => {
+  const real = textoInicialDoAssistente("real");
+  const simulado = textoInicialDoAssistente("simulado");
+  const indisponivel = textoInicialDoAssistente("indisponivel");
+  assert.match(real, /uma inteligência artificial/);
+  assert.match(simulado, /demonstração.*sem inteligência artificial.*respostas são simuladas/i);
+  assert.doesNotMatch(simulado, /sou .*inteligência artificial/i);
+  assert.match(indisponivel, /respostas inteligentes.*indisponíveis.*links públicos.*Recepção/i);
+  assert.doesNotMatch(indisponivel, /respostas são simuladas/i);
+});
+
+/* DOM mínimo (sem JSDOM): o suficiente para montar o assistente e ler o que ele desenha. */
+function criarDocFalso() {
+  class No {
+    constructor(tag) { Object.assign(this, { tag, filhos: [], attrs: {}, className: "", dataset: {}, hidden: false, escutas: {}, _texto: "", scrollTop: 0, scrollHeight: 0, disabled: false, value: "" }); }
+    set textContent(v) { this._texto = String(v); this.filhos = []; }
+    get textContent() { return this._texto + this.filhos.map((f) => f.textContent).join(""); }
+    setAttribute(k, v) { this.attrs[k] = String(v); if (k === "hidden") this.hidden = true; }
+    getAttribute(k) { return this.attrs[k] ?? null; }
+    hasAttribute(k) { return k in this.attrs; }
+    append(...nos) { this.filhos.push(...nos); }
+    replaceChildren(...nos) { this.filhos = [...nos]; this._texto = ""; }
+    cloneNode() { const c = new No(this.tag); c.attrs = { ...this.attrs }; c.className = this.className; return c; }
+    addEventListener(tipo, fn) { (this.escutas[tipo] ||= []).push(fn); }
+    focus() {}
+    querySelector(sel) { return achar(this, sel); }
+  }
+  const combina = (no, sel) => (sel.startsWith(".") ? no.className.split(/\s+/).includes(sel.slice(1)) : sel.startsWith("[") ? sel.slice(1, -1) in no.attrs : no.tag === sel);
+  const achar = (no, sel) => { for (const f of no.filhos) { if (combina(f, sel)) return f; const d = achar(f, sel); if (d) return d; } return null; };
+  const body = new No("body");
+  return { createElement: (tag) => new No(tag), body, querySelector: (sel) => achar(body, sel), location: { origin: "https://portal.test" }, achar, todos: (no, sel, acc = []) => { for (const f of no.filhos) { if (combina(f, sel)) acc.push(f); doc_todos(f, sel, acc); } return acc; } };
+  function doc_todos(no, sel, acc) { for (const f of no.filhos) { if (combina(f, sel)) acc.push(f); doc_todos(f, sel, acc); } }
+}
+const armazenamentoFalso = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v), removeItem: (k) => m.delete(k) }; };
+
+async function montarNoModo(modo) {
+  const doc = criarDocFalso();
+  const transporte = { modo, perguntar: async () => ({ resposta: "Veja a página de cursos.", links: [{ url: "cursos.html", titulo: "Cursos" }] }) };
+  const ui = montarAssistente({ doc, transporte, base: "https://portal.test/", armazenamento: armazenamentoFalso() });
+  const ler = () => ({
+    modo: ui.raiz.attrs["data-modo"],
+    saudacao: doc.achar(ui.raiz, ".pa-mensagens").filhos[0].textContent,
+    subtitulo: doc.achar(ui.raiz, ".pa-subtitulo").textContent,
+    rodape: doc.achar(ui.raiz, ".pa-rodape").textContent,
+    atalhos: doc.todos(ui.raiz, "a").filter((a) => a.className.includes("pa-atalho")).map((a) => a.attrs.href),
+    sugestoes: doc.todos(ui.raiz, ".pa-sugestao").length,
+  });
+  return { ui, ler };
+}
+
+test("o assistente desenhado em cada modo é coerente: saudação, cabeçalho, rodapé e atalhos", async () => {
+  const real = await montarNoModo("real");
+  const r = real.ler();
+  assert.equal(r.modo, "real");
+  assert.match(r.saudacao, /uma inteligência artificial que ajuda/);
+  assert.match(r.subtitulo, /^Inteligência artificial/);
+  assert.match(r.rodape, /IA pode errar/);
+  assert.equal(r.atalhos.length, 0);
+  assert.equal(r.sugestoes, 4);
+
+  const simulado = await montarNoModo("simulado");
+  const s = simulado.ler();
+  assert.equal(s.modo, "simulado");
+  assert.match(s.saudacao, /demonstração.*sem inteligência artificial/i);
+  assert.doesNotMatch(s.saudacao, /uma inteligência artificial que ajuda/);
+  assert.match(s.subtitulo, /Modo de demonstração.*sem inteligência artificial/);
+  assert.match(s.rodape, /simuladas, sem IA/);
+  assert.doesNotMatch(s.rodape, /IA pode errar/, "demonstração não pode se apresentar como IA real");
+
+  const indisponivel = await montarNoModo("indisponivel");
+  const i = indisponivel.ler();
+  assert.equal(i.modo, "indisponivel");
+  assert.match(i.saudacao, /indisponíveis.*links públicos.*Recepção/i);
+  assert.match(i.subtitulo, /temporariamente indispon/);
+  assert.match(i.rodape, /Nada do que você escreve aqui é enviado a uma IA/);
+  assert.ok(i.atalhos.some((h) => h.endsWith("/recepcao.html")), "contato humano precisa estar entre os atalhos");
+  assert.equal(i.sugestoes, i.atalhos.length, "sem perguntas sugeridas: só caminhos públicos");
+});
+
+test("a saudação do modo continua correta depois de uma pergunta (regressão: redesenho voltava ao texto do modo real)", async () => {
+  for (const modo of ["real", "simulado", "indisponivel"]) {
+    const { ui, ler } = await montarNoModo(modo);
+    const antes = ler().saudacao;
+    await ui.perguntar("Quais cursos existem?");
+    assert.equal(ler().saudacao, antes, `saudação mudou após perguntar no modo ${modo}`);
+    assert.equal(ler().saudacao.replace(/^Assistente: /, ""), textoInicialDoAssistente(modo));
+  }
+});
 
 test("base de conhecimento versionada está atualizada (regenere com node scripts/prepare-ia-conhecimento.mjs)", async () => {
   assert.deepEqual(await montarConhecimento(), BASE);
