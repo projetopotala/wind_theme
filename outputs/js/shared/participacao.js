@@ -8,7 +8,7 @@
  * Quem chama decide o que dizer na tela, mas nunca antes de a promessa
  * resolver: confirmação só depois que o banco aceitou.
  */
-import { criarRestPublico } from "../supabase/rest.js";
+import { classificarOrigem } from "../supabase/ambiente.js";
 
 export const TIPOS_DE_INTERESSE = Object.freeze(["curso", "experiencia-cultural", "retorno-recepcao"]);
 
@@ -26,7 +26,8 @@ export function montarInteresse({ kind, subject = "", details = {}, page = "" } 
 
 export async function enviarInteresse(interesse, { rest } = {}) {
   const linha = montarInteresse(interesse);
-  restPadrao ||= rest ? null : criarRestPublico();
+  if (!rest && classificarOrigem(globalThis.location?.origin || "") === "desconhecido") throw new Error("Envio indisponível nesta Preview.");
+  restPadrao ||= rest ? null : (await import("../supabase/rest.js")).criarRestPublico();
   await (rest || restPadrao).inserir("site_interests", linha);
   return linha;
 }
