@@ -48,8 +48,9 @@ const updateLandscape = () => {
   frame = 0;
   const limit = Math.max(1, document.documentElement.scrollHeight - innerHeight);
   const progress = Math.min(1, Math.max(0, scrollY / limit));
+  document.body.classList.toggle("chapters-started", scrollY > innerHeight * 0.72);
   root.style.setProperty("--journey-scroll-progress", String(progress));
-  landscape.style.setProperty("--chapters-parallax", `${progress * -32}px`);
+  landscape.style.setProperty("--chapters-parallax", `${progress * -18}px`);
   landscapeVideo.setProgress(progress);
 };
 addEventListener("scroll", () => { if (!frame) frame = requestAnimationFrame(updateLandscape); }, { passive: true });

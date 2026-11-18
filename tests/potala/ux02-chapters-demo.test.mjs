@@ -31,3 +31,13 @@ test("os capítulos alternam os lados e os cards crescem sem truncar o conteúdo
   assert.match(css, /overflow-wrap: anywhere/);
   assert.match(css, /chapters-timeline::before/);
 });
+
+test("a estrada usa enquadramentos próprios sem ampliar ou substituir a arte", () => {
+  assert.match(html, /class="chapters-road-light"/);
+  assert.match(css, /home-travessia\.webp/);
+  assert.match(css, /home-travessia-mobile\.webp/);
+  assert.match(css, /object-position: center bottom/);
+  assert.match(css, /body\.chapters-started \.chapters-road-light/);
+  assert.doesNotMatch(css, /chapters-landscape[^}]*scale\(1\.04\)/);
+  assert.match(js, /progress \* -18/);
+});
