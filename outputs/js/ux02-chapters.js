@@ -1,6 +1,7 @@
 import { JOURNEY_REGIONS } from "./home/journey-data.js";
 import { createLandscapeVideo } from "./home/landscape-video.js";
 import { shouldTransitionNavigation } from "./ux02-navigation-transition.js";
+import { walkMotionForProgress } from "./ux02-walk-motion.js";
 
 const chapters = JOURNEY_REGIONS.filter((item) => !String(item.id).startsWith("novidade-")).slice(0, 12);
 const root = document.querySelector("#chapters-root");
@@ -64,6 +65,10 @@ const updateLandscape = () => {
   document.body.classList.toggle("chapters-started", scrollY > innerHeight * 0.72);
   root.style.setProperty("--journey-scroll-progress", String(progress));
   landscape.style.setProperty("--chapters-parallax", `${progress * -18}px`);
+  const walk = walkMotionForProgress(progress, { reducedMotion: reducedMotion.matches });
+  landscape.style.setProperty("--walk-progress", String(walk.progress));
+  landscape.style.setProperty("--mobile-walk-y", `${walk.mobileShift}px`);
+  landscape.style.setProperty("--mobile-walk-scale", String(walk.mobileScale));
   landscapeVideo.setProgress(progress);
 };
 addEventListener("scroll", () => { if (!frame) frame = requestAnimationFrame(updateLandscape); }, { passive: true });

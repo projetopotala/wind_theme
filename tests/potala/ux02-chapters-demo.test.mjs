@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { shouldTransitionNavigation } from "../../outputs/js/ux02-navigation-transition.js";
+import { walkMotionForProgress } from "../../outputs/js/ux02-walk-motion.js";
 
 const html = readFileSync(new URL("../../outputs/ux02-chapters.html", import.meta.url), "utf8");
 const js = readFileSync(new URL("../../outputs/js/ux02-chapters.js", import.meta.url), "utf8");
@@ -40,6 +41,20 @@ test("a transição visual preserva navegação normal quando necessário", () =
   assert.match(js, /location\.assign\(destination\.href\)/);
 });
 
+test("a caminhada avança continuamente, responde à volta e para em movimento reduzido", () => {
+  const start = walkMotionForProgress(0.1);
+  const middle = walkMotionForProgress(0.5);
+  const end = walkMotionForProgress(0.9);
+  assert.ok(start.mobileShift < middle.mobileShift && middle.mobileShift < end.mobileShift);
+  assert.equal(walkMotionForProgress(0.5).mobileShift, middle.mobileShift);
+  assert.deepEqual(walkMotionForProgress(0.9, { reducedMotion: true }), { progress: 0, mobileShift: 0, mobileScale: 1 });
+  assert.doesNotMatch(css, /data-video-pronto[^}]*opacity:\s*0/);
+  assert.match(js, /landscapeVideo\.setProgress\(progress\)/);
+  assert.match(css, /--mobile-walk-scale/);
+  assert.match(css, /home-travessia-ux02-mobile\.webp/);
+  assert.doesNotMatch(css, /chapters-landscape[^}]*scale\(/);
+});
+
 test("os capítulos alternam os lados e os cards crescem sem truncar o conteúdo", () => {
   assert.match(css, /chapter:nth-child\(odd\) \.chapter-card \{ grid-column: 1/);
   assert.match(css, /chapter:nth-child\(even\) \.chapter-card \{ grid-column: 2/);
@@ -65,5 +80,6 @@ test("os cards ampliados mantêm conteúdo integral e viram uma coluna até tabl
   assert.match(css, /@media \(max-width: 900px\)/);
   assert.match(css, /aspect-ratio: 16 \/ 10/);
   assert.match(css, /min-height: 50px/);
+  assert.match(css, /@media \(max-width: 340px\)/);
   assert.doesNotMatch(css, /line-clamp|text-overflow:\s*ellipsis/);
 });
