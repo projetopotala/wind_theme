@@ -87,6 +87,7 @@ test("os cards oferecem aprofundamento institucional sem enriquecer Marketplace"
   assert.match(js, /chapterContentFor/);
   assert.match(js, /O que é esta área\?/);
   assert.match(js, /O que você encontra/);
+  assert.match(js, /Como funciona\?/);
   assert.match(js, /Para quem pode ser interessante\?/);
   assert.match(js, /O que diferencia esta área\?/);
   assert.match(js, /Como começar\?/);

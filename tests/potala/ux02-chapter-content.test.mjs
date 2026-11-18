@@ -27,6 +27,12 @@ test("Marketplace permanece fora do enriquecimento editorial", () => {
   assert.ok(!Object.hasOwn(UX02_CHAPTER_CONTENT, "marketplace"));
 });
 
+test("todos os capítulos institucionais explicam também como a área funciona", () => {
+  for (const chapter of institutional) {
+    assert.ok(chapterContentFor(chapter.id).how.length >= 120, `${chapter.id} precisa explicar o funcionamento com profundidade`);
+  }
+});
+
 test("os textos não afirmam preço, vaga, data ou disponibilidade garantida", () => {
   const text = JSON.stringify(UX02_CHAPTER_CONTENT).toLowerCase();
   assert.doesNotMatch(text, /r\$|preço|temos vagas|vagas abertas|disponibilidade garantida|agendamento imediato/);

@@ -30,6 +30,7 @@ list.innerHTML = chapters.map((chapter, index) => {
         ${content ? `<div class="chapter-information">
           <section><h3>O que é esta área?</h3><p>${esc(content.purpose)}</p></section>
           <section class="chapter-offers"><h3>O que você encontra</h3><ul>${content.find.map((item) => `<li>${esc(item)}</li>`).join("")}</ul></section>
+          ${content.how ? `<section><h3>Como funciona?</h3><p>${esc(content.how)}</p></section>` : ""}
           <section><h3>Para quem pode ser interessante?</h3><p>${esc(content.audience)}</p></section>
           <section><h3>O que diferencia esta área?</h3><p>${esc(content.difference)}</p></section>
           <section><h3>Como começar?</h3><p>${esc(content.start)}</p></section>
