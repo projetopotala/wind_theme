@@ -1,5 +1,6 @@
 import { JOURNEY_REGIONS } from "./home/journey-data.js";
 import { createLandscapeVideo } from "./home/landscape-video.js";
+import { sectionResourcesFor } from "./home/section-resources.js";
 import { shouldTransitionNavigation } from "./ux02-navigation-transition.js";
 import { walkMotionForProgress } from "./ux02-walk-motion.js";
 
@@ -18,7 +19,8 @@ list.innerHTML = chapters.map((chapter, index) => `
       <div class="chapter-copy">
         <p class="chapter-number">${String(index + 1).padStart(2, "0")} / 12 · ${esc(chapter.category)}</p>
         <h2 id="chapter-title-${esc(chapter.id)}">${esc(chapter.title)}</h2>
-        <p>${esc(chapter.description)}</p>
+        <p class="chapter-lead">${esc(chapter.description)}</p>
+        ${chapter.id === "marketplace" ? "" : `<p class="chapter-context">${esc(sectionResourcesFor(chapter)?.intro || "")}</p>`}
         <a class="chapter-action" href="${esc(chapter.href)}">Conhecer ${esc(chapter.title)} <span aria-hidden="true">→</span></a>
       </div>
     </article>

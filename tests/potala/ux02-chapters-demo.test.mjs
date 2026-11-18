@@ -29,6 +29,18 @@ test("a demonstração preserva a abertura e aprimora a paisagem sem alterar a T
   assert.match(css, /home-travessia-ux02-mobile\.webp/);
 });
 
+test("a entrada apresenta o Instituto e oferece caminhos públicos sem criar outro capítulo", () => {
+  assert.match(html, /Um espaço para cuidar, aprender e compartilhar\./);
+  assert.match(html, /O Instituto Potala reúne caminhos de cuidado, conhecimento, cultura e convivência\./);
+  for (const href of ["atendimentos.html", "cursos.html", "atividades.html", "cultura.html", "profissionais.html", "programacao.html", "recepcao.html"]) {
+    assert.match(html, new RegExp(`href="${href}"`));
+  }
+  assert.match(html, /12 capítulos · explore no seu ritmo/);
+  assert.match(js, /sectionResourcesFor/);
+  assert.match(js, /chapter-context/);
+  assert.doesNotMatch(html, /marketplace\.html/);
+});
+
 test("a transição visual preserva navegação normal quando necessário", () => {
   const event = { defaultPrevented: false, button: 0, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false };
   const local = new URL("https://potala.test/atendimentos-conceito.html");
