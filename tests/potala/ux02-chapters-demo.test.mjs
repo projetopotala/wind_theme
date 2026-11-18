@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { JOURNEY_REGIONS } from "../../outputs/js/home/journey-data.js";
 import { shouldTransitionNavigation } from "../../outputs/js/ux02-navigation-transition.js";
 import { walkMotionForProgress } from "../../outputs/js/ux02-walk-motion.js";
 
@@ -17,6 +18,23 @@ test("a demonstração Chapters Timeline usa os capítulos reais e é isolada", 
   assert.match(js, /data-jump/);
   assert.match(css, /chapters-timeline/);
   assert.match(css, /prefers-reduced-motion/);
+});
+
+test("a apresentação fica fora da jornada e a Recepção inicia os 11 capítulos", () => {
+  const chapterIds = JOURNEY_REGIONS
+    .filter((item) => !String(item.id).startsWith("novidade-") && item.id !== "quem-somos")
+    .slice(0, 11)
+    .map((item) => item.id);
+
+  assert.equal(chapterIds.length, 11);
+  assert.equal(chapterIds[0], "recepcao");
+  assert.ok(!chapterIds.includes("quem-somos"));
+  assert.equal(new Set(chapterIds).size, chapterIds.length);
+  assert.match(js, /setActive\(items\[0\]\)/);
+  assert.match(js, /aria-label="Ir para \$\{String\(index \+ 1\)\.padStart\(2, "0"\)\} de \$\{chapterTotal\}/);
+  assert.equal((html.match(/id="chapters-intro"/g) || []).length, 1);
+  assert.equal((html.match(/id="chapters-list"/g) || []).length, 1);
+  assert.doesNotMatch(html, /12 capítulos/);
 });
 
 test("a demonstração preserva a abertura e aprimora a paisagem sem alterar a Travessia oficial", () => {
