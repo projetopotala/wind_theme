@@ -9,6 +9,7 @@ const html = readFileSync(new URL("../../outputs/ux02-chapters.html", import.met
 const js = readFileSync(new URL("../../outputs/js/ux02-chapters.js", import.meta.url), "utf8");
 const css = readFileSync(new URL("../../outputs/css/ux02-chapters.css", import.meta.url), "utf8");
 const nav = readFileSync(new URL("../../outputs/js/ux02-institutional-nav.js", import.meta.url), "utf8");
+const content = readFileSync(new URL("../../outputs/js/ux02-chapter-content.js", import.meta.url), "utf8");
 
 test("a demonstração Chapters Timeline usa os capítulos reais e é isolada", () => {
   assert.match(html, /id="chapters-root"/);
@@ -60,9 +61,8 @@ test("a entrada apresenta o Instituto e oferece caminhos públicos sem criar out
   assert.match(html, /O que você procura hoje\?/);
   assert.match(html, /href="#chapters-intro">Começar a Travessia/);
   assert.match(html, /<header id="chapters-intro"/);
-  assert.match(js, /sectionResourcesFor/);
-  assert.match(js, /chapter-context/);
-  assert.match(js, /chapter-benefit/);
+  assert.match(js, /chapterContentFor/);
+  assert.match(js, /chapter-information/);
   assert.match(css, /chapters-direct-paths \{ display: grid/);
   assert.match(css, /direct-paths-title/);
   assert.doesNotMatch(html, /marketplace\.html/);
@@ -83,11 +83,23 @@ test("o cabeçalho oferece busca, exploração e a mesma instância do Assistent
   assert.doesNotMatch(html.match(/id="ux02-explore-panel"[\s\S]*?<\/section>/)?.[0] || "", /marketplace/i);
 });
 
-test("os cards oferecem informação progressiva sem enriquecer Marketplace", () => {
-  assert.match(js, /chapter-examples/);
-  assert.match(js, /resources\?\.resources\?\.slice\(0, 2\)/);
-  assert.match(js, /chapter\.id === "marketplace" \? null/);
-  assert.match(css, /chapter-examples/);
+test("os cards oferecem aprofundamento institucional sem enriquecer Marketplace", () => {
+  assert.match(js, /chapterContentFor/);
+  assert.match(js, /O que é esta área\?/);
+  assert.match(js, /O que você encontra/);
+  assert.match(js, /Para quem pode ser interessante\?/);
+  assert.match(js, /O que diferencia esta área\?/);
+  assert.match(js, /Como começar\?/);
+  assert.doesNotMatch(content, /marketplace\s*:/i);
+  assert.match(css, /chapter-information/);
+  assert.match(css, /height:\s*410px;\s*min-height:\s*410px/);
+});
+
+test("o cabeçalho mobile permanece em uma linha compacta", () => {
+  assert.match(css, /grid-template-columns:\s*auto 1fr auto/);
+  assert.match(css, /min-height:\s*62px/);
+  assert.match(css, /content:\s*"Assistente"/);
+  assert.match(css, /body\.chapters-started \.pa-bolinha__texto \{ display: none; \}/);
 });
 
 test("a transição visual preserva navegação normal quando necessário", () => {
@@ -143,4 +155,9 @@ test("os cards ampliados mantêm conteúdo integral e viram uma coluna até tabl
   assert.match(css, /min-height: 50px/);
   assert.match(css, /@media \(max-width: 340px\)/);
   assert.doesNotMatch(css, /line-clamp|text-overflow:\s*ellipsis/);
+});
+
+test("cards textuais altos continuam ativando a timeline", () => {
+  assert.match(js, /threshold:\s*\[0\.01, 0\.08, 0\.16\]/);
+  assert.match(js, /setActive\(visible\.target\)/);
 });

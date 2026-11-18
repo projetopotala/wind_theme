@@ -1,9 +1,9 @@
 import { JOURNEY_REGIONS } from "./home/journey-data.js";
 import { createLandscapeVideo } from "./home/landscape-video.js";
-import { sectionResourcesFor } from "./home/section-resources.js";
 import { shouldTransitionNavigation } from "./ux02-navigation-transition.js";
 import { walkMotionForProgress } from "./ux02-walk-motion.js";
 import { montarNavegacaoInstitucional } from "./ux02-institutional-nav.js";
+import { chapterContentFor } from "./ux02-chapter-content.js";
 
 // A apresentação institucional ocupa a transição antes da jornada. A Travessia
 // começa no primeiro contato: Recepção. Marketplace permanece nos dados da casa,
@@ -15,9 +15,7 @@ const list = document.querySelector("#chapters-list");
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
 list.innerHTML = chapters.map((chapter, index) => {
-  const resources = chapter.id === "marketplace" ? null : sectionResourcesFor(chapter);
-  const benefit = resources?.benefits?.[0];
-  const examples = resources?.resources?.slice(0, 2) || [];
+  const content = chapterContentFor(chapter.id);
   return `
   <li class="chapter" id="chapter-${esc(chapter.id)}" data-chapter-id="${esc(chapter.id)}">
     <button class="chapter-marker" type="button" data-jump="${esc(chapter.id)}" aria-label="Ir para ${String(index + 1).padStart(2, "0")} de ${chapterTotal} — ${esc(chapter.title)}">
@@ -28,11 +26,15 @@ list.innerHTML = chapters.map((chapter, index) => {
       <div class="chapter-copy">
         <p class="chapter-number">${String(index + 1).padStart(2, "0")} / ${chapterTotal} · ${esc(chapter.category)}</p>
         <h2 id="chapter-title-${esc(chapter.id)}">${esc(chapter.title)}</h2>
-        <p class="chapter-lead">${esc(chapter.description)}</p>
-        ${resources ? `<p class="chapter-context"><span>O que você encontra</span>${esc(resources.intro)}</p>` : ""}
-        ${benefit ? `<p class="chapter-benefit"><span>Para você</span>${esc(benefit.label)} — ${esc(benefit.description)}</p>` : ""}
-        ${examples.length ? `<div class="chapter-examples"><span>Você pode explorar</span><ul>${examples.map((item) => `<li>${esc(item.label)}</li>`).join("")}</ul></div>` : ""}
-        <a class="chapter-action" href="${esc(chapter.href)}">Conhecer ${esc(chapter.title)} <span aria-hidden="true">→</span></a>
+        <p class="chapter-lead">${esc(content?.overview || chapter.description)}</p>
+        ${content ? `<div class="chapter-information">
+          <section><h3>O que é esta área?</h3><p>${esc(content.purpose)}</p></section>
+          <section class="chapter-offers"><h3>O que você encontra</h3><ul>${content.find.map((item) => `<li>${esc(item)}</li>`).join("")}</ul></section>
+          <section><h3>Para quem pode ser interessante?</h3><p>${esc(content.audience)}</p></section>
+          <section><h3>O que diferencia esta área?</h3><p>${esc(content.difference)}</p></section>
+          <section><h3>Como começar?</h3><p>${esc(content.start)}</p></section>
+        </div>` : ""}
+        <a class="chapter-action" href="${esc(chapter.href)}">${esc(content?.cta || `Conhecer ${chapter.title}`)} <span aria-hidden="true">→</span></a>
       </div>
     </article>
   </li>`;
@@ -52,7 +54,7 @@ const setActive = (item) => {
 const observer = new IntersectionObserver((entries) => {
   const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
   if (visible) setActive(visible.target);
-}, { rootMargin: "-35% 0px -45%", threshold: [0.2, 0.55, 0.8] });
+}, { rootMargin: "-35% 0px -45%", threshold: [0.01, 0.08, 0.16] });
 items.forEach((item) => observer.observe(item));
 markers.forEach((marker) => marker.addEventListener("click", () => document.querySelector(`#chapter-${CSS.escape(marker.dataset.jump)}`)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" })));
 setActive(items[0]);
