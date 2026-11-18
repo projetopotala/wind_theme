@@ -13,12 +13,14 @@ test("a Travessia oferece orientação contextual somente na região de atendime
   assert.match(painel, /id === "atendimentos"/);
   assert.match(painel, /Conheça os atendimentos do Potala/);
   assert.match(recursos, /primary: \["Conhecer atendimentos", "atendimentos\.html#orientacao"\]/);
+  assert.match(cenas, /region--\$\{layoutVariant\}\$\{region\.id === "atendimentos" \? " region--care"/);
 });
 
 test("a orientação contextual preserva foco, toque e movimento reduzido", () => {
   assert.match(estilo, /\.region-context-orientation a[\s\S]*min-height: 44px/);
   assert.match(estilo, /\.region-context-orientation a:focus-visible/);
   assert.match(estilo, /prefers-reduced-motion: reduce/);
+  assert.match(estilo, /region--care:not\(\.is-expanded\)/);
 });
 
 test("a primeira tela explica o Potala, oferece uma ação e identifica a ajuda", () => {

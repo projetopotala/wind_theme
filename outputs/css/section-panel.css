@@ -17,6 +17,7 @@
   overscroll-behavior: contain;
   scrollbar-color: #8c7d62 #252820;
 }
+.journey-region.region--care[data-resource-section].is-expanded .region-content { background: linear-gradient(115deg, rgba(20,24,20,.84), rgba(20,24,20,.52) 52%, rgba(14,16,14,.86)), radial-gradient(circle at 12% 18%, rgba(232,201,138,.2), transparent 34%); border-left: 1px solid rgba(232,201,138,.42); box-shadow: 18px 0 60px rgba(10,12,10,.22); }
 .journey-region[data-resource-section].is-expanded .region-details { display: contents; }
 .journey-region[data-resource-section].is-expanded .region-summary { grid-column: 1; grid-row: 2; width: 100%; margin: 0; align-self: start; text-align: left; }
 .journey-region[data-resource-section].is-expanded .region-title { color: var(--panel-text); font-size: clamp(36px, 4.5vw, 70px); line-height: 1.08; font-weight: 400; letter-spacing: -.035em; }

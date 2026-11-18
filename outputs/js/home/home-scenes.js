@@ -287,7 +287,7 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
 
 
   return `
-    <div class="journey-region region--${layoutVariant}" id="${id}"
+    <div class="journey-region region--${layoutVariant}${region.id === "atendimentos" ? " region--care" : ""}" id="${id}"
       data-region-id="${id}" ${resourceConfig ? `data-resource-section="${escapeHtml(region.id)}"` : ""} data-layout-variant="${layoutVariant}" data-editorial-variant="${safeToken(region.editorialVariant, "standard")}"
       data-side="${side}" data-road-side="${roadSide}" data-content-placement="${safeToken(region.contentPlacement, "side")}"
       data-title-scale="${titleScale}" data-title-flow="${titleFlow}" data-card-kind="${novidade ? "novidade" : "fixo"}"

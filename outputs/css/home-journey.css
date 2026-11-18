@@ -725,6 +725,36 @@ html.is-crossing .journey-entry-veil {
   transition: transform .4s ease;
 }
 
+/* Proposta UX-02: a cena do cuidado assume uma composição própria, sem criar
+   uma nova seção. O convite nasce da paisagem e o conteúdo se desloca como uma
+   faixa editorial quando a pessoa escolhe olhar de perto. */
+.journey-region.region--care:not(.is-expanded) .region-content {
+  background: radial-gradient(circle at 58% 42%, rgba(232, 201, 138, .13), transparent 33%);
+}
+.journey-region.region--care:not(.is-expanded) .region-summary {
+  width: min(720px, 92%);
+  margin-inline: auto;
+  padding-block: clamp(44px, 8vh, 96px);
+  text-align: center;
+}
+.journey-region.region--care:not(.is-expanded) .region-category,
+.journey-region.region--care:not(.is-expanded) .region-expand-label { justify-content: center; }
+.journey-region.region--care:not(.is-expanded) .region-title { font-size: clamp(3.6rem, 8vw, 8rem); }
+.journey-region.region--care:not(.is-expanded) .region-description { max-width: 34ch; margin-inline: auto; }
+.journey-region.region--care:not(.is-expanded) .region-expand-label::before { content: "Toque para conhecer"; }
+.journey-region.region--care:not(.is-expanded) .region-expand-label { font-size: 0; letter-spacing: .12em; }
+.journey-region.region--care:not(.is-expanded) .region-expand-label span { font-size: 1rem; }
+.journey-region.region--care.is-expanded .region-content {
+  background:
+    linear-gradient(115deg, rgba(20, 24, 20, .84), rgba(20, 24, 20, .52) 52%, rgba(14, 16, 14, .86)),
+    radial-gradient(circle at 12% 18%, rgba(232, 201, 138, .2), transparent 34%);
+  border-left: 1px solid rgba(232, 201, 138, .42);
+  box-shadow: 18px 0 60px rgba(10, 12, 10, .22);
+}
+.journey-region.region--care.is-expanded .region-summary { max-width: 720px; }
+.journey-region.region--care.is-expanded .region-title { font-size: clamp(3rem, 5.8vw, 6.4rem); }
+.journey-region.region--care.is-expanded .region-description { max-width: 42ch; font-size: clamp(1.05rem, 1.7vw, 1.35rem); }
+
 .journey-region.is-expanded .region-expand-label span { transform: rotate(45deg); }
 
 .region-details {
