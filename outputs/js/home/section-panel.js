@@ -7,10 +7,11 @@ const link = item => `<a href="${esc(item.href)}">${sectionIcon(item.icon)}<span
 export function renderSectionPanel({ id, region, config, bodyHtml, lookup }) {
   const related = config.related.map(key => lookup?.get(key)).filter(item => item && /^[\w-]+\.html$/.test(item.href));
   const contextualOrientation = id === "atendimentos"
-    ? `<aside class="region-context-orientation" aria-label="Como começar nos atendimentos">
+      ? `<aside class="region-context-orientation" aria-label="Como começar nos atendimentos">
         <p class="region-context-orientation__eyebrow">Como começar</p>
         <h3>Conheça os atendimentos do Potala</h3>
         <p>Veja as possibilidades de cuidado e descubra como solicitar um horário.</p>
+        <a class="region-context-orientation__action" href="atendimentos.html#orientacao">Conhecer atendimentos <span aria-hidden="true">→</span></a>
       </aside>`
     : "";
   return `<div class="section-panel-tools">
@@ -29,7 +30,7 @@ export function renderSectionPanel({ id, region, config, bodyHtml, lookup }) {
       </div>
       <ul class="section-benefits" aria-label="Possibilidades em ${esc(region.title)}">${config.benefits.map(item => `<li>${link(item)}</li>`).join("")}</ul>
       <div class="section-panel-actions region-actions">
-        <a class="section-primary region-link" href="${esc(config.primary[1])}">${sectionIcon("arrow")}${esc(config.primary[0])}</a>
+        ${id !== "atendimentos" ? `<a class="section-primary region-link" href="${esc(config.primary[1])}">${sectionIcon("arrow")}${esc(config.primary[0])}</a>` : ""}
         <a class="section-secondary" href="${esc(region.href)}">Explorar ${esc(region.title)} ${sectionIcon("arrow")}</a>
       </div>
     </section>
