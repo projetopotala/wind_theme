@@ -36,6 +36,8 @@ test("a entrada apresenta o Instituto e oferece caminhos públicos sem criar out
     assert.match(html, new RegExp(`href="${href}"`));
   }
   assert.match(html, /12 capítulos · explore no seu ritmo/);
+  assert.match(html, /href="#chapters-intro">Começar a Travessia/);
+  assert.match(html, /<header id="chapters-intro"/);
   assert.match(js, /sectionResourcesFor/);
   assert.match(js, /chapter-context/);
   assert.doesNotMatch(html, /marketplace\.html/);
