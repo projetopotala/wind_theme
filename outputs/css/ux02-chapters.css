@@ -1,0 +1,44 @@
+:root { color-scheme: dark; --gold: #e8c98a; --ivory: #f4eedf; --ink: #171511; --muted: rgba(244,238,223,.72); }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; background: var(--ink); }
+body { margin: 0; color: var(--ivory); background: var(--ink); font: 400 16px/1.6 system-ui, sans-serif; }
+.chapters-landscape { position: fixed; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(22,19,15,.3), rgba(22,19,15,.78)), url("../media/home-travessia.webp") center/cover; }
+.chapters-landscape::after { position: absolute; inset: 0; background: radial-gradient(circle at 50% 22%, rgba(240,215,160,.2), transparent 40%); content: ""; }
+#chapters-root { position: relative; min-height: 100vh; overflow: clip; }
+.chapters-intro { width: min(760px, calc(100% - 48px)); margin: 0 auto; padding: 15vh 0 10vh; text-align: center; }
+.chapters-kicker, .chapter-number { color: var(--gold); font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
+.chapters-intro h1 { max-width: 720px; margin: 16px auto; font: 400 clamp(3rem, 8vw, 7.2rem)/.9 Georgia, serif; letter-spacing: -.055em; }
+.chapters-intro > p:last-child { max-width: 44ch; margin: auto; color: var(--muted); }
+.chapters-timeline { position: relative; width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding-bottom: 18vh; }
+.chapters-rail { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(244,238,223,.25); transform: translateX(-50%); }
+.chapters-rail span { position: sticky; top: 42vh; display: block; width: 3px; height: 18vh; background: var(--gold); transform: translateX(-1px) scaleY(calc(.35 + var(--chapter-progress, 0) * .65)); transform-origin: top; }
+#chapters-list { position: relative; display: grid; gap: 12vh; margin: 0; padding: 0; list-style: none; }
+.chapter { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 7vw; min-height: 72vh; align-items: center; scroll-margin-top: 14vh; }
+.chapter:nth-child(even) .chapter-card { grid-column: 1; grid-row: 1; }
+.chapter:nth-child(even) .chapter-marker { grid-column: 2; }
+.chapter-marker { position: absolute; z-index: 2; top: 50%; left: 50%; display: grid; width: 54px; height: 54px; place-items: center; border: 1px solid rgba(244,238,223,.5); border-radius: 50%; color: var(--ivory); background: rgba(23,21,17,.86); font: 600 .8rem system-ui,sans-serif; transform: translate(-50%,-50%); cursor: pointer; transition: .3s ease; }
+.chapter-marker[aria-current="step"], .chapter-marker:focus-visible { border-color: var(--gold); color: var(--ink); background: var(--gold); box-shadow: 0 0 0 8px rgba(232,201,138,.16); }
+.chapter-card { display: grid; grid-template-columns: minmax(180px,.82fr) minmax(0,1fr); min-height: 330px; overflow: hidden; border: 1px solid rgba(244,238,223,.2); background: rgba(23,21,17,.72); box-shadow: 0 28px 80px rgba(0,0,0,.25); opacity: .58; transform: translateY(24px) scale(.98); transition: opacity .6s ease, transform .6s ease, border-color .6s ease; }
+.chapter:nth-child(even) .chapter-card { grid-template-columns: minmax(0,1fr) minmax(180px,.82fr); }
+.chapter.is-active .chapter-card { border-color: rgba(232,201,138,.72); opacity: 1; transform: none; }
+.chapter-image { min-height: 100%; background-position: center; background-size: cover; filter: saturate(.72); }
+.chapter-copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(24px, 4vw, 54px); }
+.chapter-number { margin: 0 0 18px; }
+.chapter-copy h2 { margin: 0; font: 400 clamp(2.2rem, 4vw, 4.7rem)/.95 Georgia, serif; letter-spacing: -.04em; }
+.chapter-copy p:not(.chapter-number) { max-width: 35ch; color: var(--muted); }
+.chapter-action { display: inline-flex; align-items: center; gap: 12px; width: fit-content; min-height: 44px; margin-top: 16px; padding: 10px 16px; border: 1px solid var(--gold); border-radius: 999px; color: var(--ink); background: var(--gold); text-decoration: none; }
+.chapter-action:focus-visible, .chapter-marker:focus-visible { outline: 2px solid var(--ivory); outline-offset: 4px; }
+@media (max-width: 700px) {
+  .chapters-intro { width: min(100% - 32px, 520px); padding-top: 12vh; }
+  .chapters-timeline { width: calc(100% - 32px); }
+  .chapters-rail { left: 18px; }
+  .chapters-rail span { left: 0; }
+  #chapters-list { gap: 8vh; }
+  .chapter, .chapter:nth-child(even) { display: block; min-height: 70vh; padding-left: 48px; }
+  .chapter-marker, .chapter:nth-child(even) .chapter-marker { top: 28px; left: 18px; transform: translateX(-50%); }
+  .chapter-card, .chapter:nth-child(even) .chapter-card { display: block; }
+  .chapter-image { height: 30vh; min-height: 180px; }
+  .chapter-copy { padding: 24px 20px 28px; }
+  .chapter-copy h2 { font-size: clamp(2.2rem, 12vw, 3.7rem); }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition-duration: .01ms !important; } }
