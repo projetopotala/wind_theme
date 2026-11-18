@@ -41,3 +41,13 @@ test("a estrada usa enquadramentos próprios sem ampliar ou substituir a arte", 
   assert.doesNotMatch(css, /chapters-landscape[^}]*scale\(1\.04\)/);
   assert.match(js, /progress \* -18/);
 });
+
+test("os cards ampliados mantêm conteúdo integral e viram uma coluna até tablet", () => {
+  assert.match(css, /width: min\(1380px, calc\(100% - 32px\)\)/);
+  assert.match(css, /min-height: 410px/);
+  assert.match(css, /max-width: 42ch/);
+  assert.match(css, /@media \(max-width: 900px\)/);
+  assert.match(css, /aspect-ratio: 16 \/ 10/);
+  assert.match(css, /min-height: 50px/);
+  assert.doesNotMatch(css, /line-clamp|text-overflow:\s*ellipsis/);
+});
