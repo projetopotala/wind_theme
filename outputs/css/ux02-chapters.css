@@ -1,15 +1,18 @@
 :root { color-scheme: dark; --gold: #e8c98a; --ivory: #f4eedf; --ink: #171511; --muted: rgba(244,238,223,.72); }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; background: var(--ink); }
-body { margin: 0; color: var(--ivory); background: var(--ink); font: 400 16px/1.6 system-ui, sans-serif; }
-.chapters-landscape { position: fixed; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(22,19,15,.3), rgba(22,19,15,.78)), url("../media/home-travessia.webp") center/cover; }
-.chapters-landscape::after { position: absolute; inset: 0; background: radial-gradient(circle at 50% 22%, rgba(240,215,160,.2), transparent 40%); content: ""; }
+body[data-story-page="true"] { margin: 0; color: var(--ivory); background: var(--ink); font: 400 16px/1.6 system-ui, sans-serif; }
+.chapters-landscape { z-index: 0; transform: translate3d(0, var(--chapters-parallax, 0), 0) scale(1.04); transition: filter .8s ease; }
+.chapters-landscape::after { position: absolute; inset: 0; background: radial-gradient(circle at 50% 22%, rgba(240,215,160,.2), transparent 40%), linear-gradient(180deg, rgba(22,19,15,.12), rgba(22,19,15,.66)); content: ""; }
+.chapters-mist { position: absolute; z-index: 2; inset: 25% -20% 0; background: radial-gradient(ellipse at 35% 50%, rgba(242,232,210,.18), transparent 38%), radial-gradient(ellipse at 70% 65%, rgba(242,232,210,.12), transparent 34%); filter: blur(18px); opacity: .58; animation: chapters-mist-drift 18s ease-in-out infinite alternate; }
+@keyframes chapters-mist-drift { to { transform: translate3d(4%, -2%, 0) scale(1.04); opacity: .42; } }
 #chapters-root { position: relative; min-height: 100vh; overflow: clip; }
-.chapters-intro { width: min(760px, calc(100% - 48px)); margin: 0 auto; padding: 15vh 0 10vh; text-align: center; }
-.chapters-kicker, .chapter-number { color: var(--gold); font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
-.chapters-intro h1 { max-width: 720px; margin: 16px auto; font: 400 clamp(3rem, 8vw, 7.2rem)/.9 Georgia, serif; letter-spacing: -.055em; }
-.chapters-intro > p:last-child { max-width: 44ch; margin: auto; color: var(--muted); }
-.chapters-timeline { position: relative; width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding-bottom: 18vh; }
+.journey-prologue { min-height: 100svh; }
+.chapter-number { color: var(--gold); font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
+.chapters-timeline { position: relative; z-index: 3; width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 8vh 0 18vh; }
+.chapters-transition { width: min(680px, 100%); margin: 0 auto 16vh; text-align: center; }
+.chapters-transition p { margin: 0 0 12px; color: var(--gold); font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
+.chapters-transition h2 { margin: 0; font: 400 clamp(2.5rem, 6vw, 5.8rem)/.94 Georgia, serif; letter-spacing: -.05em; }
 .chapters-rail { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(244,238,223,.25); transform: translateX(-50%); }
 .chapters-rail span { position: sticky; top: 42vh; display: block; width: 3px; height: 18vh; background: var(--gold); transform: translateX(-1px) scaleY(calc(.35 + var(--chapter-progress, 0) * .65)); transform-origin: top; }
 #chapters-list { position: relative; display: grid; gap: 12vh; margin: 0; padding: 0; list-style: none; }
@@ -29,7 +32,9 @@ body { margin: 0; color: var(--ivory); background: var(--ink); font: 400 16px/1.
 .chapter-action { display: inline-flex; align-items: center; gap: 12px; width: fit-content; min-height: 44px; margin-top: 16px; padding: 10px 16px; border: 1px solid var(--gold); border-radius: 999px; color: var(--ink); background: var(--gold); text-decoration: none; }
 .chapter-action:focus-visible, .chapter-marker:focus-visible { outline: 2px solid var(--ivory); outline-offset: 4px; }
 @media (max-width: 700px) {
-  .chapters-intro { width: min(100% - 32px, 520px); padding-top: 12vh; }
+  .journey-prologue .prologue-copy { padding-inline: 22px; }
+  .journey-prologue .prologue-copy h1 { font-size: clamp(3.2rem, 16vw, 5rem); }
+  .journey-prologue .journey-home-link--secondary { display: block; width: fit-content; margin-left: 0; }
   .chapters-timeline { width: calc(100% - 32px); }
   .chapters-rail { left: 18px; }
   .chapters-rail span { left: 0; }
@@ -41,4 +46,4 @@ body { margin: 0; color: var(--ivory); background: var(--ink); font: 400 16px/1.
   .chapter-copy { padding: 24px 20px 28px; }
   .chapter-copy h2 { font-size: clamp(2.2rem, 12vw, 3.7rem); }
 }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition-duration: .01ms !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition-duration: .01ms !important; } .chapters-landscape { transform: none; } .chapters-mist { display: none; } }

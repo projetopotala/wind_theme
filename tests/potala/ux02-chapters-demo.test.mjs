@@ -14,3 +14,12 @@ test("a demonstração Chapters Timeline usa os capítulos reais e é isolada", 
   assert.match(css, /chapters-timeline/);
   assert.match(css, /prefers-reduced-motion/);
 });
+
+test("a demonstração preserva a abertura e aprimora a paisagem sem alterar a Travessia oficial", () => {
+  assert.match(html, /class="journey-prologue"/);
+  assert.match(html, /Bem-vindo ao Potala\./);
+  assert.match(html, /journey-home-link--primary/);
+  assert.match(html, /home-travessia\.mp4/);
+  assert.match(js, /createLandscapeVideo/);
+  assert.match(css, /chapters-mist-drift/);
+});

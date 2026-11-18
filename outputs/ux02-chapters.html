@@ -2,19 +2,32 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Travessia por capítulos — Instituto Potala</title>
+  <link rel="stylesheet" href="css/secoes.css">
   <link rel="stylesheet" href="css/ux02-chapters.css">
 </head>
-<body>
+<body data-story-page="true">
+  <a class="skip-link" href="#chapters-list">Ir para os capítulos</a>
+  <div class="journey-landscape chapters-landscape" id="chapters-landscape" aria-hidden="true">
+    <video class="journey-landscape-video" data-src="media/home-travessia.mp4" muted playsinline preload="none" tabindex="-1"></video>
+    <span class="chapters-mist"></span>
+  </div>
   <main id="chapters-root" aria-labelledby="chapters-title">
-    <div class="chapters-landscape" aria-hidden="true"></div>
-    <header class="chapters-intro">
-      <p class="chapters-kicker">Travessia pelo Ecossistema Potala</p>
-      <h1 id="chapters-title">Um caminho para conhecer a casa.</h1>
-      <p>Desça pelos capítulos para encontrar cuidado, conhecimento, cultura e encontros.</p>
-    </header>
+    <section class="journey-prologue" id="inicio" aria-labelledby="chapters-title">
+      <div class="prologue-copy">
+        <p>Ecossistema Digital Potala</p>
+        <h1 id="chapters-title">Bem-vindo ao Potala.</h1>
+        <span>Um espaço de cuidado, conhecimento, cultura e encontros.</span>
+        <a class="journey-home-link journey-home-link--primary" href="#chapters-list">Começar a Travessia <i aria-hidden="true">↓</i></a>
+        <a class="journey-home-link journey-home-link--secondary" href="transcendido.html">Ler a matéria de Atendimentos <i aria-hidden="true">→</i></a>
+      </div>
+    </section>
     <section class="chapters-timeline" aria-label="Capítulos da Travessia">
+      <header class="chapters-transition">
+        <p>12 capítulos · um mesmo caminho</p>
+        <h2>A paisagem acompanha cada descoberta.</h2>
+      </header>
       <div class="chapters-rail" aria-hidden="true"><span></span></div>
       <ol id="chapters-list"></ol>
     </section>

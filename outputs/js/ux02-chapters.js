@@ -1,4 +1,5 @@
 import { JOURNEY_REGIONS } from "./home/journey-data.js";
+import { createLandscapeVideo } from "./home/landscape-video.js";
 
 const chapters = JOURNEY_REGIONS.filter((item) => !String(item.id).startsWith("novidade-")).slice(0, 12);
 const root = document.querySelector("#chapters-root");
@@ -36,3 +37,17 @@ const observer = new IntersectionObserver((entries) => {
 items.forEach((item) => observer.observe(item));
 markers.forEach((marker) => marker.addEventListener("click", () => document.querySelector(`#chapter-${CSS.escape(marker.dataset.jump)}`)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" })));
 setActive(items[0]);
+
+const landscape = document.querySelector("#chapters-landscape");
+const landscapeVideo = createLandscapeVideo(landscape, { lerProgresso: () => Number.parseFloat(root.style.getPropertyValue("--chapter-progress") || "0") });
+let frame = 0;
+const updateLandscape = () => {
+  frame = 0;
+  const limit = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+  const progress = Math.min(1, Math.max(0, scrollY / limit));
+  root.style.setProperty("--journey-scroll-progress", String(progress));
+  landscape.style.setProperty("--chapters-parallax", `${progress * -32}px`);
+  landscapeVideo.setProgress(progress);
+};
+addEventListener("scroll", () => { if (!frame) frame = requestAnimationFrame(updateLandscape); }, { passive: true });
+updateLandscape();
