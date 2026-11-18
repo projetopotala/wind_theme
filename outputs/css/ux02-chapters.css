@@ -7,28 +7,38 @@ body[data-story-page="true"] { margin: 0; color: var(--ivory); background: var(-
 .chapters-mist { position: absolute; z-index: 2; inset: 25% -20% 0; background: radial-gradient(ellipse at 35% 50%, rgba(242,232,210,.18), transparent 38%), radial-gradient(ellipse at 70% 65%, rgba(242,232,210,.12), transparent 34%); filter: blur(18px); opacity: .58; animation: chapters-mist-drift 18s ease-in-out infinite alternate; }
 @keyframes chapters-mist-drift { to { transform: translate3d(4%, -2%, 0) scale(1.04); opacity: .42; } }
 #chapters-root { position: relative; min-height: 100vh; overflow: clip; }
+#chapters-root::before { position: fixed; z-index: 1; inset: 0; background: radial-gradient(circle at var(--chapter-light-x, 28%) 54%, rgba(232,201,138,.13), transparent 30%); content: ""; pointer-events: none; transition: background-position 1s ease, opacity .8s ease; }
 .journey-prologue { min-height: 100svh; }
 .chapter-number { color: var(--gold); font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
-.chapters-timeline { position: relative; z-index: 3; width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 8vh 0 18vh; }
+.chapters-timeline { position: relative; z-index: 3; width: min(1260px, calc(100% - 48px)); margin: 0 auto; padding: 8vh 0 18vh; }
+.chapters-timeline::before { position: absolute; z-index: -1; top: 12vh; bottom: 4vh; left: 50%; width: clamp(96px, 12vw, 170px); border: 1px solid rgba(232,201,138,.14); border-radius: 48% 52% 44% 56% / 10% 12% 8% 10%; background: linear-gradient(90deg, transparent, rgba(232,201,138,.05) 18%, rgba(247,237,218,.11) 50%, rgba(232,201,138,.05) 82%, transparent), repeating-linear-gradient(180deg, rgba(247,237,218,.055) 0 2px, transparent 2px 44px); box-shadow: inset 0 0 36px rgba(232,201,138,.08), 0 0 52px rgba(232,201,138,.08); content: ""; opacity: .88; transform: translateX(-50%) perspective(480px) rotateX(2deg); pointer-events: none; }
+.chapters-timeline::after { position: absolute; z-index: -2; top: 10vh; bottom: 0; left: 50%; width: clamp(210px, 25vw, 360px); background: radial-gradient(ellipse at center, rgba(232,201,138,.12), transparent 66%); content: ""; filter: blur(18px); transform: translateX(-50%); pointer-events: none; }
 .chapters-transition { width: min(680px, 100%); margin: 0 auto 16vh; text-align: center; }
 .chapters-transition p { margin: 0 0 12px; color: var(--gold); font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
 .chapters-transition h2 { margin: 0; font: 400 clamp(2.5rem, 6vw, 5.8rem)/.94 Georgia, serif; letter-spacing: -.05em; }
-.chapters-rail { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(244,238,223,.25); transform: translateX(-50%); }
-.chapters-rail span { position: sticky; top: 42vh; display: block; width: 3px; height: 18vh; background: var(--gold); transform: translateX(-1px) scaleY(calc(.35 + var(--chapter-progress, 0) * .65)); transform-origin: top; }
+.chapters-rail { position: absolute; top: 0; bottom: 0; left: 50%; width: 3px; background: linear-gradient(180deg, transparent, rgba(244,238,223,.38) 8%, rgba(244,238,223,.18) 92%, transparent); box-shadow: 0 0 16px rgba(232,201,138,.18); transform: translateX(-50%); }
+.chapters-rail span { position: sticky; top: 42vh; display: block; width: 5px; height: 18vh; border-radius: 999px; background: linear-gradient(180deg, #fff6df, var(--gold)); box-shadow: 0 0 18px rgba(232,201,138,.72); transform: translateX(-1px) scaleY(calc(.35 + var(--chapter-progress, 0) * .65)); transform-origin: top; }
 #chapters-list { position: relative; display: grid; gap: 12vh; margin: 0; padding: 0; list-style: none; }
-.chapter { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 7vw; min-height: 72vh; align-items: center; scroll-margin-top: 14vh; }
-.chapter:nth-child(even) .chapter-card { grid-column: 1; grid-row: 1; }
-.chapter:nth-child(even) .chapter-marker { grid-column: 2; }
+.chapter { position: relative; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: clamp(88px, 9vw, 150px); min-height: 76vh; align-items: center; scroll-margin-top: 12vh; }
+.chapter::before { position: absolute; z-index: -1; top: 12%; bottom: 12%; width: 46%; border-radius: 50%; background: radial-gradient(ellipse, rgba(232,201,138,.12), transparent 68%); content: ""; filter: blur(22px); opacity: 0; transition: opacity .6s ease, transform .8s ease; }
+.chapter:nth-child(odd)::before { left: 0; transform: translateX(-8%); }
+.chapter:nth-child(even)::before { right: 0; transform: translateX(8%); }
+.chapter.is-active::before { opacity: 1; transform: translateX(0); }
+.chapter:nth-child(odd) .chapter-card { grid-column: 1; grid-row: 1; }
+.chapter:nth-child(even) .chapter-card { grid-column: 2; grid-row: 1; }
 .chapter-marker { position: absolute; z-index: 2; top: 50%; left: 50%; display: grid; width: 54px; height: 54px; place-items: center; border: 1px solid rgba(244,238,223,.5); border-radius: 50%; color: var(--ivory); background: rgba(23,21,17,.86); font: 600 .8rem system-ui,sans-serif; transform: translate(-50%,-50%); cursor: pointer; transition: .3s ease; }
 .chapter-marker[aria-current="step"], .chapter-marker:focus-visible { border-color: var(--gold); color: var(--ink); background: var(--gold); box-shadow: 0 0 0 8px rgba(232,201,138,.16); }
-.chapter-card { display: grid; grid-template-columns: minmax(180px,.82fr) minmax(0,1fr); min-height: 330px; overflow: hidden; border: 1px solid rgba(244,238,223,.2); background: rgba(23,21,17,.72); box-shadow: 0 28px 80px rgba(0,0,0,.25); opacity: .58; transform: translateY(24px) scale(.98); transition: opacity .6s ease, transform .6s ease, border-color .6s ease; }
-.chapter:nth-child(even) .chapter-card { grid-template-columns: minmax(0,1fr) minmax(180px,.82fr); }
-.chapter.is-active .chapter-card { border-color: rgba(232,201,138,.72); opacity: 1; transform: none; }
-.chapter-image { min-height: 100%; background-position: center; background-size: cover; filter: saturate(.72); }
-.chapter-copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(24px, 4vw, 54px); }
+.chapter-card { display: grid; grid-template-columns: minmax(132px,.58fr) minmax(240px,1.18fr); min-width: 0; min-height: 390px; overflow: hidden; border: 1px solid rgba(244,238,223,.2); border-radius: 2px 32px 2px 32px; background: linear-gradient(125deg, rgba(23,21,17,.9), rgba(23,21,17,.68)); box-shadow: 0 28px 80px rgba(0,0,0,.25); opacity: .54; transform: translateY(32px) scale(.965); transition: opacity .65s ease, transform .75s cubic-bezier(.2,.72,.2,1), border-color .6s ease, box-shadow .6s ease; }
+.chapter:nth-child(even) .chapter-card { grid-template-columns: minmax(240px,1.18fr) minmax(132px,.58fr); border-radius: 32px 2px 32px 2px; }
+.chapter:nth-child(even) .chapter-image { grid-column: 2; grid-row: 1; }
+.chapter:nth-child(even) .chapter-copy { grid-column: 1; grid-row: 1; }
+.chapter.is-active .chapter-card { border-color: rgba(232,201,138,.72); box-shadow: 0 34px 90px rgba(0,0,0,.38), 0 0 42px rgba(232,201,138,.08); opacity: 1; transform: none; }
+.chapter-image { min-height: 100%; background-position: center; background-size: cover; filter: saturate(.72) contrast(.94); transform: scale(1.035); transition: filter .8s ease, transform 1.2s cubic-bezier(.2,.72,.2,1); }
+.chapter.is-active .chapter-image { filter: saturate(.92) contrast(1.03); transform: scale(1); }
+.chapter-copy { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: clamp(28px, 3.2vw, 48px); overflow: visible; }
 .chapter-number { margin: 0 0 18px; }
-.chapter-copy h2 { margin: 0; font: 400 clamp(2.2rem, 4vw, 4.7rem)/.95 Georgia, serif; letter-spacing: -.04em; }
-.chapter-copy p:not(.chapter-number) { max-width: 35ch; color: var(--muted); }
+.chapter-copy h2 { margin: 0; overflow-wrap: anywhere; font: 400 clamp(2.15rem, 3.55vw, 4.35rem)/1 Georgia, serif; letter-spacing: -.04em; }
+.chapter-copy p:not(.chapter-number) { max-width: 38ch; margin: 18px 0 0; color: var(--muted); line-height: 1.68; overflow-wrap: anywhere; }
 .chapter-action { display: inline-flex; align-items: center; gap: 12px; width: fit-content; min-height: 44px; margin-top: 16px; padding: 10px 16px; border: 1px solid var(--gold); border-radius: 999px; color: var(--ink); background: var(--gold); text-decoration: none; }
 .chapter-action:focus-visible, .chapter-marker:focus-visible { outline: 2px solid var(--ivory); outline-offset: 4px; }
 @media (max-width: 700px) {
@@ -36,14 +46,19 @@ body[data-story-page="true"] { margin: 0; color: var(--ivory); background: var(-
   .journey-prologue .prologue-copy h1 { font-size: clamp(3.2rem, 16vw, 5rem); }
   .journey-prologue .journey-home-link--secondary { display: block; width: fit-content; margin-left: 0; }
   .chapters-timeline { width: calc(100% - 32px); }
+  .chapters-timeline::before { left: 18px; width: 54px; }
+  .chapters-timeline::after { left: 18px; width: 120px; }
   .chapters-rail { left: 18px; }
   .chapters-rail span { left: 0; }
   #chapters-list { gap: 8vh; }
-  .chapter, .chapter:nth-child(even) { display: block; min-height: 70vh; padding-left: 48px; }
+  .chapter, .chapter:nth-child(even) { display: block; min-height: 0; padding: 8vh 0 8vh 48px; }
   .chapter-marker, .chapter:nth-child(even) .chapter-marker { top: 28px; left: 18px; transform: translateX(-50%); }
-  .chapter-card, .chapter:nth-child(even) .chapter-card { display: block; }
+  .chapter-card, .chapter:nth-child(even) .chapter-card { display: flex; flex-direction: column; min-height: 0; border-radius: 2px 24px 2px 24px; }
+  .chapter:nth-child(even) .chapter-image, .chapter:nth-child(even) .chapter-copy { grid-column: auto; grid-row: auto; }
   .chapter-image { height: 30vh; min-height: 180px; }
-  .chapter-copy { padding: 24px 20px 28px; }
-  .chapter-copy h2 { font-size: clamp(2.2rem, 12vw, 3.7rem); }
+  .chapter-copy { padding: 25px 21px 30px; }
+  .chapter-copy h2 { font-size: clamp(2.15rem, 11vw, 3.45rem); overflow-wrap: normal; hyphens: auto; }
+  .chapter-copy p:not(.chapter-number) { max-width: none; }
+  .chapter-action { width: 100%; justify-content: center; text-align: center; }
 }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition-duration: .01ms !important; } .chapters-landscape { transform: none; } .chapters-mist { display: none; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition-duration: .01ms !important; } .chapters-landscape { transform: none; } .chapters-mist { display: none; } .chapter-card, .chapter-image, .chapter::before { transform: none !important; } }

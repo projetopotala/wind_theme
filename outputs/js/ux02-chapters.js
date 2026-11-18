@@ -27,7 +27,10 @@ const markers = [...list.querySelectorAll("[data-jump]")];
 const setActive = (item) => {
   items.forEach((chapter) => chapter.classList.toggle("is-active", chapter === item));
   markers.forEach((marker) => marker.setAttribute("aria-current", marker.dataset.jump === item?.dataset.chapterId ? "step" : "false"));
-  root.style.setProperty("--chapter-progress", `${Math.max(0, items.indexOf(item)) / Math.max(1, items.length - 1)}`);
+  const activeIndex = Math.max(0, items.indexOf(item));
+  root.dataset.activeChapter = item?.dataset.chapterId || "";
+  root.style.setProperty("--chapter-progress", `${activeIndex / Math.max(1, items.length - 1)}`);
+  root.style.setProperty("--chapter-light-x", activeIndex % 2 ? "72%" : "28%");
 };
 
 const observer = new IntersectionObserver((entries) => {

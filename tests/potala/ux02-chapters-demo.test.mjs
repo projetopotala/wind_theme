@@ -23,3 +23,11 @@ test("a demonstração preserva a abertura e aprimora a paisagem sem alterar a T
   assert.match(js, /createLandscapeVideo/);
   assert.match(css, /chapters-mist-drift/);
 });
+
+test("os capítulos alternam os lados e os cards crescem sem truncar o conteúdo", () => {
+  assert.match(css, /chapter:nth-child\(odd\) \.chapter-card \{ grid-column: 1/);
+  assert.match(css, /chapter:nth-child\(even\) \.chapter-card \{ grid-column: 2/);
+  assert.match(css, /\.chapter-copy[\s\S]*overflow: visible/);
+  assert.match(css, /overflow-wrap: anywhere/);
+  assert.match(css, /chapters-timeline::before/);
+});
