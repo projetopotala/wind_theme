@@ -284,14 +284,6 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
   const newsMeta = novidade
     ? `<span class="region-news-meta" aria-hidden="true"><small>${escapeHtml(region.category || "Caderno")}</small><span>${escapeHtml(title)}</span></span>`
     : "";
-  const contextualOrientation = region.id === "atendimentos" && !resourceConfig
-    ? `<aside class="region-context-orientation" aria-label="Como começar nos atendimentos">
-        <p class="region-context-orientation__eyebrow">Como começar</p>
-        <h3>Conheça os atendimentos do Potala</h3>
-        <p>Veja as possibilidades de cuidado e descubra como solicitar um horário.</p>
-        <a href="atendimentos.html">Conhecer atendimentos <span aria-hidden="true">→</span></a>
-      </aside>`
-    : "";
 
 
   return `
@@ -334,7 +326,6 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
               <span class="region-divider" aria-hidden="true"></span>
               <p class="region-lead-label">Encontre o que faz sentido para você</p>
               ${renderRestrictedMarkdown(body)}
-              ${contextualOrientation}
               <ul class="region-tags" aria-label="Temas desta região">${renderTags(temasVisiveis(region.tags))}</ul>
             </section>
             <aside class="region-details-aside">
