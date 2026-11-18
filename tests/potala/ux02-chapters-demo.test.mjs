@@ -8,6 +8,7 @@ import { walkMotionForProgress } from "../../outputs/js/ux02-walk-motion.js";
 const html = readFileSync(new URL("../../outputs/ux02-chapters.html", import.meta.url), "utf8");
 const js = readFileSync(new URL("../../outputs/js/ux02-chapters.js", import.meta.url), "utf8");
 const css = readFileSync(new URL("../../outputs/css/ux02-chapters.css", import.meta.url), "utf8");
+const nav = readFileSync(new URL("../../outputs/js/ux02-institutional-nav.js", import.meta.url), "utf8");
 
 test("a demonstração Chapters Timeline usa os capítulos reais e é isolada", () => {
   assert.match(html, /id="chapters-root"/);
@@ -65,6 +66,28 @@ test("a entrada apresenta o Instituto e oferece caminhos públicos sem criar out
   assert.match(css, /chapters-direct-paths \{ display: grid/);
   assert.match(css, /direct-paths-title/);
   assert.doesNotMatch(html, /marketplace\.html/);
+});
+
+test("o cabeçalho oferece busca, exploração e a mesma instância do Assistente", () => {
+  assert.match(html, /data-ux02-header/);
+  assert.match(html, /O que você procura no Potala\?/);
+  assert.match(html, /id="ux02-explore-panel"/);
+  assert.match(html, /data-abrir-assistente/);
+  assert.match(nav, /buscarInstituto/);
+  assert.match(nav, /ArrowDown/);
+  assert.match(nav, /ArrowUp/);
+  assert.match(nav, /Escape/);
+  assert.match(nav, /prefers-reduced-motion: reduce/);
+  assert.match(nav, /setInterval/);
+  assert.match(nav, /aria-pressed/);
+  assert.doesNotMatch(html.match(/id="ux02-explore-panel"[\s\S]*?<\/section>/)?.[0] || "", /marketplace/i);
+});
+
+test("os cards oferecem informação progressiva sem enriquecer Marketplace", () => {
+  assert.match(js, /chapter-examples/);
+  assert.match(js, /resources\?\.resources\?\.slice\(0, 2\)/);
+  assert.match(js, /chapter\.id === "marketplace" \? null/);
+  assert.match(css, /chapter-examples/);
 });
 
 test("a transição visual preserva navegação normal quando necessário", () => {

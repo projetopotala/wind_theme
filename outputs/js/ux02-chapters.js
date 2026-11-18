@@ -3,6 +3,7 @@ import { createLandscapeVideo } from "./home/landscape-video.js";
 import { sectionResourcesFor } from "./home/section-resources.js";
 import { shouldTransitionNavigation } from "./ux02-navigation-transition.js";
 import { walkMotionForProgress } from "./ux02-walk-motion.js";
+import { montarNavegacaoInstitucional } from "./ux02-institutional-nav.js";
 
 // A apresentação institucional ocupa a transição antes da jornada. A Travessia
 // começa no primeiro contato: Recepção. Marketplace permanece nos dados da casa,
@@ -16,6 +17,7 @@ const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&":
 list.innerHTML = chapters.map((chapter, index) => {
   const resources = chapter.id === "marketplace" ? null : sectionResourcesFor(chapter);
   const benefit = resources?.benefits?.[0];
+  const examples = resources?.resources?.slice(0, 2) || [];
   return `
   <li class="chapter" id="chapter-${esc(chapter.id)}" data-chapter-id="${esc(chapter.id)}">
     <button class="chapter-marker" type="button" data-jump="${esc(chapter.id)}" aria-label="Ir para ${String(index + 1).padStart(2, "0")} de ${chapterTotal} — ${esc(chapter.title)}">
@@ -28,7 +30,8 @@ list.innerHTML = chapters.map((chapter, index) => {
         <h2 id="chapter-title-${esc(chapter.id)}">${esc(chapter.title)}</h2>
         <p class="chapter-lead">${esc(chapter.description)}</p>
         ${resources ? `<p class="chapter-context"><span>O que você encontra</span>${esc(resources.intro)}</p>` : ""}
-        ${benefit ? `<p class="chapter-benefit"><span>Para você</span>${esc(benefit.description)}</p>` : ""}
+        ${benefit ? `<p class="chapter-benefit"><span>Para você</span>${esc(benefit.label)} — ${esc(benefit.description)}</p>` : ""}
+        ${examples.length ? `<div class="chapter-examples"><span>Você pode explorar</span><ul>${examples.map((item) => `<li>${esc(item.label)}</li>`).join("")}</ul></div>` : ""}
         <a class="chapter-action" href="${esc(chapter.href)}">Conhecer ${esc(chapter.title)} <span aria-hidden="true">→</span></a>
       </div>
     </article>
@@ -84,3 +87,4 @@ const updateLandscape = () => {
 };
 addEventListener("scroll", () => { if (!frame) frame = requestAnimationFrame(updateLandscape); }, { passive: true });
 updateLandscape();
+montarNavegacaoInstitucional();
