@@ -11,7 +11,9 @@ const css = readFileSync(new URL("../../outputs/css/ux02-chapters.css", import.m
 test("a demonstração Chapters Timeline usa os capítulos reais e é isolada", () => {
   assert.match(html, /id="chapters-root"/);
   assert.match(js, /JOURNEY_REGIONS/);
-  assert.match(js, /slice\(0, 12\)/);
+  assert.match(js, /item\.id !== "quem-somos"/);
+  assert.match(js, /slice\(0, 11\)/);
+  assert.match(js, /const chapterTotal = chapters\.length/);
   assert.match(js, /data-jump/);
   assert.match(css, /chapters-timeline/);
   assert.match(css, /prefers-reduced-motion/);
@@ -31,15 +33,19 @@ test("a demonstração preserva a abertura e aprimora a paisagem sem alterar a T
 
 test("a entrada apresenta o Instituto e oferece caminhos públicos sem criar outro capítulo", () => {
   assert.match(html, /Um espaço para cuidar, aprender e compartilhar\./);
-  assert.match(html, /O Instituto Potala reúne caminhos de cuidado, conhecimento, cultura e convivência\./);
+  assert.match(html, /O Instituto Potala reúne caminhos de cuidado, conhecimento, cultura, atividades e convivência\./);
   for (const href of ["atendimentos.html", "cursos.html", "atividades.html", "cultura.html", "profissionais.html", "programacao.html", "recepcao.html"]) {
     assert.match(html, new RegExp(`href="${href}"`));
   }
-  assert.match(html, /12 capítulos · explore no seu ritmo/);
+  assert.match(html, /Apresentação do Instituto · depois, 11 capítulos/);
+  assert.match(html, /O que você procura hoje\?/);
   assert.match(html, /href="#chapters-intro">Começar a Travessia/);
   assert.match(html, /<header id="chapters-intro"/);
   assert.match(js, /sectionResourcesFor/);
   assert.match(js, /chapter-context/);
+  assert.match(js, /chapter-benefit/);
+  assert.match(css, /chapters-direct-paths \{ display: grid/);
+  assert.match(css, /direct-paths-title/);
   assert.doesNotMatch(html, /marketplace\.html/);
 });
 

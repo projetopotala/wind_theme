@@ -4,27 +4,36 @@ import { sectionResourcesFor } from "./home/section-resources.js";
 import { shouldTransitionNavigation } from "./ux02-navigation-transition.js";
 import { walkMotionForProgress } from "./ux02-walk-motion.js";
 
-const chapters = JOURNEY_REGIONS.filter((item) => !String(item.id).startsWith("novidade-")).slice(0, 12);
+// A apresentação institucional ocupa a transição antes da jornada. A Travessia
+// começa no primeiro contato: Recepção. Marketplace permanece nos dados da casa,
+// mas não recebe tratamento novo nesta demonstração.
+const chapters = JOURNEY_REGIONS.filter((item) => !String(item.id).startsWith("novidade-") && item.id !== "quem-somos").slice(0, 11);
+const chapterTotal = chapters.length;
 const root = document.querySelector("#chapters-root");
 const list = document.querySelector("#chapters-list");
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
-list.innerHTML = chapters.map((chapter, index) => `
+list.innerHTML = chapters.map((chapter, index) => {
+  const resources = chapter.id === "marketplace" ? null : sectionResourcesFor(chapter);
+  const benefit = resources?.benefits?.[0];
+  return `
   <li class="chapter" id="chapter-${esc(chapter.id)}" data-chapter-id="${esc(chapter.id)}">
-    <button class="chapter-marker" type="button" data-jump="${esc(chapter.id)}" aria-label="Ir para ${String(index + 1).padStart(2, "0")} — ${esc(chapter.title)}">
+    <button class="chapter-marker" type="button" data-jump="${esc(chapter.id)}" aria-label="Ir para ${String(index + 1).padStart(2, "0")} de ${chapterTotal} — ${esc(chapter.title)}">
       <span>${String(index + 1).padStart(2, "0")}</span>
     </button>
     <article class="chapter-card" aria-labelledby="chapter-title-${esc(chapter.id)}">
       <div class="chapter-image" style="background-image:url('${esc(chapter.media || "media/home-travessia.webp")}')" role="img" aria-label="${esc(chapter.alt || chapter.title)}"></div>
       <div class="chapter-copy">
-        <p class="chapter-number">${String(index + 1).padStart(2, "0")} / 12 · ${esc(chapter.category)}</p>
+        <p class="chapter-number">${String(index + 1).padStart(2, "0")} / ${chapterTotal} · ${esc(chapter.category)}</p>
         <h2 id="chapter-title-${esc(chapter.id)}">${esc(chapter.title)}</h2>
         <p class="chapter-lead">${esc(chapter.description)}</p>
-        ${chapter.id === "marketplace" ? "" : `<p class="chapter-context">${esc(sectionResourcesFor(chapter)?.intro || "")}</p>`}
+        ${resources ? `<p class="chapter-context"><span>O que você encontra</span>${esc(resources.intro)}</p>` : ""}
+        ${benefit ? `<p class="chapter-benefit"><span>Para você</span>${esc(benefit.description)}</p>` : ""}
         <a class="chapter-action" href="${esc(chapter.href)}">Conhecer ${esc(chapter.title)} <span aria-hidden="true">→</span></a>
       </div>
     </article>
-  </li>`).join("");
+  </li>`;
+}).join("");
 
 const items = [...list.querySelectorAll(".chapter")];
 const markers = [...list.querySelectorAll("[data-jump]")];
