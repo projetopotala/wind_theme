@@ -354,7 +354,7 @@ html.is-crossing .journey-entry-veil {
 .prologue-copy h1 {
   max-width: 900px;
   font-size: clamp(3.35rem, 9vw, 8.5rem);
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .prologue-copy > span {

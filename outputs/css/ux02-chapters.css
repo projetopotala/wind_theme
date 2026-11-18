@@ -57,6 +57,7 @@ body.chapters-started .chapters-landscape::after { background: radial-gradient(c
 #chapters-root { position: relative; min-height: 100vh; overflow: clip; }
 #chapters-root::before { position: fixed; z-index: 1; inset: 0; background: radial-gradient(circle at var(--chapter-light-x, 28%) 54%, rgba(232,201,138,.13), transparent 30%); content: ""; pointer-events: none; transition: background-position 1s ease, opacity .8s ease; }
 .journey-prologue { min-height: 100svh; }
+.journey-prologue .prologue-copy h1 { white-space: normal; }
 .chapter-number { color: var(--gold); font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
 .chapters-timeline { position: relative; z-index: 3; width: min(1380px, calc(100% - 32px)); margin: 0 auto; padding: 8vh 0 18vh; }
 .chapters-timeline::before { position: absolute; z-index: -1; top: 12vh; bottom: 4vh; left: 50%; width: clamp(96px, 12vw, 170px); border: 1px solid rgba(232,201,138,.14); border-radius: 48% 52% 44% 56% / 10% 12% 8% 10%; background: linear-gradient(90deg, transparent, rgba(232,201,138,.05) 18%, rgba(247,237,218,.11) 50%, rgba(232,201,138,.05) 82%, transparent), repeating-linear-gradient(180deg, rgba(247,237,218,.055) 0 2px, transparent 2px 44px); box-shadow: inset 0 0 36px rgba(232,201,138,.08), 0 0 52px rgba(232,201,138,.08); content: ""; opacity: .88; transform: translateX(-50%) perspective(480px) rotateX(2deg); pointer-events: none; }
