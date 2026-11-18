@@ -31,3 +31,14 @@ test("a primeira tela explica o Potala, oferece uma ação e identifica a ajuda"
   assert.match(assistente, /Assistente Potala/);
   assert.match(assistente, /Precisa de ajuda\?/);
 });
+
+test("a navegação da Travessia oferece anterior, próxima etapa e visão geral", () => {
+  assert.match(cenas, /data-journey-prev/);
+  assert.match(cenas, /data-journey-next/);
+  assert.match(cenas, /class="journey-progress-map"/);
+  assert.match(cenas, /Ver etapas/);
+  assert.match(cenas, /data-progress-target="\$\{id\}"/);
+  const controller = readFileSync(new URL("../../outputs/js/home/home-controller.js", import.meta.url), "utf8");
+  assert.match(controller, /data-journey-prev/);
+  assert.match(controller, /data-journey-next/);
+});

@@ -461,12 +461,25 @@ function renderProgressNav(regions = []) {
     const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
     return `<li><button type="button" data-progress-target="${id}" aria-label="${numero} — ${escapeHtml(region.title)}"><span aria-hidden="true">${numero} — ${escapeHtml(region.title)}</span></button></li>`;
   }).join("");
+  const mapa = capitulos.map((region, index) => {
+    const numero = String(index + 1).padStart(2, "0");
+    const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
+    return `<li><button type="button" data-progress-target="${id}"><strong>${numero}</strong><span>${escapeHtml(region.title)}</span></button></li>`;
+  }).join("");
   return `
     <nav class="journey-progress" aria-label="Capítulos da travessia">
       <p class="journey-progress-count"><span data-journey-current>01</span><span data-journey-total>${total}</span></p>
       <p class="journey-progress-hint">12 etapas para explorar</p>
+      <div class="journey-progress-actions" aria-label="Navegar entre etapas">
+        <button type="button" data-journey-prev aria-label="Etapa anterior">↑</button>
+        <button type="button" data-journey-next aria-label="Próxima etapa">↓</button>
+      </div>
       <ol>${dots}</ol>
       <p class="journey-progress-label" data-journey-progress-label>01 — ${escapeHtml(capitulos[0].title)}</p>
+      <details class="journey-progress-map">
+        <summary>Ver etapas</summary>
+        <ol>${mapa}</ol>
+      </details>
     </nav>`;
 }
 

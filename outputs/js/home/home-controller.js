@@ -549,6 +549,16 @@ export function createHomeController({
     if (rotulo && blocoAtivo && !emNovidades) {
       rotulo.textContent = `${String(capituloIndex + 1).padStart(2, "0")} — ${blocoAtivo.title}`;
     }
+    const anterior = root.querySelector("[data-journey-prev]");
+    const proxima = root.querySelector("[data-journey-next]");
+    if (anterior) {
+      anterior.disabled = capituloIndex <= 0;
+      anterior.setAttribute("aria-label", capituloIndex > 0 ? `Etapa anterior: ${capitulos[capituloIndex - 1].title}` : "Etapa anterior — início da jornada");
+    }
+    if (proxima) {
+      proxima.disabled = capituloIndex < 0 || capituloIndex >= capitulos.length - 1;
+      proxima.setAttribute("aria-label", capituloIndex >= 0 && capituloIndex < capitulos.length - 1 ? `Próxima etapa: ${capitulos[capituloIndex + 1].title}` : "Próxima etapa — fim da jornada");
+    }
 
     /* Nas novidades a roleta para na linha "Recentes"; nas seções, na linha da
        seção. Sem isto ela ficava presa onde estava quando a jornada abriu. */
@@ -558,6 +568,16 @@ export function createHomeController({
 
   /* Os pontos de capítulo levam direto à seção que cada um representa. */
   const onProgresso = (event) => {
+    const acao = event.target.closest?.("[data-journey-prev], [data-journey-next]");
+    if (acao) {
+      const atual = root.querySelector("[data-progress-target][aria-current=\"true\"]");
+      const capitulos = emOrdem.filter((bloco) => !ehNovidade(bloco));
+      const index = capitulos.findIndex((bloco) => bloco.id === atual?.dataset.progressTarget);
+      const delta = acao.hasAttribute("data-journey-prev") ? -1 : 1;
+      const destino = capitulos[index + delta];
+      if (destino) goToSection(destino.id);
+      return;
+    }
     const alvo = event.target.closest?.("[data-progress-target]");
     if (!alvo) return;
     goToSection(alvo.dataset.progressTarget);

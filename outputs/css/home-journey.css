@@ -3610,6 +3610,11 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 
 .journey-progress-hint { margin: 0; color: rgba(247, 237, 218, .62); font: 500 .58rem/1.2 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
 
+.journey-progress-actions { display: flex; gap: 6px; }
+.journey-progress-actions button { width: 30px; height: 30px; border: 1px solid rgba(247,237,218,.28); border-radius: 50%; color: var(--journey-ivory); background: rgba(23,16,12,.28); font: 700 .9rem/1 system-ui,sans-serif; cursor: pointer; }
+.journey-progress-actions button:hover:not(:disabled), .journey-progress-actions button:focus-visible { border-color: var(--journey-gold); background: rgba(231,202,143,.16); }
+.journey-progress-actions button:disabled { opacity: .28; cursor: not-allowed; }
+
 .journey-progress ol {
   display: grid;
   gap: 8px;
@@ -3657,6 +3662,18 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 .journey-progress:hover .journey-progress-label,
 .journey-progress:focus-within .journey-progress-label { opacity: 1; }
 
+.journey-progress-map { position: relative; margin-top: 4px; }
+.journey-progress-map summary { min-height: 34px; padding: 8px 11px; border: 1px solid rgba(247,237,218,.24); border-radius: 999px; color: var(--journey-ivory); background: rgba(23,16,12,.28); font: 600 .66rem/1 system-ui,sans-serif; cursor: pointer; list-style: none; }
+.journey-progress-map summary::-webkit-details-marker { display: none; }
+.journey-progress-map summary::before { content: "＋"; margin-right: 5px; color: var(--journey-gold); }
+.journey-progress-map[open] summary::before { content: "−"; }
+.journey-progress-map > ol { position: absolute; right: 0; bottom: calc(100% + 8px); display: grid; gap: 3px; width: min(220px, 72vw); max-height: min(54vh, 390px); padding: 8px; overflow-y: auto; border: 1px solid rgba(247,237,218,.24); border-radius: 12px; background: rgba(23,16,12,.92); box-shadow: 0 14px 30px rgba(0,0,0,.28); }
+.journey-progress-map > ol li { list-style: none; }
+.journey-progress-map > ol button { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: center; width: 100%; height: auto; padding: 8px 7px; border-radius: 7px; color: rgba(247,237,218,.78); background: transparent; text-align: left; }
+.journey-progress-map > ol button strong { color: var(--journey-gold); font-size: .7rem; }
+.journey-progress-map > ol button span { position: static; display: block; width: auto; max-width: none; padding: 0; opacity: 1; transform: none; color: inherit; font-size: .7rem; text-align: left; background: none; }
+.journey-progress-map > ol button:hover, .journey-progress-map > ol button:focus-visible, .journey-progress-map > ol button[aria-current="true"] { background: rgba(231,202,143,.14); color: var(--journey-ivory); }
+
 body:has(.journey-region.is-expanded) .journey-progress { opacity: 0; pointer-events: none; }
 
 @media (max-width: 820px) {
@@ -3664,6 +3681,8 @@ body:has(.journey-region.is-expanded) .journey-progress { opacity: 0; pointer-ev
   .journey-progress ol { grid-auto-flow: column; }
   .journey-progress-count, .journey-progress-label { display: none; }
   .journey-progress-hint { font-size: .54rem; }
+  .journey-progress-actions button { width: 36px; height: 36px; }
+  .journey-progress-map > ol { right: 50%; transform: translateX(50%); bottom: calc(100% + 10px); }
 }
 
 .journey-canto {
