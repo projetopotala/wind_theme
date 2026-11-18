@@ -352,8 +352,9 @@ html.is-crossing .journey-entry-veil {
  * inteira, e proibir a quebra ali jogaria a frase para fora da tela.
  */
 .prologue-copy h1 {
-  font-size: min(14.6vw, 10rem);
-  white-space: nowrap;
+  max-width: 900px;
+  font-size: clamp(3.35rem, 9vw, 8.5rem);
+  white-space: normal;
 }
 
 .prologue-copy > span {
@@ -362,6 +363,13 @@ html.is-crossing .journey-entry-veil {
   color: rgba(247, 237, 218, .72);
   letter-spacing: .12em;
 }
+
+.prologue-copy .journey-home-link { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; text-decoration: none; }
+.prologue-copy .journey-home-link--primary { margin-top: 28px; padding: 13px 23px; border: 1px solid var(--journey-gold); border-radius: 999px; color: #292318; background: var(--journey-gold); font-size: .9rem; font-weight: 700; letter-spacing: .04em; text-shadow: none; transition: transform .2s ease, background .2s ease; }
+.prologue-copy .journey-home-link--primary:hover { transform: translateY(-2px); background: var(--journey-ivory); }
+.prologue-copy .journey-home-link--secondary { margin: 22px 0 0 16px; color: rgba(247, 237, 218, .72); font-size: .78rem; letter-spacing: .05em; }
+.prologue-copy .journey-home-link--secondary:hover { color: var(--journey-ivory); }
+.prologue-copy .journey-home-link:focus-visible { outline: 2px solid var(--journey-ivory); outline-offset: 4px; }
 
 /*
  * O PAR é a unidade de rolagem; a região é só o bloco dentro dele.
@@ -3570,6 +3578,8 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 
 .journey-progress-count [data-journey-total]::before { content: "/"; margin-right: 6px; opacity: .55; }
 
+.journey-progress-hint { margin: 0; color: rgba(247, 237, 218, .62); font: 500 .58rem/1.2 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+
 .journey-progress ol {
   display: grid;
   gap: 8px;
@@ -3623,6 +3633,7 @@ body:has(.journey-region.is-expanded) .journey-progress { opacity: 0; pointer-ev
   .journey-progress { top: auto; bottom: max(18px, env(safe-area-inset-bottom)); right: 50%; transform: translateX(50%); }
   .journey-progress ol { grid-auto-flow: column; }
   .journey-progress-count, .journey-progress-label { display: none; }
+  .journey-progress-hint { font-size: .54rem; }
 }
 
 .journey-canto {
