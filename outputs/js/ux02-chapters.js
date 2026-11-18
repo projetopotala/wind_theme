@@ -1,5 +1,6 @@
 import { JOURNEY_REGIONS } from "./home/journey-data.js";
 import { createLandscapeVideo } from "./home/landscape-video.js";
+import { shouldTransitionNavigation } from "./ux02-navigation-transition.js";
 
 const chapters = JOURNEY_REGIONS.filter((item) => !String(item.id).startsWith("novidade-")).slice(0, 12);
 const root = document.querySelector("#chapters-root");
@@ -40,6 +41,18 @@ const observer = new IntersectionObserver((entries) => {
 items.forEach((item) => observer.observe(item));
 markers.forEach((marker) => marker.addEventListener("click", () => document.querySelector(`#chapter-${CSS.escape(marker.dataset.jump)}`)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" })));
 setActive(items[0]);
+
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+list.addEventListener("click", (event) => {
+  const action = event.target.closest?.(".chapter-action");
+  if (!action) return;
+  const destination = new URL(action.href, location.href);
+  if (!shouldTransitionNavigation(event, destination, { origin: location.origin, reducedMotion: reducedMotion.matches })) return;
+  event.preventDefault();
+  document.body.classList.add("chapters-leaving");
+  action.closest(".chapter-card")?.classList.add("is-selected");
+  setTimeout(() => location.assign(destination.href), 180);
+});
 
 const landscape = document.querySelector("#chapters-landscape");
 const landscapeVideo = createLandscapeVideo(landscape, { lerProgresso: () => Number.parseFloat(root.style.getPropertyValue("--chapter-progress") || "0") });

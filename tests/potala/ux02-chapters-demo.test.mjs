@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { shouldTransitionNavigation } from "../../outputs/js/ux02-navigation-transition.js";
 
 const html = readFileSync(new URL("../../outputs/ux02-chapters.html", import.meta.url), "utf8");
 const js = readFileSync(new URL("../../outputs/js/ux02-chapters.js", import.meta.url), "utf8");
@@ -22,6 +23,21 @@ test("a demonstração preserva a abertura e aprimora a paisagem sem alterar a T
   assert.match(html, /home-travessia\.mp4/);
   assert.match(js, /createLandscapeVideo/);
   assert.match(css, /chapters-mist-drift/);
+  assert.match(html, /chapters-refined-landscape/);
+  assert.match(css, /home-travessia-ux02\.webp/);
+  assert.match(css, /home-travessia-ux02-mobile\.webp/);
+});
+
+test("a transição visual preserva navegação normal quando necessário", () => {
+  const event = { defaultPrevented: false, button: 0, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false };
+  const local = new URL("https://potala.test/atendimentos-conceito.html");
+  const external = new URL("https://example.com/");
+  assert.equal(shouldTransitionNavigation(event, local, { origin: local.origin }), true);
+  assert.equal(shouldTransitionNavigation({ ...event, ctrlKey: true }, local, { origin: local.origin }), false);
+  assert.equal(shouldTransitionNavigation(event, external, { origin: local.origin }), false);
+  assert.equal(shouldTransitionNavigation(event, local, { origin: local.origin, reducedMotion: true }), false);
+  assert.match(html, /chapters-page-transition/);
+  assert.match(js, /location\.assign\(destination\.href\)/);
 });
 
 test("os capítulos alternam os lados e os cards crescem sem truncar o conteúdo", () => {
