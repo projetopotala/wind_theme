@@ -3717,3 +3717,45 @@ body:has(.journey-region.is-expanded) .journey-canto {
   background: none;
   cursor: pointer;
 }
+
+/* Uma única orientação contextual, integrada ao conteúdo da etapa de cuidado. */
+.region-context-orientation {
+  margin: 24px 0 8px;
+  padding: 16px 18px;
+  border-left: 2px solid #d8bd83;
+  background: rgba(216, 189, 131, .08);
+}
+.region-context-orientation__eyebrow {
+  margin: 0 0 5px !important;
+  color: #d8bd83;
+  font-size: .7rem !important;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.region-context-orientation h3 {
+  margin: 0 0 7px;
+  color: #fff2d5;
+  font: 400 clamp(1.2rem, 2.4vw, 1.65rem)/1.15 Georgia, serif;
+}
+.region-context-orientation > p:not(.region-context-orientation__eyebrow) {
+  margin: 0 0 11px !important;
+  color: #d4cebf;
+  font-size: .92rem !important;
+}
+.region-context-orientation a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: #fff2d5;
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+.region-context-orientation a:focus-visible {
+  outline: 2px solid #e8c986;
+  outline-offset: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .region-context-orientation a { transition: none; }
+}
