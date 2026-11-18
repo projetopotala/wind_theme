@@ -79,7 +79,7 @@ body.chapters-leaving .chapters-page-transition { opacity: .92; visibility: visi
   .chapters-transition::before { inset: -4% -8%; background: linear-gradient(90deg, rgba(22,19,15,.7), rgba(22,19,15,.38) 72%, transparent); }
   .chapters-transition h2 { font-size: clamp(2.45rem, 8vw, 4rem); }
   .chapters-intro-text { max-width: 48ch; }
-  .chapters-direct-paths { grid-template-columns: 1fr; gap: 4px; margin-top: 28px; max-width: 430px; }
+  .chapters-direct-paths { grid-template-columns: 1fr; gap: 4px; margin-top: 28px; max-width: 430px; padding-bottom: max(96px, calc(72px + env(safe-area-inset-bottom))); }
   .chapters-direct-paths a { min-height: 58px; padding-block: 10px; }
   .chapters-timeline::before { left: 20px; width: 48px; }
   .chapters-timeline::after { left: 20px; width: 112px; }
