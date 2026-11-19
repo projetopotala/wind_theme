@@ -23,12 +23,15 @@ test("Chegada explica o Instituto e oferece destinos públicos em uma ação", (
   }
 });
 
-test("abertura integra a orientação à paisagem sem restaurar o painel opaco", () => {
+test("abertura prioriza a paisagem e mantém caminhos auxiliares em descoberta expansível", () => {
+  const html = ler("transcender.html");
   const css = ler("css/chegada-guia.css");
-  assert.match(css, /\.arrival-guide\s*\{[\s\S]*?background:\s*transparent;/);
-  assert.match(css, /\.arrival-guide::before\s*\{[\s\S]*?linear-gradient/);
+  assert.match(html, /<details class="arrival-guide__paths">/);
+  assert.match(html, /<summary>Outros caminhos no Instituto <span>5 opções<\/span><\/summary>/);
+  assert.ok(html.indexOf('class="arrival-guide__journey"') < html.indexOf('<details class="arrival-guide__paths">'));
+  assert.doesNotMatch(css, /\.arrival-guide\s*\{[^}]*background\s*:/);
   assert.match(css, /\.arrival-guide__journey\s*\{[\s\S]*?border-radius:\s*999px/);
-  assert.match(css, /@media \(max-width:\s*600px\)[\s\S]*?grid-template-columns:\s*repeat\(2/);
+  assert.match(css, /\.arrival-guide__paths nav\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2/);
   assert.match(css, /@media \(max-width:\s*350px\)[\s\S]*?grid-template-columns:\s*1fr/);
 });
 
