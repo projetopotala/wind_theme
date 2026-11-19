@@ -82,6 +82,28 @@ function criarSelo(documento) {
   return selo;
 }
 
+// O navegador só revela nomes de aparelhos depois de a pessoa permitir mídia.
+// Enquanto isso, a lista pode estar vazia — isso não é motivo para pedir câmera
+// automaticamente nem para expor identificadores do aparelho em mensagens.
+export function rotuloDaCamera(dispositivo, indice = 0) {
+  const nome = String(dispositivo?.label ?? "").trim();
+  return nome || `Câmera ${indice + 1}`;
+}
+
+export async function listarCameras(room, sdk) {
+  const obter = typeof room?.getLocalDevices === "function"
+    ? room.getLocalDevices.bind(room)
+    : typeof sdk?.Room?.getLocalDevices === "function"
+      ? sdk.Room.getLocalDevices.bind(sdk.Room)
+      : null;
+  if (!obter) return [];
+  // O segundo argumento da API LiveKit impede que a enumeração dispare uma
+  // solicitação de permissão. A câmera só é ligada pela ação explícita já
+  // existente na sala.
+  const dispositivos = await obter("videoinput", false);
+  return Array.isArray(dispositivos) ? dispositivos.filter((item) => item?.deviceId) : [];
+}
+
 export function adaptadorLiveKit({ documento = globalThis.document, sdk = globalThis.LivekitClient } = {}) {
   return {
     nome: "livekit",
@@ -119,6 +141,17 @@ export function adaptadorLiveKit({ documento = globalThis.document, sdk = global
       const controles = criar(documento, "div", "sala-video-controles");
       controles.setAttribute("role", "group");
       controles.setAttribute("aria-label", "Controles da videochamada");
+      const cameraOpcoes = criar(documento, "label", "sala-video-camera");
+      const cameraRotulo = criar(documento, "span", "sala-video-camera-rotulo", "Escolher câmera");
+      const cameraSelect = criar(documento, "select", "sala-video-camera-seletor");
+      const cameraStatus = criar(documento, "p", "sala-video-camera-status");
+      cameraSelect.id = "sala-camera-dispositivo";
+      cameraSelect.setAttribute("aria-label", "Escolher câmera");
+      cameraStatus.setAttribute("role", "status");
+      cameraStatus.setAttribute("aria-live", "polite");
+      cameraOpcoes.append(cameraRotulo, cameraSelect);
+      cameraOpcoes.hidden = true;
+      cameraStatus.hidden = true;
       remoto.append(nomeDoRemoto, semVideoRemoto, seloMicRemoto);
       local.append(nomeDoLocal, semVideoLocal, seloMicLocal);
       grade.append(remoto, espera, local, aviso, bAudio, controles);
@@ -130,6 +163,7 @@ export function adaptadorLiveKit({ documento = globalThis.document, sdk = global
       let conectou = false;
       let audioRecusado = false;
       const ligado = { mic: false, cam: false }; // só para SDKs sem os getters de estado
+      let cameraSelecionada = "";
       const ouvir = (evento, fn) => { if (evento !== undefined) room.on(evento, fn); };
       const E = sdk.RoomEvent ?? {};
 
@@ -166,6 +200,39 @@ export function adaptadorLiveKit({ documento = globalThis.document, sdk = global
         else if (!conectou) { espera.hidden = false; espera.textContent = "Conectando…"; }
         else if (!o) { espera.hidden = false; espera.textContent = "Aguardando o outro participante"; }
         else { espera.hidden = true; }
+      };
+
+      const atualizarCameras = async ({ avisarMudanca = false } = {}) => {
+        let cameras;
+        try {
+          cameras = await listarCameras(room, sdk);
+        } catch (erro) {
+          // Não há câmera nem permissão garantida só por entrar na sala. O
+          // controle continua utilizável e a pessoa recebe a causa ao ligá-la.
+          cameraOpcoes.hidden = true;
+          cameraStatus.hidden = true;
+          return;
+        }
+        const anteriorSelecionada = cameraSelecionada;
+        const ativa = typeof room.getActiveDevice === "function" ? room.getActiveDevice("videoinput") : "";
+        const escolhida = cameras.some((camera) => camera.deviceId === ativa) ? ativa : cameraSelecionada;
+        cameraSelect.replaceChildren();
+        for (const [indice, camera] of cameras.entries()) {
+          const opcao = criar(documento, "option", "", rotuloDaCamera(camera, indice));
+          opcao.value = camera.deviceId;
+          cameraSelect.append(opcao);
+        }
+        if (escolhida && cameras.some((camera) => camera.deviceId === escolhida)) cameraSelect.value = escolhida;
+        else if (cameras[0]) cameraSelect.value = cameras[0].deviceId;
+        cameraSelecionada = cameraSelect.value || "";
+        cameraOpcoes.hidden = cameras.length < 2;
+        cameraStatus.hidden = cameras.length !== 1;
+        cameraStatus.textContent = cameras.length === 1 ? `Câmera disponível: ${rotuloDaCamera(cameras[0])}.` : "";
+        if (avisarMudanca && anteriorSelecionada && !cameras.some((camera) => camera.deviceId === anteriorSelecionada)) {
+          mostrarAviso(cameras.length
+            ? "A câmera selecionada não está mais disponível. Escolha uma das câmeras detectadas."
+            : "A câmera selecionada não está mais disponível. Conecte outra câmera e tente de novo.");
+        }
       };
 
       /* ---------- áudio e vídeo remotos ---------- */
@@ -225,6 +292,23 @@ export function adaptadorLiveKit({ documento = globalThis.document, sdk = global
       const ligarCam = (valor) => definir("cam", "a câmera", valor, (v) => room.localParticipant.setCameraEnabled(v));
       const bMic = criarBotao(documento, () => ligarMic(!micLocal()));
       const bCam = criarBotao(documento, () => ligarCam(!camLocal()));
+      cameraSelect.addEventListener("change", async (evento) => {
+        const deviceId = String(evento?.target?.value ?? cameraSelect.value ?? "");
+        if (!deviceId || typeof room.switchActiveDevice !== "function") return;
+        const anterior = cameraSelecionada;
+        try {
+          cameraSelect.disabled = true;
+          await room.switchActiveDevice("videoinput", deviceId);
+          cameraSelecionada = deviceId;
+          await atualizarCameras();
+          sincronizar();
+        } catch (erro) {
+          cameraSelect.value = anterior;
+          mostrarAviso(mensagemDeMidia(erro, "a câmera selecionada"));
+        } finally {
+          cameraSelect.disabled = false;
+        }
+      });
 
       /* ---------- tela cheia: API nativa; se faltar (ex.: iPhone), expande dentro da página ---------- */
       let modo = "normal"; // normal | nativa | pagina
@@ -266,7 +350,7 @@ export function adaptadorLiveKit({ documento = globalThis.document, sdk = global
         try { await room.startAudio(); audioRecusado = false; } catch { mostrarAviso("O navegador não liberou o áudio. Toque na tela e tente de novo."); }
         sincronizar();
       });
-      controles.append(bMic, bCam, bTela);
+      controles.append(bMic, bCam, bTela, cameraOpcoes, cameraStatus);
       pintarTela();
       sincronizar();
 
@@ -282,11 +366,14 @@ export function adaptadorLiveKit({ documento = globalThis.document, sdk = global
           // Câmera e microfone só depois de conectar; recusa de permissão não derruba a chamada.
           await ligarMic(true);
           await ligarCam(true);
+          await atualizarCameras();
           sincronizar();
         } catch {
           if (!encerrado) ganchos.aoFalhar?.();
         }
       })();
+
+      ouvir(E.MediaDevicesChanged, () => { atualizarCameras({ avisarMudanca: true }); });
 
       return {
         sair() {
