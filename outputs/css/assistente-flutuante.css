@@ -99,7 +99,7 @@
 @media (max-width: 560px) {
   .pa-raiz { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); }
   .pa-bolinha { width: 52px; height: 52px; }
-  .pa-bolinha__texto { right: 58px; min-width: 154px; padding: 6px 9px; }
+  .pa-bolinha__texto { right: 58px; min-width: 0; width: min(154px, calc(100vw - 88px)); padding: 6px 9px; overflow-wrap: anywhere; }
   .pa-raiz[data-aberto] { left: 8px; right: 8px; }
   .pa-raiz[data-aberto] .pa-bolinha { margin-left: auto; }
   .pa-janela { position: fixed; left: 8px; right: 8px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 62px); width: auto; height: min(72dvh, 560px); border-radius: 16px; }

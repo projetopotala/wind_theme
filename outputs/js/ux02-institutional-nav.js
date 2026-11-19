@@ -9,8 +9,6 @@ const MENSAGENS_ASSISTENTE = [
   "Posso ajudar você a explorar o Potala.",
 ];
 
-const fechar = (elemento) => { elemento.hidden = true; };
-
 export function montarNavegacaoInstitucional({ doc = document, buscar = buscarInstituto, carregarIndice } = {}) {
   const header = doc.querySelector("[data-ux02-header]");
   if (!header) return null;
@@ -23,6 +21,12 @@ export function montarNavegacaoInstitucional({ doc = document, buscar = buscarIn
   const resultados = header.querySelector("#ux02-search-results");
   const estado = header.querySelector("#ux02-search-status");
   let indice = {};
+  const fechar = (elemento) => { elemento.hidden = true; };
+  const fecharPaineis = () => {
+    [buscaPainel, explorarPainel].forEach(fechar);
+    [buscaBotao, explorarBotao].forEach((controle) => controle.setAttribute("aria-expanded", "false"));
+    doc.body.classList.remove("ux02-header-open");
+  };
 
   const carregar = carregarIndice || (async () => {
     const resposta = await fetch(new URL("./home/busca-indice.json", import.meta.url));
@@ -33,8 +37,7 @@ export function montarNavegacaoInstitucional({ doc = document, buscar = buscarIn
 
   const alternarPainel = (painel, botao) => {
     const vaiAbrir = painel.hidden;
-    [buscaPainel, explorarPainel].forEach(fechar);
-    [buscaBotao, explorarBotao].forEach((controle) => controle.setAttribute("aria-expanded", "false"));
+    fecharPaineis();
     painel.hidden = !vaiAbrir;
     botao.setAttribute("aria-expanded", String(vaiAbrir));
     doc.body.classList.toggle("ux02-header-open", vaiAbrir);
@@ -84,9 +87,7 @@ export function montarNavegacaoInstitucional({ doc = document, buscar = buscarIn
   });
   doc.addEventListener("keydown", (evento) => {
     if (evento.key !== "Escape") return;
-    [buscaPainel, explorarPainel].forEach(fechar);
-    [buscaBotao, explorarBotao].forEach((controle) => controle.setAttribute("aria-expanded", "false"));
-    doc.body.classList.remove("ux02-header-open");
+    fecharPaineis();
   });
 
   const assistente = header.querySelector("[data-assistant-promo]");
@@ -119,5 +120,5 @@ export function montarNavegacaoInstitucional({ doc = document, buscar = buscarIn
   definirPausa(pausado);
 
   renderizar("");
-  return { buscar: renderizar, fechar: () => [buscaPainel, explorarPainel].forEach(fechar) };
+  return { buscar: renderizar, fechar: fecharPaineis };
 }

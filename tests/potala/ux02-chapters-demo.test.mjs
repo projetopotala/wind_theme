@@ -8,7 +8,9 @@ import { walkMotionForProgress } from "../../outputs/js/ux02-walk-motion.js";
 const html = readFileSync(new URL("../../outputs/ux02-chapters.html", import.meta.url), "utf8");
 const js = readFileSync(new URL("../../outputs/js/ux02-chapters.js", import.meta.url), "utf8");
 const css = readFileSync(new URL("../../outputs/css/ux02-chapters.css", import.meta.url), "utf8");
+const assistantCss = readFileSync(new URL("../../outputs/css/assistente-flutuante.css", import.meta.url), "utf8");
 const nav = readFileSync(new URL("../../outputs/js/ux02-institutional-nav.js", import.meta.url), "utf8");
+const assistantUi = readFileSync(new URL("../../outputs/js/assistente/assistente-ui.js", import.meta.url), "utf8");
 const content = readFileSync(new URL("../../outputs/js/ux02-chapter-content.js", import.meta.url), "utf8");
 
 test("a demonstração Chapters Timeline usa os capítulos reais e é isolada", () => {
@@ -65,7 +67,6 @@ test("a entrada apresenta o Instituto e oferece caminhos públicos sem criar out
   assert.match(js, /chapter-information/);
   assert.match(css, /chapters-direct-paths \{ display: grid/);
   assert.match(css, /direct-paths-title/);
-  assert.doesNotMatch(html, /marketplace\.html/);
 });
 
 test("o cabeçalho oferece busca, exploração e a mesma instância do Assistente", () => {
@@ -80,7 +81,13 @@ test("o cabeçalho oferece busca, exploração e a mesma instância do Assistent
   assert.match(nav, /prefers-reduced-motion: reduce/);
   assert.match(nav, /setInterval/);
   assert.match(nav, /aria-pressed/);
-  assert.doesNotMatch(html.match(/id="ux02-explore-panel"[\s\S]*?<\/section>/)?.[0] || "", /marketplace/i);
+  const exploreStart = html.indexOf('id="ux02-explore-panel"');
+  const exploreEnd = html.indexOf("</header>", exploreStart);
+  const explore = html.slice(exploreStart, exploreEnd);
+  for (const [label, href] of [["Quem somos", "quem-somos.html"], ["Recepção", "recepcao.html"], ["Atendimentos", "atendimentos.html"], ["Cursos", "cursos.html"], ["Atividades", "atividades.html"], ["Profissionais", "profissionais.html"], ["Programação", "programacao.html"], ["Arte e cultura", "cultura.html"], ["Inspiração diária", "inspiracao.html"], ["Blog", "blog.html"], ["Revista", "revista.html"], ["Marketplace", "marketplace.html"]]) {
+    assert.match(explore, new RegExp(`<a href="${href.replace(".", "\\.")}"><strong>${label}</strong>`));
+  }
+  for (const group of ["Conheça o Potala", "Cuidado e aprendizagem", "Experiências e cultura", "Conteúdos e publicações"]) assert.match(explore, new RegExp(group));
 });
 
 test("os 11 cards oferecem aprofundamento institucional", () => {
@@ -100,7 +107,16 @@ test("o cabeçalho mobile permanece em uma linha compacta", () => {
   assert.match(css, /grid-template-columns:\s*auto 1fr auto/);
   assert.match(css, /min-height:\s*62px/);
   assert.match(css, /content:\s*"Assistente"/);
-  assert.match(css, /body\.chapters-started \.pa-bolinha__texto \{ display: none; \}/);
+  assert.doesNotMatch(css, /body\.chapters-started \.pa-bolinha__texto \{ display: none; \}/);
+});
+
+test("o Assistente flutuante mantém uma ajuda visível e acionável durante a jornada", () => {
+  assert.match(assistantUi, /texto: "Assistente Potala"/);
+  assert.match(assistantUi, /texto: "Precisa de ajuda\?"/);
+  assert.match(assistantCss, /\.pa-bolinha__texto \{[^}]*position: absolute/);
+  assert.match(assistantCss, /\.pa-raiz\[data-aberto\] \.pa-bolinha__texto \{ display: none; \}/);
+  assert.match(assistantCss, /width: min\(154px, calc\(100vw - 88px\)\)/);
+  assert.doesNotMatch(css, /chapters-started \.pa-bolinha__texto/);
 });
 
 test("a transição visual preserva navegação normal quando necessário", () => {
@@ -133,7 +149,10 @@ test("os capítulos alternam os lados e os cards crescem sem truncar o conteúdo
   assert.match(css, /chapter:nth-child\(odd\) \.chapter-card \{ grid-column: 1/);
   assert.match(css, /chapter:nth-child\(even\) \.chapter-card \{ grid-column: 2/);
   assert.match(css, /\.chapter-copy[\s\S]*overflow: visible/);
+  assert.match(css, /\.chapter-card \{[\s\S]*overflow: visible/);
+  assert.match(css, /\.chapter-image \{[\s\S]*clip-path: inset\(0\)/);
   assert.match(css, /overflow-wrap: anywhere/);
+  assert.match(css, /\.chapter-offers li, \.chapter-action \{ overflow-wrap: anywhere; hyphens: auto; \}/);
   assert.match(css, /chapters-timeline::before/);
 });
 

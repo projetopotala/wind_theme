@@ -27,3 +27,13 @@ test("Chegada, caminhos rápidos e capítulos preservam destinos públicos reais
     assert.match(canonical, new RegExp(`href="${destination.replace(".", "\\.")}"`), destination);
   }
 });
+
+test("Explore o Instituto agrupa caminhos públicos e preserva microdescrições", () => {
+  for (const destination of ["quem-somos.html", "recepcao.html", "atendimentos.html", "cursos.html", "atividades.html", "profissionais.html", "programacao.html", "cultura.html", "inspiracao.html", "blog.html", "revista.html", "marketplace.html"]) {
+    assert.ok(existsSync(new URL(`../../outputs/${destination}`, import.meta.url)), destination);
+    assert.match(canonical, new RegExp(`href="${destination.replace(".", "\\.")}"`), destination);
+  }
+  for (const group of ["Conheça o Potala", "Cuidado e aprendizagem", "Experiências e cultura", "Conteúdos e publicações"]) {
+    assert.match(canonical, new RegExp(`<h3[^>]*>${group}</h3>`));
+  }
+});
