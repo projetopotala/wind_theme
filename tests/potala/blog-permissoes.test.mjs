@@ -105,7 +105,7 @@ test("nivel do Blog derivado so dos dados do banco", () => {
 
 test("owner ve controle do Blog nas contas comuns e 'acesso total' nas administrativas", () => {
   const html = renderizarAcessos({ contas: [ow, escritor, comum] });
-  const linhas = html.split("<tr data-conta=").slice(1);
+  const linhas = html.split('<article class="acessos-conta" data-conta="').slice(1);
   assert.match(linhas[0], /Acesso total ao Blog/);
   assert.doesNotMatch(linhas[0], /data-blog-nivel/);
   assert.match(linhas[1], /data-blog-nivel[\s\S]*<option value="writer" selected>/);
@@ -136,7 +136,7 @@ function painelFalso(respostas) {
 const tick = async () => { await new Promise((r) => setTimeout(r, 0)); await new Promise((r) => setTimeout(r, 0)); };
 const clique = (attrs, nivelSelecionado) => {
   const linha = { querySelector: () => ({ value: nivelSelecionado }) };
-  const botao = { getAttribute: (k) => attrs[k] ?? null, closest: (s) => (s === "tr" ? linha : botao) };
+  const botao = { getAttribute: (k) => attrs[k] ?? null, closest: (s) => (s === "[data-conta]" ? linha : botao) };
   return { target: { closest: () => botao } };
 };
 

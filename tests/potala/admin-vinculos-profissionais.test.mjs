@@ -38,7 +38,10 @@ test("desativar exige confirmação inline que avisa sobre salas e não conclui 
   assert.match(conf, /encerra as salas abertas/);
   assert.match(conf, /as consultas não são concluídas/);
   assert.match(conf, /data-acao="desativar-confirmado"/);
-  assert.doesNotMatch(renderizarAcessos({ contas, perfis }).split("cli@x")[1].split("</tr>")[0], /data-acao/);
+  const htmlCli = renderizarAcessos({ contas, perfis });
+  const contaCli = htmlCli.slice(htmlCli.indexOf('data-conta="u3"'));
+  const vinculosCli = contaCli.slice(contaCli.indexOf("op-lista-curta"), contaCli.indexOf("</ul>"));
+  assert.doesNotMatch(vinculosCli, /data-acao/);
 });
 test("cadastro com papéis de cliente e profissional não oferece desativar a conta inteira", () => {
   const multi = [{ ...contas[0], links: [{ ...prof, roles: ["client", "professional"] }] }];

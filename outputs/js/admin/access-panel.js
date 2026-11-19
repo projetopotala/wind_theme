@@ -120,16 +120,20 @@ function acoesDoVinculo(conta, v, confirmando) {
   return `<button type="button" class="op-button" data-acao="desativar" data-conta-id="${e(conta.id)}" data-perfil="${e(v.profile_id)}">Desativar vínculo</button>`;
 }
 
-function linha(conta, confirmando) {
+function itemDaLista(conta, confirmando) {
   const papeis = papeisDaConta(conta);
   const vinculos = (conta.links || []).map((v) => `<li>${e(v.display_name || v.profile_id)} · ${v.link_active ? "vínculo ativo" : "vínculo inativo"}${v.profile_active ? "" : " · perfil desativado"} ${acoesDoVinculo(conta, v, confirmando)}</li>`).join("");
-  return `<tr data-conta="${e(conta.id)}">
-    <td><strong>${e(conta.name || "—")}</strong><small>${e(conta.email)}</small></td>
-    <td><span class="op-badge${conta.status === "ativa" ? "" : conta.status === "bloqueada" ? " is-cancelled" : " is-unconfirmed"}" data-status="${e(conta.status)}">${e(STATUS[conta.status] || conta.status)}</span></td>
-    <td>${papeis.map((p) => `<span class="op-badge" data-papel="${e(p)}">${e(ROTULO_PAPEL[p] || p)}</span>`).join(" ")}<div>${controleDoBlog(conta, confirmando)}</div></td>
-    <td>${vinculos ? `<ul class="op-lista-curta">${vinculos}</ul>` : "—"}</td>
-    <td>${e(data(conta.last_sign_in_at))}</td>
-  </tr>`;
+  return `<li><article class="acessos-conta" data-conta="${e(conta.id)}">
+    <header class="acessos-conta-topo">
+      <div><strong>${e(conta.name || "—")}</strong><small>${e(conta.email)}</small></div>
+      <span class="op-badge${conta.status === "ativa" ? "" : conta.status === "bloqueada" ? " is-cancelled" : " is-unconfirmed"}" data-status="${e(conta.status)}">${e(STATUS[conta.status] || conta.status)}</span>
+    </header>
+    <dl>
+      <div><dt>Papéis</dt><dd>${papeis.map((p) => `<span class="op-badge" data-papel="${e(p)}">${e(ROTULO_PAPEL[p] || p)}</span>`).join(" ")}${controleDoBlog(conta, confirmando)}</dd></div>
+      <div><dt>Vínculos</dt><dd>${vinculos ? `<ul class="op-lista-curta">${vinculos}</ul>` : "—"}</dd></div>
+      <div><dt>Último acesso</dt><dd>${e(data(conta.last_sign_in_at))}</dd></div>
+    </dl>
+  </article></li>`;
 }
 
 /*
@@ -174,10 +178,9 @@ export function renderizarAcessos({ contas = [], perfis = [], perfisComErro = fa
       <label>Status <select name="status"><option value="">Todos</option>${opcoes(STATUS, filtros.status)}</select></label>
     </form>
     ${erro ? `<p class="op-loading" role="alert">${e(erro)}</p>` : `<p class="op-muted" role="status">${lista.length} de ${contas.length} conta(s).</p>
-    <div class="op-table-scroll"${ocupado ? ' aria-busy="true"' : ""}><table class="op-table">
-      <thead><tr><th scope="col">Conta</th><th scope="col">Status</th><th scope="col">Papéis</th><th scope="col">Vínculos</th><th scope="col">Último acesso</th></tr></thead>
-      <tbody>${lista.map((c) => linha(c, confirmando)).join("") || `<tr><td colspan="5" class="op-empty">Nenhuma conta encontrada com esses filtros.</td></tr>`}</tbody>
-    </table></div>${historicoDoBlog(eventos)}`}`;
+    <ul class="acessos-lista"${ocupado ? ' aria-busy="true"' : ""}>
+      ${lista.map((c) => itemDaLista(c, confirmando)).join("") || `<li class="acessos-vazio">Nenhuma conta encontrada com esses filtros.</li>`}
+    </ul>${historicoDoBlog(eventos)}`}`;
 }
 
 /* Erros de regra do Blog vem do banco em portugues e sao seguros para exibir. */
@@ -262,7 +265,7 @@ export function createAccessPanel({ root, client }) {
     const perfil = botao.getAttribute("data-perfil");
     if (acao === "cancelar") { confirmando = ""; desenhar(); return; }
     if (acao === "blog") {
-      const nivel = botao.closest("tr")?.querySelector("[data-blog-nivel]")?.value;
+      const nivel = botao.closest("[data-conta]")?.querySelector("[data-blog-nivel]")?.value;
       const atual = nivelBlog(contas.find((c) => c.id === conta));
       if (!NIVEIS_BLOG[nivel] || nivel === atual) { aviso = "Escolha um nivel diferente do atual."; desenhar(); return; }
       confirmando = `blog|${conta}|${nivel}`; desenhar(); return;
