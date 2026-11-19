@@ -69,6 +69,16 @@ export const UX02_CHAPTER_CONTENT = {
     start: "Escolha uma experiência cultural, explore a biblioteca ou consulte a Programação. Como os encontros variam ao longo do ano, confirme sempre as informações atuais na página correspondente.",
     cta: "Explorar arte e cultura",
   },
+  marketplace: {
+    overview: "Marketplace Potala é a apresentação comercial ligada ao ecossistema do Instituto. Sua proposta é reunir escolhas que possam continuar um estudo, uma prática ou uma descoberta, mantendo contexto antes de qualquer decisão de compra.",
+    purpose: "Explicar a curadoria do Marketplace e conduzir o visitante à loja externa sem confundir produtos com atendimento, prescrição ou resultado terapêutico.",
+    find: ["Livros relacionados a cursos, grupos de estudo, cultura e processos de autoconhecimento", "Óleos essenciais, incensos e produtos naturais apresentados com orientação de uso responsável", "Cristais, objetos e itens de bem-estar cotidiano ligados a práticas, simbolismos e interesses pessoais"],
+    how: "A página institucional apresenta a proposta e as categorias da curadoria; dela, o visitante pode seguir para a loja externa, que hoje publica páginas de catálogo, busca e categorias. A documentação técnica ainda registra checkout, pagamentos e integração comercial completa como não concluídos, por isso a Travessia não promete compra operacional nem disponibilidade de estoque.",
+    audience: "Para quem deseja conhecer livros, objetos e materiais relacionados às experiências do Potala ou continuar em casa uma descoberta iniciada em cursos, cultura, atendimentos e outras práticas.",
+    difference: "O Marketplace apresenta uma curadoria comercial conectada ao Instituto, enquanto Cursos, Arte e Cultura e Atendimentos explicam as experiências que dão contexto às escolhas. Curadoria não é prescrição, e nenhum produto substitui atendimento, diagnóstico ou tratamento.",
+    start: "Conheça primeiro a proposta e as categorias na página institucional. Se quiser consultar a vitrine pública, siga o link para a loja externa e confirme nela as informações atuais, a disponibilidade e as condições efetivamente oferecidas.",
+    cta: "Conhecer o Marketplace",
+  },
   inspiracao: {
     overview: "Inspiração é uma pausa contemplativa dentro do portal. Em vez de pedir uma decisão imediata, oferece práticas curtas, leituras e perguntas que podem acompanhar alguns minutos de presença antes de o visitante continuar seu caminho.",
     purpose: "Disponibilizar recursos breves e autônomos que podem ser iniciados, pausados ou retomados no próprio ritmo, sem reprodução automática.",

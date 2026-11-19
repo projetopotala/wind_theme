@@ -83,7 +83,7 @@ test("o cabeçalho oferece busca, exploração e a mesma instância do Assistent
   assert.doesNotMatch(html.match(/id="ux02-explore-panel"[\s\S]*?<\/section>/)?.[0] || "", /marketplace/i);
 });
 
-test("os cards oferecem aprofundamento institucional sem enriquecer Marketplace", () => {
+test("os 11 cards oferecem aprofundamento institucional", () => {
   assert.match(js, /chapterContentFor/);
   assert.match(js, /O que é esta área\?/);
   assert.match(js, /O que você encontra/);
@@ -91,7 +91,7 @@ test("os cards oferecem aprofundamento institucional sem enriquecer Marketplace"
   assert.match(js, /Para quem pode ser interessante\?/);
   assert.match(js, /O que diferencia esta área\?/);
   assert.match(js, /Como começar\?/);
-  assert.doesNotMatch(content, /marketplace\s*:/i);
+  assert.match(content, /marketplace\s*:/i);
   assert.match(css, /chapter-information/);
   assert.match(css, /height:\s*410px;\s*min-height:\s*410px/);
 });

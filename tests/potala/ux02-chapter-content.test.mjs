@@ -5,10 +5,10 @@ import { JOURNEY_REGIONS } from "../../outputs/js/home/journey-data.js";
 import { UX02_CHAPTER_CONTENT, chapterContentFor } from "../../outputs/js/ux02-chapter-content.js";
 
 const chapters = JOURNEY_REGIONS.filter((item) => !String(item.id).startsWith("novidade-") && item.id !== "quem-somos");
-const institutional = chapters.filter((item) => item.id !== "marketplace");
+const institutional = chapters;
 
-test("os dez capítulos institucionais possuem explicações profundas e estruturadas", () => {
-  assert.equal(institutional.length, 10);
+test("os onze capítulos institucionais possuem explicações profundas e estruturadas", () => {
+  assert.equal(institutional.length, 11);
   for (const chapter of institutional) {
     const content = chapterContentFor(chapter.id);
     assert.ok(content, `conteúdo ausente: ${chapter.id}`);
@@ -22,9 +22,12 @@ test("os dez capítulos institucionais possuem explicações profundas e estrutu
   }
 });
 
-test("Marketplace permanece fora do enriquecimento editorial", () => {
-  assert.equal(chapterContentFor("marketplace"), null);
-  assert.ok(!Object.hasOwn(UX02_CHAPTER_CONTENT, "marketplace"));
+test("Marketplace diferencia vitrine pública de operação comercial não confirmada", () => {
+  const marketplace = chapterContentFor("marketplace");
+  assert.ok(marketplace);
+  assert.match(marketplace.how, /checkout, pagamentos e integração comercial completa como não concluídos/);
+  assert.match(marketplace.difference, /Curadoria não é prescrição/);
+  assert.match(marketplace.start, /confirme nela as informações atuais/);
 });
 
 test("todos os capítulos institucionais explicam também como a área funciona", () => {

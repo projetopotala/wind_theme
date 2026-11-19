@@ -6,8 +6,8 @@ import { montarNavegacaoInstitucional } from "./ux02-institutional-nav.js";
 import { chapterContentFor } from "./ux02-chapter-content.js";
 
 // A apresentação institucional ocupa a transição antes da jornada. A Travessia
-// começa no primeiro contato: Recepção. Marketplace permanece nos dados da casa,
-// mas não recebe tratamento novo nesta demonstração.
+// começa no primeiro contato: Recepção. Os 11 capítulos recebem orientação
+// editorial, sem transformar a Travessia em catálogo ou fluxo comercial.
 const chapters = JOURNEY_REGIONS.filter((item) => !String(item.id).startsWith("novidade-") && item.id !== "quem-somos").slice(0, 11);
 const chapterTotal = chapters.length;
 const root = document.querySelector("#chapters-root");
