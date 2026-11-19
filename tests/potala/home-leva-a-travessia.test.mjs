@@ -96,11 +96,11 @@ test("o Admin leva a Home de verdade: links e previa apontam para a Travessia", 
   assert.doesNotMatch(admin, /(?:href|src)="\/transcendido\.html/);
 });
 
-test("a pagina da previa e a que sabe receber a previa", () => {
+test("a prévia administrativa mantém a rota oficial; a Travessia canônica carrega UX-02", () => {
   const travessia = ler("travessia.html");
   assert.match(travessia, /<body data-story-page="true">/);
-  assert.match(travessia, /id="journey-root"/);
-  assert.match(travessia, /src="js\/secoes\.js"/);
+  assert.match(travessia, /id="chapters-root"/);
+  assert.match(travessia, /src="\/js\/ux02-chapters\.js"/);
   const controlador = readFileSync(new URL("js/home/home-controller.js", outputs), "utf8");
   assert.match(controlador, /get\("admin-preview"\) === "1"/);
   assert.match(controlador, /createHomeAdminPreview/);

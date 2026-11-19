@@ -105,11 +105,16 @@ test("o menu só adiciona a Central Operacional depois da autorização confirma
 });
 
 test("as páginas da jornada carregam o menu e o cabeçalho das seções o monta", () => {
-  for (const pagina of ["transcender.html", "travessia.html", "transcendido.html", "atendimentos-conceito.html"]) {
+  for (const pagina of ["transcender.html", "transcendido.html", "atendimentos-conceito.html"]) {
     const html = ler(pagina);
     assert.match(html, /<link rel="stylesheet" href="css\/portal-menu\.css">/, pagina);
     assert.match(html, /<script type="module" src="js\/shared\/portal-menu-boot\.js"><\/script>/, pagina);
   }
+  const travessia = ler("travessia.html");
+  assert.match(travessia, /data-search-toggle/);
+  assert.match(travessia, /data-explore-toggle/);
+  assert.match(travessia, /data-assistant-promo/);
+  assert.match(travessia, /src="\/js\/ux02-chapters\.js"/);
   assert.match(ler("js/shared/portal-header.js"), /mountPortalMenu\(\{ documentRef, host: ferramentas, antes: conta \}\)/);
 });
 
