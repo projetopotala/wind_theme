@@ -7,14 +7,16 @@ const html = read("outputs/ux02-travessia.html");
 const css = read("outputs/css/ux02-travessia.css");
 const js = read("outputs/js/ux02-travessia.js");
 
-test("protótipo UX-02 é uma rota isolada e não substitui a Chegada ou a Travessia", () => {
+test("protótipo inicial permanece isolado; a Travessia canônica usa Chapters UX-02", () => {
   assert.match(html, /Protótipo da Travessia Guiada/);
   assert.match(html, /data-start="guided"/);
   assert.match(html, /data-start="free"/);
   assert.match(html, /src="js\/ux02-travessia\.js"/);
   assert.match(html, /src="\/js\/assistente\/assistente-boot\.js"/);
   assert.doesNotMatch(read("outputs/transcender.html"), /ux02-travessia/);
-  assert.doesNotMatch(read("outputs/travessia.html"), /ux02-travessia/);
+  const travessia = read("outputs/travessia.html");
+  assert.match(travessia, /js\/ux02-chapters\.js/);
+  assert.match(travessia, /rel="canonical" href="\/travessia\.html"/);
 });
 
 test("três regiões usam necessidades cotidianas, contexto e destinos públicos", () => {

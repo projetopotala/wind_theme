@@ -4,13 +4,10 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("Home carrega o SDK público antes do módulo de entrada", async () => {
+test("a Travessia canônica carrega o módulo Chapters e o assistente IA-01", async () => {
   const html = await read("outputs/travessia.html");
-  const sdkIndex = html.indexOf('src="vendor/supabase.js"');
-  const entryIndex = html.indexOf('src="js/secoes.js"');
-
-  assert.ok(sdkIndex >= 0, "Home precisa carregar o SDK vendorizado");
-  assert.ok(entryIndex > sdkIndex, "SDK precisa existir antes do entrypoint da Home");
+  assert.match(html, /src="\/js\/ux02-chapters\.js"/);
+  assert.match(html, /src="\/js\/assistente\/assistente-boot\.js"/);
 });
 
 test("entrypoint monta repositório Supabase com fallback empacotado", async () => {

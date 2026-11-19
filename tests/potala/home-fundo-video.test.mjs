@@ -97,14 +97,14 @@ test("navegador sem `connection` não é tratado como lento", () => {
 const css = await readFile(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
 const html = await readFile(new URL("../../outputs/travessia.html", import.meta.url), "utf8");
 
-test("o vídeo mora dentro da paisagem, para atravessar junto com ela", () => {
+test("a Travessia canônica mantém o vídeo dentro da paisagem cinematográfica", () => {
   /*
    * A travessia desloca `.journey-landscape` para o lado quando um bloco abre, e
    * o elemento é de propósito mais largo que a tela para a borda nunca aparecer.
    * O vídeo dentro dele herda as duas coisas; um vídeo irmão, fixo por conta
    * própria, ficaria parado enquanto a cena anda.
    */
-  const paisagem = html.match(/<div class="journey-landscape"[\s\S]*?<\/div>/);
+  const paisagem = html.match(/<div class="journey-landscape chapters-landscape"[\s\S]*?<\/div>/);
   assert.ok(paisagem, "falta a paisagem");
   assert.match(paisagem[0], /<video/, "o vídeo precisa viver dentro da paisagem");
   assert.match(paisagem[0], /muted/, "sem `muted` o navegador recusa carregar sozinho");

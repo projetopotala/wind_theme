@@ -56,12 +56,12 @@ test("convites institucionais encaminham à Recepção e pontes correspondem ao 
   assert.match(renderNarrativeBridge({ id: "cursos" }), /aprender/);
   assert.equal(renderNarrativeBridge({ id: "novo-conteudo" }), "");
 });
-test("efeitos respeitam movimento reduzido e estilos carregam apenas na Home", () => {
+test("o módulo legado respeita movimento reduzido e a Travessia canônica carrega seus estilos", () => {
   const css = readFileSync(new URL("../../outputs/css/portal-discovery.css", import.meta.url), "utf8");
   assert.match(css, /@media \(prefers-reduced-motion: no-preference\)/);
   assert.match(css, /\[hidden\].*display: none !important/);
   const arrival = readFileSync(new URL("../../outputs/transcender.html", import.meta.url), "utf8");
   assert.doesNotMatch(arrival, /portal-discovery/);
   const home = readFileSync(new URL("../../outputs/travessia.html", import.meta.url), "utf8");
-  assert.match(home, /css\/portal-discovery.css/);
+  assert.match(home, /css\/ux02-chapters.css/);
 });
