@@ -125,14 +125,12 @@ function itemDaLista(conta, confirmando) {
   const vinculos = (conta.links || []).map((v) => `<li>${e(v.display_name || v.profile_id)} · ${v.link_active ? "vínculo ativo" : "vínculo inativo"}${v.profile_active ? "" : " · perfil desativado"} ${acoesDoVinculo(conta, v, confirmando)}</li>`).join("");
   return `<li><article class="acessos-conta" data-conta="${e(conta.id)}">
     <header class="acessos-conta-topo">
-      <div><strong>${e(conta.name || "—")}</strong><small>${e(conta.email)}</small></div>
+      <div><strong>${e(conta.name || "—")}</strong><small>${e(conta.email)} · último acesso ${e(data(conta.last_sign_in_at))}</small></div>
       <span class="op-badge${conta.status === "ativa" ? "" : conta.status === "bloqueada" ? " is-cancelled" : " is-unconfirmed"}" data-status="${e(conta.status)}">${e(STATUS[conta.status] || conta.status)}</span>
     </header>
-    <dl>
-      <div><dt>Papéis</dt><dd>${papeis.map((p) => `<span class="op-badge" data-papel="${e(p)}">${e(ROTULO_PAPEL[p] || p)}</span>`).join(" ")}${controleDoBlog(conta, confirmando)}</dd></div>
-      <div><dt>Vínculos</dt><dd>${vinculos ? `<ul class="op-lista-curta">${vinculos}</ul>` : "—"}</dd></div>
-      <div><dt>Último acesso</dt><dd>${e(data(conta.last_sign_in_at))}</dd></div>
-    </dl>
+    <p class="acessos-papeis">${papeis.map((p) => `<span class="op-badge" data-papel="${e(p)}">${e(ROTULO_PAPEL[p] || p)}</span>`).join("")}</p>
+    ${vinculos ? `<ul class="op-lista-curta">${vinculos}</ul>` : ""}
+    ${controleDoBlog(conta, confirmando)}
   </article></li>`;
 }
 
