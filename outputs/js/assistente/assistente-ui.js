@@ -53,7 +53,8 @@ export function montarAssistente({ doc = document, transporte, base = new URL(".
   const indisponivel = transporte.modo === "indisponivel";
 
   const marca = el(doc, "img", { src: new URL("media/potala-mark-transparent.png", base).href, alt: "", width: 34, height: 28, decoding: "async" });
-  const bolinha = el(doc, "button", { type: "button", classe: "pa-bolinha", "aria-expanded": "false", "aria-controls": "pa-janela", "aria-label": "Abrir o Assistente Potala", "data-pa-bolinha": true }, [marca, el(doc, "span", { classe: "pa-bolinha__texto", texto: "Ajuda" }), el(doc, "span", { classe: "pa-bolinha__ponto", "aria-hidden": "true", hidden: true })]);
+  const identificacao = el(doc, "span", { classe: "pa-bolinha__texto" }, [el(doc, "strong", { texto: "Assistente Potala" }), el(doc, "small", { texto: "Precisa de ajuda?" })]);
+  const bolinha = el(doc, "button", { type: "button", classe: "pa-bolinha", "aria-expanded": "false", "aria-controls": "pa-janela", "aria-label": "Abrir o Assistente Potala — Precisa de ajuda?", "data-pa-bolinha": true }, [marca, identificacao, el(doc, "span", { classe: "pa-bolinha__ponto", "aria-hidden": "true", hidden: true })]);
 
   const titulo = el(doc, "h2", { id: "pa-titulo", classe: "pa-titulo", texto: "Assistente Potala" });
   const subtitulo = el(doc, "p", { classe: "pa-subtitulo", texto: indisponivel ? AVISO_INDISPONIVEL : simulado ? AVISO_SIMULADO : "Inteligência artificial · conteúdo público do portal" });
@@ -107,7 +108,7 @@ export function montarAssistente({ doc = document, transporte, base = new URL(".
     janela.hidden = true;
     delete raiz.dataset.aberto;
     bolinha.setAttribute("aria-expanded", "false");
-    bolinha.setAttribute("aria-label", estado.mensagens.length ? "Abrir o Assistente Potala (conversa em andamento)" : "Abrir o Assistente Potala");
+    bolinha.setAttribute("aria-label", estado.mensagens.length ? "Abrir o Assistente Potala — conversa em andamento" : "Abrir o Assistente Potala — Precisa de ajuda?");
     bolinha.querySelector(".pa-bolinha__ponto").hidden = !estado.mensagens.length;
     estado.aberto = false;
     salvarSessao(estado, armazenamento);

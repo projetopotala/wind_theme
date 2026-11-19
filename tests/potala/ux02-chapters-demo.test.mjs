@@ -1,0 +1,164 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import { JOURNEY_REGIONS } from "../../outputs/js/home/journey-data.js";
+import { shouldTransitionNavigation } from "../../outputs/js/ux02-navigation-transition.js";
+import { walkMotionForProgress } from "../../outputs/js/ux02-walk-motion.js";
+
+const html = readFileSync(new URL("../../outputs/ux02-chapters.html", import.meta.url), "utf8");
+const js = readFileSync(new URL("../../outputs/js/ux02-chapters.js", import.meta.url), "utf8");
+const css = readFileSync(new URL("../../outputs/css/ux02-chapters.css", import.meta.url), "utf8");
+const nav = readFileSync(new URL("../../outputs/js/ux02-institutional-nav.js", import.meta.url), "utf8");
+const content = readFileSync(new URL("../../outputs/js/ux02-chapter-content.js", import.meta.url), "utf8");
+
+test("a demonstração Chapters Timeline usa os capítulos reais e é isolada", () => {
+  assert.match(html, /id="chapters-root"/);
+  assert.match(js, /JOURNEY_REGIONS/);
+  assert.match(js, /item\.id !== "quem-somos"/);
+  assert.match(js, /slice\(0, 11\)/);
+  assert.match(js, /const chapterTotal = chapters\.length/);
+  assert.match(js, /data-jump/);
+  assert.match(css, /chapters-timeline/);
+  assert.match(css, /prefers-reduced-motion/);
+});
+
+test("a apresentação fica fora da jornada e a Recepção inicia os 11 capítulos", () => {
+  const chapterIds = JOURNEY_REGIONS
+    .filter((item) => !String(item.id).startsWith("novidade-") && item.id !== "quem-somos")
+    .slice(0, 11)
+    .map((item) => item.id);
+
+  assert.equal(chapterIds.length, 11);
+  assert.equal(chapterIds[0], "recepcao");
+  assert.ok(!chapterIds.includes("quem-somos"));
+  assert.equal(new Set(chapterIds).size, chapterIds.length);
+  assert.match(js, /setActive\(items\[0\]\)/);
+  assert.match(js, /aria-label="Ir para \$\{String\(index \+ 1\)\.padStart\(2, "0"\)\} de \$\{chapterTotal\}/);
+  assert.equal((html.match(/id="chapters-intro"/g) || []).length, 1);
+  assert.equal((html.match(/id="chapters-list"/g) || []).length, 1);
+  assert.doesNotMatch(html, /12 capítulos/);
+});
+
+test("a demonstração preserva a abertura e aprimora a paisagem sem alterar a Travessia oficial", () => {
+  assert.match(html, /class="journey-prologue"/);
+  assert.match(html, /Bem-vindo ao Potala\./);
+  assert.match(html, /journey-home-link--primary/);
+  assert.match(html, /home-travessia\.mp4/);
+  assert.match(js, /createLandscapeVideo/);
+  assert.match(css, /chapters-mist-drift/);
+  assert.match(html, /chapters-refined-landscape/);
+  assert.match(css, /home-travessia-ux02\.webp/);
+  assert.match(css, /home-travessia-ux02-mobile\.webp/);
+});
+
+test("a entrada apresenta o Instituto e oferece caminhos públicos sem criar outro capítulo", () => {
+  assert.match(html, /Um espaço para cuidar, aprender e compartilhar\./);
+  assert.match(html, /O Instituto Potala reúne caminhos de cuidado, conhecimento, cultura, atividades e convivência\./);
+  for (const href of ["atendimentos.html", "cursos.html", "atividades.html", "cultura.html", "profissionais.html", "programacao.html", "recepcao.html"]) {
+    assert.match(html, new RegExp(`href="${href}"`));
+  }
+  assert.match(html, /Apresentação do Instituto · depois, 11 capítulos/);
+  assert.match(html, /O que você procura hoje\?/);
+  assert.match(html, /href="#chapters-intro">Começar a Travessia/);
+  assert.match(html, /<header id="chapters-intro"/);
+  assert.match(js, /chapterContentFor/);
+  assert.match(js, /chapter-information/);
+  assert.match(css, /chapters-direct-paths \{ display: grid/);
+  assert.match(css, /direct-paths-title/);
+  assert.doesNotMatch(html, /marketplace\.html/);
+});
+
+test("o cabeçalho oferece busca, exploração e a mesma instância do Assistente", () => {
+  assert.match(html, /data-ux02-header/);
+  assert.match(html, /O que você procura no Potala\?/);
+  assert.match(html, /id="ux02-explore-panel"/);
+  assert.match(html, /data-abrir-assistente/);
+  assert.match(nav, /buscarInstituto/);
+  assert.match(nav, /ArrowDown/);
+  assert.match(nav, /ArrowUp/);
+  assert.match(nav, /Escape/);
+  assert.match(nav, /prefers-reduced-motion: reduce/);
+  assert.match(nav, /setInterval/);
+  assert.match(nav, /aria-pressed/);
+  assert.doesNotMatch(html.match(/id="ux02-explore-panel"[\s\S]*?<\/section>/)?.[0] || "", /marketplace/i);
+});
+
+test("os 11 cards oferecem aprofundamento institucional", () => {
+  assert.match(js, /chapterContentFor/);
+  assert.match(js, /O que é esta área\?/);
+  assert.match(js, /O que você encontra/);
+  assert.match(js, /Como funciona\?/);
+  assert.match(js, /Para quem pode ser interessante\?/);
+  assert.match(js, /O que diferencia esta área\?/);
+  assert.match(js, /Como começar\?/);
+  assert.match(content, /marketplace\s*:/i);
+  assert.match(css, /chapter-information/);
+  assert.match(css, /height:\s*410px;\s*min-height:\s*410px/);
+});
+
+test("o cabeçalho mobile permanece em uma linha compacta", () => {
+  assert.match(css, /grid-template-columns:\s*auto 1fr auto/);
+  assert.match(css, /min-height:\s*62px/);
+  assert.match(css, /content:\s*"Assistente"/);
+  assert.match(css, /body\.chapters-started \.pa-bolinha__texto \{ display: none; \}/);
+});
+
+test("a transição visual preserva navegação normal quando necessário", () => {
+  const event = { defaultPrevented: false, button: 0, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false };
+  const local = new URL("https://potala.test/atendimentos-conceito.html");
+  const external = new URL("https://example.com/");
+  assert.equal(shouldTransitionNavigation(event, local, { origin: local.origin }), true);
+  assert.equal(shouldTransitionNavigation({ ...event, ctrlKey: true }, local, { origin: local.origin }), false);
+  assert.equal(shouldTransitionNavigation(event, external, { origin: local.origin }), false);
+  assert.equal(shouldTransitionNavigation(event, local, { origin: local.origin, reducedMotion: true }), false);
+  assert.match(html, /chapters-page-transition/);
+  assert.match(js, /location\.assign\(destination\.href\)/);
+});
+
+test("a caminhada avança continuamente, responde à volta e para em movimento reduzido", () => {
+  const start = walkMotionForProgress(0.1);
+  const middle = walkMotionForProgress(0.5);
+  const end = walkMotionForProgress(0.9);
+  assert.ok(start.mobileShift < middle.mobileShift && middle.mobileShift < end.mobileShift);
+  assert.equal(walkMotionForProgress(0.5).mobileShift, middle.mobileShift);
+  assert.deepEqual(walkMotionForProgress(0.9, { reducedMotion: true }), { progress: 0, mobileShift: 0, mobileScale: 1 });
+  assert.doesNotMatch(css, /data-video-pronto[^}]*opacity:\s*0/);
+  assert.match(js, /landscapeVideo\.setProgress\(progress\)/);
+  assert.match(css, /--mobile-walk-scale/);
+  assert.match(css, /home-travessia-ux02-mobile\.webp/);
+  assert.doesNotMatch(css, /chapters-landscape[^}]*scale\(/);
+});
+
+test("os capítulos alternam os lados e os cards crescem sem truncar o conteúdo", () => {
+  assert.match(css, /chapter:nth-child\(odd\) \.chapter-card \{ grid-column: 1/);
+  assert.match(css, /chapter:nth-child\(even\) \.chapter-card \{ grid-column: 2/);
+  assert.match(css, /\.chapter-copy[\s\S]*overflow: visible/);
+  assert.match(css, /overflow-wrap: anywhere/);
+  assert.match(css, /chapters-timeline::before/);
+});
+
+test("a estrada usa enquadramentos próprios sem ampliar ou substituir a arte", () => {
+  assert.match(html, /class="chapters-road-light"/);
+  assert.match(css, /home-travessia\.webp/);
+  assert.match(css, /home-travessia-mobile\.webp/);
+  assert.match(css, /object-position: center bottom/);
+  assert.match(css, /body\.chapters-started \.chapters-road-light/);
+  assert.doesNotMatch(css, /chapters-landscape[^}]*scale\(1\.04\)/);
+  assert.match(js, /progress \* -18/);
+});
+
+test("os cards ampliados mantêm conteúdo integral e viram uma coluna até tablet", () => {
+  assert.match(css, /width: min\(1380px, calc\(100% - 32px\)\)/);
+  assert.match(css, /min-height: 410px/);
+  assert.match(css, /max-width: 42ch/);
+  assert.match(css, /@media \(max-width: 900px\)/);
+  assert.match(css, /aspect-ratio: 16 \/ 10/);
+  assert.match(css, /min-height: 50px/);
+  assert.match(css, /@media \(max-width: 340px\)/);
+  assert.doesNotMatch(css, /line-clamp|text-overflow:\s*ellipsis/);
+});
+
+test("cards textuais altos continuam ativando a timeline", () => {
+  assert.match(js, /threshold:\s*\[0\.01, 0\.08, 0\.16\]/);
+  assert.match(js, /setActive\(visible\.target\)/);
+});

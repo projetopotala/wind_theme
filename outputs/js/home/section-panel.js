@@ -6,13 +6,21 @@ const link = item => `<a href="${esc(item.href)}">${sectionIcon(item.icon)}<span
 
 export function renderSectionPanel({ id, region, config, bodyHtml, lookup }) {
   const related = config.related.map(key => lookup?.get(key)).filter(item => item && /^[\w-]+\.html$/.test(item.href));
+  const contextualOrientation = id === "atendimentos"
+      ? `<aside class="region-context-orientation" aria-label="Como começar nos atendimentos">
+        <p class="region-context-orientation__eyebrow">Como começar</p>
+        <h3>Conheça os atendimentos do Potala</h3>
+        <p>Veja as possibilidades de cuidado e descubra como solicitar um horário.</p>
+        <a class="region-context-orientation__action" href="atendimentos.html#orientacao">Conhecer atendimentos <span aria-hidden="true">→</span></a>
+      </aside>`
+    : "";
   return `<div class="section-panel-tools">
       <button type="button" data-section-share data-share-href="${esc(region.href)}">${sectionIcon("share")}<span>Compartilhar</span></button>
       <button type="button" data-region-close aria-label="Fechar ${esc(region.title)} e voltar à jornada">${sectionIcon("close")}</button>
       <span class="section-share-status" data-share-status role="status"></span>
     </div>
     <section class="region-details-main section-panel-main">
-      <div class="section-panel-intro">${bodyHtml || `<p>${esc(config.intro)}</p>`}</div>
+      <div class="section-panel-intro">${contextualOrientation}${bodyHtml || `<p>${esc(config.intro)}</p>`}</div>
       <form class="section-resource-search" role="search" aria-label="Recursos de ${esc(region.title)}">
         <label class="section-sr-only" for="${id}-resource-search">Buscar recursos em ${esc(region.title)}</label>
         ${sectionIcon("search")}<input type="search" id="${id}-resource-search" data-section-search placeholder="${esc(config.search)}" autocomplete="off" aria-controls="${id}-resources">
@@ -22,7 +30,7 @@ export function renderSectionPanel({ id, region, config, bodyHtml, lookup }) {
       </div>
       <ul class="section-benefits" aria-label="Possibilidades em ${esc(region.title)}">${config.benefits.map(item => `<li>${link(item)}</li>`).join("")}</ul>
       <div class="section-panel-actions region-actions">
-        <a class="section-primary region-link" href="${esc(config.primary[1])}">${sectionIcon("arrow")}${esc(config.primary[0])}</a>
+        ${id !== "atendimentos" ? `<a class="section-primary region-link" href="${esc(config.primary[1])}">${sectionIcon("arrow")}${esc(config.primary[0])}</a>` : ""}
         <a class="section-secondary" href="${esc(region.href)}">Explorar ${esc(region.title)} ${sectionIcon("arrow")}</a>
       </div>
     </section>
