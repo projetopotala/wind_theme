@@ -23,6 +23,15 @@ test("Chegada explica o Instituto e oferece destinos públicos em uma ação", (
   }
 });
 
+test("abertura integra a orientação à paisagem sem restaurar o painel opaco", () => {
+  const css = ler("css/chegada-guia.css");
+  assert.match(css, /\.arrival-guide\s*\{[\s\S]*?background:\s*transparent;/);
+  assert.match(css, /\.arrival-guide::before\s*\{[\s\S]*?linear-gradient/);
+  assert.match(css, /\.arrival-guide__journey\s*\{[\s\S]*?border-radius:\s*999px/);
+  assert.match(css, /@media \(max-width:\s*600px\)[\s\S]*?grid-template-columns:\s*repeat\(2/);
+  assert.match(css, /@media \(max-width:\s*350px\)[\s\S]*?grid-template-columns:\s*1fr/);
+});
+
 test("Recepção e Atividades usam o assistente IA-01 sem formulário de prévia", () => {
   for (const pagina of ["recepcao.html", "atividades.html"]) {
     const html = ler(pagina);
