@@ -1,10 +1,8 @@
 /*
- * A PRÉVIA DO ASSISTENTE, como componente de página.
+ * Bloco de orientação da página de Atividades.
  *
- * A Recepção tem uma versão anterior desta mesma coisa, escrita dentro do CSS
- * daquela página e amarrada por seletores compartilhados ao widget de retorno
- * que vive só lá. Este arquivo é a versão solta: não depende de nenhuma página,
- * e é para cá que a da Recepção deve migrar quando alguém for mexer nela.
+ * O convite abre a instância IA-01. Os estilos antigos de campo permanecem
+ * isolados sob classes específicas e não criam outro formulário de conversa.
  *
  * As cores saem de variáveis com padrão escuro. A seção que usar o componente
  * pode redefini-las e o componente acompanha, sem uma segunda folha de estilo
@@ -53,6 +51,24 @@
 }
 
 .assistente-forma { display: grid; gap: 18px; }
+.assistente-abrir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  min-height: 48px;
+  padding: 12px 20px;
+  border: 1px solid var(--assistente-realce);
+  border-radius: 999px;
+  color: var(--assistente-tinta);
+  font: 700 .8rem/1.3 Arial, sans-serif;
+  text-decoration: none;
+}
+.assistente-abrir:hover { background: var(--assistente-realce); color: var(--assistente-fundo); }
+.assistente-abrir:focus-visible { outline: 2px solid var(--assistente-realce); outline-offset: 4px; }
+.assistente-forma p { margin: 0; color: var(--assistente-suave); font: 400 .95rem/1.7 Arial, sans-serif; }
+.assistente-forma p a { color: var(--assistente-tinta); text-underline-offset: 3px; }
+.assistente-forma p a:focus-visible { outline: 2px solid var(--assistente-realce); outline-offset: 3px; }
 
 .assistente-forma > label {
   color: var(--assistente-suave);

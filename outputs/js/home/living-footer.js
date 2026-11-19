@@ -93,6 +93,8 @@ function writeLocalPlant(storage, state) {
 
 async function connectAccountPlant({ getState, applyState, setNotice, active }) {
   if (typeof document === "undefined" || !globalThis.supabase?.createClient) return () => {};
+  const { classificarOrigem } = await import("../supabase/ambiente.js");
+  if (classificarOrigem(globalThis.location?.origin || "") === "desconhecido") return () => {};
   try {
     const { createPlantCareRepository } = await import("./plant-care-repository.js");
     if (!active()) return () => {};
