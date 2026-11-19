@@ -107,7 +107,7 @@ test("o cabeçalho mobile permanece em uma linha compacta", () => {
   assert.match(css, /grid-template-columns:\s*auto 1fr auto/);
   assert.match(css, /min-height:\s*62px/);
   assert.match(css, /content:\s*"Assistente"/);
-  assert.doesNotMatch(css, /body\.chapters-started \.pa-bolinha__texto \{ display: none; \}/);
+  assert.match(css, /body\.chapters-started \.pa-bolinha__texto \{ display: none; \}/);
 });
 
 test("o Assistente flutuante mantém uma ajuda visível e acionável durante a jornada", () => {
@@ -116,7 +116,8 @@ test("o Assistente flutuante mantém uma ajuda visível e acionável durante a j
   assert.match(assistantCss, /\.pa-bolinha__texto \{[^}]*position: absolute/);
   assert.match(assistantCss, /\.pa-raiz\[data-aberto\] \.pa-bolinha__texto \{ display: none; \}/);
   assert.match(assistantCss, /width: min\(154px, calc\(100vw - 88px\)\)/);
-  assert.doesNotMatch(css, /chapters-started \.pa-bolinha__texto/);
+  assert.match(css, /chapters-started \.pa-bolinha__texto/);
+  assert.match(css, /@media \(min-width: 601px\) and \(max-width: 900px\)[\s\S]*top: auto;[\s\S]*bottom: max\(12px/);
 });
 
 test("a transição visual preserva navegação normal quando necessário", () => {
