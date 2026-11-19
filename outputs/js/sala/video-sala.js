@@ -164,7 +164,12 @@ export function adaptadorLiveKit({ documento = globalThis.document, sdk = global
       let audioRecusado = false;
       const ligado = { mic: false, cam: false }; // só para SDKs sem os getters de estado
       let cameraSelecionada = "";
-      const ouvir = (evento, fn) => { if (evento !== undefined) room.on(evento, fn); };
+      const ouvintesDaSala = [];
+      const ouvir = (evento, fn) => {
+        if (evento === undefined || typeof room.on !== "function") return;
+        room.on(evento, fn);
+        ouvintesDaSala.push([evento, fn]);
+      };
       const E = sdk.RoomEvent ?? {};
 
       /* ---------- estado lido da sala (fonte da verdade) ---------- */
@@ -206,7 +211,7 @@ export function adaptadorLiveKit({ documento = globalThis.document, sdk = global
         let cameras;
         try {
           cameras = await listarCameras(room, sdk);
-        } catch (erro) {
+        } catch {
           // Não há câmera nem permissão garantida só por entrar na sala. O
           // controle continua utilizável e a pessoa recebe a causa ao ligá-la.
           cameraOpcoes.hidden = true;
@@ -298,13 +303,21 @@ export function adaptadorLiveKit({ documento = globalThis.document, sdk = global
         const anterior = cameraSelecionada;
         try {
           cameraSelect.disabled = true;
-          await room.switchActiveDevice("videoinput", deviceId);
+          // A API do LiveKit pode resolver com `false` quando não conseguiu
+          // trocar a fonte. Nesse caso, manter a seleção e a câmera anterior
+          // evita que a interface anuncie uma troca que não aconteceu.
+          const trocou = await room.switchActiveDevice("videoinput", deviceId);
+          if (trocou === false) {
+            throw Object.assign(new Error("A troca de câmera não foi concluída."), { name: "SwitchCameraFailed" });
+          }
           cameraSelecionada = deviceId;
           await atualizarCameras();
           sincronizar();
         } catch (erro) {
           cameraSelect.value = anterior;
-          mostrarAviso(mensagemDeMidia(erro, "a câmera selecionada"));
+          mostrarAviso(erro?.name === "SwitchCameraFailed"
+            ? "Não foi possível trocar de câmera. A câmera anterior continua selecionada."
+            : mensagemDeMidia(erro, "a câmera selecionada"));
         } finally {
           cameraSelect.disabled = false;
         }
@@ -383,6 +396,8 @@ export function adaptadorLiveKit({ documento = globalThis.document, sdk = global
           documento.removeEventListener?.("fullscreenchange", aoMudarTela);
           documento.removeEventListener?.("webkitfullscreenchange", aoMudarTela);
           documento.removeEventListener?.("keydown", aoTeclar);
+          for (const [evento, fn] of ouvintesDaSala) room.off?.(evento, fn);
+          ouvintesDaSala.length = 0;
           if (modo === "nativa") { try { documento.exitFullscreen?.()?.catch?.(() => {}); } catch { /* sem tela cheia */ } }
           container.className = classeBase;
           try { room.disconnect(); } catch { /* já desconectado */ }
