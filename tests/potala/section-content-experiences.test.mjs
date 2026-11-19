@@ -32,8 +32,9 @@ test("a Revista filtra pautas por tema e por busca textual", async () => {
   assert.deepEqual(modulo.filterMagazineArticles(articles, { category: "todos", query: "" }), articles);
 });
 
-test("a Revista é uma seção permanente editável da Home", async () => {
+test("a Revista permanece acessível na Travessia canônica e é renderizada pela UX-02", async () => {
   const { DEFAULT_HOME_BLOCKS, JOURNEY_DISCOVERIES, JOURNEY_REGIONS } = await import("../../outputs/js/home/journey-data.js");
+  const { chapterContentFor } = await import("../../outputs/js/ux02-chapter-content.js");
   const region = JOURNEY_REGIONS.find((item) => item.id === "revista");
   const block = DEFAULT_HOME_BLOCKS.find((item) => item.id === "revista");
 
@@ -42,8 +43,16 @@ test("a Revista é uma seção permanente editável da Home", async () => {
   assert.equal(block?.published, true);
   assert.equal(JOURNEY_DISCOVERIES.some((item) => item.id === "revista"), false);
 
+  const chapter = chapterContentFor("revista");
+  assert.ok(chapter?.overview, "o capítulo Revista precisa de conteúdo institucional");
+  assert.equal(chapter?.cta, "Ler a Revista");
+
+  const ux02 = await readFile(new URL("js/ux02-chapters.js", outputs), "utf8");
+  assert.match(ux02, /JOURNEY_REGIONS\.filter[\s\S]*?chapterContentFor\(chapter\.id\)/);
+  assert.match(ux02, /href="\$\{esc\(chapter\.href\)\}"/, "o CTA renderizado precisa usar o destino real do capítulo");
+
   const home = await readFile(new URL("travessia.html", outputs), "utf8");
-  assert.match(home, /href="revista\.html"[^>]*>Revista</);
+  assert.match(home, /js\/ux02-chapters\.js/, "a rota pública precisa carregar o renderizador dos capítulos");
 });
 
 test("o front acrescenta a Revista ausente sem apagar a edição remota", async () => {

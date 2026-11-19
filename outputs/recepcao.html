@@ -98,11 +98,11 @@
         <article data-foco data-revelar="1" class="reception-path">
           <p class="reception-path-number">02</p>
           <div>
-            <p class="reception-path-label">Interface em preparação</p>
+            <p class="reception-path-label">Assistente Potala</p>
             <h3>Posso ajudar você?</h3>
-            <p>Um espaço de conversa livre com a futura inteligência do Portal para perguntas sobre o Instituto, seus serviços e conteúdos.</p>
+            <p>Uma ajuda para encontrar atendimentos, cursos, atividades e conteúdos do Instituto. A disponibilidade das respostas inteligentes aparece no próprio assistente.</p>
           </div>
-          <a href="#assistente">Ver a prévia <span aria-hidden="true">↓</span></a>
+          <a href="#assistente">Pedir orientação <span aria-hidden="true">↓</span></a>
         </article>
 
         <article data-foco data-revelar="2" class="reception-path reception-path--featured">
@@ -166,23 +166,14 @@
 
     <section class="reception-assistant" id="assistente" data-capitulo="assistente" aria-labelledby="assistant-title">
       <div class="reception-assistant-copy" data-fio-alvo>
-        <p class="reception-kicker" data-revelar="0">Prévia do assistente</p>
+        <p class="reception-kicker" data-revelar="0">Orientação</p>
         <h2 id="assistant-title" data-revelar="1">Posso ajudar você?</h2>
-        <p data-revelar="2">Esta é a interface visual da futura conversa inteligente do Portal. A integração será feita em uma próxima etapa; por enquanto, nenhuma mensagem é enviada ou armazenada.</p>
+        <p data-revelar="2">O Assistente Potala ajuda a encontrar páginas do portal. Quando as respostas inteligentes estiverem indisponíveis, você pode seguir os atalhos ou falar com a Recepção.</p>
       </div>
-      <form class="reception-assistant-form" data-assistant-preview data-revelar="0">
-        <label for="reception-question">O que trouxe você ao Potala?</label>
-        <div class="reception-assistant-input">
-          <input id="reception-question" name="question" type="text" autocomplete="off" placeholder="Escreva sua pergunta...">
-          <button type="submit">Continuar</button>
-        </div>
-        <div class="reception-suggestions" aria-label="Perguntas sugeridas">
-          <button type="button" data-suggestion="Estou conhecendo o Instituto pela primeira vez.">É minha primeira visita</button>
-          <button type="button" data-suggestion="Quero encontrar uma forma de cuidado.">Procuro acolhimento</button>
-          <button type="button" data-suggestion="Quero conhecer cursos e atividades.">Quero aprender ou praticar</button>
-        </div>
-        <p class="reception-assistant-status" data-assistant-status aria-live="polite"></p>
-      </form>
+      <div class="reception-assistant-form" data-revelar="0">
+        <a class="reception-assistant-open" href="#fale-conosco" data-abrir-assistente>Conversar com o Assistente Potala</a>
+        <p><a href="atendimentos.html">Ver atendimentos</a> · <a href="cursos.html">Ver cursos</a> · <a href="#fale-conosco">Falar com a Recepção</a></p>
+      </div>
     </section>
 
     <section class="reception-contact" id="fale-conosco" data-capitulo="contato" aria-labelledby="contact-title">

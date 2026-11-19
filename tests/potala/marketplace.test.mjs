@@ -36,7 +36,7 @@ test("toda regiao recebe direcao e ritmo, quantas forem", () => {
   }
 });
 
-test("Marketplace aparece no indice das secoes e no fallback sem script", async () => {
+test("Marketplace aparece no capítulo UX-02 com CTA institucional", async () => {
   /*
    * A CHECAGEM MUDOU DE LUGAR, e nao de propósito.
    *
@@ -51,8 +51,11 @@ test("Marketplace aparece no indice das secoes e no fallback sem script", async 
    */
   const jornada = await readFile("outputs/js/home/journey-data.js", "utf8");
   assert.match(jornada, /id: "marketplace"[\s\S]*?href: "marketplace\.html"/);
-  const home = await readFile("outputs/travessia.html", "utf8");
-  assert.match(home, /marketplace\.html/);
+  const { chapterContentFor } = await import("../../outputs/js/ux02-chapter-content.js");
+  const content = chapterContentFor("marketplace");
+  assert.equal(content?.cta, "Conhecer o Marketplace");
+  const renderer = await readFile("outputs/js/ux02-chapters.js", "utf8");
+  assert.match(renderer, /href="\$\{esc\(chapter\.href\)\}"/);
 });
 
 test("a página do Marketplace segue o novo padrão fotográfico das seções", async () => {

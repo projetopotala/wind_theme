@@ -143,7 +143,7 @@ test("as quatro dimensões são uma constelação, não quatro cartões iguais",
   assert.match(quemSomosCss, /\.about-paths > article\.is-ativa svg \{[^}]*transform: scale/);
 });
 
-test("Recepção mantém as oito portas, os contatos e as prévias", () => {
+test("Recepção mantém as oito portas, os contatos e a orientação IA-01", () => {
   const obrigatorios = [
     "Recepção",
     "O primeiro ponto de contato para reconhecer o caminho certo.",
@@ -161,11 +161,12 @@ test("Recepção mantém as oito portas, os contatos e as prévias", () => {
     "(19) 99776-6131",
     "(19) 3834-6147",
     "contato@institutopotala.com",
-    "nenhuma mensagem é enviada ou armazenada",
+    "Quando as respostas inteligentes estiverem indisponíveis",
     "Você encontrou o que procurava?",
   ];
   for (const trecho of obrigatorios) assert.ok(recepcao.includes(trecho), `sumiu do conteúdo: ${trecho}`);
-  assert.match(recepcao, /data-assistant-preview/);
+  assert.match(recepcao, /data-abrir-assistente/);
+  assert.doesNotMatch(recepcao, /data-assistant-preview/);
   assert.match(recepcao, /data-feedback-preview/);
   assert.equal((recepcao.match(/class="reception-path"/g) || []).length, 6, "seis portas comuns");
   assert.equal((recepcao.match(/data-foco data-revelar="\d" class="reception-path/g) || []).length, 8, "as oito portas seguem na página");

@@ -12,7 +12,18 @@ const DIR = new URL("../../supabase/migrations/", import.meta.url);
 const U = { owner: "00000000-0000-0000-0000-0000000000a1", aluna: "00000000-0000-0000-0000-0000000000c1", prof: "00000000-0000-0000-0000-0000000000d2" };
 const LINK = "https://meet.example.invalid/sala-da-turma";
 const min = (n) => new Date(Date.now() + n * 60000).toISOString();
-const HOJE = new Date().toISOString().slice(0, 10);
+const dataEmSaoPaulo = (data = new Date()) => {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(data).map(({ type, value }) => [type, value]),
+  );
+  return `${partes.year}-${partes.month}-${partes.day}`;
+};
+const HOJE = dataEmSaoPaulo();
 
 async function montar() {
   const db = new PGlite({ extensions: { pgcrypto } });

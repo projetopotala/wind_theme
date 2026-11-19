@@ -9,13 +9,17 @@ const css = ler("css/portal-cinema.css");
 const js = ler("js/shared/portal-cinema.js");
 
 test("as quatro entradas carregam a camada cinematográfica e mantêm o menu Explorar", () => {
-  for (const pagina of ["transcender.html", "travessia.html", "transcendido.html", "atendimentos-conceito.html"]) {
+  for (const pagina of ["transcender.html", "transcendido.html", "atendimentos-conceito.html"]) {
     const html = ler(pagina);
     assert.match(html, /href="css\/portal-cinema\.css"/, pagina);
     assert.match(html, /src="js\/shared\/portal-cinema\.js"/, pagina);
     assert.match(html, /src="js\/shared\/portal-menu-boot\.js"/, `${pagina} perdeu o menu Explorar`);
     assert.match(html, /href="css\/portal-menu\.css"/, pagina);
   }
+  const travessia = ler("travessia.html");
+  assert.match(travessia, /css\/ux02-chapters\.css/);
+  assert.match(travessia, /journey-landscape-video/);
+  assert.match(travessia, /js\/ux02-chapters\.js/);
 });
 
 test("todo movimento fica sob prefers-reduced-motion: no-preference (exceto o estado estático)", () => {

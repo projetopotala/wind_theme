@@ -27,7 +27,7 @@
     "db:seed-blog": "node scripts/gerar-semente-blog.mjs --leva 2",
     "audit:database": "node scripts/audit-supabase-public.mjs",
     "validate:portal": "node scripts/validate-portal-assets.mjs",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .worktrees --ignore-pattern outputs/vendor",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .worktrees --ignore-pattern .claude --ignore-pattern \"Claude outputs\" --ignore-pattern outputs/vendor",
     "db:generate": "drizzle-kit generate",
     "build:media-manifest": "node scripts/build-media-manifest.mjs",
     "build:home": "node scripts/build-home-editorial.mjs",

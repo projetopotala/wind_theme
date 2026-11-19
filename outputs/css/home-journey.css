@@ -352,7 +352,8 @@ html.is-crossing .journey-entry-veil {
  * inteira, e proibir a quebra ali jogaria a frase para fora da tela.
  */
 .prologue-copy h1 {
-  font-size: min(14.6vw, 10rem);
+  max-width: 900px;
+  font-size: clamp(3.35rem, 9vw, 8.5rem);
   white-space: nowrap;
 }
 
@@ -362,6 +363,13 @@ html.is-crossing .journey-entry-veil {
   color: rgba(247, 237, 218, .72);
   letter-spacing: .12em;
 }
+
+.prologue-copy .journey-home-link { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; text-decoration: none; }
+.prologue-copy .journey-home-link--primary { margin-top: 28px; padding: 13px 23px; border: 1px solid var(--journey-gold); border-radius: 999px; color: #292318; background: var(--journey-gold); font-size: .9rem; font-weight: 700; letter-spacing: .04em; text-shadow: none; transition: transform .2s ease, background .2s ease; }
+.prologue-copy .journey-home-link--primary:hover { transform: translateY(-2px); background: var(--journey-ivory); }
+.prologue-copy .journey-home-link--secondary { margin: 22px 0 0 16px; color: rgba(247, 237, 218, .72); font-size: .78rem; letter-spacing: .05em; }
+.prologue-copy .journey-home-link--secondary:hover { color: var(--journey-ivory); }
+.prologue-copy .journey-home-link:focus-visible { outline: 2px solid var(--journey-ivory); outline-offset: 4px; }
 
 /*
  * O PAR é a unidade de rolagem; a região é só o bloco dentro dele.
@@ -716,6 +724,36 @@ html.is-crossing .journey-entry-veil {
   font-size: 1rem;
   transition: transform .4s ease;
 }
+
+/* Proposta UX-02: a cena do cuidado assume uma composição própria, sem criar
+   uma nova seção. O convite nasce da paisagem e o conteúdo se desloca como uma
+   faixa editorial quando a pessoa escolhe olhar de perto. */
+.journey-region.region--care:not(.is-expanded) .region-content {
+  background: radial-gradient(circle at 58% 42%, rgba(232, 201, 138, .13), transparent 33%);
+}
+.journey-region.region--care:not(.is-expanded) .region-summary {
+  width: min(720px, 92%);
+  margin-inline: auto;
+  padding-block: clamp(44px, 8vh, 96px);
+  text-align: center;
+}
+.journey-region.region--care:not(.is-expanded) .region-category,
+.journey-region.region--care:not(.is-expanded) .region-expand-label { justify-content: center; }
+.journey-region.region--care:not(.is-expanded) .region-title { font-size: clamp(3.6rem, 8vw, 8rem); }
+.journey-region.region--care:not(.is-expanded) .region-description { max-width: 34ch; margin-inline: auto; }
+.journey-region.region--care:not(.is-expanded) .region-expand-label::before { content: "Toque para conhecer"; }
+.journey-region.region--care:not(.is-expanded) .region-expand-label { font-size: 0; letter-spacing: .12em; }
+.journey-region.region--care:not(.is-expanded) .region-expand-label span { font-size: 1rem; }
+.journey-region.region--care.is-expanded .region-content {
+  background:
+    linear-gradient(115deg, rgba(20, 24, 20, .84), rgba(20, 24, 20, .52) 52%, rgba(14, 16, 14, .86)),
+    radial-gradient(circle at 12% 18%, rgba(232, 201, 138, .2), transparent 34%);
+  border-left: 1px solid rgba(232, 201, 138, .42);
+  box-shadow: 18px 0 60px rgba(10, 12, 10, .22);
+}
+.journey-region.region--care.is-expanded .region-summary { max-width: 720px; }
+.journey-region.region--care.is-expanded .region-title { font-size: clamp(3rem, 5.8vw, 6.4rem); }
+.journey-region.region--care.is-expanded .region-description { max-width: 42ch; font-size: clamp(1.05rem, 1.7vw, 1.35rem); }
 
 .journey-region.is-expanded .region-expand-label span { transform: rotate(45deg); }
 
@@ -3570,6 +3608,13 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 
 .journey-progress-count [data-journey-total]::before { content: "/"; margin-right: 6px; opacity: .55; }
 
+.journey-progress-hint { margin: 0; color: rgba(247, 237, 218, .62); font: 500 .58rem/1.2 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+
+.journey-progress-actions { display: flex; gap: 6px; }
+.journey-progress-actions button { width: 30px; height: 30px; border: 1px solid rgba(247,237,218,.28); border-radius: 50%; color: var(--journey-ivory); background: rgba(23,16,12,.28); font: 700 .9rem/1 system-ui,sans-serif; cursor: pointer; }
+.journey-progress-actions button:hover:not(:disabled), .journey-progress-actions button:focus-visible { border-color: var(--journey-gold); background: rgba(231,202,143,.16); }
+.journey-progress-actions button:disabled { opacity: .28; cursor: not-allowed; }
+
 .journey-progress ol {
   display: grid;
   gap: 8px;
@@ -3617,12 +3662,27 @@ body[data-travessia-ativa="true"] .journey-scroll-cue {
 .journey-progress:hover .journey-progress-label,
 .journey-progress:focus-within .journey-progress-label { opacity: 1; }
 
+.journey-progress-map { position: relative; margin-top: 4px; }
+.journey-progress-map summary { min-height: 34px; padding: 8px 11px; border: 1px solid rgba(247,237,218,.24); border-radius: 999px; color: var(--journey-ivory); background: rgba(23,16,12,.28); font: 600 .66rem/1 system-ui,sans-serif; cursor: pointer; list-style: none; }
+.journey-progress-map summary::-webkit-details-marker { display: none; }
+.journey-progress-map summary::before { content: "＋"; margin-right: 5px; color: var(--journey-gold); }
+.journey-progress-map[open] summary::before { content: "−"; }
+.journey-progress-map > ol { position: absolute; right: 0; bottom: calc(100% + 8px); display: grid; gap: 3px; width: min(220px, 72vw); max-height: min(54vh, 390px); padding: 8px; overflow-y: auto; border: 1px solid rgba(247,237,218,.24); border-radius: 12px; background: rgba(23,16,12,.92); box-shadow: 0 14px 30px rgba(0,0,0,.28); }
+.journey-progress-map > ol li { list-style: none; }
+.journey-progress-map > ol button { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: center; width: 100%; height: auto; padding: 8px 7px; border-radius: 7px; color: rgba(247,237,218,.78); background: transparent; text-align: left; }
+.journey-progress-map > ol button strong { color: var(--journey-gold); font-size: .7rem; }
+.journey-progress-map > ol button span { position: static; display: block; width: auto; max-width: none; padding: 0; opacity: 1; transform: none; color: inherit; font-size: .7rem; text-align: left; background: none; }
+.journey-progress-map > ol button:hover, .journey-progress-map > ol button:focus-visible, .journey-progress-map > ol button[aria-current="true"] { background: rgba(231,202,143,.14); color: var(--journey-ivory); }
+
 body:has(.journey-region.is-expanded) .journey-progress { opacity: 0; pointer-events: none; }
 
 @media (max-width: 820px) {
   .journey-progress { top: auto; bottom: max(18px, env(safe-area-inset-bottom)); right: 50%; transform: translateX(50%); }
   .journey-progress ol { grid-auto-flow: column; }
   .journey-progress-count, .journey-progress-label { display: none; }
+  .journey-progress-hint { font-size: .54rem; }
+  .journey-progress-actions button { width: 36px; height: 36px; }
+  .journey-progress-map > ol { right: 50%; transform: translateX(50%); bottom: calc(100% + 10px); }
 }
 
 .journey-canto {
@@ -3716,4 +3776,46 @@ body:has(.journey-region.is-expanded) .journey-canto {
   text-align: left;
   background: none;
   cursor: pointer;
+}
+
+/* Uma única orientação contextual, integrada ao conteúdo da etapa de cuidado. */
+.region-context-orientation {
+  margin: 24px 0 8px;
+  padding: 16px 18px;
+  border-left: 2px solid #d8bd83;
+  background: rgba(216, 189, 131, .08);
+}
+.region-context-orientation__eyebrow {
+  margin: 0 0 5px !important;
+  color: #d8bd83;
+  font-size: .7rem !important;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.region-context-orientation h3 {
+  margin: 0 0 7px;
+  color: #fff2d5;
+  font: 400 clamp(1.2rem, 2.4vw, 1.65rem)/1.15 Georgia, serif;
+}
+.region-context-orientation > p:not(.region-context-orientation__eyebrow) {
+  margin: 0 0 11px !important;
+  color: #d4cebf;
+  font-size: .92rem !important;
+}
+.region-context-orientation a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: #fff2d5;
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+.region-context-orientation a:focus-visible {
+  outline: 2px solid #e8c986;
+  outline-offset: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .region-context-orientation a { transition: none; }
 }

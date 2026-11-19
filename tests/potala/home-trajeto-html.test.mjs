@@ -8,10 +8,12 @@ import {
 } from "../../outputs/js/home/home-controller.js";
 import { mountJourney, renderJourneyMenu, renderPair } from "../../outputs/js/home/home-scenes.js";
 
-test("Home aponta o navegador para o módulo Three.js local", async () => {
+test("Travessia canônica aponta para o controlador de caminhada UX-02", async () => {
   const html = await readFile(new URL("../../outputs/travessia.html", import.meta.url), "utf8");
-  assert.match(html, /type="importmap"/);
-  assert.match(html, /\.\/vendor\/three\.module\.min\.js/);
+  assert.match(html, /js\/ux02-chapters\.js/);
+  const controller = await readFile(new URL("../../outputs/js/ux02-chapters.js", import.meta.url), "utf8");
+  assert.match(controller, /createLandscapeVideo/);
+  assert.match(controller, /walkMotionForProgress/);
 });
 
 test("fim editorial não contém subida nem destino automático", () => {

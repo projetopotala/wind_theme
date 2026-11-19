@@ -308,6 +308,22 @@ body[data-section="recepcao"] .site-nav-link.is-active {
   padding-top: 6px;
   color: var(--reception-cream);
 }
+.reception-assistant-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 20px;
+  border: 1px solid var(--reception-gold);
+  border-radius: 999px;
+  color: var(--reception-cream);
+  font: 700 .8rem/1.3 Arial, sans-serif;
+  text-decoration: none;
+}
+.reception-assistant-open:hover { background: var(--reception-gold); color: var(--reception-night); }
+.reception-assistant-open:focus-visible { outline: 2px solid var(--reception-gold); outline-offset: 4px; }
+.reception-assistant-form p a { color: var(--reception-cream); text-underline-offset: 3px; }
+.reception-assistant-form p a:focus-visible { outline: 2px solid var(--reception-gold); outline-offset: 3px; }
 
 .reception-assistant-form > label {
   display: block;

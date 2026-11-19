@@ -6,7 +6,7 @@
  * falhar, a página fica exatamente como o HTML a entregou. Dentro do editor (?editor-site=1) não faz nada: é o
  * editor que aplica o rascunho.
  */
-import { criarRestPublico } from "../supabase/rest.js";
+import { classificarOrigem } from "../supabase/ambiente.js";
 import { aplicarConteudo } from "./aplicar.js";
 import { carregarManifesto } from "./paginas.js";
 
@@ -14,15 +14,17 @@ export async function iniciarConteudoPublico({ doc = document, localizacao = loc
   const marcador = doc.querySelector("script[data-site-pagina]");
   const slug = marcador?.getAttribute("data-site-pagina");
   if (!slug || new URLSearchParams(localizacao.search).has("editor-site")) return null;
+  if (!rest && classificarOrigem(localizacao.origin || globalThis.location?.origin || "") === "desconhecido") return null;
   try {
-    const cliente = rest || criarRestPublico();
+    const cliente = rest || (await import("../supabase/rest.js")).criarRestPublico();
     const linhas = await cliente.ler("site_pages_published", { page_slug: `eq.${slug}`, select: "version,content", limit: "1" });
     const publicado = Array.isArray(linhas) ? linhas[0] : null;
     if (!publicado?.content || !Object.keys(publicado.content).length) return null;
     const manifesto = await carregarManifesto(slug);
     aplicarConteudo(doc, manifesto, publicado.content);
     return publicado.version;
-  } catch {
+  } catch (error) {
+    console.warn("Conteúdo publicado indisponível; mantendo o HTML da página.", error);
     return null;
   }
 }

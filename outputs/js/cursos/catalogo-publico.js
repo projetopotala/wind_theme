@@ -1,3 +1,5 @@
+import { classificarOrigem } from "../supabase/ambiente.js";
+
 /*
  * Catalogo publico de cursos: mostra as turmas que o Owner marcou para divulgacao.
  *
@@ -258,6 +260,12 @@ const MENSAGENS_INTERESSE = {
 
 export async function iniciarCatalogoPublico(raiz = globalThis.document?.querySelector("[data-catalogo-publico]")) {
   if (!raiz) return;
+  if (classificarOrigem(globalThis.location?.origin || "") === "desconhecido") {
+    for (const alvo of [raiz.querySelector("[data-catalogo-lista]"), globalThis.document?.querySelector("[data-outros-lista]")]) {
+      if (alvo) { alvo.textContent = "A consulta de turmas não está disponível nesta Preview. Fale com o Instituto para confirmar a programação."; alvo.setAttribute("aria-busy", "false"); }
+    }
+    return;
+  }
   const rest = async () => {
     const [{ SUPABASE_CONFIG }, { criarRestPublico }] = await Promise.all([import("../supabase/config.js"), import("../supabase/rest.js")]);
     return criarRestPublico({ config: SUPABASE_CONFIG });

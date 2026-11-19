@@ -194,7 +194,7 @@ export default Object.freeze({
    "rotulo": "Parágrafo 2",
    "seletor": "#caminhos > div:nth-child(2) > article:nth-child(2) > div:nth-child(2) > p:nth-child(1)",
    "original": {
-    "text": "Interface em preparação"
+    "text": "Assistente Potala"
    }
   },
   {
@@ -214,17 +214,17 @@ export default Object.freeze({
    "rotulo": "Parágrafo 3",
    "seletor": "#caminhos > div:nth-child(2) > article:nth-child(2) > div:nth-child(2) > p:nth-child(3)",
    "original": {
-    "text": "Um espaço de conversa livre com a futura inteligência do Portal para perguntas sobre o Instituto, seus serviços e conteúdos."
+    "text": "Uma ajuda para encontrar atendimentos, cursos, atividades e conteúdos do Instituto. A disponibilidade das respostas inteligentes aparece no próprio assistente."
    }
   },
   {
    "chave": "o-que-voce-precisa-hoje-botao-2",
    "tipo": "botao",
    "secao": "O que você precisa hoje?",
-   "rotulo": "Botão: Ver a prévia",
+   "rotulo": "Botão: Pedir orientação",
    "seletor": "#caminhos > div:nth-child(2) > article:nth-child(2) > a:nth-child(3)",
    "original": {
-    "text": "Ver a prévia",
+    "text": "Pedir orientação",
     "href": "#assistente"
    },
    "fixo": [
@@ -463,7 +463,7 @@ export default Object.freeze({
    "rotulo": "Chamada curta",
    "seletor": "#assistente > div:nth-child(1) > p:nth-child(1)",
    "original": {
-    "text": "Prévia do assistente"
+    "text": "Orientação"
    }
   },
   {

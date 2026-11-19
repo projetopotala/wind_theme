@@ -35,11 +35,10 @@ test("o indicador vertical de progresso ficou só na Chegada", () => {
   assert.doesNotMatch(home, /class="journey-scroll-cue"/);
 });
 
-test("home mantém fallback e não intercepta wheel", () => {
-  assert.match(home, /<noscript>/);
-  assert.match(home, /id="journey-road"[^>]*aria-hidden="true"/);
-  assert.match(home, /id="journey-entry-veil"[^>]*aria-hidden="true"/);
-  assert.doesNotMatch(home, /journey-entry-road/);
+test("Travessia canônica preserva rolagem nativa e os módulos UX-02", () => {
+  assert.match(home, /id="chapters-root"/);
+  assert.match(home, /class="chapters-rail"/);
+  assert.match(home, /js\/ux02-chapters\.js/);
   assert.doesNotMatch(homeJs, /addEventListener\(["']wheel["']/);
   assert.doesNotMatch(homeJs, /handleStoryWheel|wheelTailFrame|wheelTailTimer/);
 });

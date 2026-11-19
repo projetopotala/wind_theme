@@ -287,7 +287,7 @@ export function renderRegion(region, index, _discovery, discoveriesById) {
 
 
   return `
-    <div class="journey-region region--${layoutVariant}" id="${id}"
+    <div class="journey-region region--${layoutVariant}${region.id === "atendimentos" ? " region--care" : ""}" id="${id}"
       data-region-id="${id}" ${resourceConfig ? `data-resource-section="${escapeHtml(region.id)}"` : ""} data-layout-variant="${layoutVariant}" data-editorial-variant="${safeToken(region.editorialVariant, "standard")}"
       data-side="${side}" data-road-side="${roadSide}" data-content-placement="${safeToken(region.contentPlacement, "side")}"
       data-title-scale="${titleScale}" data-title-flow="${titleFlow}" data-card-kind="${novidade ? "novidade" : "fixo"}"
@@ -461,11 +461,25 @@ function renderProgressNav(regions = []) {
     const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
     return `<li><button type="button" data-progress-target="${id}" aria-label="${numero} — ${escapeHtml(region.title)}"><span aria-hidden="true">${numero} — ${escapeHtml(region.title)}</span></button></li>`;
   }).join("");
+  const mapa = capitulos.map((region, index) => {
+    const numero = String(index + 1).padStart(2, "0");
+    const id = safeToken(region.slug || region.id, `regiao-${index + 1}`);
+    return `<li><button type="button" data-progress-target="${id}"><strong>${numero}</strong><span>${escapeHtml(region.title)}</span></button></li>`;
+  }).join("");
   return `
     <nav class="journey-progress" aria-label="Capítulos da travessia">
       <p class="journey-progress-count"><span data-journey-current>01</span><span data-journey-total>${total}</span></p>
+      <p class="journey-progress-hint">12 etapas para explorar</p>
+      <div class="journey-progress-actions" aria-label="Navegar entre etapas">
+        <button type="button" data-journey-prev aria-label="Etapa anterior">↑</button>
+        <button type="button" data-journey-next aria-label="Próxima etapa">↓</button>
+      </div>
       <ol>${dots}</ol>
       <p class="journey-progress-label" data-journey-progress-label>01 — ${escapeHtml(capitulos[0].title)}</p>
+      <details class="journey-progress-map">
+        <summary>Ver etapas</summary>
+        <ol>${mapa}</ol>
+      </details>
     </nav>`;
 }
 
@@ -533,14 +547,14 @@ export function mountJourney(root, { regions = [], discoveries = [] } = {}) {
     <section class="journey-prologue" id="inicio" aria-labelledby="journey-title">
       <div class="prologue-copy">
         <p>Ecossistema Digital Potala</p>
-        <h1 id="journey-title">Bem-vindo.</h1>
-        <span>O caminho continua.</span>
-        <a class="journey-home-link" href="transcendido.html" data-keeps-expansion>Ler a matéria de Atendimentos <i aria-hidden="true">→</i></a>
-        <p class="home-welcome-context">Cuidado, conhecimento, cultura e pessoas.<br>Encontre novas possibilidades para o seu momento.</p>
+        <h1 id="journey-title">Bem-vindo ao Potala.</h1>
+        <span>Um espaço de cuidado, conhecimento, cultura e encontros.</span>
+        <a class="journey-home-link journey-home-link--primary" href="#journey-path" data-keeps-expansion>Começar a Travessia <i aria-hidden="true">↓</i></a>
+        <a class="journey-home-link journey-home-link--secondary" href="transcendido.html" data-keeps-expansion>Ler a matéria de Atendimentos <i aria-hidden="true">→</i></a>
       </div>
     </section>
     ${renderPortalDiscovery()}
-    <div class="journey-regions">${regionMarkup}</div>
+    <div class="journey-regions" id="journey-path">${regionMarkup}</div>
     ${renderInvitation(invitationsFor(regions))}
     ${renderJourneyMenu(regions)}
     ${renderCommunityInvitation()}

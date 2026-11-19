@@ -296,7 +296,7 @@ export default Object.freeze({
    "rotulo": "Chamada curta",
    "seletor": "#assistente > div:nth-child(1) > p:nth-child(1)",
    "original": {
-    "text": "Prévia do assistente"
+    "text": "Orientação"
    }
   },
   {

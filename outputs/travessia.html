@@ -4,101 +4,103 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#c7b79f">
-  <meta name="description" content="Percorra o Ecossistema Potala: cuidado, conhecimento, atividades, pessoas, cultura e inspiração.">
+  <meta name="description" content="Uma travessia pelo Instituto Potala: cuidado, conhecimento, cultura e encontros.">
+  <link rel="canonical" href="/travessia.html">
   <title>Instituto Potala — A Travessia</title>
-  <script>
-    document.documentElement.classList.add("js");
-    try {
-      const handoff = JSON.parse(sessionStorage.getItem("potala.travessia.v1") || "{}");
-      if (["scroll", "drag", "keyboard"].includes(handoff.entry)) {
-        document.documentElement.classList.add("entry-pending");
-      }
-    } catch {}
-  </script>
   <link rel="stylesheet" href="css/secoes.css">
-  <link rel="stylesheet" href="css/living-footer.css">
-  <link rel="stylesheet" href="css/portal-discovery.css">
-  <link rel="stylesheet" href="css/section-panel.css">
-  <script type="importmap">
-    {"imports":{"three":"./vendor/three.module.min.js"}}
-  </script>
-  <script src="vendor/supabase.js"></script>
-  <script type="module" src="js/secoes.js"></script>
-<link rel="stylesheet" href="css/portal-menu.css">
-<link rel="stylesheet" href="css/portal-cinema.css">
+  <link rel="stylesheet" href="css/ux02-chapters.css">
 </head>
 <body data-story-page="true">
-  <a class="skip-link" href="#journey-root">Ir para a jornada</a>
-  <!--
-    A paisagem sai do `body` e vira ELEMENTO.
-    Um `background-attachment: fixed` não pode ser animado, e a travessia
-    precisa deslocá-la horizontalmente. Em repouso este elemento pinta
-    exatamente o que o body pintava, então nada muda visualmente até alguém
-    abrir um bloco. Ele é uma camada só: a cena nunca é trocada por outra.
-  -->
-  <div class="journey-landscape" id="journey-landscape" aria-hidden="true">
-    <!--
-      O vídeo anda com a rolagem: descer adianta a câmera, subir rebobina.
-
-      Ele vive DENTRO da paisagem porque a travessia desloca esse elemento para o
-      lado quando um bloco abre, e ele é de propósito mais largo que a tela para
-      a borda nunca aparecer. Um vídeo irmão, fixo por conta própria, ficaria
-      parado enquanto a cena anda.
-
-      O endereço está em `data-src`, e não em `src`: assim o navegador não gasta
-      banda com sete megabytes enquanto ainda desenha o que a pessoa precisa ver
-      primeiro. Quem o promove a `src` é o `landscape-video.js`, depois de
-      decidir se vale — no telefone, com movimento reduzido ou em conexão
-      medida, ele nunca chega a ser pedido, e o fundo segue sendo a webp que já
-      está por trás.
-    -->
-    <video class="journey-landscape-video" data-src="media/home-travessia.mp4"
-      muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
-  </div>
-  <canvas class="journey-road journey-path" id="journey-road" aria-hidden="true"></canvas>
-  <div class="journey-entry-veil" id="journey-entry-veil" aria-hidden="true"></div>
-  <main id="journey-root" aria-label="Travessia pelo Ecossistema Potala"></main>
-
-  <noscript>
-    <section class="journey-noscript" aria-labelledby="journey-noscript-title">
-      <h1 id="journey-noscript-title">Ecossistema Potala</h1>
-      <p>Escolha um caminho para continuar:</p>
-      <!--
-        A LISTA COMPLETA, e não a que sobrou.
-
-        Ela tinha nove das treze seções: faltavam Recepção, Saúde Integrativa e
-        Blog, e ninguém notou porque a lista só aparece sem JavaScript. Enquanto
-        as páginas de seção carregavam um menu com as treze, o buraco era
-        contornável; agora que a barra do topo mudou de assunto, este é o único
-        caminho de quem não tem script, e uma seção fora daqui não existe.
-      -->
-      <ul>
-        <li><a href="quem-somos.html">Quem somos</a></li>
-        <li><a href="recepcao.html">Recepção</a></li>
-        <li><a href="atendimentos.html">Atendimentos</a></li>
-        <li><a href="cursos.html">Cursos</a></li>
-        <li><a href="atividades.html">Atividades</a></li>
-        <li><a href="profissionais.html">Profissionais</a></li>
-        <li><a href="saude-integrativa.html">Saúde Integrativa</a></li>
-        <li><a href="programacao.html">Programação</a></li>
-        <li><a href="cultura.html">Arte e cultura</a></li>
-        <li><a href="marketplace.html">Marketplace</a></li>
-        <li><a href="inspiracao.html">Inspiração</a></li>
-        <li><a href="revista.html">Revista</a></li>
-        <li><a href="blog.html">Blog</a></li>
-      </ul>
-      <p>E o que acontece fora da grade de aulas:</p>
-      <ul>
-        <li><a href="especialistas.html">Especialistas</a></li>
-        <li><a href="workshops.html">Workshops</a></li>
-        <li><a href="grupos-de-estudo.html">Grupos de estudo</a></li>
-        <li><a href="mentorias.html">Mentorias</a></li>
-        <li><a href="eventos.html">Eventos futuros</a></li>
-      </ul>
+  <a class="skip-link" href="#chapters-list">Ir para os capítulos</a>
+  <header class="ux02-site-header" data-ux02-header>
+    <a class="ux02-brand" href="#inicio" aria-label="Instituto Potala — voltar ao início">
+      <img src="media/potala-mark-transparent.png" alt="" width="42" height="42">
+      <span><strong>Instituto</strong> Potala</span>
+    </a>
+    <nav class="ux02-header-actions" aria-label="Descobrir o Instituto">
+      <button type="button" data-search-toggle aria-expanded="false" aria-controls="ux02-search-panel"><span aria-hidden="true">⌕</span> Buscar</button>
+      <button type="button" data-explore-toggle aria-expanded="false" aria-controls="ux02-explore-panel"><span class="ux02-explore-label">Explore o Instituto</span> <span aria-hidden="true">＋</span></button>
+    </nav>
+    <div class="ux02-assistant-promo" data-assistant-promo>
+      <a href="recepcao.html#assistente" data-abrir-assistente>
+        <strong>Assistente Potala</strong>
+        <span data-assistant-message aria-live="off">Não sabe por onde começar?</span>
+      </a>
+      <button type="button" data-assistant-pause aria-pressed="false" aria-label="Pausar mensagens do Assistente">Pausar</button>
+    </div>
+    <section class="ux02-header-panel ux02-search-panel" id="ux02-search-panel" aria-labelledby="ux02-search-title" hidden>
+      <div>
+        <p>Busca institucional</p>
+        <h2 id="ux02-search-title">O que você procura no Potala?</h2>
+      </div>
+      <form action="recepcao.html" role="search">
+        <label for="ux02-search-input">Tema, serviço ou necessidade</label>
+        <div class="ux02-search-field">
+          <input id="ux02-search-input" name="q" type="search" autocomplete="off" placeholder="Ex.: yoga, atendimento online, cursos…" aria-controls="ux02-search-results" aria-expanded="false">
+          <span aria-hidden="true">⌕</span>
+        </div>
+        <p class="ux02-search-status" id="ux02-search-status" role="status">Digite um tema, serviço ou necessidade.</p>
+        <ul class="ux02-search-results" id="ux02-search-results"></ul>
+      </form>
     </section>
-  </noscript>
-<script type="module" src="js/shared/portal-menu-boot.js"></script>
-<script type="module" src="js/shared/portal-cinema.js"></script>
+    <section class="ux02-header-panel ux02-explore-panel" id="ux02-explore-panel" aria-labelledby="ux02-explore-title" hidden>
+      <div class="ux02-explore-heading">
+        <p>Orientação rápida</p>
+        <h2 id="ux02-explore-title">Explore o Instituto</h2>
+        <span>Escolha uma área para compreender o que ela oferece.</span>
+      </div>
+      <nav aria-label="Áreas do Instituto">
+        <a href="atendimentos.html"><strong>Atendimentos</strong><span>Cuidado, modalidades e orientação</span></a>
+        <a href="cursos.html"><strong>Cursos</strong><span>Aprendizagem, formações e oficinas</span></a>
+        <a href="atividades.html"><strong>Atividades</strong><span>Práticas corporais, artísticas e culturais</span></a>
+        <a href="profissionais.html"><strong>Profissionais</strong><span>Trajetórias e áreas de atuação</span></a>
+        <a href="programacao.html"><strong>Programação</strong><span>Atividades e eventos publicados</span></a>
+        <a href="cultura.html"><strong>Arte e cultura</strong><span>Experiências, encontros e convivência</span></a>
+        <a href="recepcao.html"><strong>Recepção</strong><span>Orientação para o primeiro passo</span></a>
+        <a href="quem-somos.html"><strong>Quem somos</strong><span>História, propósito e valores</span></a>
+      </nav>
+    </section>
+  </header>
+  <div class="journey-landscape chapters-landscape" id="chapters-landscape" aria-hidden="true">
+    <span class="chapters-refined-landscape"></span>
+    <video class="journey-landscape-video" data-src="media/home-travessia.mp4" muted playsinline preload="none" tabindex="-1"></video>
+    <span class="chapters-mist"></span>
+    <span class="chapters-road-light"></span>
+  </div>
+  <div class="chapters-page-transition" aria-hidden="true"></div>
+  <main id="chapters-root" aria-labelledby="chapters-title">
+    <section class="journey-prologue" id="inicio" aria-labelledby="chapters-title">
+      <div class="prologue-copy">
+        <p>Ecossistema Digital Potala</p>
+        <h1 id="chapters-title">Bem-vindo ao Potala.</h1>
+        <span>Um espaço de cuidado, conhecimento, cultura e encontros.</span>
+        <a class="journey-home-link journey-home-link--primary" href="#chapters-intro">Começar a Travessia <i aria-hidden="true">↓</i></a>
+        <a class="journey-home-link journey-home-link--secondary" href="transcendido.html">Ler a matéria de Atendimentos <i aria-hidden="true">→</i></a>
+      </div>
+    </section>
+    <section class="chapters-timeline" aria-label="Capítulos da Travessia">
+      <header id="chapters-intro" class="chapters-transition" aria-labelledby="chapters-intro-title">
+        <div class="chapters-intro-copy">
+          <p>Apresentação do Instituto · depois, 11 capítulos</p>
+          <h2 id="chapters-intro-title">Um espaço para cuidar, aprender e compartilhar.</h2>
+          <p class="chapters-intro-text">O Instituto Potala reúne caminhos de cuidado, conhecimento, cultura, atividades e convivência. Escolha um caminho rápido ou comece pela Recepção para encontrar seu próximo passo.</p>
+        </div>
+        <nav class="chapters-direct-paths" aria-label="Caminhos rápidos pelo Instituto">
+          <p class="direct-paths-title">O que você procura hoje?</p>
+          <a href="atendimentos.html"><span>Atendimentos</span><small>Conheça possibilidades de cuidado</small></a>
+          <a href="cursos.html"><span>Cursos</span><small>Encontre um percurso de aprendizagem</small></a>
+          <a href="atividades.html"><span>Atividades</span><small>Experimente práticas e encontros</small></a>
+          <a href="cultura.html"><span>Arte e cultura</span><small>Veja experiências para criar e refletir</small></a>
+          <a href="profissionais.html"><span>Profissionais</span><small>Conheça quem acompanha cada caminho</small></a>
+          <a href="programacao.html"><span>Programação</span><small>Consulte o que acontece no Instituto</small></a>
+          <a href="recepcao.html"><span>Recepção</span><small>Peça ajuda para escolher por onde começar</small></a>
+        </nav>
+      </header>
+      <div class="chapters-rail" aria-hidden="true"><span></span></div>
+      <ol id="chapters-list"></ol>
+    </section>
+  </main>
+  <script type="module" src="/js/ux02-chapters.js"></script>
   <script type="module" src="/js/assistente/assistente-boot.js"></script>
 </body>
 </html>

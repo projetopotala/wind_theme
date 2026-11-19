@@ -3,13 +3,14 @@ import { createLocalContentRepository } from "./home/content-repository.js";
 import { DEFAULT_HOME_BLOCKS } from "./home/journey-data.js";
 import { withRequiredDefaultSections } from "./home/default-section-bridge.js";
 import { createSupabaseContentRepository } from "./home/supabase-content-repository.js";
-import { getSupabaseClient } from "./supabase/client.js";
+import { classificarOrigem } from "./supabase/ambiente.js";
 import { mountPortalHeader } from "./shared/portal-header.js";
 
 (() => {
   "use strict";
 
   const body = document.body;
+  const origemConhecida = classificarOrigem(location.origin) !== "desconhecido";
   /*
    * A BARRA DAS PÁGINAS DE SEÇÃO.
    *
@@ -86,22 +87,26 @@ import { mountPortalHeader } from "./shared/portal-header.js";
           storage: null,
         });
         let repository = snapshot;
-        try {
-          const remote = withRequiredDefaultSections(createSupabaseContentRepository({
-            client: getSupabaseClient(),
-            defaults: DEFAULT_HOME_BLOCKS,
-          }), DEFAULT_HOME_BLOCKS, ["revista"]);
-          repository = createHomeContentSource({
-            remote,
-            fallback: snapshot,
-            onRemoteError(error) {
-              console.warn("Conteúdo remoto indisponível; usando snapshot empacotado.", error);
-            },
-          });
-        } catch (error) {
-          console.warn("Supabase indisponível; usando snapshot empacotado.", error);
+        if (origemConhecida) {
+          try {
+            const { getSupabaseClient } = await import("./supabase/client.js");
+            const remote = withRequiredDefaultSections(createSupabaseContentRepository({
+              client: getSupabaseClient(),
+              defaults: DEFAULT_HOME_BLOCKS,
+            }), DEFAULT_HOME_BLOCKS, ["revista"]);
+            repository = createHomeContentSource({
+              remote,
+              fallback: snapshot,
+              onRemoteError(error) {
+                console.warn("Conteúdo remoto indisponível; usando snapshot empacotado.", error);
+              },
+            });
+          } catch (error) {
+            console.warn("Supabase indisponível; usando snapshot empacotado.", error);
+          }
         }
         /* Cartão de artigo do Blog só com o texto confirmado no ar pelo banco. */
+        if (!origemConhecida) return mountHomeJourney({ repository });
         const { comArtigosConfirmados } = await import("./blog/artigos-publicados.js");
         return mountHomeJourney({ repository: comArtigosConfirmados(repository) });
       })
@@ -120,7 +125,9 @@ import { mountPortalHeader } from "./shared/portal-header.js";
    * e uma falha aqui não derruba a Travessia nem a seção. Na Home o botão vem na
    * marcação da jornada; nas outras páginas a própria conta o cria.
    */
-  import("./conta/conta.js")
-    .then(({ montarConta }) => montarConta())
-    .catch((error) => console.warn("Conta indisponível.", error));
+  if (origemConhecida) {
+    import("./conta/conta.js")
+      .then(({ montarConta }) => montarConta())
+      .catch((error) => console.warn("Conta indisponível.", error));
+  }
 })();

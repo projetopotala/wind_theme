@@ -7,7 +7,6 @@ import { MOTIVOS_DISPONIVEIS, seloDoEspecialista } from "../../outputs/js/comuni
 const outputs = new URL("../../outputs/", import.meta.url);
 const ler = (arquivo) => readFile(new URL(arquivo, outputs), "utf8");
 
-const home = await ler("travessia.html");
 const profissionais = await ler("profissionais.html");
 const especialistas = await ler("especialistas.html");
 const secoes = await ler("js/secoes.js");
@@ -97,7 +96,7 @@ test("Profissionais leva a Especialistas por um botao cheio, e nao so por um lin
   assert.equal((html.match(/class="photo-cta"/g) || []).length, 1);
 });
 
-test("as cinco portas continuam alcancaveis a partir da Home", () => {
+test("as cinco portas continuam alcancaveis pela cadeia real da Travessia", async () => {
   /*
    * O CAMINHO FICOU MAIS FUNDO, e este teste garante que ele nao sumiu.
    *
@@ -109,9 +108,8 @@ test("as cinco portas continuam alcancaveis a partir da Home", () => {
    * botao cheio para Especialistas — e dali a barra daquelas paginas leva as
    * outras quatro. Nenhuma ficou orfa; nenhuma esta mais a um clique.
    */
-  for (const [arquivo] of PAGINAS) {
-    assert.match(home, new RegExp(`href="${arquivo}"`), `o fallback sem script perdeu ${arquivo}`);
-  }
+  const jornada = await ler("js/home/journey-data.js");
+  assert.match(jornada, /id:\s*"profissionais"[\s\S]*?href:\s*"profissionais\.html"/);
 
   assert.match(profissionais, /<a class="photo-cta" href="especialistas\.html">/, "a ponte da jornada para Especialistas caiu");
 

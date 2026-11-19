@@ -38,14 +38,8 @@ test("os módulos publicados em vendor/ não pedem arquivo que não foi copiado"
   assert.deepEqual(faltando, [], `importações sem arquivo em vendor/: ${faltando.join("; ")}`);
 });
 
-test("o import map da Home aponta para um arquivo que existe", async () => {
+test("a implementação Three.js legada permanece empacotada, sem ser requisito da rota canônica", async () => {
   const html = await readFile(new URL("../../outputs/travessia.html", import.meta.url), "utf8");
-  const mapa = html.match(/<script type="importmap">\s*([\s\S]*?)\s*<\/script>/);
-  assert.ok(mapa, "a Home precisa do import map do Three.js");
-
-  const { imports } = JSON.parse(mapa[1]);
-  assert.equal(typeof imports.three, "string", "o especificador 'three' precisa estar mapeado");
-
-  const alvo = new URL(imports.three.replace(/^\.\//, ""), new URL("../../outputs/", import.meta.url));
-  await readFile(alvo, "utf8");
+  assert.match(html, /js\/ux02-chapters\.js/);
+  await readFile(new URL("../../outputs/vendor/three.module.min.js", import.meta.url), "utf8");
 });

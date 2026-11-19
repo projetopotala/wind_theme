@@ -13,6 +13,10 @@ const eslintConfig = defineConfig([
     "dist/**",
     "out/**",
     "build/**",
+    // Evidências locais de homologação e backups operacionais não versionados.
+    // Não são código da aplicação; lintar `.` ainda percorria esses diretórios.
+    ".codex/**",
+    "artifacts/**",
     "next-env.d.ts",
     // Código de terceiros, minificado, publicado como veio: revisar o estilo
     // dele não diz nada sobre este projeto e o ruído esconderia os avisos que

@@ -1,0 +1,46 @@
+:root { color-scheme: dark; --ink: #17201c; --paper: #f1eadb; --gold: #d8bc83; --line: rgba(241,234,219,.35); }
+* { box-sizing: border-box; }
+html, body { min-height: 100%; margin: 0; }
+body { background: var(--ink); color: var(--paper); font-family: Arial, sans-serif; }
+button, a { font: inherit; }
+button { cursor: pointer; }
+.guided { isolation: isolate; min-height: 100svh; position: relative; overflow: hidden; padding: 18px clamp(16px, 4vw, 64px) 28px; }
+.guided__landscape { position: absolute; inset: 0; z-index: -2; background: linear-gradient(180deg, rgba(10,19,16,.12), rgba(10,18,16,.78)), url('../media/chegada-v2-master.webp') center / cover; transform: scale(1.03); }
+.guided__landscape::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,20,17,.72), transparent 75%); }
+.guided__topbar { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2; }
+.guided__brand, .guided__help { color: var(--paper); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; background: rgba(16,25,21,.52); backdrop-filter: blur(10px); }
+.guided__brand { font: 700 .72rem/1 Arial, sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+.guided__help { font-size: .82rem; }
+.guided__welcome, .guided__journey { width: min(640px, 100%); margin-top: clamp(72px, 15vh, 150px); }
+.guided__eyebrow, .guided__context-kicker { color: var(--gold); font-size: .72rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; margin: 0 0 12px; }
+h1, h2, h3 { font-family: Georgia, serif; font-weight: 400; line-height: 1.04; margin: 0; }
+h1 { font-size: clamp(2.35rem, 8vw, 5rem); max-width: 10ch; }
+h2 { font-size: clamp(2rem, 6vw, 3.6rem); }
+h3 { font-size: clamp(1.35rem, 4vw, 2.1rem); }
+.guided__lead, .guided__journey-heading > p, .guided__context p { max-width: 52ch; color: rgba(241,234,219,.88); font-size: 1rem; line-height: 1.55; }
+.guided__choice { display: grid; gap: 10px; max-width: 420px; margin-top: 28px; }
+.guided__choice-button { text-align: left; color: var(--paper); background: rgba(20,30,25,.65); border: 1px solid var(--line); border-radius: 15px; padding: 15px 17px; transition: background .2s, transform .2s; }
+.guided__choice-button:hover, .guided__choice-button:focus-visible { background: rgba(216,188,131,.22); transform: translateY(-2px); }
+.guided__choice-button--primary { border-color: var(--gold); background: rgba(45,54,43,.86); }
+.guided__choice-button span, .waypoint span { display: block; font-weight: 700; }
+.guided__choice-button small, .waypoint small { display: block; color: rgba(241,234,219,.72); margin-top: 4px; }
+.guided__journey { margin-top: clamp(38px, 9vh, 100px); }
+.guided__waypoints { min-height: 300px; position: relative; margin-top: 20px; }
+.waypoint { position: absolute; min-width: 150px; color: var(--paper); text-align: left; border: 1px solid var(--line); border-radius: 999px; padding: 12px 16px; background: rgba(18,29,24,.72); box-shadow: 0 10px 30px rgba(0,0,0,.25); backdrop-filter: blur(8px); }
+.waypoint::before { content: ''; display: block; width: 9px; height: 9px; margin-bottom: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 6px rgba(216,188,131,.14); }
+.waypoint--care { left: 3%; top: 4%; }.waypoint--learn { right: 4%; top: 34%; }.waypoint--move { left: 20%; bottom: 3%; }
+.waypoint:hover, .waypoint:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; background: rgba(52,65,54,.92); }
+.guided__context { width: min(520px, 100%); padding: 20px; border-left: 2px solid var(--gold); background: rgba(14,23,19,.76); backdrop-filter: blur(12px); }
+.guided__context p { margin: 8px 0 0; }.guided__context .guided__context-kicker { margin: 0; }
+.guided__context a { color: var(--paper); }
+.guided__secondary-actions { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 18px; }.guided__secondary-actions a { color: var(--paper); font-size: .86rem; }
+.guided__status { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); color: var(--paper); font-size: .78rem; }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+[hidden] { display: none !important; }
+@media (max-width: 560px) {
+  .guided { padding: 14px 12px 24px; overflow-y: auto; }
+  .guided__welcome { margin-top: 64px; }.guided__journey { margin-top: 30px; }
+  .guided__lead, .guided__journey-heading > p, .guided__context p { font-size: .94rem; }
+  .guided__waypoints { min-height: 280px; }.waypoint { min-width: 0; width: 65%; padding: 11px 14px; font-size: .9rem; }.waypoint small { font-size: .76rem; }.waypoint--care { left: 0; }.waypoint--learn { right: 0; }.waypoint--move { left: 10%; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
