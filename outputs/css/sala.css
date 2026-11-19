@@ -49,6 +49,10 @@
 /* ---------- barra de controles ---------- */
 .sala-video-controles { grid-row: 2; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; padding: .6rem; background: #3f2a1e; border-top: 1px solid rgba(215, 186, 120, .35); }
 .sala-video-botao { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: 0 .9rem; border-radius: 999px; border: 1px solid rgba(215, 186, 120, .55); background: rgba(248, 241, 230, .08); color: #f8f1e6; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; transition: background .15s, border-color .15s; }
+.sala-video-camera { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; max-width: min(100%, 21rem); color: #f8f1e6; font-size: .85rem; font-weight: 600; }
+.sala-video-camera-seletor { min-width: 0; min-height: 44px; max-width: 13rem; padding: 0 .65rem; border: 1px solid rgba(215, 186, 120, .55); border-radius: 999px; background: #2c211a; color: #f8f1e6; font: inherit; }
+.sala-video-camera-seletor:focus-visible { outline: 3px solid #d7ba78; outline-offset: 2px; }
+.sala-video-camera-status { max-width: 15rem; margin: 0; color: rgba(248, 241, 230, .86); font-size: .8rem; line-height: 1.3; }
 .sala-video-botao:hover:not(:disabled) { background: rgba(248, 241, 230, .2); border-color: #d7ba78; }
 .sala-video-botao:disabled { opacity: .5; cursor: not-allowed; }
 .sala-video-botao[data-ativo="false"] { background: #9a3b2a; border-color: #9a3b2a; }
@@ -99,6 +103,9 @@ body:has(.sala-video--cheia) { overflow: hidden; }
   /* Telas estreitas: só ícones (o nome acessível com o estado continua no aria-label). */
   .sala-video-botao { padding: 0; min-width: 48px; justify-content: center; }
   .sala-video-botao-rotulo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .sala-video-camera { width: 100%; justify-content: center; }
+  .sala-video-camera-seletor { flex: 1 1 10rem; max-width: min(100%, 16rem); }
+  .sala-video-camera-status { width: 100%; max-width: none; text-align: center; }
 }
 @media (max-width: 480px) {
   .sala-video-botao { gap: .35rem; }

@@ -469,7 +469,7 @@ function renderProgressNav(regions = []) {
   return `
     <nav class="journey-progress" aria-label="Capítulos da travessia">
       <p class="journey-progress-count"><span data-journey-current>01</span><span data-journey-total>${total}</span></p>
-      <p class="journey-progress-hint">12 etapas para explorar</p>
+      <p class="journey-progress-hint">11 capítulos para explorar</p>
       <div class="journey-progress-actions" aria-label="Navegar entre etapas">
         <button type="button" data-journey-prev aria-label="Etapa anterior">↑</button>
         <button type="button" data-journey-next aria-label="Próxima etapa">↓</button>

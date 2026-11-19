@@ -2,7 +2,7 @@
  * MENU GLOBAL DO PORTAL
  *
  * Um único botão discreto abre uma lista com os caminhos essenciais do Potala,
- * para que quem chega não precise atravessar as 12 etapas da Travessia só para
+ * para que quem chega não precise atravessar os 11 capítulos da Travessia só para
  * achar Atendimentos, o Blog ou a Loja.
  *
  * Os caminhos vêm agrupados pelo que a pessoa quer fazer (Serviços, Aprendizado,
@@ -34,7 +34,7 @@ export const MENU_ITEMS = Object.freeze([
   { key: "blog", grupo: "conteudos", label: "Blog e Revista", hint: "Artigos e reflexões", href: "blog.html", extra: { label: "Revista", href: "revista.html" } },
   { key: "materia", grupo: "conteudos", label: "Atendimentos em matéria", hint: "A leitura editorial do cuidado", href: "transcendido.html" },
   { key: "institucional", grupo: "instituto", label: "Home do Instituto", hint: "Todos os caminhos: cuidado, cursos, blog, loja e cultura", href: "atendimentos-conceito.html" },
-  { key: "home", grupo: "instituto", label: "Explorar o Potala", hint: "A Travessia: a jornada em 12 etapas", href: "travessia.html" },
+  { key: "home", grupo: "instituto", label: "Explorar o Potala", hint: "A Travessia: uma jornada em 11 capítulos", href: "travessia.html" },
   { key: "chegada", grupo: "instituto", label: "Voltar à Chegada", hint: "A paisagem inicial", href: "/transcender.html" },
   { key: "recepcao", grupo: "instituto", label: "Recepção", hint: "Fale com o Instituto", href: "recepcao.html" },
   { key: "meu-potala", grupo: "conta", label: "Meu Potala", hint: "Seu espaço: cursos, agenda e atendimentos", href: "/meu-potala" },
