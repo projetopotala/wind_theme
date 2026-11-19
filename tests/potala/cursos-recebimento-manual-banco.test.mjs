@@ -60,7 +60,19 @@ async function montar() {
 
 
 /* ---- Recebimento manual (migration 202611160008) ---- */
-const HOJE = new Date().toISOString().slice(0, 10);
+function dataEmSaoPaulo(data = new Date()) {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(data).map(({ type, value }) => [type, value]),
+  );
+  return `${partes.year}-${partes.month}-${partes.day}`;
+}
+
+const HOJE = dataEmSaoPaulo();
 let seq = 0;
 const chave = () => `cccccccc-0000-4000-8000-${String(++seq).padStart(12, "0")}`;
 
@@ -173,7 +185,7 @@ test("pedido cancelado, recusado ou so solicitado nao pode ser confirmado", asyn
   assert.equal((await receber()).code, "PT409");
   const b = (await pedir(U.a2, "t1")).r.id;
   const vb = (await q("select updated_at from public.course_enrollment_requests where id=$1", [b]))[0].updated_at;
-  const tent = await ctx.como(U.owner, "select public.admin_register_manual_course_payment($1::uuid,$2::uuid,$3::timestamptz,15000,'pix',current_date,null)", [chave(), b, vb]).then(() => "ok", (e) => e.code);
+  const tent = await ctx.como(U.owner, "select public.admin_register_manual_course_payment($1::uuid,$2::uuid,$3::timestamptz,15000,'pix',$4::date,null)", [chave(), b, vb, HOJE]).then(() => "ok", (e) => e.code);
   assert.equal(tent, "PT409", "solicitada ainda nao foi aprovada");
   assert.equal(await status(b), "solicitada");
   await decidir(b, "recusar");
