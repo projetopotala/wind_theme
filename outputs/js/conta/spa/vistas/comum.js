@@ -10,7 +10,7 @@
 import { escaparHtml } from "../../html.js";
 import { iniciaisDe, nomeDeExibicao, primeiroNome } from "../../modelos.js";
 import { continuarDeOndeParou, naoLidas, notificacoesPermitidas } from "../../leituras.js";
-import { ROTAS, ROTAS_DA_NAVEGACAO, caminhoDa } from "../roteador.js";
+import { ROTAS, ROTAS_DA_BIBLIOTECA, ROTAS_PRINCIPAIS, caminhoDa } from "../roteador.js";
 
 export const e = escaparHtml;
 
@@ -141,24 +141,42 @@ export function renderizarLinkDeAvisos({ rota, dados }) {
   return `<a class="mp-nav-avisos" href="${caminhoDa("notificacoes")}"${corrente}>${conteudoDoLinkDeAvisos(contarAvisosNovos(dados))}</a>`;
 }
 
+/* O selo ao lado de "Meu Potala": dado de exemplo é dito antes de qualquer outra coisa. */
+function seloDeDados(estado) {
+  if (estado.demonstracao) return " <span class=\"mp-selo-demo\">Demonstração</span>";
+  if (estado.dadosEmReserva) return " <span class=\"mp-selo-demo\">Dados de exemplo</span>";
+  return "";
+}
+
+function abaDaRota(nomeDaRota, rota) {
+  const definicao = ROTAS.find((candidata) => candidata.nome === nomeDaRota);
+  const corrente = nomeDaRota === rota.nome ? " aria-current=\"page\"" : "";
+  return `<li><a href="${caminhoDa(nomeDaRota)}"${corrente}>${e(definicao.rotulo)}</a></li>`;
+}
+
+/*
+ * A navegação tem dois grupos. A faixa principal (a primeira <ul> da .mp-nav —
+ * é ela que a SPA mantém rolada até a aba aberta) leva ao que a pessoa vem
+ * fazer. A biblioteca e as notificações ficam num grupo menor, à parte.
+ */
 export function renderizarCabecalho({ estado, rota, dados }) {
   const nome = nomeDeExibicao(estado.usuario, estado.perfil);
   const noInicio = rota.nome === "inicio";
-
-  const abas = ROTAS_DA_NAVEGACAO.map((nomeDaRota) => {
-    const definicao = ROTAS.find((candidata) => candidata.nome === nomeDaRota);
-    const corrente = nomeDaRota === rota.nome ? " aria-current=\"page\"" : "";
-    return `<li><a href="${caminhoDa(nomeDaRota)}"${corrente}>${e(definicao.rotulo)}</a></li>`;
-  }).join("");
+  const principais = ROTAS_PRINCIPAIS.map((nomeDaRota) => abaDaRota(nomeDaRota, rota)).join("");
+  const biblioteca = ROTAS_DA_BIBLIOTECA.map((nomeDaRota) => abaDaRota(nomeDaRota, rota)).join("");
 
   return `<header class="mp-cabecalho">
-    <p class="mp-kicker">Meu Potala</p>
+    <p class="mp-kicker">Meu Potala${seloDeDados(estado)}</p>
     <h1 class="mp-titulo" id="mp-vista-titulo" data-vista-titulo tabindex="-1">${noInicio ? `Olá, ${e(primeiroNome(estado.usuario, estado.perfil))}.` : e(rota.titulo)}</h1>
     ${noInicio ? `<p class="mp-lede">${e(mensagemDeBoasVindas(dados))}</p>` : ""}
     ${avisoDeDadosDeExemplo(estado)}
     <nav class="mp-nav" aria-label="Seções do Meu Potala">
-      <ul>${abas}</ul>
-      ${renderizarLinkDeAvisos({ rota, dados })}
+      <ul class="mp-nav-principal">${principais}</ul>
+      <div class="mp-nav-extra">
+        <p class="mp-nav-rotulo" id="mp-nav-biblioteca" aria-hidden="true">Biblioteca</p>
+        <ul class="mp-nav-biblioteca" aria-label="Biblioteca: o que você guardou e acompanha">${biblioteca}</ul>
+        ${renderizarLinkDeAvisos({ rota, dados })}
+      </div>
     </nav>
     <p class="mp-sr">Conta de ${e(nome)}</p>
   </header>`;
@@ -194,8 +212,13 @@ export function renderizarVisitante(estado = {}, rota = "") {
   </div>`;
 }
 
+/* Um esboço do que vem, no lugar de uma frase solta: a página não pula quando os dados chegam. */
 export function renderizarCarregando() {
-  return "<p class=\"mp-carregando\" aria-busy=\"true\">Abrindo seu espaço…</p>";
+  return `<div class="mp-carregando" role="status" aria-busy="true">
+    <p class="mp-kicker">Meu Potala</p>
+    <p class="mp-carregando-texto">Abrindo seu espaço…</p>
+    <div class="mp-esboco" aria-hidden="true"><span class="mp-esboco-titulo"></span><span class="mp-esboco-faixa"></span><span class="mp-esboco-cartao"></span><span class="mp-esboco-cartao"></span></div>
+  </div>`;
 }
 
 export function renderizarNaoEncontrada() {

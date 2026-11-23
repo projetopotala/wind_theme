@@ -119,10 +119,10 @@ function agendaDeQuemAtende(consultas) {
     ${acessoDaConsultaProfissional(consulta)}
   </li>`).join("")}</ol>`);
   return `${secao({
-    id: "mp-agenda-profissional", kicker: "Como profissional", titulo: "Sua agenda de atendimentos",
+    id: "mp-agenda-profissional", classe: "mp-secao-profissional", kicker: "Como profissional", titulo: "Sua agenda de atendimentos",
     corpo: lista(proximas, "Nenhuma consulta futura atribuída a você."),
   })}${anteriores.length ? secao({
-    id: "mp-agenda-profissional-anteriores", classe: "mp-secao-discreta", kicker: "Histórico", titulo: "Consultas anteriores",
+    id: "mp-agenda-profissional-anteriores", classe: "mp-secao-discreta mp-secao-profissional", kicker: "Histórico", titulo: "Consultas anteriores",
     corpo: lista(anteriores, ""),
   }) : ""}`;
 }
@@ -231,6 +231,44 @@ function formulario(opcoes, horarios, ofertaEscolhida = null, agora = new Date()
   return `${comHorario}${formularioSemHorario(opcoes, Boolean(comHorario), ofertaEscolhida, agora)}`;
 }
 
+/*
+ * Quem o banco reconhece como profissional (vínculo ativo, consultas atribuídas)
+ * ou professor (turmas ministradas) vê aqui a própria agenda de trabalho. A
+ * interface de cliente — pedir e acompanhar atendimentos — só aparece para essa
+ * pessoa quando ela mesma tem pedidos. A tela de início usa a mesma regra para
+ * não oferecer um pedido que esta tela não mostraria.
+ */
+export function papelProfissional({ agendaProfissional = [], perfisProfissionais = [], aulasDoProfessor = [] } = {}) {
+  return (Array.isArray(agendaProfissional) && agendaProfissional.length > 0)
+    || (Array.isArray(perfisProfissionais) && perfisProfissionais.length > 0)
+    || (Array.isArray(aulasDoProfessor) && aulasDoProfessor.length > 0);
+}
+
+export function mostraInterfaceDeCliente(contexto = {}) {
+  return !papelProfissional(contexto) || (Array.isArray(contexto.atendimentos) && contexto.atendimentos.length > 0);
+}
+
+/* Mesma regra de "confirmada e ainda não terminou" usada na lista: fim + 30 min quando online. */
+export function consultaAindaVale(pedido, agora = new Date()) {
+  const referencia = agora instanceof Date ? agora : new Date(agora);
+  const fim = new Date(pedido?.fim || pedido?.inicio || "");
+  if (!Number.isFinite(fim.valueOf())) return false;
+  const limite = fim.valueOf() + (pedido.modalidade === "online" ? TOLERANCIA_DA_SALA_MS : 0);
+  return limite > referencia.valueOf();
+}
+
+export function separarAtendimentos(atendimentos = [], agora = new Date()) {
+  const lista = Array.isArray(atendimentos) ? atendimentos : [];
+  const futura = (pedido) => consultaAindaVale(pedido, agora);
+  return {
+    pendentes: lista.filter((pedido) => ["recebida", "em_contato"].includes(pedido.status)),
+    confirmados: lista.filter((pedido) => pedido.status === "encerrada" && pedido.reservaId && futura(pedido))
+      .sort((a, b) => String(a.inicio || "").localeCompare(String(b.inicio || ""))),
+    anteriores: lista.filter((pedido) => pedido.status === "encerrada" && (!pedido.reservaId || !futura(pedido))),
+    cancelados: lista.filter((pedido) => pedido.status === "cancelada"),
+  };
+}
+
 const vista = {
   renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], perfisProfissionais = [], aulasDoProfessor = [], atendimentoDisponivel = false, parametros = null, agora = new Date() }) {
     /*
@@ -239,50 +277,56 @@ const vista = {
      * agenda aparece vazia. A parte de cliente só aparece se houver pedidos próprios.
      */
     const consultasProfissionais = Array.isArray(agendaProfissional) ? agendaProfissional : [];
-    const temVinculo = Array.isArray(perfisProfissionais) && perfisProfissionais.length > 0;
     const aulasMinistradas = Array.isArray(aulasDoProfessor) ? aulasDoProfessor : [];
-    if (consultasProfissionais.length || temVinculo || aulasMinistradas.length) {
+    if (papelProfissional({ agendaProfissional, perfisProfissionais, aulasDoProfessor })) {
       const agendaPropria = `${secaoAulasDoProfessor(aulasMinistradas, agora)}${agendaDeQuemAtende(consultasProfissionais)}`;
       if (!atendimentos.length) return agendaPropria;
-      return `${agendaPropria}${vista.renderizar({ atendimentos, opcoesAtendimento, horariosAtendimento, atendimentoDisponivel, parametros, agora })}`;
+      /* Os dois papéis, separados por um marco visível: o trabalho em cima, o que é seu embaixo. */
+      const marco = "<p class=\"mp-papel\"><span>Como cliente</span> Os atendimentos que você pediu para você</p>";
+      return `${agendaPropria}${marco}${vista.renderizar({ atendimentos, opcoesAtendimento, horariosAtendimento, atendimentoDisponivel, parametros, agora })}`;
     }
     const referencia = agora instanceof Date ? agora : new Date(agora);
-    // Continua "confirmada" enquanto a consulta não acabou: até o fim do horário e, se online,
-    // até a sala fechar (fim + 30 min, mesma regra de appointment_room_context). O banco decide o acesso.
-    const futura = (pedido) => {
-      const fim = new Date(pedido.fim || pedido.inicio || "");
-      if (!Number.isFinite(fim.valueOf())) return false;
-      const limite = fim.valueOf() + (pedido.modalidade === "online" ? TOLERANCIA_DA_SALA_MS : 0);
-      return limite > referencia.valueOf();
-    };
-    const pendentes = atendimentos.filter((pedido) => ["recebida", "em_contato"].includes(pedido.status));
-    const confirmados = atendimentos.filter((pedido) => pedido.status === "encerrada" && pedido.reservaId && futura(pedido));
-    const anteriores = atendimentos.filter((pedido) => pedido.status === "encerrada" && (!pedido.reservaId || !futura(pedido)));
-    const cancelados = atendimentos.filter((pedido) => pedido.status === "cancelada");
+    const { pendentes, confirmados, anteriores, cancelados } = separarAtendimentos(atendimentos, referencia);
     const resumo = `<nav class="mp-atendimentos-resumo" aria-label="Resumo dos atendimentos">
       <a href="#mp-atendimentos-pendentes"><strong>${pendentes.length}</strong><span>Aguardando a equipe</span></a>
       <a href="#mp-atendimentos-confirmados"><strong>${confirmados.length}</strong><span>Confirmados</span></a>
       <a href="#mp-atendimentos-historico"><strong>${anteriores.length}</strong><span>Horários anteriores</span></a>
       <a href="#mp-atendimentos-cancelados"><strong>${cancelados.length}</strong><span>Cancelados</span></a>
     </nav>`;
-    const acompanhamento = `${secao({
+    /* O que está vivo (confirmado, aguardando) fica à vista; o que passou, recolhido. */
+    const confirmadas = secao({
+      id: "mp-atendimentos-confirmados", classe: "mp-secao-destaque", kicker: "Próximos atendimentos", titulo: "Consultas confirmadas",
+      corpo: listaDePedidos(confirmados, "Quando uma consulta futura for confirmada, ela aparecerá aqui e na sua Agenda.", "confirmada", referencia),
+    });
+    const aguardando = secao({
       id: "mp-atendimentos-pendentes", kicker: "Em análise pela equipe", titulo: "Aguardando confirmação",
       corpo: listaDePedidos(pendentes, "Nenhuma solicitação aguarda retorno da equipe."),
-    })}${secao({
-      id: "mp-atendimentos-confirmados", kicker: "Próximos atendimentos", titulo: "Consultas confirmadas",
-      corpo: listaDePedidos(confirmados, "Quando uma consulta futura for confirmada, ela aparecerá aqui e na sua Agenda.", "confirmada", referencia),
-    })}${secao({
-      id: "mp-atendimentos-historico", classe: "mp-secao-discreta", kicker: "Histórico", titulo: "Horários confirmados anteriores",
-      corpo: listaDePedidos(anteriores, "Nenhum horário confirmado anterior.", "anterior"),
-    })}${secao({
-      id: "mp-atendimentos-cancelados", classe: "mp-secao-discreta", kicker: "Cancelamentos", titulo: "Solicitações canceladas",
-      corpo: listaDePedidos(cancelados, "Nenhuma solicitação cancelada."),
-    })}`;
+    });
+    const passados = anteriores.length + cancelados.length;
+    const historico = `<details class="mp-recolhido"${passados ? "" : " data-vazio"}>
+      <summary>Histórico e cancelamentos <span class="mp-recolhido-total">${passados}</span></summary>
+      ${secao({
+    id: "mp-atendimentos-historico", classe: "mp-secao-discreta", kicker: "Histórico", titulo: "Horários confirmados anteriores",
+    corpo: listaDePedidos(anteriores, "Nenhum horário confirmado anterior.", "anterior"),
+  })}${secao({
+    id: "mp-atendimentos-cancelados", classe: "mp-secao-discreta", kicker: "Cancelamentos", titulo: "Solicitações canceladas",
+    corpo: listaDePedidos(cancelados, "Nenhuma solicitação cancelada."),
+  })}
+    </details>`;
+    const temAlgoVivo = confirmados.length + pendentes.length > 0;
+    const vivos = confirmados.length ? `${confirmadas}${aguardando}` : `${aguardando}${confirmadas}`;
     if (!atendimentoDisponivel) {
-      return `${resumo}<p class="mp-aviso" role="status">Novas solicitações continuam desativadas enquanto o fluxo completo é preparado.</p>${acompanhamento}`;
+      return `${resumo}<p class="mp-aviso" role="status">Novas solicitações continuam desativadas enquanto o fluxo completo é preparado.</p>${vivos}${historico}`;
     }
     const corpo = formulario(opcoesAtendimento, horariosAtendimento, escolhaDoEndereco(parametros), referencia);
-    return `${resumo}${secao({ id: "mp-atendimentos-novo", classe: "mp-atendimentos-acao", kicker: "Começar aqui", titulo: "Solicitar um atendimento", corpo })}${acompanhamento}`;
+    const novo = secao({ id: "mp-atendimentos-novo", classe: "mp-atendimentos-acao", kicker: temAlgoVivo ? "Outro atendimento" : "Começar aqui", titulo: "Solicitar um atendimento", corpo });
+    /* Quem já tem consulta ou pedido vê isso primeiro; o atalho leva direto ao formulário. */
+    const atalho = temAlgoVivo
+      ? "<p class=\"mp-atalho\"><a class=\"mp-botao\" href=\"#mp-atendimentos-novo\">Solicitar outro atendimento</a></p>"
+      : "";
+    return temAlgoVivo
+      ? `${resumo}${atalho}${vivos}${novo}${historico}`
+      : `${resumo}${novo}${vivos}${historico}`;
   },
 };
 

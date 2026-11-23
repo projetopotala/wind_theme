@@ -168,6 +168,26 @@ export async function montarMeuPotala({ documento = document, janela = window } 
    * vizinho mais próximo quando o elemento sumiu. Sem isso, quem usa teclado
    * voltaria ao começo do documento a cada clique.
    */
+  /*
+   * Leva até o trecho pedido no endereço (#id) depois de a tela ser desenhada.
+   * Se o trecho está dentro de um <details> fechado (o histórico recolhido), ele
+   * abre antes. O foco vai para o título da tela, como em toda troca, e a
+   * rolagem para o trecho. Âncora desconhecida não faz nada.
+   */
+  function revelarAncora(hash = janela.location?.hash || "", { suave = false } = {}) {
+    const id = String(hash).replace(/^#/, "");
+    if (!id || !/^[A-Za-z][\w-]*$/.test(id)) return false;
+    const alvo = documento.getElementById(id);
+    if (!alvo || !palco.contains(alvo)) return false;
+    const recolhido = alvo.closest?.("details");
+    if (recolhido && !recolhido.open) recolhido.open = true;
+    palco.querySelector("[data-vista-titulo]")?.focus({ preventScroll: true });
+    /* A página rola até o trecho (a faixa de abas nunca rola a página: ver manterAbaAtivaVisivel). */
+    const topo = (alvo.getBoundingClientRect?.().top || 0) + (janela.scrollY || 0) - 16;
+    janela.scrollTo?.({ top: Math.max(0, topo), behavior: suave && !reduzido() ? "smooth" : "instant" });
+    return true;
+  }
+
   function trocar(html, { nome = null, origem }) {
     const focoAntes = documento.activeElement;
     const focoEstavaAqui = focoAntes && focoAntes !== palco && palco.contains(focoAntes);
@@ -188,11 +208,15 @@ export async function montarMeuPotala({ documento = document, janela = window } 
        * do documento, e a rolagem ficava onde o convite estava.
        */
       if (origem === "sessao" && (!documento.activeElement || documento.activeElement === documento.body)) {
+        if (nome && revelarAncora()) return;
         janela.scrollTo?.({ top: 0, behavior: "instant" });
         palco.querySelector("[data-vista-titulo]")?.focus({ preventScroll: true });
         return;
       }
-      if (mudaDeTela) {
+      if (mudaDeTela || (origem === "inicial" && nome)) {
+        /* Com âncora (#mp-atendimentos-novo), a tela abre já naquele trecho; sem ela, no topo. */
+        if (revelarAncora()) return;
+        if (!mudaDeTela) return;
         janela.scrollTo?.({ top: 0, behavior: "instant" });
         palco.querySelector("[data-vista-titulo]")?.focus({ preventScroll: true });
         return;
@@ -557,6 +581,8 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     manterAbaAtivaVisivel(faixa, faixa.scrollLeft, aba);
   }
 
+  const aoMudarAncora = () => revelarAncora(janela.location?.hash || "", { suave: true });
+  janela.addEventListener?.("hashchange", aoMudarAncora);
   documento.addEventListener("keydown", aoTeclar, true);
   documento.addEventListener("pointerdown", aoApontar, true);
   palco.addEventListener("focusin", aoFocarAba);
@@ -573,6 +599,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       desligarSessao();
       roteador.destroy();
       documento.removeEventListener("keydown", aoTeclar, true);
+      janela.removeEventListener?.("hashchange", aoMudarAncora);
       documento.removeEventListener("pointerdown", aoApontar, true);
       palco.removeEventListener("focusin", aoFocarAba);
       palco.removeEventListener("click", aoClicar);
