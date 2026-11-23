@@ -7,6 +7,7 @@ const painel = readFileSync(new URL("../../outputs/js/home/section-panel.js", im
 const recursos = readFileSync(new URL("../../outputs/js/home/section-resources.js", import.meta.url), "utf8");
 const estilo = readFileSync(new URL("../../outputs/css/home-journey.css", import.meta.url), "utf8");
 const assistente = readFileSync(new URL("../../outputs/js/assistente/assistente-ui.js", import.meta.url), "utf8");
+const menu = readFileSync(new URL("../../outputs/js/shared/portal-menu.js", import.meta.url), "utf8");
 
 test("a Travessia oferece orientação contextual somente na região de atendimentos", () => {
   assert.match(cenas, /renderSectionPanel\(\{ id, region, config/);
@@ -27,7 +28,9 @@ test("a primeira tela explica o Potala, oferece uma ação e identifica a ajuda"
   assert.match(cenas, /Bem-vindo ao Potala\./);
   assert.match(cenas, /Um espaço de cuidado, conhecimento, cultura e encontros\./);
   assert.match(cenas, /journey-home-link--primary[^>]*href="#journey-path"[^>]*>Começar a Travessia/);
-  assert.match(cenas, /journey-progress-hint.*12 etapas para explorar/);
+  assert.match(cenas, /journey-progress-hint.*11 capítulos para explorar/);
+  assert.match(menu, /A Travessia: uma jornada em 11 capítulos/);
+  assert.doesNotMatch(menu, /12 etapas/);
   assert.match(assistente, /Assistente Potala/);
   assert.match(assistente, /Precisa de ajuda\?/);
 });

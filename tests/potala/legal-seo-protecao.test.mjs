@@ -22,14 +22,17 @@ test("vercel.json versionado mantém a guarda de ambiente da PR-0 e os rewrites 
   const config = await vercelReal();
   assert.equal(config.buildCommand, "node ../scripts/ambiente-supabase.mjs producao");
   assert.equal(config.outputDirectory, ".");
-  const origem = config.rewrites.slice(0, 10).map(item => `${item.source}=>${item.destination}`);
-  assert.deepEqual(origem, [
+  // Ordem relativa preservada, em qualquer posição: o gerador só acrescenta rotas no fim.
+  const BASE = [
+    "/favicon.ico=>/media/potala-mark-transparent.png",
     "/admin=>/admin.html", "/admin/=>/admin.html",
     "/blog=>/blog-admin.html", "/blog/=>/blog-admin.html",
     "/confirmar-conta=>/confirmar-conta.html", "/confirmar-conta/=>/confirmar-conta.html",
     "/redefinir-senha=>/redefinir-senha.html", "/redefinir-senha/=>/redefinir-senha.html",
     "/meu-potala=>/meu-potala.html", "/meu-potala/:path*=>/meu-potala.html",
-  ]);
+  ];
+  const todas = config.rewrites.map(item => `${item.source}=>${item.destination}`);
+  assert.deepEqual(todas.filter(item => BASE.includes(item)), BASE);
   assert.ok(!("headers" in config));
 });
 

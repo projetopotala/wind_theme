@@ -80,8 +80,11 @@ test("vídeo LiveKit: conecta com url e token, liga câmera e microfone, mostra 
   assert.deepEqual(eventos, ["conectou"]);
   const grade = container.children[0];
   const controles = grade.children.find((c) => c.className === "sala-video-controles");
-  assert.equal(controles.children.length, 3, "microfone, câmera e tela cheia");
+  assert.equal(controles.children.length, 5, "microfone, câmera, tela cheia e controles progressivos de câmera");
   assert.match(controles.children[0]["aria-label"], /Microfone ligado/);
+  assert.match(controles.children[1]["aria-label"], /Câmera ligada/);
+  assert.match(controles.children[2]["aria-label"], /Expandir/);
+  assert.equal(controles.children[3].hidden, true, "sem API de dispositivos, nenhuma lista enganosa é exibida");
   controles.children[0].listeners.click(); await aguardar();
   assert.deepEqual(f.estado.mic, [true, false]);
   assert.match(controles.children[0]["aria-label"], /Microfone desligado/);

@@ -93,10 +93,8 @@ test("robots.txt aponta para o sitemap provisório e não conflita com noindex",
 
 test("vercel.json recebe rewrites das páginas públicas sem remover nada e sem destinos inexistentes", async () => {
   const parsed = JSON.parse(await read("vercel.json"));
-  assert.deepEqual(parsed.rewrites.slice(0, 2), [
-    { source:"/admin", destination:"/admin.html" },
-    { source:"/admin/", destination:"/admin.html" },
-  ]);
+  assert.ok(parsed.rewrites.some(item => item.source === "/admin" && item.destination === "/admin.html"));
+  assert.ok(parsed.rewrites.some(item => item.source === "/admin/" && item.destination === "/admin.html"));
   assert.ok(parsed.rewrites.some(item => item.source === "/meu-potala/:path*" && item.destination === "/meu-potala.html"));
   assert.ok(parsed.rewrites.some(item => item.source === "/politica-de-cookies" && item.destination === "/politica-de-cookies.html"));
   assert.ok(!("redirects" in parsed) && !("trailingSlash" in parsed), "sem mapa legado aprovado, nada de redirects nem trailingSlash");
