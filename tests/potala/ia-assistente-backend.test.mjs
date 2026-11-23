@@ -22,7 +22,7 @@ const DOCS = [
 ];
 const respostaModelo = (obj, tokens = 900) => ({ texto: JSON.stringify(obj), tokens });
 
-function montar({ ambiente = {}, reserva = { error: null }, modelo, conhecimento = DOCS } = {}) {
+function montar({ ambiente = {}, reserva = { error: null }, modelo, conhecimento = DOCS, autorizarDemo } = {}) {
   const registro = { reservas: [], tokens: [], chamadas: [], eventos: [] };
   const handle = createAssistantHandler({
     env: (n) => ({ ...AMBIENTE, ...ambiente })[n],
@@ -30,6 +30,7 @@ function montar({ ambiente = {}, reserva = { error: null }, modelo, conhecimento
     registrarTokens: async (t) => { registro.tokens.push(t); },
     carregarConhecimento: async () => (typeof conhecimento === "function" ? conhecimento() : conhecimento),
     chamarModelo: async (c) => { registro.chamadas.push(c); return modelo ? modelo(c) : respostaModelo({ resposta: "O Instituto oferece cursos de meditação e desenho.", links: [{ titulo: "Cursos", url: "cursos.html" }] }); },
+    autorizarDemo,
     agora: () => new Date("2026-11-12T15:00:00Z"),
     registrar: (evento, dados) => registro.eventos.push(JSON.stringify({ evento, ...dados })),
   });
@@ -51,6 +52,20 @@ test("desligado ou sem configuração: fail-closed, sem reservar uso e sem chama
   const { handle } = montar({ ambiente: { IA_ATIVO: "false" } });
   assert.deepEqual(await (await handle(pedido(null, { metodo: "GET" }))).json(), { ativo: false });
   assert.deepEqual(await (await montar().handle(pedido(null, { metodo: "GET" }))).json(), { ativo: true });
+});
+
+test("demonstração restrita só fica ativa para Owner autorizado e nunca reserva cota para terceiros", async () => {
+  const ambiente = { IA_DEMO_RESTRITA: "true" };
+  const semSessao = montar({ ambiente });
+  assert.deepEqual(await (await semSessao.handle(pedido(null, { metodo: "GET" }))).json(), { ativo: false });
+  assert.equal((await semSessao.handle(pedido(conversa()))).status, 403);
+  assert.equal(semSessao.registro.reservas.length + semSessao.registro.chamadas.length, 0);
+
+  const owner = montar({ ambiente, autorizarDemo: async () => true });
+  assert.deepEqual(await (await owner.handle(pedido(null, { metodo: "GET" }))).json(), { ativo: true });
+  assert.equal((await owner.handle(pedido(conversa()))).status, 200);
+  assert.equal(owner.registro.reservas.length, 1);
+  assert.equal(owner.registro.chamadas.length, 1);
 });
 
 test("CORS restrito às origens permitidas (sem ser a única proteção)", async () => {
@@ -291,10 +306,11 @@ test("conhecimento do servidor: só fontes públicas, chave publicável, sem ras
   assert.ok(grande.texto.length <= 9000);
 });
 
-test("Edge Function: segredos só por Deno.env, config.toml sem JWT obrigatório e nenhuma chave no código", () => {
+test("Edge Function: segredos só por Deno.env, autenticação combinada e nenhuma chave no código", () => {
   const index = readFileSync(new URL("../../supabase/functions/assistente-potala/index.ts", import.meta.url), "utf8");
   const handler = readFileSync(new URL("../../supabase/functions/assistente-potala/handler.ts", import.meta.url), "utf8");
-  assert.match(index, /withSupabase\(\{ auth: "publishable", cors: "disabled" \}/);
+  assert.match(index, /withSupabase\(\{ auth: \["user", "publishable"\], cors: "disabled" \}/);
+  assert.match(index, /context\.supabase\.rpc\("site_is_owner"\)/);
   assert.match(handler, /env\("OPENAI_API_KEY"\)/);
   for (const fonte of [index, handler]) assert.doesNotMatch(fonte, /sk-[A-Za-z0-9]{10,}|sb_secret_/);
   assert.match(readFileSync(new URL("../../supabase/config.toml", import.meta.url), "utf8"), /\[functions\.assistente-potala\][\s\S]*?verify_jwt = false/);

@@ -194,7 +194,7 @@ test("modo: Production só mostra a bolinha com backend ativo; fora dela cai no 
 
 test("transporte real: chave publicável, só {mensagens}, erros traduzidos, links revalidados", async () => {
   const chamadas = [];
-  const t = criarTransporteReal({ url: "https://abc.supabase.co/functions/v1/assistente-potala", chave: "sb_publishable_x" }, async (url, init) => {
+  const t = criarTransporteReal({ url: "https://abc.supabase.co/functions/v1/assistente-potala", chave: "sb_publishable_x", obterToken: async () => "jwt-do-owner" }, async (url, init) => {
     chamadas.push(init);
     if (init.method === "GET") return Response.json({ ativo: true });
     return Response.json({ resposta: "Veja os cursos.", links: [{ titulo: "Cursos", url: "cursos.html" }, { titulo: "Mau", url: "https://evil.invalid" }] });
@@ -203,6 +203,7 @@ test("transporte real: chave publicável, só {mensagens}, erros traduzidos, lin
   const r = await t.perguntar([{ papel: "usuario", texto: "cursos?" }]);
   assert.deepEqual(r, { resposta: "Veja os cursos.", links: [{ url: "cursos.html", titulo: "Cursos" }] });
   assert.equal(chamadas[1].headers.apikey, "sb_publishable_x");
+  assert.equal(chamadas[1].headers.Authorization, "Bearer jwt-do-owner");
   assert.deepEqual(JSON.parse(chamadas[1].body), { mensagens: [{ papel: "usuario", texto: "cursos?" }] });
   const limite = criarTransporteReal({ url: "u", chave: "k" }, async () => new Response(JSON.stringify({ mensagem: "Você fez muitas perguntas em pouco tempo." }), { status: 429 }));
   await assert.rejects(limite.perguntar([{ papel: "usuario", texto: "x" }]), (e) => e instanceof ErroDoAssistente && e.status === 429 && /muitas perguntas/.test(e.message));
