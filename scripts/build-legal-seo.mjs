@@ -23,7 +23,11 @@ export const ORIGEM_CANONICA_PROVISORIA = "https://wind-theme.vercel.app";
 /** Slugs jurídicos com texto aprovado pelo Instituto. Vazio até a aprovação formal. */
 export const LEGAIS_APROVADOS = new Set();
 
-const PAGINAS_PRIVADAS = new Set(["admin.html", "blog-admin.html", "confirmar-conta.html", "meu-potala.html"]);
+const PAGINAS_PRIVADAS = new Set([
+  "admin.html", "blog-admin.html", "confirmar-conta.html", "meu-potala.html", "redefinir-senha.html", "sala-atendimento.html",
+]);
+// Protótipos fora da navegação pública: o gerador não os toca (sem canonical, rewrite ou sitemap).
+const PROTOTIPOS = new Set(["ux02-travessia.html"]);
 // Na produção, /blog e /blog/ são rewrites para blog-admin.html (editor, privado). O blog público
 // é servido como /blog.html; por isso o canonical dele é fixo e nunca pode ser /blog.
 const CANONICO_FIXO = new Map([["blog.html", "/blog.html"]]);
@@ -109,8 +113,11 @@ ${robots}<link rel="canonical" href="${origem}/${slug}"><link rel="stylesheet" h
 export function definirCanonical(html, origem, caminhoPadrao, forcar = false) {
   const existente = /<link\s+rel=["']canonical["']\s+href=["']([^"']+)["'][^>]*>/i.exec(html);
   if (existente) {
+    // Canonical relativo já declarado por outra frente (ex.: Travessia UX-02 aponta "/travessia.html")
+    // é respeitado como está: o caminho continua valendo na origem servida e os contratos dela não mudam.
+    if (!forcar && existente[1].startsWith("/")) return html;
     let caminho = caminhoPadrao;
-    if (!forcar) { try { caminho = new URL(existente[1]).pathname; } catch { /* mantém o padrão */ } }
+    if (!forcar) { try { caminho = new URL(existente[1], origem).pathname; } catch { /* mantém o padrão */ } }
     return html.replace(existente[0], `<link rel="canonical" href="${origem}${caminho}">`);
   }
   return html.replace(/<\/head>/i, `  <link rel="canonical" href="${origem}${caminhoPadrao}">\n</head>`);
@@ -144,7 +151,7 @@ export async function gerar({ saida = path.resolve("outputs"), origem = resolver
   }
 
   const legaisSlugs = new Set(PAGINAS_LEGAIS.map(([slug]) => slug));
-  const arquivosHtml = readdirSync(saida).filter(arquivo => arquivo.endsWith(".html") && !PAGINAS_PRIVADAS.has(arquivo));
+  const arquivosHtml = readdirSync(saida).filter(arquivo => arquivo.endsWith(".html") && !PAGINAS_PRIVADAS.has(arquivo) && !PROTOTIPOS.has(arquivo));
   const noSitemap = [];
   for (const arquivo of arquivosHtml) {
     const alvo = path.join(saida, arquivo);
@@ -159,7 +166,7 @@ export async function gerar({ saida = path.resolve("outputs"), origem = resolver
     }
     const slug = arquivo === "index.html" ? "/" : `/${arquivo.replace(/\.html$/, "")}`;
     html = definirCanonical(html, origem, CANONICO_FIXO.get(arquivo) ?? slug, CANONICO_FIXO.has(arquivo));
-    const canonicoAtual = new URL(/<link\s+rel="canonical"\s+href="([^"]+)"/i.exec(html)[1]).pathname.replace(/\/$/, "");
+    const canonicoAtual = new URL(/<link\s+rel="canonical"\s+href="([^"]+)"/i.exec(html)[1], origem).pathname.replace(/\/$/, "");
     if (rotasPrivadas.has(canonicoAtual)) {
       throw new Error(`${arquivo}: canonical ${canonicoAtual} aponta para uma rota administrativa; abortando.`);
     }
@@ -171,7 +178,9 @@ export async function gerar({ saida = path.resolve("outputs"), origem = resolver
 
     const nome = arquivo.replace(/\.html$/, "");
     const legalPendente = legaisSlugs.has(nome) && !legaisAprovados.has(nome);
-    if (!legalPendente && !temNoindex(html)) noSitemap.push(CANONICO_FIXO.get(arquivo) ?? slug);
+    // O sitemap lista o endereço canônico: páginas que apontam o canonical para outra (ex.: capítulos da
+    // Travessia) não viram URL duplicada.
+    if (!legalPendente && !temNoindex(html)) noSitemap.push(canonicoAtual || "/");
   }
 
   const urls = [...new Set(noSitemap)].sort();

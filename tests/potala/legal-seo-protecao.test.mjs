@@ -22,11 +22,12 @@ test("vercel.json versionado mantém a guarda de ambiente da PR-0 e os rewrites 
   const config = await vercelReal();
   assert.equal(config.buildCommand, "node ../scripts/ambiente-supabase.mjs producao");
   assert.equal(config.outputDirectory, ".");
-  const origem = config.rewrites.slice(0, 8).map(item => `${item.source}=>${item.destination}`);
+  const origem = config.rewrites.slice(0, 10).map(item => `${item.source}=>${item.destination}`);
   assert.deepEqual(origem, [
     "/admin=>/admin.html", "/admin/=>/admin.html",
     "/blog=>/blog-admin.html", "/blog/=>/blog-admin.html",
     "/confirmar-conta=>/confirmar-conta.html", "/confirmar-conta/=>/confirmar-conta.html",
+    "/redefinir-senha=>/redefinir-senha.html", "/redefinir-senha/=>/redefinir-senha.html",
     "/meu-potala=>/meu-potala.html", "/meu-potala/:path*=>/meu-potala.html",
   ]);
   assert.ok(!("headers" in config));
@@ -110,11 +111,11 @@ test("blog: /blog é a administração; o blog público tem canonical próprio e
 test("nenhuma página pública usa como canonical uma rota que o vercel.json envia para a administração", async () => {
   const { readdirSync } = await import("node:fs");
   const config = await vercelReal();
-  const privadas = new Set(config.rewrites.filter(item => /^\/(admin|blog-admin|confirmar-conta|meu-potala)\.html$/.test(item.destination)).map(item => item.source.replace(/\/$/, "").replace(/\/:path\*$/, "")));
+  const privadas = new Set(config.rewrites.filter(item => /^\/(admin|blog-admin|confirmar-conta|meu-potala|redefinir-senha|sala-atendimento)\.html$/.test(item.destination)).map(item => item.source.replace(/\/$/, "").replace(/\/:path\*$/, "")));
   const dir = new URL("../../outputs/", import.meta.url);
-  for (const arquivo of readdirSync(dir).filter(nome => nome.endsWith(".html") && !/^(admin|blog-admin|confirmar-conta|meu-potala)\.html$/.test(nome))) {
+  for (const arquivo of readdirSync(dir).filter(nome => nome.endsWith(".html") && !/^(admin|blog-admin|confirmar-conta|meu-potala|redefinir-senha|sala-atendimento)\.html$/.test(nome))) {
     const caminho = /rel="canonical" href="([^"]+)"/.exec(await readFile(new URL(arquivo, dir), "utf8"))?.[1];
-    if (caminho) assert.ok(!privadas.has(new URL(caminho).pathname.replace(/\/$/, "")), `${arquivo}: canonical ${caminho} é rota administrativa`);
+    if (caminho) assert.ok(!privadas.has(new URL(caminho, ORIGEM_CANONICA_PROVISORIA).pathname.replace(/\/$/, "")), `${arquivo}: canonical ${caminho} é rota administrativa`);
   }
 });
 
@@ -129,4 +130,17 @@ test("o gerador corrige o canonical do blog público e recusa canonical apontand
     await writeFile(path.join(dir, "cultura.html"), HEAD('<link rel="canonical" href="https://wind-theme.vercel.app/admin">'));
     await assert.rejects(() => gerar({ saida: dir, origem: ORIGEM_CANONICA_PROVISORIA }), /rota administrativa/);
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test("áreas privadas atuais e o protótipo da Travessia ficam fora do sitemap e sem rewrite gerado", async () => {
+  const sitemap = await readFile(new URL("../../outputs/sitemap.xml", import.meta.url), "utf8");
+  for (const rota of ["/admin", "/blog-admin", "/meu-potala", "/confirmar-conta", "/redefinir-senha", "/sala-atendimento", "/ux02-travessia", "/ux02-chapters"]) {
+    assert.ok(!sitemap.includes(`<loc>https://wind-theme.vercel.app${rota}<`), `${rota} não pode estar no sitemap`);
+  }
+  const config = await vercelReal();
+  for (const rota of ["/sala-atendimento", "/ux02-travessia"]) {
+    assert.ok(!config.rewrites.some(item => item.source === rota), `${rota} não deve ganhar rewrite`);
+  }
+  // Capítulos da Travessia apontam o canonical para /travessia.html e não viram URL duplicada.
+  assert.ok(sitemap.includes("<loc>https://wind-theme.vercel.app/travessia.html</loc>"));
 });
