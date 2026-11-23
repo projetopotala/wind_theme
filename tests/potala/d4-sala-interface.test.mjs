@@ -24,29 +24,43 @@ const achar = (raiz, teste) => {
 const porClasse = (raiz, classe) => achar(raiz, (c) => String(c.className).split(" ").includes(classe));
 const aguardar = () => new Promise((r) => setImmediate(r));
 
-function sdkComSala() {
-  const eventos = {}, estado = { audio: 0, startAudio: 0 };
+function sdkComSala({ cameras = [], cameraAtiva = "", falharTroca = false, trocaRetornaFalso = false } = {}) {
+  const eventos = {}, estado = { audio: 0, startAudio: 0, cameras, cameraAtiva, pedidosDeDispositivo: [], trocasDeCamera: [], removidos: [] };
   const local = { isMicrophoneEnabled: false, isCameraEnabled: false, isSpeaking: false,
     setMicrophoneEnabled: async (v) => { local.isMicrophoneEnabled = v; emitir("TrackMuted"); },
     setCameraEnabled: async (v) => { local.isCameraEnabled = v; emitir("TrackMuted"); } };
   class Room {
     constructor() { this.remoteParticipants = new Map(); this.localParticipant = local; this.canPlaybackAudio = true; }
     on(ev, fn) { (eventos[ev] ??= []).push(fn); return this; }
+    off(ev, fn) { estado.removidos.push({ ev, fn }); eventos[ev] = (eventos[ev] ?? []).filter((ouvinte) => ouvinte !== fn); return this; }
     async connect() {}
     async startAudio() { estado.startAudio++; this.canPlaybackAudio = true; }
+    getActiveDevice() { return estado.cameraAtiva; }
+    async switchActiveDevice(tipo, deviceId) {
+      if (falharTroca) throw Object.assign(new Error("recusado"), { name: "NotReadableError" });
+      estado.trocasDeCamera.push({ tipo, deviceId });
+      if (trocaRetornaFalso) return false;
+      estado.cameraAtiva = deviceId;
+      return true;
+    }
     disconnect() {}
   }
   const nomes = ["TrackSubscribed", "TrackUnsubscribed", "LocalTrackPublished", "LocalTrackUnpublished", "Reconnecting", "Reconnected",
-    "Disconnected", "ParticipantConnected", "ParticipantDisconnected", "TrackMuted", "TrackUnmuted", "ActiveSpeakersChanged", "AudioPlaybackStatusChanged"];
+    "Disconnected", "ParticipantConnected", "ParticipantDisconnected", "TrackMuted", "TrackUnmuted", "ActiveSpeakersChanged", "AudioPlaybackStatusChanged", "MediaDevicesChanged"];
   const RoomEvent = Object.fromEntries(nomes.map((n) => [n, n]));
   function emitir(ev, ...a) { (eventos[ev] ?? []).forEach((fn) => fn(...a)); }
   const salas = [];
-  const sdk = { RoomEvent, Room: class extends Room { constructor(o) { super(o); salas.push(this); } } };
+  class SalaComDispositivos extends Room { constructor(o) { super(o); salas.push(this); } }
+  SalaComDispositivos.getLocalDevices = async (tipo, pedirPermissao) => {
+    estado.pedidosDeDispositivo.push({ tipo, pedirPermissao });
+    return estado.cameras;
+  };
+  const sdk = { RoomEvent, Room: SalaComDispositivos };
   return { sdk, local, emitir, estado, get sala() { return salas[0]; } };
 }
 
-async function montar(papel = "professional", docExtra = {}) {
-  const f = sdkComSala(); const doc = Object.assign(criarDoc(), docExtra);
+async function montar(papel = "professional", opcoesDaSala = {}, docExtra = {}) {
+  const f = sdkComSala(opcoesDaSala); const doc = Object.assign(criarDoc(), docExtra);
   const container = Object.assign(no("div"), { className: "sala-video" });
   const porta = criarPortaDeVideo(adaptadorLiveKit({ documento: doc, sdk: f.sdk }));
   porta.entrar(container, { url: "wss://x.livekit.cloud", token: "t", papel }, {});
@@ -107,6 +121,44 @@ test("câmera: botão, aviso 'Câmera desligada' e estado vêm da sala; sem outr
   assert.equal(espera.textContent, "Aguardando o outro participante");
 });
 
+test("câmera: lista aparelhos autorizados sem pedir permissão, troca sem reconectar e reage à remoção", async () => {
+  const { f, grade } = await montar("client", { cameras: [
+    { deviceId: "frontal", label: "Câmera integrada" },
+    { deviceId: "usb", label: "Webcam USB" },
+  ], cameraAtiva: "frontal" });
+  const seletor = porClasse(grade, "sala-video-camera-seletor");
+  const opcoes = porClasse(grade, "sala-video-camera");
+  assert.equal(opcoes.hidden, false, "duas câmeras oferecem seleção");
+  assert.equal(seletor.children.length, 2);
+  assert.equal(seletor.value, "frontal");
+  assert.deepEqual(f.estado.pedidosDeDispositivo[0], { tipo: "videoinput", pedirPermissao: false }, "enumerar não pede permissão");
+  await seletor.listeners.change({ target: { value: "usb" } });
+  assert.deepEqual(f.estado.trocasDeCamera, [{ tipo: "videoinput", deviceId: "usb" }]);
+  assert.equal(f.estado.cameraAtiva, "usb");
+  f.estado.cameras = [{ deviceId: "frontal", label: "Câmera integrada" }];
+  f.emitir("MediaDevicesChanged"); await aguardar();
+  assert.equal(opcoes.hidden, true, "uma única câmera não mostra uma lista confusa");
+  assert.match(porClasse(grade, "sala-video-aviso").textContent, /não está mais disponível/);
+
+  const recusada = await montar("professional", { cameras: [
+    { deviceId: "frontal", label: "Câmera integrada" },
+    { deviceId: "usb", label: "Webcam USB" },
+  ], cameraAtiva: "frontal", falharTroca: true });
+  const seletorRecusado = porClasse(recusada.grade, "sala-video-camera-seletor");
+  await seletorRecusado.listeners.change({ target: { value: "usb" } });
+  assert.equal(seletorRecusado.value, "frontal", "uma falha mantém a câmera anterior selecionada");
+  assert.match(porClasse(recusada.grade, "sala-video-aviso").textContent, /outro programa ou navegador/);
+
+  const naoTrocou = await montar("client", { cameras: [
+    { deviceId: "frontal", label: "Câmera integrada" },
+    { deviceId: "usb", label: "Webcam USB" },
+  ], cameraAtiva: "frontal", trocaRetornaFalso: true });
+  const seletorSemTroca = porClasse(naoTrocou.grade, "sala-video-camera-seletor");
+  await seletorSemTroca.listeners.change({ target: { value: "usb" } });
+  assert.equal(seletorSemTroca.value, "frontal", "um retorno false mantém a câmera anterior selecionada");
+  assert.match(porClasse(naoTrocou.grade, "sala-video-aviso").textContent, /câmera anterior continua selecionada/);
+});
+
 test("áudio bloqueado pelo navegador: aparece 'Ativar áudio', que libera a reprodução", async () => {
   const { f, grade } = await montar();
   const botao = porClasse(grade, "sala-video-audio");
@@ -130,7 +182,7 @@ test("áudio remoto: elemento que o navegador recusa tocar também mostra 'Ativa
 });
 
 test("tela cheia: sem API nativa expande na página, alterna o texto e Esc volta; sair() limpa", async () => {
-  const { doc, container, porta, grade } = await montar();
+  const { f, doc, container, porta, grade } = await montar();
   const botao = porClasse(grade, "sala-video-controles").children[2];
   assert.match(botao["aria-label"], /Expandir/);
   await botao.listeners.click();
@@ -146,6 +198,7 @@ test("tela cheia: sem API nativa expande na página, alterna o texto e Esc volta
   porta.sair();
   assert.equal(container.className, "sala-video");
   assert.equal(doc.ouvintes.keydown, undefined, "ouvintes do documento removidos ao sair");
+  assert.ok(f.estado.removidos.length > 0, "ouvintes da sala removidos ao sair");
 });
 
 test("tela cheia: com API nativa usa o contêiner do vídeo e acompanha a saída pelo Esc do navegador", async () => {

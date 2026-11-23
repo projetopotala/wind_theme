@@ -3,6 +3,10 @@
   "outputDirectory": ".",
   "rewrites": [
     {
+      "source": "/favicon.ico",
+      "destination": "/media/potala-mark-transparent.png"
+    },
+    {
       "source": "/admin",
       "destination": "/admin.html"
     },
