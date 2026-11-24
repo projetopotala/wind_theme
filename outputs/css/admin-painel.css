@@ -1,0 +1,114 @@
+/*
+ * CENTRAL OPERACIONAL - redesenho visual (painel inicial, papeis e campos obrigatorios).
+ * So apresentacao: nenhum texto, rota, permissao ou contrato de dados muda por aqui.
+ * Usa os tokens de admin.css (marfim, dourado, superficies escuras).
+ */
+
+/* ---------- Painel inicial: pendencias e indicadores primeiro, atalhos compactos ---------- */
+.admin-home { display: flex; flex-direction: column; }
+.admin-home[hidden] { display: none; }
+.admin-home > [data-op-view="dashboard"] { display: contents; }
+
+.admin-home .op-header { order: 1; margin-bottom: 14px; }
+.admin-home .op-header h2 { font-size: clamp(1.5rem, 2.4vw, 2.1rem); }
+.admin-home .op-dashboard-shortcuts { order: 2; margin-bottom: 12px; }
+.admin-home .op-local-note { order: 3; margin-bottom: 10px; }
+.admin-home .op-stats { order: 4; }
+.admin-home .admin-tarefas { order: 5; margin: 6px 0 22px; padding-bottom: 0; border-bottom: 0; }
+.admin-home .op-welcome { order: 6; }
+.admin-home .op-columns { order: 7; }
+.admin-home [data-appointment-admin] { order: 8; }
+
+/* A fila de solicitacoes e o que mais pede o olhar: destaque dourado. */
+.admin-home .op-dashboard-shortcuts > :first-child {
+  position: relative;
+  border-color: rgba(216, 178, 106, .45);
+  background: var(--admin-gold-soft);
+}
+.admin-home .op-dashboard-shortcuts > :first-child::after {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  color: var(--admin-gold);
+  content: "\2192";
+}
+
+/* Indicadores: cinco numeros legiveis; "Pendencias" sobe de tom quando ha algo a fazer. */
+.admin-home .op-stats { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.admin-home .op-stats article.is-atencao { border-color: rgba(216, 178, 106, .5); background: var(--admin-gold-soft); }
+.admin-home .op-stats article.is-atencao strong { color: var(--admin-gold); }
+.op-alerts .op-alerts__ok { border-left-color: var(--admin-green); background: rgba(127, 176, 105, .08); color: var(--admin-muted); }
+
+/* Atalhos por tarefa: cartoes baixos (icone, titulo e uma linha); o proximo passo aparece ao apontar. */
+.admin-home .admin-tarefas__cabeca { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 10px; }
+.admin-home .admin-tarefas__cabeca .admin-kicker { margin: 0; }
+.admin-home .admin-tarefas__cabeca h2 { margin: 0; font-size: 1.05rem; }
+.admin-home .admin-tarefas__cabeca p:last-child {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.admin-home .admin-tarefas__lista { gap: 10px; }
+.admin-home .admin-tarefa { grid-template-areas: "icone titulo" "texto texto"; gap: 4px 10px; padding: 12px 14px; }
+.admin-home .admin-tarefa__texto {
+  display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; font-size: .78rem;
+}
+/* O proximo passo nunca depende de hover: sem ponteiro fino ele fica so para leitores de tela (o texto ja diz o que o atalho faz). */
+.admin-home .admin-tarefa__passo {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+@media (hover: hover) and (min-width: 561px) {
+  .admin-home .admin-tarefa__passo {
+    position: static; grid-area: texto; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; white-space: normal;
+    align-self: start; font-size: .78rem; opacity: 0; transition: opacity .15s ease;
+  }
+  .admin-home .admin-tarefa:is(:hover, :focus-visible) .admin-tarefa__texto { opacity: 0; }
+  .admin-home .admin-tarefa:is(:hover, :focus-visible) .admin-tarefa__passo { opacity: 1; }
+}
+.admin-home .admin-tarefa-dupla { gap: 4px; }
+.admin-home .admin-tarefa__extra { min-height: 36px; padding: 6px 14px; }
+.admin-home .admin-tarefa__extra-dica { font-size: .72rem; }
+
+@media (max-width: 560px) {
+  .admin-home .admin-tarefas__lista { grid-template-columns: minmax(0, 1fr); }
+  .admin-home .admin-tarefa { padding: 12px 14px; min-height: 44px; }
+  .admin-home .admin-tarefa-dupla { grid-column: 1 / -1; }
+  .admin-home .op-header { gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .admin-home .admin-tarefa__passo { transition: none; } }
+
+/* ---------- Usuarios e acessos: cada papel com a sua cor (nunca so a cor: o rotulo continua escrito) ---------- */
+[data-access-view] .op-badge[data-papel="owner"] { color: var(--admin-gold); background: var(--admin-gold-soft); box-shadow: inset 0 0 0 1px rgba(216, 178, 106, .4); }
+[data-access-view] .op-badge[data-papel="admin"] { color: #f0d9a4; background: rgba(216, 178, 106, .07); box-shadow: inset 0 0 0 1px rgba(216, 178, 106, .25); }
+[data-access-view] .op-badge[data-papel="editor"] { color: #9cc0f0; background: rgba(120, 160, 230, .12); }
+[data-access-view] .op-badge[data-papel="escritor"] { color: #c3b2ec; background: rgba(160, 140, 220, .12); }
+[data-access-view] .op-badge[data-papel="profissional"] { color: #7fd0c4; background: rgba(90, 190, 175, .12); }
+[data-access-view] .op-badge[data-papel="cliente"] { color: var(--admin-ivory); background: rgba(242, 233, 217, .08); }
+[data-access-view] .op-badge[data-papel="sem_vinculo"],
+[data-access-view] .op-badge[data-papel="blog_sem_permissao"],
+[data-access-view] .op-badge[data-papel="profissional_inativo"] { color: var(--admin-muted); background: rgba(242, 233, 217, .05); box-shadow: inset 0 0 0 1px var(--admin-hairline); }
+
+/* ---------- Formularios: campo obrigatorio identificado ao lado do nome, em palavras ---------- */
+.admin label:has(> :is(input, select, textarea)[required]),
+.admin label:has(+ :is(input, select, textarea)[required]) { position: relative; }
+.admin label:has(> :is(input, select, textarea)[required])::after,
+.admin label:has(+ :is(input, select, textarea)[required])::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--admin-gold);
+  content: "obrigat\00F3rio";
+  font-size: .68rem;
+  letter-spacing: .02em;
+  pointer-events: none;
+}
+
+/* Telefone: indicadores em duas colunas e alvos de toque de 44px. */
+@media (max-width: 560px) {
+  .admin-home .op-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .admin-home .op-stats article { padding: 12px; }
+  .admin-home .op-stats strong { font-size: 1.35rem; }
+  .admin-home .op-stats small { font-size: .72rem; }
+  .admin-home .op-stats article:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .admin-home .admin-tarefa__extra, .admin-home .op-alerts .op-button, .admin-home .op-actions .op-button { min-height: 44px; }
+  .admin-home .op-dashboard-shortcuts { grid-template-columns: 1fr; gap: 8px; }
+  .admin-home .op-dashboard-shortcuts :is(a, button) { padding: 12px 14px; }
+}
