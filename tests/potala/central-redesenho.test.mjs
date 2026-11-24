@@ -23,7 +23,7 @@ test("painel inicial: com pendências o indicador sobe de tom e o plural está c
   const duas = painel({ ...vazio(), rooms: [sala("a", "unconfirmed"), sala("b", "unconfirmed")] });
   assert.match(duas, /2 salas aguardam confirmação do cadastro/);
   const manut = painel({ ...vazio(), rooms: [sala("a", "available")], maintenance_orders: [{ id: "m", room_id: "a", description: "Lâmpada", status: "open" }] });
-  assert.match(manut, /<strong>1<\/strong><small>Veja &quot;Precisa de atenção&quot;<\/small>/);
+  assert.match(manut, /<strong>1<\/strong><small>Salas, recursos, manutenção e site<\/small>/);
 });
 
 test("painel inicial: nenhuma ação existente foi removida", () => {

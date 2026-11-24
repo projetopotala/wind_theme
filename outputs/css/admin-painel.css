@@ -51,19 +51,25 @@
 .admin-home .admin-tarefa__texto {
   display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; font-size: .78rem;
 }
-.admin-home .admin-tarefa__passo { grid-area: texto; align-self: start; font-size: .78rem; opacity: 0; transition: opacity .15s ease; }
-.admin-home .admin-tarefa:is(:hover, :focus-visible) .admin-tarefa__texto { opacity: 0; }
-.admin-home .admin-tarefa:is(:hover, :focus-visible) .admin-tarefa__passo { opacity: 1; }
+/* O proximo passo nunca depende de hover: sem ponteiro fino ele fica so para leitores de tela (o texto ja diz o que o atalho faz). */
+.admin-home .admin-tarefa__passo {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+@media (hover: hover) and (min-width: 561px) {
+  .admin-home .admin-tarefa__passo {
+    position: static; grid-area: texto; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; white-space: normal;
+    align-self: start; font-size: .78rem; opacity: 0; transition: opacity .15s ease;
+  }
+  .admin-home .admin-tarefa:is(:hover, :focus-visible) .admin-tarefa__texto { opacity: 0; }
+  .admin-home .admin-tarefa:is(:hover, :focus-visible) .admin-tarefa__passo { opacity: 1; }
+}
 .admin-home .admin-tarefa-dupla { gap: 4px; }
 .admin-home .admin-tarefa__extra { min-height: 36px; padding: 6px 14px; }
 .admin-home .admin-tarefa__extra-dica { font-size: .72rem; }
 
 @media (max-width: 560px) {
-  .admin-home .admin-tarefas__lista { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .admin-home .admin-tarefa__texto, .admin-home .admin-tarefa__passo {
-    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
-  }
-  .admin-home .admin-tarefa { grid-template-areas: "icone titulo"; padding: 12px; }
+  .admin-home .admin-tarefas__lista { grid-template-columns: minmax(0, 1fr); }
+  .admin-home .admin-tarefa { padding: 12px 14px; min-height: 44px; }
   .admin-home .admin-tarefa-dupla { grid-column: 1 / -1; }
   .admin-home .op-header { gap: 10px; }
 }
