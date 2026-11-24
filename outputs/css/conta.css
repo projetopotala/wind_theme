@@ -1236,3 +1236,197 @@
   .mp-interruptor input,
   .mp-interruptor input::before { transition: none; }
 }
+
+/* ==================================================================
+ * MEU POTALA — EXPERIÊNCIA (navegação em dois grupos, "Agora" no
+ * Início, área profissional à parte, estados de espera e de dado de exemplo).
+ * ================================================================== */
+
+:root { --conta-profissional: #45524b; }
+
+/* Dado de exemplo é dito no alto, antes do nome. */
+.mp-selo-demo {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 4px 8px;
+  border: 1px dashed var(--conta-ouro-texto);
+  border-radius: 999px;
+  color: var(--conta-ouro-texto);
+  font: 700 .58rem/1 var(--conta-sans);
+  letter-spacing: .14em;
+  vertical-align: 1px;
+}
+.mp-cabecalho > .mp-aviso[role="note"] { border-left-style: dashed; }
+
+/* Navegação: a faixa principal e, à parte, a biblioteca e as notificações. */
+.mp-nav { gap: 24px; }
+.mp-nav-extra { display: flex; flex: none; align-items: center; gap: 14px; min-width: 0; }
+.mp-nav-rotulo {
+  margin: 0;
+  color: var(--conta-tinta-suave);
+  font: italic 400 .8rem/1 var(--conta-serif);
+}
+.mp-nav .mp-nav-biblioteca { flex: none; gap: 14px; margin: -5px; }
+.mp-nav .mp-nav-biblioteca a { letter-spacing: .02em; text-transform: none; font-size: .8rem; font-weight: 400; }
+.mp-nav .mp-nav-biblioteca a[aria-current="page"] { font-weight: 700; }
+.mp-nav-extra .mp-nav-avisos { padding-left: 14px; border-left: 1px solid var(--conta-linha); }
+
+@media (max-width: 1040px) and (min-width: 621px) {
+  .mp-nav { flex-wrap: wrap; row-gap: 0; }
+  .mp-nav > .mp-nav-principal { flex-basis: 100%; }
+  .mp-nav-extra { flex-basis: 100%; border-top: 1px solid var(--conta-linha); }
+}
+
+@media (max-width: 620px) {
+  .mp-nav > .mp-nav-principal { gap: 14px; }
+  .mp-nav > .mp-nav-principal a { letter-spacing: .06em; }
+  .mp-nav-extra { flex-wrap: wrap; gap: 0 12px; padding: 0; border-top: 1px solid var(--conta-linha); }
+  .mp-nav-extra .mp-nav-biblioteca a { padding: 13px 0 11px; }
+  .mp-nav-extra .mp-nav-avisos { flex-basis: 100%; padding: 13px 0 11px; border-top: 1px solid var(--conta-linha); border-left: 0; }
+}
+
+@media (max-width: 360px) {
+  .mp-nav > .mp-nav-principal { gap: 10px; }
+  .mp-nav > .mp-nav-principal a { font-size: .6rem; letter-spacing: .02em; }
+  .mp-nav-extra .mp-nav-biblioteca { gap: 10px; }
+}
+
+/* Início: o bloco "Agora". */
+.mp-agora { margin-top: clamp(32px, 5vw, 52px); }
+.mp-agora-grade { display: grid; gap: 14px; }
+@media (min-width: 860px) { .mp-agora-grade { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
+/* No celular, o que fazer vem logo depois do próximo compromisso, antes da lista de espera. */
+@media (max-width: 859px) {
+  .mp-agora { display: flex; flex-direction: column; gap: 14px; }
+  .mp-agora-grade { display: contents; }
+  .mp-agora .mp-proximo { order: 1; }
+  .mp-agora .mp-atalhos { order: 2; margin-top: 0; }
+  .mp-agora .mp-agora-pendencias { order: 3; }
+}
+
+.mp-proximo,
+.mp-agora-pendencias {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 8px;
+  min-width: 0;
+  padding: clamp(20px, 3.4vw, 30px);
+  border: 1px solid var(--conta-linha);
+  border-radius: 20px;
+  background: rgba(255, 250, 240, .72);
+}
+.mp-proximo { border-color: rgba(184, 138, 79, .45); background: var(--conta-papel); box-shadow: 0 18px 40px -32px rgba(63, 42, 30, .55); }
+.mp-proximo-vazio { border-style: dashed; box-shadow: none; background: rgba(255, 250, 240, .5); }
+.mp-proximo-rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--conta-ouro-texto);
+  font: 700 .64rem/1.2 var(--conta-sans);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+.mp-proximo-quando { margin: 4px 0 0; color: var(--conta-marrom); font: 400 clamp(1.5rem, 3.4vw, 2.1rem)/1.05 var(--conta-serif); }
+.mp-proximo-titulo { margin: 0; font: 500 clamp(1.1rem, 2.2vw, 1.35rem)/1.25 var(--conta-serif); overflow-wrap: anywhere; }
+.mp-proximo-vazio .mp-proximo-titulo { font-style: italic; color: var(--conta-tinta-suave); }
+.mp-proximo .mp-cartao-detalhe { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; }
+.mp-proximo .mp-atendimento-sala { margin: 8px 0 0; }
+.mp-proximo > .mp-link { margin-top: 8px; }
+
+.mp-pendencias { display: grid; width: 100%; margin: 0; padding: 0; list-style: none; }
+.mp-pendencias li { display: grid; gap: 4px; padding: 12px 0; border-bottom: 1px solid var(--conta-linha); }
+.mp-pendencias li:last-child { border-bottom: 0; padding-bottom: 0; }
+.mp-pendencia-titulo { display: inline-block; padding: 3px 0; color: var(--conta-tinta); font: 500 1rem/1.35 var(--conta-serif); overflow-wrap: anywhere; }
+/* Alvos de toque de pelo menos 24px nos links curtos. */
+.mp-secao-topo .mp-ver-tudo { padding: 8px 0; }
+.mp-proximo .mp-link, .mp-profissional-resumo .mp-link { padding: 6px 0; }
+.mp-pendencia-titulo:hover { color: var(--conta-marrom); }
+.mp-pendencias .mp-cartao-detalhe { margin: 0; }
+.mp-pendencias-vazio { margin: 4px 0 0; color: var(--conta-tinta-suave); font: italic 400 1rem/1.5 var(--conta-serif); }
+.mp-status[data-status="em_contato"]::before,
+.mp-status[data-status="aviso"]::before { background: var(--conta-ouro-texto); }
+.mp-status[data-status="encerrada"]::before { background: var(--conta-musgo); }
+
+.mp-atalhos { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+@media (max-width: 520px) {
+  .mp-atalhos { display: grid; grid-template-columns: 1fr 1fr; }
+  .mp-atalhos .mp-botao { padding: 0 12px; }
+  .mp-atalhos .mp-botao:first-child:not(.mp-botao-secundario) { grid-column: 1 / -1; }
+}
+
+/* Área profissional: mesma conta, outro papel — e se vê. */
+.mp-secao-profissional {
+  padding-left: clamp(14px, 2.4vw, 24px);
+  border-left: 3px solid var(--conta-musgo);
+}
+.mp-secao-profissional .mp-kicker { color: var(--conta-profissional); }
+.mp-secao-profissional .mp-kicker::before {
+  content: "Área profissional · ";
+}
+#mp-inicio-profissional .mp-kicker::before { content: none; }
+.mp-profissional-resumo { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 760px) { .mp-profissional-resumo { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
+.mp-profissional-resumo li { display: grid; justify-items: start; gap: 6px; padding: 18px 20px; border: 1px solid var(--conta-linha); border-radius: 16px; background: rgba(255, 250, 240, .62); }
+.mp-profissional-resumo h3 { margin: 0; font: 500 1.15rem/1.25 var(--conta-serif); }
+.mp-profissional-resumo .mp-cartao-detalhe { margin: 0; }
+.mp-profissional-resumo .mp-link { margin-top: 6px; }
+
+.mp-papel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  margin: clamp(52px, 8vw, 88px) 0 22px;
+  padding-top: 18px;
+  border-top: 2px solid var(--conta-marrom);
+  color: var(--conta-tinta-suave);
+  font: .9rem/1.4 var(--conta-sans);
+}
+.mp-papel span { color: var(--conta-marrom); font: 700 .66rem/1 var(--conta-sans); letter-spacing: .2em; text-transform: uppercase; }
+
+/* Atendimentos: atalho, resumo compacto, histórico recolhido. */
+.mp-atalho { margin: 18px 0 0; }
+@media (max-width: 680px) {
+  .mp-atendimentos-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .mp-atendimentos-resumo a { padding: 12px 14px; }
+  .mp-atendimentos-resumo strong { font-size: 1.4rem; }
+}
+.mp-recolhido { margin-top: clamp(40px, 6vw, 64px); border-top: 1px solid var(--conta-linha); }
+.mp-recolhido > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 0;
+  color: var(--conta-marrom);
+  font: 700 .66rem/1.2 var(--conta-sans);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.mp-recolhido > summary::-webkit-details-marker { display: none; }
+.mp-recolhido > summary::before { content: "+"; width: 1em; font: 400 1.1rem/1 var(--conta-serif); }
+.mp-recolhido[open] > summary::before { content: "–"; }
+.mp-recolhido > summary:focus-visible { outline: 2px solid var(--conta-foco); outline-offset: 3px; }
+.mp-recolhido-total { padding: 3px 8px; border-radius: 999px; background: rgba(86, 59, 43, .08); letter-spacing: 0; }
+.mp-recolhido > .mp-secao:first-of-type { margin-top: 12px; }
+
+/* Carregando: um esboço do que vem, sem saltos quando os dados chegam. */
+.mp-carregando { padding: clamp(36px, 7vw, 88px) 0 0; font-style: normal; text-align: left; }
+.mp-carregando-texto { margin: 0; color: var(--conta-tinta-suave); font: italic 400 1.1rem/1.4 var(--conta-serif); }
+.mp-esboco { display: grid; gap: 14px; margin-top: 22px; }
+.mp-esboco span { display: block; border-radius: 14px; background: linear-gradient(90deg, rgba(86, 59, 43, .07), rgba(86, 59, 43, .13), rgba(86, 59, 43, .07)); background-size: 200% 100%; }
+.mp-esboco-titulo { width: min(420px, 70%); height: 56px; }
+.mp-esboco-faixa { height: 44px; }
+.mp-esboco-cartao { height: 120px; }
+@media (prefers-reduced-motion: no-preference) {
+  .mp-esboco span { animation: mp-esboco 1.4s ease-in-out infinite; }
+}
+@keyframes mp-esboco { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+@media (forced-colors: active) {
+  .mp-selo-demo, .mp-proximo, .mp-agora-pendencias, .mp-profissional-resumo li { border: 1px solid CanvasText; }
+  .mp-secao-profissional { border-left-color: CanvasText; }
+}

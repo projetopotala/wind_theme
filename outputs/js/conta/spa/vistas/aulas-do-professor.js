@@ -61,6 +61,7 @@ export function aulasDoProfessor(aulas = [], agora = new Date()) {
   }).join("");
   return secao({
     id: "mp-aulas-do-professor",
+    classe: "mp-secao-profissional",
     kicker: "Como professor",
     titulo: "Aulas que você ministra",
     corpo: `<ul class="mp-lista-cartoes">${itens}</ul>`,

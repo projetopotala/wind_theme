@@ -29,6 +29,16 @@ export const ROTAS = Object.freeze([
 /* As abas do cabeçalho. Notificações e Configurações ficam fora: têm lugar próprio. */
 export const ROTAS_DA_NAVEGACAO = Object.freeze(["inicio", "perfil", "cursos", "agenda", "atendimentos", "salvos", "historico", "acompanhando"]);
 
+/*
+ * As mesmas abas, em dois grupos. As principais são o que a pessoa vem fazer —
+ * ver o que tem para agora, pedir ou acompanhar um atendimento, seguir um curso,
+ * olhar a agenda, cuidar do perfil — e cabem numa faixa só, até no celular.
+ * A biblioteca (Salvos, Histórico, Acompanhando) continua inteira, com os mesmos
+ * endereços, mas num grupo menor ao lado: é para voltar a algo, não para agir.
+ */
+export const ROTAS_PRINCIPAIS = Object.freeze(["inicio", "atendimentos", "cursos", "agenda", "perfil"]);
+export const ROTAS_DA_BIBLIOTECA = Object.freeze(["salvos", "historico", "acompanhando"]);
+
 export function caminhoDa(nome) {
   const rota = ROTAS.find((candidata) => candidata.nome === nome);
   if (!rota) throw new TypeError(`Rota desconhecida: ${nome}`);
@@ -82,7 +92,7 @@ export function criarRoteador({ janela = window, documento = document, aoMudar }
   const atual = () => resolverRota(janela.location.pathname);
 
   function navegar(caminho, { substituir = false } = {}) {
-    const agora = `${janela.location.pathname}${janela.location.search}`;
+    const agora = `${janela.location.pathname}${janela.location.search}${janela.location.hash || ""}`;
     if (caminho !== agora) janela.history[substituir ? "replaceState" : "pushState"]({}, "", caminho);
     aoMudar(atual(), { origem: substituir ? "substituicao" : "navegacao" });
   }
@@ -107,7 +117,8 @@ export function criarRoteador({ janela = window, documento = document, aoMudar }
      * Salvos usam. Trocar três vezes de filtro não deve exigir três toques em
      * Voltar para sair da tela.
      */
-    navegar(`${destino.pathname}${destino.search}`, { substituir: ancora.hasAttribute("data-substituir") });
+    /* A âncora vai junto: "Solicitar atendimento" no Início abre a tela já no formulário. */
+    navegar(`${destino.pathname}${destino.search}${destino.hash}`, { substituir: ancora.hasAttribute("data-substituir") });
   };
 
   const aoVoltar = () => aoMudar(atual(), { origem: "historico" });
