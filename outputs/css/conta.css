@@ -1639,3 +1639,17 @@
 
 /* O id do bloco profissional do Início está no título, não na seção: o kicker já diz Área profissional. */
 .mp-secao-profissional:has(#mp-inicio-profissional) .mp-kicker::before { content: none; }
+
+/* Atendimentos sem histórico: convite acolhedor no lugar de quatro zeros. */
+.mp-vazio-acolhedor { padding: 22px; border: 1px solid var(--conta-linha); border-radius: 18px; background: rgba(255, 252, 247, .78); margin-top: 8px; }
+.mp-vazio-acolhedor .mp-vazio-titulo { font-size: 1.3rem; }
+.mp-vazio-acolhedor p { font-style: normal; font-size: 1rem; }
+.mp-vazio-acolhedor .mp-botao { margin-top: 4px; }
+
+/* Cabeçalho do Meu Potala em telas estreitas (320 px): marca, Explorar e avatar cabem sem rolagem lateral. Escopo: só .mp-topo. */
+@media (max-width: 359px) {
+  .mp-topo { gap: 8px; padding-inline: 12px; }
+  .mp-topo .mp-marca { gap: 6px; min-width: 0; }
+  .mp-topo .mp-marca span { font-size: .58rem; letter-spacing: .1em; }
+  .mp-topo .potala-menu__trigger--inline { padding-inline: 10px; min-width: 0; letter-spacing: .06em; }
+}

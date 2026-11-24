@@ -163,8 +163,20 @@ test("profissional: trabalho em bloco próprio, sem oferecer pedido que a tela n
 
 test("atendimentos: o que está vivo vem antes; histórico recolhido sem perder seções", () => {
   const vazio = atendimentos.renderizar(base({ opcoesAtendimento: [{ id: "o1", service: "Acupuntura", professional: "Lia", modality: "presencial" }] }));
-  assert.ok(vazio.indexOf('id="mp-atendimentos-novo"') < vazio.indexOf('id="mp-atendimentos-pendentes"'), "sem nada vivo, o formulário vem primeiro");
-  assert.match(vazio, /<details class="mp-recolhido" data-vazio>/);
+  /* Sem nenhum pedido: convite acolhedor com botão e formulário; nada de quatro zeros nem de seções vazias. */
+  assert.match(vazio, /data-sem-atendimentos/);
+  assert.match(vazio, /Você ainda não pediu nenhum atendimento/);
+  assert.match(vazio, /href="#mp-atendimentos-novo">Solicitar atendimento/);
+  assert.ok(vazio.indexOf("data-sem-atendimentos") < vazio.indexOf('id="mp-atendimentos-novo"'), "convite antes do formulário");
+  assert.doesNotMatch(vazio, /mp-atendimentos-resumo|id="mp-atendimentos-pendentes"|id="mp-atendimentos-confirmados"/);
+  const desativado = atendimentos.renderizar(base({ atendimentoDisponivel: false }));
+  assert.match(desativado, /data-sem-atendimentos/);
+  assert.doesNotMatch(desativado, /Solicitar atendimento<\/a>|mp-atendimentos-resumo/);
+  assert.match(desativado, /continuam desativadas/);
+  /* Com histórico (mesmo só cancelado), os indicadores voltam. */
+  const soCancelado = atendimentos.renderizar(base({ atendimentos: [{ ...pendente, id: "x", status: "cancelada" }] }));
+  assert.match(soCancelado, /mp-atendimentos-resumo/);
+  assert.doesNotMatch(soCancelado, /data-sem-atendimentos/);
 
   const cheio = atendimentos.renderizar(base({ atendimentos: [pendente, confirmada], opcoesAtendimento: [{ id: "o1", service: "A", professional: "L", modality: "presencial" }] }));
   const ordem = ['class="mp-atalho"', 'id="mp-atendimentos-confirmados"', 'id="mp-atendimentos-pendentes"', 'id="mp-atendimentos-novo"', 'class="mp-recolhido"'].map((marca) => cheio.indexOf(marca));

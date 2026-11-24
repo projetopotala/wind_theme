@@ -303,9 +303,20 @@ const vista = {
   })}
     </details>`;
     const temAlgoVivo = confirmados.length + pendentes.length > 0;
+    /* Quem nunca pediu nada não precisa de quatro zeros: recebe um convite e o caminho para pedir. */
+    const semHistorico = !temAlgoVivo && !passados;
+    const boasVindas = (comBotao) => `<div class="mp-vazio mp-vazio-acolhedor" data-sem-atendimentos>
+      <span class="mp-vazio-icone" aria-hidden="true"></span>
+      <div class="mp-vazio-texto">
+        <h2 class="mp-vazio-titulo">Você ainda não pediu nenhum atendimento</h2>
+        <p>${comBotao ? "Quando quiser, é só pedir: a equipe responde por aqui e a consulta confirmada aparece também na sua Agenda." : "Quando os pedidos forem liberados, a equipe responderá por aqui e a consulta confirmada aparecerá também na sua Agenda."}</p>
+        ${comBotao ? "<a class=\"mp-botao\" href=\"#mp-atendimentos-novo\">Solicitar atendimento</a>" : ""}
+      </div>
+    </div>`;
     const vivos = confirmados.length ? `${confirmadas}${aguardando}` : `${aguardando}${confirmadas}`;
     if (!atendimentoDisponivel) {
-      return `${resumo}<p class="mp-aviso" role="status">Novas solicitações continuam desativadas enquanto o fluxo completo é preparado.</p>${vivos}${historico}`;
+      const aviso = "<p class=\"mp-aviso\" role=\"status\">Novas solicitações continuam desativadas enquanto o fluxo completo é preparado.</p>";
+      return semHistorico ? `${boasVindas(false)}${aviso}` : `${resumo}${aviso}${vivos}${historico}`;
     }
     const corpo = formulario(opcoesAtendimento, horariosAtendimento, escolhaDoEndereco(parametros), referencia);
     const novo = secao({ id: "mp-atendimentos-novo", classe: "mp-atendimentos-acao", kicker: temAlgoVivo ? "Outro atendimento" : "Começar aqui", titulo: "Solicitar um atendimento", corpo });
@@ -313,6 +324,7 @@ const vista = {
     const atalho = temAlgoVivo
       ? "<p class=\"mp-atalho\"><a class=\"mp-botao\" href=\"#mp-atendimentos-novo\">Solicitar outro atendimento</a></p>"
       : "";
+    if (semHistorico) return `${boasVindas(true)}${novo}`;
     return temAlgoVivo
       ? `${resumo}${atalho}${vivos}${novo}${historico}`
       : `${resumo}${novo}${vivos}${historico}`;
