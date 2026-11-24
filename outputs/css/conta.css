@@ -1626,3 +1626,16 @@
   .mp-pagina .mp-nav a[aria-current="page"] { outline: 2px solid Highlight; }
   .mp-nav [data-icone]::before, .mp-nav .mp-nav-avisos::before { background: CanvasText; }
 }
+
+/* Acabamento da casca nova: atalhos que quebram linha e resumo que respira. */
+.mp-pagina:has(> .mp-nav) .mp-atalhos { display: flex; flex-wrap: wrap; gap: 10px; }
+.mp-pagina:has(> .mp-nav) .mp-atalhos .mp-botao { flex: 1 1 auto; min-width: 0; grid-column: auto; white-space: normal; text-align: center; line-height: 1.25; padding-block: 10px; }
+.mp-pagina:has(> .mp-nav) .mp-atalhos .mp-botao:first-child:not(.mp-botao-secundario) { flex-basis: 100%; }
+.mp-pagina:has(> .mp-nav) .mp-atendimentos-resumo { margin-top: 16px; }
+@media (min-width: 640px) {
+  .mp-pagina:has(> .mp-nav) .mp-atalhos .mp-botao { flex: 0 0 auto; }
+  .mp-pagina:has(> .mp-nav) .mp-atalhos .mp-botao:first-child:not(.mp-botao-secundario) { flex-basis: auto; }
+}
+
+/* O id do bloco profissional do Início está no título, não na seção: o kicker já diz Área profissional. */
+.mp-secao-profissional:has(#mp-inicio-profissional) .mp-kicker::before { content: none; }
