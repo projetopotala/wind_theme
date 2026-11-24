@@ -1,5 +1,5 @@
 import { STATUS_DE_ATENDIMENTO } from "../../modelos.js";
-import { e, secao, vazio } from "./comum.js";
+import { e, papelProfissional, secao, vazio } from "./comum.js";
 import { aulasDoProfessor as secaoAulasDoProfessor } from "./aulas-do-professor.js";
 import { caminhoDaSala } from "../../../sala/estado-sala.js";
 
@@ -231,18 +231,7 @@ function formulario(opcoes, horarios, ofertaEscolhida = null, agora = new Date()
   return `${comHorario}${formularioSemHorario(opcoes, Boolean(comHorario), ofertaEscolhida, agora)}`;
 }
 
-/*
- * Quem o banco reconhece como profissional (vínculo ativo, consultas atribuídas)
- * ou professor (turmas ministradas) vê aqui a própria agenda de trabalho. A
- * interface de cliente — pedir e acompanhar atendimentos — só aparece para essa
- * pessoa quando ela mesma tem pedidos. A tela de início usa a mesma regra para
- * não oferecer um pedido que esta tela não mostraria.
- */
-export function papelProfissional({ agendaProfissional = [], perfisProfissionais = [], aulasDoProfessor = [] } = {}) {
-  return (Array.isArray(agendaProfissional) && agendaProfissional.length > 0)
-    || (Array.isArray(perfisProfissionais) && perfisProfissionais.length > 0)
-    || (Array.isArray(aulasDoProfessor) && aulasDoProfessor.length > 0);
-}
+export { papelProfissional };
 
 export function mostraInterfaceDeCliente(contexto = {}) {
   return !papelProfissional(contexto) || (Array.isArray(contexto.atendimentos) && contexto.atendimentos.length > 0);

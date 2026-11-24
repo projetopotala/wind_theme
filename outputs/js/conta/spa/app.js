@@ -323,7 +323,21 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     },
   });
 
+  /* O botão "Mais" da barra do celular: abre e fecha o resto do menu. */
+  function alternarMenu(botao, aberto = botao.getAttribute("aria-expanded") !== "true") {
+    botao.setAttribute("aria-expanded", String(aberto));
+    botao.closest(".mp-nav")?.toggleAttribute("data-aberto", aberto);
+  }
+  function fecharMenu({ devolverFoco = false } = {}) {
+    const botao = palco.querySelector(".mp-nav-mais[aria-expanded='true']");
+    if (!botao) return false;
+    alternarMenu(botao, false);
+    if (devolverFoco) botao.focus({ preventScroll: true });
+    return true;
+  }
+
   const ACOES = {
+    "menu-mais": (botao) => alternarMenu(botao),
     "remover-salvo": (botao, id) => {
       const item = acharEm("salvos", id);
       return agir(botao, removerDe("salvos", id), item ? `“${item.titulo}” saiu de Salvos.` : "Item removido de Salvos.");
@@ -396,6 +410,8 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       painel.abrir({ estado: abrir.dataset.contaAbrir, origem: abrir });
       return;
     }
+    /* Tocar fora do menu aberto, ou num link dele, fecha o menu. */
+    if (!evento.target.closest?.(".mp-nav-mais, .mp-nav-extra") || evento.target.closest?.(".mp-nav-extra a")) fecharMenu();
     const botao = evento.target.closest?.("[data-acao]");
     if (!botao || !palco.contains(botao)) return;
     ACOES[botao.dataset.acao]?.(botao, botao.dataset.id);
@@ -567,8 +583,9 @@ export async function montarMeuPotala({ documento = document, janela = window } 
    * então quem usou o mouse e depois aperta Tab volta a ter a aba revelada.
    */
   let ultimaEntrada = "teclado";
-  const aoTeclar = () => {
+  const aoTeclar = (evento) => {
     ultimaEntrada = "teclado";
+    if (evento?.key === "Escape" && fecharMenu({ devolverFoco: true })) evento.stopPropagation?.();
   };
   const aoApontar = () => {
     ultimaEntrada = "ponteiro";
