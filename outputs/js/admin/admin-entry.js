@@ -150,6 +150,19 @@ try {
         blogNivel: nivelDoBlog(access),
         accessRole: access.role,
       });
+      /*
+       * Minha área profissional: só o Owner COM vínculo profissional ativo (lido do banco,
+       * pela mesma função do Meu Potala). Sem vínculo, falha ou outro papel: o link não existe.
+       */
+      const linkArea = panel.querySelector("[data-admin-minha-area]");
+      if (linkArea) {
+        linkArea.hidden = true;
+        if (access.role === "owner") {
+          void Promise.resolve(client.rpc("my_appointment_professional_profiles")).then(({ data, error }) => {
+            if (!error && Array.isArray(data) && data.some((p) => p?.profile_id) && usuarioAtual === quem) linkArea.hidden = false;
+          }).catch(() => {});
+        }
+      }
       /* Editar site: só a conta Owner monta o editor; o banco confere de novo em cada chamada. */
       if (access.role === "owner" && !editarSite) {
         editarSite = createEditarSite({

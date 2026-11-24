@@ -414,6 +414,18 @@ button {
 
 .admin-user-menu summary { cursor: pointer; color: var(--admin-muted); font-size: .8rem; padding: 8px 0; }
 
+.admin-user-link {
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid var(--admin-hairline);
+  border-radius: 10px;
+  color: inherit;
+  font-size: .85rem;
+  text-decoration: none;
+}
+.admin-user-link:hover { border-color: var(--admin-gold, #d9b26b); }
+.admin-user-link[hidden] { display: none; }
+
 .admin-nav-veu {
   position: fixed;
   z-index: 25;

@@ -20,6 +20,7 @@ import { mensagemDoErro } from "../mensagens.js";
 import { notificacoesPermitidas } from "../leituras.js";
 import { TIPOS_DE_NOTIFICACAO, criarCompromisso, criarPreferencia } from "../modelos.js";
 import { criarRoteador } from "./roteador.js";
+import { PAPEIS_ADMINISTRATIVOS, destinoDoPapel } from "./destino-admin.js";
 import { manterAbaAtivaVisivel, renderizarCabecalho, renderizarCarregando, renderizarNaoEncontrada, renderizarVisitante } from "./vistas/comum.js";
 import { criarAberturaDeAvisos, marcarAvisoNaLista, refletirAvisoLido } from "./avisos.js";
 import inicio from "./vistas/inicio.js";
@@ -552,11 +553,21 @@ export async function montarMeuPotala({ documento = document, janela = window } 
   const retrato = (estado) => ({ status: estado.status, usuarioId: estado.usuario?.id || null, perfil: estado.perfil });
   let anterior = retrato(sessao.obter());
   let redirecionandoAdmin = false;
+  let ownerVerificado = null;
   const desligarSessao = sessao.assinar((estado) => {
-    if (!redirecionandoAdmin && ["owner", "admin", "blog_editor"].includes(estado.papelPortal)) {
-      redirecionandoAdmin = true;
-      janela.location.assign?.("/admin/");
-      return;
+    if (!redirecionandoAdmin && PAPEIS_ADMINISTRATIVOS.includes(estado.papelPortal)) {
+      /* Owner com vínculo profissional ativo fica; os demais vão para a Central. */
+      const quem = estado.usuario?.id;
+      if (quem && quem !== ownerVerificado) {
+        ownerVerificado = quem;
+        destinoDoPapel({ papelPortal: estado.papelPortal, perfisProfissionais: () => sessao.perfisProfissionais(), habilitado: APPOINTMENT_REQUESTS_ENABLED })
+          .then((destino) => {
+            if (destino !== "admin" || redirecionandoAdmin || sessao.obter().usuario?.id !== quem) return;
+            redirecionandoAdmin = true;
+            janela.location.assign?.("/admin/");
+          });
+      }
+      if (estado.papelPortal !== "owner") return;
     }
     const agora = retrato(estado);
     if (agora.usuarioId !== dono) {
