@@ -7,6 +7,7 @@ import {
 } from "./admin-auth.js";
 import { createAdminController } from "./admin-controller.js";
 import { createAdminShell } from "./admin-shell.js";
+import { ligarRotasDoAdmin } from "./admin-rotas.js";
 import { ligarTarefas } from "./admin-tarefas.js";
 import { createCadastroGuiado } from "./cadastro-profissional.js";
 import { createOrganizarCurso } from "./organizar-curso.js";
@@ -44,6 +45,8 @@ const firstAccess = isAdminFirstAccess(window.location);
 
 const shell = panel ? createAdminShell({ root: panel }) : null;
 const tarefas = panel ? ligarTarefas({ root: panel }) : null;
+/* Cada seção tem endereço (/admin/#/acessos): recarregar e o Voltar do navegador respeitam onde a pessoa estava. */
+const rotas = panel ? ligarRotasDoAdmin({ janela: window, nav: panel.querySelector("[data-admin-nav]"), painel: panel }) : null;
 const operationsStatus = panel?.querySelector("[data-op-status]");
 
 /*
@@ -161,6 +164,8 @@ try {
       } else if (access.role !== "owner") { editarSite?.limpar(); }
       /* Os atalhos seguem o menu: só aparecem os das seções que esta conta pode abrir. */
       tarefas?.atualizar();
+      /* Já com o menu desta conta definido: quem recarregou em "Usuários e acessos" não vê a Visão geral piscar enquanto a operação abre. */
+      rotas?.aplicar();
       if (!passwordSetup) {
         passwordSetup = createAdminPasswordSetup({ client, root: panel, firstAccess });
       }
@@ -186,7 +191,9 @@ try {
       }
       if (operacaoAbrindo) await operacaoAbrindo;
       if (appointmentPanel) { void appointmentPanel.reload(); void atendimentosPanel?.reload(); }
-      panel?.querySelector("h2")?.focus();
+      /* Depois de tudo montado (os cliques de cada seção já têm quem os ouça), abre a seção do endereço. */
+      rotas?.aplicar();
+      (panel?.querySelector("[data-admin-workspace]:not([hidden]) h2") || panel?.querySelector("h2"))?.focus();
     },
   });
 } catch (error) {

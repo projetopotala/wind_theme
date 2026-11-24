@@ -120,14 +120,45 @@ function acoesDoVinculo(conta, v, confirmando) {
   return `<button type="button" class="op-button" data-acao="desativar" data-conta-id="${e(conta.id)}" data-perfil="${e(v.profile_id)}">Desativar vínculo</button>`;
 }
 
-function itemDaLista(conta, confirmando) {
+/*
+ * Filtros rápidos: cada papel que existe entre as contas, com quantas são.
+ * Servem para chegar a "quem escreve" ou "quem ainda não confirmou o e-mail"
+ * sem abrir os dois seletores; os seletores continuam valendo e os dois lados
+ * andam juntos (os chips só leem e escrevem os mesmos filtros).
+ */
+const STATUS_EM_ATENCAO = ["pendente_confirmacao", "nunca_entrou", "bloqueada"];
+
+export function resumoDeContas(contas) {
+  const porPapel = {};
+  const porStatus = {};
+  for (const c of contas) {
+    for (const p of papeisDaConta(c)) porPapel[p] = (porPapel[p] || 0) + 1;
+    if (STATUS_EM_ATENCAO.includes(c.status)) porStatus[c.status] = (porStatus[c.status] || 0) + 1;
+  }
+  return { porPapel, porStatus };
+}
+
+function chipsDeFiltro(contas, filtros) {
+  const { porPapel, porStatus } = resumoDeContas(contas);
+  const chip = (attr, valor, rotulo, qtd, ativo) =>
+    `<button type="button" class="acessos-chip" ${attr}="${e(valor)}" aria-pressed="${ativo}">${e(rotulo)} <span>${qtd}</span></button>`;
+  const todos = !filtros.papel && !filtros.status;
+  const papeis = Object.keys(ROTULO_PAPEL).filter((p) => porPapel[p]).map((p) => chip("data-chip-papel", p, ROTULO_PAPEL[p], porPapel[p], filtros.papel === p));
+  const status = STATUS_EM_ATENCAO.filter((s) => porStatus[s]).map((s) => chip("data-chip-status", s, STATUS[s], porStatus[s], filtros.status === s));
+  return `<div class="acessos-resumo" role="group" aria-label="Filtros rápidos">${chip("data-chip-papel", "", "Todas", contas.length, todos)}${papeis.join("")}${status.join("")}</div>`;
+}
+
+function itemDaLista(conta, confirmando, avisoDaConta = "") {
   const papeis = papeisDaConta(conta);
   const vinculos = (conta.links || []).map((v) => `<li>${e(v.display_name || v.profile_id)} · ${v.link_active ? "vínculo ativo" : "vínculo inativo"}${v.profile_active ? "" : " · perfil desativado"} ${acoesDoVinculo(conta, v, confirmando)}</li>`).join("");
-  return `<li><article class="acessos-conta" data-conta="${e(conta.id)}">
+  /* O resultado aparece NA conta que a pessoa mexeu: no topo da página, numa lista longa, ficava fora da tela. */
+  const aviso = avisoDaConta ? `<p class="acessos-aviso" role="status" data-access-aviso-conta>${e(avisoDaConta)}</p>` : "";
+  return `<li><article class="acessos-conta" data-conta="${e(conta.id)}" tabindex="-1">
     <header class="acessos-conta-topo">
       <div><strong>${e(conta.name || "—")}</strong><small>${e(conta.email)} · último acesso ${e(data(conta.last_sign_in_at))}</small></div>
       <span class="op-badge${conta.status === "ativa" ? "" : conta.status === "bloqueada" ? " is-cancelled" : " is-unconfirmed"}" data-status="${e(conta.status)}">${e(STATUS[conta.status] || conta.status)}</span>
     </header>
+    ${aviso}
     <p class="acessos-papeis">${papeis.map((p) => `<span class="op-badge" data-papel="${e(p)}">${e(ROTULO_PAPEL[p] || p)}</span>`).join("")}</p>
     ${vinculos ? `<ul class="op-lista-curta">${vinculos}</ul>` : ""}
     ${controleDoBlog(conta, confirmando)}
@@ -161,15 +192,16 @@ function formularioDeVinculo(contas, perfis, perfisComErro = false) {
   </form>`;
 }
 
-export function renderizarAcessos({ contas = [], perfis = [], perfisComErro = false, eventos = [], filtros = {}, erro = "", aviso = "", confirmando = "", ocupado = false } = {}) {
+export function renderizarAcessos({ contas = [], perfis = [], perfisComErro = false, eventos = [], filtros = {}, erro = "", aviso = "", avisoConta = "", confirmando = "", ocupado = false } = {}) {
   const lista = filtrarContas(contas, filtros);
   const opcoes = (mapa, atual) => Object.entries(mapa).map(([k, v]) => `<option value="${e(k)}"${k === atual ? " selected" : ""}>${e(v)}</option>`).join("");
   return `<header class="op-header"><div><p class="op-eyebrow">Pessoas e patrimônio</p>
       <h2 id="acessos-titulo" tabindex="-1">Usuários e acessos</h2>
       <p>Contas do portal e seus vínculos. Cada operação é autorizada e registrada pelo banco.</p></div>
     </header>
-    ${aviso ? `<p class="op-muted" role="status" data-access-aviso>${e(aviso)}</p>` : ""}
+    ${aviso && !(avisoConta && lista.some((c) => c.id === avisoConta)) ? `<p class="op-muted" role="status" data-access-aviso>${e(aviso)}</p>` : ""}
     ${erro ? "" : formularioDeVinculo(contas, perfis, perfisComErro)}
+    ${erro || !contas.length ? "" : chipsDeFiltro(contas, filtros)}
     <form class="op-toolbar" data-access-filtros role="search">
       <label>Buscar <input type="search" name="busca" value="${e(filtros.busca || "")}" placeholder="Nome, e-mail ou perfil"></label>
       <label>Papel <select name="papel"><option value="">Todos</option>${opcoes(ROTULO_PAPEL, filtros.papel)}</select></label>
@@ -177,7 +209,7 @@ export function renderizarAcessos({ contas = [], perfis = [], perfisComErro = fa
     </form>
     ${erro ? `<p class="op-loading" role="alert">${e(erro)}</p>` : `<p class="op-muted" role="status">${lista.length} de ${contas.length} conta(s).</p>
     <ul class="acessos-lista"${ocupado ? ' aria-busy="true"' : ""}>
-      ${lista.map((c) => itemDaLista(c, confirmando)).join("") || `<li class="acessos-vazio">Nenhuma conta encontrada com esses filtros.</li>`}
+      ${lista.map((c) => itemDaLista(c, confirmando, c.id === avisoConta ? aviso : "")).join("") || `<li class="acessos-vazio">Nenhuma conta encontrada com esses filtros.</li>`}
     </ul>${historicoDoBlog(eventos)}`}`;
 }
 
@@ -209,11 +241,20 @@ export function createAccessPanel({ root, client }) {
   let eventos = [];
   let erro = "";
   let aviso = "";
+  let avisoConta = "";
   let perfisComErro = false;
   let confirmando = "";
   let ocupado = false;
   const filtros = { busca: "", papel: "", status: "" };
-  const desenhar = () => { if (alvo) alvo.innerHTML = renderizarAcessos({ contas, perfis, perfisComErro, eventos, filtros, erro, aviso, confirmando, ocupado }); };
+  /* Redesenhar troca o HTML inteiro e destrói o botão focado: quem navega por teclado cairia no topo da página. */
+  const noAlvo = (seletor) => alvo?.querySelector?.(seletor) || null;
+  const daConta = (id, resto = "") => noAlvo(`[data-conta="${String(id).replace(/["\\]/g, "")}"]${resto}`);
+  const desenhar = (foco = "") => {
+    if (!alvo) return;
+    alvo.innerHTML = renderizarAcessos({ contas, perfis, perfisComErro, eventos, filtros, erro, aviso, avisoConta, confirmando, ocupado });
+    if (foco) noAlvo(foco)?.focus?.();
+  };
+  const contaDaConfirmacao = () => (String(confirmando).startsWith("blog|") ? String(confirmando).split("|")[1] : String(confirmando).split("|")[0]);
 
   async function carregar() {
     const [lista, profs, hist] = await Promise.all([
@@ -229,21 +270,32 @@ export function createAccessPanel({ root, client }) {
 
   async function operar(nome, args, sucesso, mensagem = mensagemDaOperacao) {
     if (ocupado) return;
-    ocupado = true; aviso = ""; desenhar();
+    const idDaConta = String(args?.p_user_id || "");
+    ocupado = true; aviso = ""; avisoConta = ""; desenhar();
     try {
       const { data: resposta, error } = await client.rpc(nome, args);
       aviso = error ? mensagem(error) : sucesso(resposta || {});
     } catch { aviso = mensagem(null); }
     ocupado = false; confirmando = "";
+    /* O resultado vai para a conta mexida, e a conta é trazida à vista: a lista pode ter dezenas de linhas. */
+    avisoConta = idDaConta;
     await carregar();
+    const linha = idDaConta ? daConta(idDaConta) : null;
+    if (linha) {
+      linha.scrollIntoView?.({ block: "nearest" });
+      linha.focus?.({ preventScroll: true });
+    }
   }
 
   alvo?.addEventListener?.("input", (evento) => {
     const campo = evento.target;
     if (!campo?.name || !(campo.name in filtros) || !campo.closest?.("[data-access-filtros]")) return;
     filtros[campo.name] = campo.value;
-    desenhar();
-    alvo.querySelector?.(`[data-access-filtros] [name="${campo.name}"]`)?.focus?.();
+    const posicao = typeof campo.selectionStart === "number" ? campo.selectionStart : null;
+    desenhar(`[data-access-filtros] [name="${campo.name}"]`);
+    /* Digitar no meio do texto não pode jogar o cursor para o fim a cada letra. */
+    const novo = noAlvo(`[data-access-filtros] [name="${campo.name}"]`);
+    if (posicao !== null && typeof novo?.setSelectionRange === "function") { try { novo.setSelectionRange(posicao, posicao); } catch { /* tipo sem seleção */ } }
   });
   alvo?.addEventListener?.("submit", (evento) => {
     evento.preventDefault();
@@ -256,17 +308,39 @@ export function createAccessPanel({ root, client }) {
       (r) => (r.changed === false ? "Este vínculo já estava ativo." : "Conta vinculada ao perfil profissional."));
   });
   alvo?.addEventListener?.("click", (evento) => {
+    /* Filtros rápidos: mesmos filtros dos seletores; clicar no que já está marcado limpa. */
+    const chip = evento.target?.closest?.("[data-chip-papel], [data-chip-status]");
+    const chipStatus = chip?.getAttribute?.("data-chip-status");
+    const chipPapel = chip?.getAttribute?.("data-chip-papel");
+    if (chipStatus != null || chipPapel != null) {
+      if (chipStatus != null) {
+        filtros.status = filtros.status === chipStatus ? "" : chipStatus;
+        filtros.papel = "";
+      } else {
+        filtros.papel = filtros.papel === chipPapel ? "" : chipPapel;
+        filtros.status = "";
+      }
+      desenhar(chipStatus != null ? `[data-chip-status="${chipStatus}"]` : `[data-chip-papel="${chipPapel}"]`);
+      return;
+    }
     const botao = evento.target?.closest?.("[data-acao]");
     if (!botao) return;
     const acao = botao.getAttribute("data-acao");
     const conta = botao.getAttribute("data-conta-id");
     const perfil = botao.getAttribute("data-perfil");
-    if (acao === "cancelar") { confirmando = ""; desenhar(); return; }
+    if (acao === "cancelar") {
+      const id = contaDaConfirmacao();
+      const eraBlog = String(confirmando).startsWith("blog|");
+      confirmando = "";
+      /* Cancelar devolve o foco ao controle que abriu a confirmação. */
+      desenhar(eraBlog ? `[data-conta="${id}"] [data-blog-nivel]` : `[data-conta="${id}"] [data-acao="desativar"]`);
+      return;
+    }
     if (acao === "blog") {
       const nivel = botao.closest("[data-conta]")?.querySelector("[data-blog-nivel]")?.value;
       const atual = nivelBlog(contas.find((c) => c.id === conta));
-      if (!NIVEIS_BLOG[nivel] || nivel === atual) { aviso = "Escolha um nivel diferente do atual."; desenhar(); return; }
-      confirmando = `blog|${conta}|${nivel}`; desenhar(); return;
+      if (!NIVEIS_BLOG[nivel] || nivel === atual) { aviso = "Escolha um nivel diferente do atual."; avisoConta = conta || ""; desenhar(); return; }
+      confirmando = `blog|${conta}|${nivel}`; avisoConta = ""; desenhar(`[data-conta="${conta}"] [data-acao="blog-confirmar"]`); return;
     }
     if (acao === "blog-confirmar") {
       const nivel = botao.getAttribute("data-nivel");
@@ -275,7 +349,7 @@ export function createAccessPanel({ root, client }) {
         mensagemDoBlog);
       return;
     }
-    if (acao === "desativar") { confirmando = `${conta}|${perfil}`; desenhar(); return; }
+    if (acao === "desativar") { confirmando = `${conta}|${perfil}`; avisoConta = ""; desenhar(`[data-conta="${conta}"] [data-acao="desativar-confirmado"]`); return; }
     if (acao === "desativar-confirmado") {
       void operar("admin_set_professional_link", { p_user_id: conta, p_profile_id: perfil, p_active: false },
         (r) => `Vínculo desativado.${r.rooms_closed ? ` ${r.rooms_closed} sala(s) aberta(s) encerrada(s); a desconexão no LiveKit ocorre em até um minuto.` : ""}`);
@@ -286,6 +360,6 @@ export function createAccessPanel({ root, client }) {
   });
   return {
     reload: carregar,
-    clear() { contas = []; perfis = []; eventos = []; erro = ""; aviso = ""; confirmando = ""; if (alvo) alvo.innerHTML = ""; },
+    clear() { contas = []; perfis = []; eventos = []; erro = ""; aviso = ""; avisoConta = ""; confirmando = ""; if (alvo) alvo.innerHTML = ""; },
   };
 }

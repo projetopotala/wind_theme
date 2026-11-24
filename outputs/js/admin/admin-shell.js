@@ -60,15 +60,27 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
     if (devolverFoco) alternadores.find((botao) => botao.offsetParent !== null)?.focus?.();
   }
 
-  function selecionar(botao) {
-    if (!botao || isInerte(botao)) return;
-    const secao = botao.getAttribute("data-section");
+  /*
+   * UM lugar só decide qual seção está ativa: a marca na navegação, o painel
+   * visível e o nome na barra superior andam juntos. Antes, só o clique
+   * atualizava a marca e o nome; a conta só-Blog (que entra direto no Blog, sem
+   * clicar) ficava com "Visão geral" no topo e a marca num item escondido.
+   */
+  function ativarSecao(secao) {
+    let ativo = null;
     for (const item of nav?.querySelectorAll("[data-section]") || []) {
-      if (item.getAttribute("data-section") === secao) item.setAttribute("aria-current", "page");
-      else item.removeAttribute("aria-current");
+      if (item.getAttribute("data-section") === secao && !item.hidden) {
+        item.setAttribute("aria-current", "page");
+        ativo = item;
+      } else item.removeAttribute?.("aria-current");
     }
     mostrar(secao);
-    if (secaoAtual) secaoAtual.textContent = botao.getAttribute("data-dica") || botao.textContent?.trim() || "";
+    if (secaoAtual && ativo) secaoAtual.textContent = ativo.getAttribute("data-dica") || ativo.textContent?.trim() || "";
+  }
+
+  function selecionar(botao) {
+    if (!botao || isInerte(botao)) return;
+    ativarSecao(botao.getAttribute("data-section"));
     fecharNav();
     esconderDica();
   }
@@ -212,6 +224,8 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
         item.hidden = !permitido;
         item.setAttribute("aria-hidden", permitido ? "false" : "true");
       }
+      /* O que só o Owner usa não aparece para as outras contas: um link que a Mesa recusa é um beco sem saída. */
+      for (const item of root.querySelectorAll?.("[data-admin-so-owner]") || []) item.hidden = accessRole !== "owner";
       if (root.dataset) root.dataset.blogNivel = somenteBlog ? blogNivel : "total";
       if (somenteBlog && (blogNivel === "escritor" || blogNivel === "leitor")) {
         const titulo = root.querySelector?.("[data-blog-titulo]");
@@ -219,7 +233,7 @@ export function createAdminShell({ root, onSignOut, onReset } = {}) {
         if (titulo) titulo.textContent = blogNivel === "leitor" ? "Acompanhar o Blog" : "Escrever e enviar textos para revis\u00e3o";
         if (texto) texto.textContent = blogNivel === "leitor" ? "Voc\u00ea pode acompanhar os textos do Blog, sem editar nem publicar." : "Voc\u00ea escreve e salva rascunhos na mesa do Blog e envia para revis\u00e3o. A publica\u00e7\u00e3o \u00e9 feita por um Editor.";
       }
-      if (somenteBlog) mostrar("blog");
+      if (somenteBlog) ativarSecao("blog");
     },
 
     abrirNav,

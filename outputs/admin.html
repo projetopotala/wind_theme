@@ -441,7 +441,8 @@
           <div class="admin-workspace-toolbar admin-workspace-toolbar--links">
             <a class="admin-workspace-link" href="/blog#/visao">Abrir a mesa do Blog</a>
             <a class="admin-workspace-link" href="/blog#/novo">Escrever um texto novo</a>
-            <a class="admin-workspace-link" href="/blog#/comentarios">Ver comentários</a>
+            <!-- Comentários são da revisão e publicação (Owner): para as outras contas a Mesa recusa a rota e volta à visão geral. -->
+            <a class="admin-workspace-link" href="/blog#/comentarios" data-admin-so-owner hidden>Ver comentários</a>
           </div>
         </article>
       </section>
