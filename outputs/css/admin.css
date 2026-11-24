@@ -414,6 +414,18 @@ button {
 
 .admin-user-menu summary { cursor: pointer; color: var(--admin-muted); font-size: .8rem; padding: 8px 0; }
 
+.admin-user-link {
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid var(--admin-hairline);
+  border-radius: 10px;
+  color: inherit;
+  font-size: .85rem;
+  text-decoration: none;
+}
+.admin-user-link:hover { border-color: var(--admin-gold, #d9b26b); }
+.admin-user-link[hidden] { display: none; }
+
 .admin-nav-veu {
   position: fixed;
   z-index: 25;
@@ -1593,6 +1605,17 @@ button {
 .op-lista-curta li + li { margin-top: 6px; }
 [data-access-view] .op-badge + .op-badge { margin-left: 4px; }
 [data-access-view] .op-muted { text-align: left; margin: 0 0 8px; }
+
+/* Usuários e acessos — filtros rápidos por papel e aviso na própria conta. */
+.acessos-resumo { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 0; }
+.acessos-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 4px 12px; border: 1px solid var(--admin-line); border-radius: 999px; background: transparent; color: var(--admin-muted); font: inherit; font-size: .8rem; cursor: pointer; }
+.acessos-chip span { padding: 0 6px; border-radius: 999px; background: rgba(255, 255, 255, .08); color: inherit; font-size: .72rem; font-variant-numeric: tabular-nums; }
+.acessos-chip:hover, .acessos-chip:focus-visible { border-color: var(--admin-gold); color: inherit; }
+.acessos-chip[aria-pressed="true"] { border-color: var(--admin-gold); background: var(--admin-gold-soft); color: inherit; font-weight: 700; }
+.acessos-resumo + .op-toolbar { margin-top: 10px; }
+.acessos-aviso { margin: 0; padding: 8px 12px; border-left: 3px solid var(--admin-gold); border-radius: 6px; background: var(--admin-gold-soft); font-size: .84rem; }
+.acessos-conta:focus-visible { outline: 2px solid var(--admin-gold); outline-offset: -2px; }
+@media (max-width: 620px) { .acessos-chip { min-height: 44px; } }
 
 
 /* Serviços de atendimento (cadastro simples) */

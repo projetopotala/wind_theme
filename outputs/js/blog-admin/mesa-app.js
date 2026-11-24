@@ -429,6 +429,8 @@ export function criarMesa({ raiz, repositorio: repositorioBruto, permissoes = {}
       const voltar = raiz.querySelector(".mesa-voltar span");
       if (voltar) voltar.textContent = nomePosts;
       for (const item of raiz.querySelectorAll("[data-mesa-owner]")) item.hidden = !podePublicar(ctx.permissoes);
+      /* A Central é de quem administra (Owner/Admin). Escritor e Editor, que só têm o Blog, não veem um link que não é deles. */
+      for (const item of raiz.querySelectorAll("[data-mesa-central]")) item.hidden = ctx.permissoes?.somenteProprios === true;
       await rotear();
     },
     /* Tela de login: devolve true se havia alteracoes pendentes que foram descartadas. */

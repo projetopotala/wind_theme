@@ -129,6 +129,7 @@
                 </form>
                 <p data-admin-password-status role="status" aria-live="polite"></p>
               </details>
+              <a class="admin-user-link" href="/meu-potala/" data-admin-minha-area hidden>Minha área profissional</a>
               <button type="button" data-admin-reset>Restaurar conteúdo original</button>
             </div>
           </div>
@@ -441,7 +442,8 @@
           <div class="admin-workspace-toolbar admin-workspace-toolbar--links">
             <a class="admin-workspace-link" href="/blog#/visao">Abrir a mesa do Blog</a>
             <a class="admin-workspace-link" href="/blog#/novo">Escrever um texto novo</a>
-            <a class="admin-workspace-link" href="/blog#/comentarios">Ver comentários</a>
+            <!-- Comentários são da revisão e publicação (Owner): para as outras contas a Mesa recusa a rota e volta à visão geral. -->
+            <a class="admin-workspace-link" href="/blog#/comentarios" data-admin-so-owner hidden>Ver comentários</a>
           </div>
         </article>
       </section>

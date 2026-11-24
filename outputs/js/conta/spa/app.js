@@ -20,6 +20,7 @@ import { mensagemDoErro } from "../mensagens.js";
 import { notificacoesPermitidas } from "../leituras.js";
 import { TIPOS_DE_NOTIFICACAO, criarCompromisso, criarPreferencia } from "../modelos.js";
 import { criarRoteador } from "./roteador.js";
+import { criarGuardaDeDestino } from "./destino-admin.js";
 import { manterAbaAtivaVisivel, renderizarCabecalho, renderizarCarregando, renderizarNaoEncontrada, renderizarVisitante } from "./vistas/comum.js";
 import { criarAberturaDeAvisos, marcarAvisoNaLista, refletirAvisoLido } from "./avisos.js";
 import inicio from "./vistas/inicio.js";
@@ -551,13 +552,10 @@ export async function montarMeuPotala({ documento = document, janela = window } 
 
   const retrato = (estado) => ({ status: estado.status, usuarioId: estado.usuario?.id || null, perfil: estado.perfil });
   let anterior = retrato(sessao.obter());
-  let redirecionandoAdmin = false;
+  const guardaDeDestino = criarGuardaDeDestino({ sessao, janela, habilitado: APPOINTMENT_REQUESTS_ENABLED });
   const desligarSessao = sessao.assinar((estado) => {
-    if (!redirecionandoAdmin && ["owner", "admin", "blog_editor"].includes(estado.papelPortal)) {
-      redirecionandoAdmin = true;
-      janela.location.assign?.("/admin/");
-      return;
-    }
+    /* Owner com vínculo profissional ativo fica; os demais papéis administrativos vão para a Central. */
+    if (guardaDeDestino(estado)) return;
     const agora = retrato(estado);
     if (agora.usuarioId !== dono) {
       dados = null;
