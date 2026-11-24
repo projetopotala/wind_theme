@@ -10,7 +10,7 @@
 import { escaparHtml } from "../../html.js";
 import { iniciaisDe, nomeDeExibicao, primeiroNome } from "../../modelos.js";
 import { continuarDeOndeParou, naoLidas, notificacoesPermitidas } from "../../leituras.js";
-import { ROTAS, ROTAS_DA_BIBLIOTECA, ROTAS_PRINCIPAIS, caminhoDa } from "../roteador.js";
+import { ROTAS, ROTAS_DA_BIBLIOTECA, ROTAS_DA_CONTA, ROTAS_PRINCIPAIS, caminhoDa } from "../roteador.js";
 
 export const e = escaparHtml;
 
@@ -28,11 +28,15 @@ export function verTudo(nome, texto = "Ver tudo") {
   return `<a class="mp-ver-tudo" href="${caminhoDa(nome)}">${e(texto)} <span aria-hidden="true">→</span></a>`;
 }
 
-export function vazio({ texto, link = null }) {
+/*
+ * Estado vazio: diz o que vai aparecer ali e oferece o próximo passo, sem culpa.
+ * `titulo` é opcional; o link vira botão, para ser o caminho mais visível.
+ */
+export function vazio({ texto, titulo = "", link = null }) {
   const saida = link
-    ? `<a class="mp-link" href="${e(link.href)}">${e(link.texto)} <span aria-hidden="true">↗</span></a>`
+    ? `<a class="mp-botao mp-botao-secundario mp-botao-pequeno" href="${e(link.href)}">${e(link.texto)}</a>`
     : "";
-  return `<div class="mp-vazio"><p>${e(texto)}</p>${saida}</div>`;
+  return `<div class="mp-vazio"><span class="mp-vazio-icone" aria-hidden="true"></span><div class="mp-vazio-texto">${titulo ? `<p class="mp-vazio-titulo">${e(titulo)}</p>` : ""}<p>${e(texto)}</p>${saida}</div></div>`;
 }
 
 export function barraDeProgresso(fracao, rotulo) {
@@ -148,36 +152,87 @@ function seloDeDados(estado) {
   return "";
 }
 
-function abaDaRota(nomeDaRota, rota) {
+/*
+ * Quem o banco reconhece como profissional (vínculo ativo, consultas atribuídas)
+ * ou professor (turmas ministradas). Vive aqui porque o menu, o Início e a tela
+ * de atendimentos precisam da mesma resposta.
+ */
+export function papelProfissional({ agendaProfissional = [], perfisProfissionais = [], aulasDoProfessor = [] } = {}) {
+  return (Array.isArray(agendaProfissional) && agendaProfissional.length > 0)
+    || (Array.isArray(perfisProfissionais) && perfisProfissionais.length > 0)
+    || (Array.isArray(aulasDoProfessor) && aulasDoProfessor.length > 0);
+}
+
+/* `data-icone` vem antes do href: o desenho do ícone é do CSS, o HTML só diz qual. */
+function itemDaRota(nomeDaRota, rota) {
   const definicao = ROTAS.find((candidata) => candidata.nome === nomeDaRota);
   const corrente = nomeDaRota === rota.nome ? " aria-current=\"page\"" : "";
-  return `<li><a href="${caminhoDa(nomeDaRota)}"${corrente}>${e(definicao.rotulo)}</a></li>`;
+  return `<li><a data-icone="${nomeDaRota}" href="${caminhoDa(nomeDaRota)}"${corrente}>${e(definicao.rotulo)}</a></li>`;
+}
+
+/* Atalhos do trabalho, só para quem tem vínculo: levam ao trecho profissional da tela. */
+function itensProfissionais(dados = {}) {
+  const itens = [];
+  const atende = (Array.isArray(dados.perfisProfissionais) && dados.perfisProfissionais.length)
+    || (Array.isArray(dados.agendaProfissional) && dados.agendaProfissional.length);
+  if (atende) itens.push(`<li><a data-icone="trabalho" href="${caminhoDa("atendimentos")}#mp-agenda-profissional">Consultas que atendo</a></li>`);
+  if ((Array.isArray(dados.aulasDoProfessor) ? dados.aulasDoProfessor : []).some((aula) => aula?.id)) {
+    itens.push(`<li><a data-icone="turmas" href="${caminhoDa("cursos")}#mp-aulas-do-professor">Turmas que ministro</a></li>`);
+  }
+  return itens.join("");
+}
+
+function identidadeDoMenu(estado, dados) {
+  const nome = nomeDeExibicao(estado.usuario, estado.perfil);
+  const papel = papelProfissional(dados) ? "Conta pessoal e profissional" : "Conta pessoal";
+  const aviso = estado.demonstracao ? "Demonstração" : estado.dadosEmReserva ? "Dados de exemplo" : papel;
+  return `<div class="mp-nav-identidade">
+    <span class="mp-nav-avatar" aria-hidden="true">${e(iniciaisDe(nome, estado.usuario?.email))}</span>
+    <span class="mp-nav-nome"><strong>${e(nome)}</strong><small>${e(aviso)}</small></span>
+  </div>`;
 }
 
 /*
- * A navegação tem dois grupos. A faixa principal (a primeira <ul> da .mp-nav —
- * é ela que a SPA mantém rolada até a aba aberta) leva ao que a pessoa vem
- * fazer. A biblioteca e as notificações ficam num grupo menor, à parte.
+ * O MENU DO MEU POTALA.
+ *
+ * Uma só <nav>, que o CSS apresenta de dois jeitos: menu lateral fixo no
+ * desktop; no celular, uma barra de quatro abas na parte de baixo, com "Mais"
+ * abrindo o resto. Os links são sempre os mesmos — nenhum deixa de existir.
+ * A primeira <ul> é a das abas principais (a SPA mantém a aba aberta à vista).
  */
+export function renderizarMenu({ estado, rota, dados }) {
+  const principais = ROTAS_PRINCIPAIS.map((nomeDaRota) => itemDaRota(nomeDaRota, rota)).join("");
+  const biblioteca = ROTAS_DA_BIBLIOTECA.map((nomeDaRota) => itemDaRota(nomeDaRota, rota)).join("");
+  const itensConta = ROTAS_DA_CONTA.map((nomeDaRota) => (nomeDaRota === "notificacoes"
+    ? `<li>${renderizarLinkDeAvisos({ rota, dados })}</li>`
+    : itemDaRota(nomeDaRota, rota))).join("");
+  const trabalho = itensProfissionais(dados);
+  const emMais = [...ROTAS_DA_BIBLIOTECA, ...ROTAS_DA_CONTA].includes(rota.nome);
+  const novos = contarAvisosNovos(dados);
+
+  return `<nav class="mp-nav" aria-label="Seções do Meu Potala">
+    ${identidadeDoMenu(estado, dados)}
+    <ul class="mp-nav-principal">${principais}</ul>
+    <button type="button" class="mp-nav-mais" data-acao="menu-mais" data-icone="mais" aria-expanded="false" aria-controls="mp-nav-extra"${emMais ? " data-ativo=\"true\"" : ""}>Mais${novos ? `<span class="mp-contador">${novos}<span class="mp-sr"> ${novos === 1 ? "aviso novo" : "avisos novos"}</span></span>` : ""}</button>
+    <div class="mp-nav-extra" id="mp-nav-extra">
+      ${trabalho ? `<p class="mp-nav-rotulo" aria-hidden="true">Área profissional</p><ul class="mp-nav-profissional" aria-label="Área profissional">${trabalho}</ul>` : ""}
+      <p class="mp-nav-rotulo" aria-hidden="true">Biblioteca</p>
+      <ul class="mp-nav-biblioteca" aria-label="Biblioteca: o que você guardou e acompanha">${biblioteca}</ul>
+      <p class="mp-nav-rotulo" aria-hidden="true">Minha conta</p>
+      <ul class="mp-nav-conta" aria-label="Minha conta">${itensConta}</ul>
+    </div>
+  </nav>`;
+}
+
 export function renderizarCabecalho({ estado, rota, dados }) {
   const nome = nomeDeExibicao(estado.usuario, estado.perfil);
   const noInicio = rota.nome === "inicio";
-  const principais = ROTAS_PRINCIPAIS.map((nomeDaRota) => abaDaRota(nomeDaRota, rota)).join("");
-  const biblioteca = ROTAS_DA_BIBLIOTECA.map((nomeDaRota) => abaDaRota(nomeDaRota, rota)).join("");
 
-  return `<header class="mp-cabecalho">
+  return `${renderizarMenu({ estado, rota, dados })}<header class="mp-cabecalho">
     <p class="mp-kicker">Meu Potala${seloDeDados(estado)}</p>
     <h1 class="mp-titulo" id="mp-vista-titulo" data-vista-titulo tabindex="-1">${noInicio ? `Olá, ${e(primeiroNome(estado.usuario, estado.perfil))}.` : e(rota.titulo)}</h1>
     ${noInicio ? `<p class="mp-lede">${e(mensagemDeBoasVindas(dados))}</p>` : ""}
     ${avisoDeDadosDeExemplo(estado)}
-    <nav class="mp-nav" aria-label="Seções do Meu Potala">
-      <ul class="mp-nav-principal">${principais}</ul>
-      <div class="mp-nav-extra">
-        <p class="mp-nav-rotulo" id="mp-nav-biblioteca" aria-hidden="true">Biblioteca</p>
-        <ul class="mp-nav-biblioteca" aria-label="Biblioteca: o que você guardou e acompanha">${biblioteca}</ul>
-        ${renderizarLinkDeAvisos({ rota, dados })}
-      </div>
-    </nav>
     <p class="mp-sr">Conta de ${e(nome)}</p>
   </header>`;
 }

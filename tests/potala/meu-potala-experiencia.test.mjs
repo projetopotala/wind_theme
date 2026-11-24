@@ -10,8 +10,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const { ROTAS, ROTAS_DA_NAVEGACAO, ROTAS_PRINCIPAIS, ROTAS_DA_BIBLIOTECA, resolverRota } = await import("../../outputs/js/conta/spa/roteador.js");
-const { renderizarCabecalho, renderizarCarregando } = await import("../../outputs/js/conta/spa/vistas/comum.js");
+const { ROTAS, ROTAS_DA_NAVEGACAO, ROTAS_PRINCIPAIS, ROTAS_DA_BIBLIOTECA, ROTAS_DA_CONTA, resolverRota } = await import("../../outputs/js/conta/spa/roteador.js");
+const { renderizarCabecalho, renderizarCarregando, renderizarMenu, vazio } = await import("../../outputs/js/conta/spa/vistas/comum.js");
 const inicio = (await import("../../outputs/js/conta/spa/vistas/inicio.js")).default;
 const { proximoCompromisso, pendencias } = await import("../../outputs/js/conta/spa/vistas/inicio.js");
 const atendimentos = (await import("../../outputs/js/conta/spa/vistas/atendimentos.js")).default;
@@ -30,10 +30,11 @@ const pendente = { id: "a1", servico: "Acupuntura", modalidade: "presencial", st
 const confirmada = { id: "c3d1a4f2-0000-4000-8000-000000000001", servico: "Psicoterapia", modalidade: "online", status: "encerrada", reservaId: "r1", inicio: "2026-11-24T18:00:00Z", fim: "2026-11-24T19:00:00Z" };
 const aula = { id: "g1", tipo: "aula", titulo: "Meditação — aula 8", inicio: "2026-11-25T22:00:00Z", fim: "2026-11-25T23:00:00Z", local: "Online", origem: "instituto" };
 
-test("navegação: cinco abas principais, biblioteca à parte, nenhuma rota perdida", () => {
-  assert.deepEqual([...ROTAS_PRINCIPAIS], ["inicio", "atendimentos", "cursos", "agenda", "perfil"]);
+test("navegação: quatro abas principais, biblioteca e conta no 'Mais', nenhuma rota perdida", () => {
+  assert.deepEqual([...ROTAS_PRINCIPAIS], ["inicio", "atendimentos", "cursos", "agenda"]);
   assert.deepEqual([...ROTAS_DA_BIBLIOTECA], ["salvos", "historico", "acompanhando"]);
-  assert.deepEqual([...ROTAS_PRINCIPAIS, ...ROTAS_DA_BIBLIOTECA].sort(), [...ROTAS_DA_NAVEGACAO].sort());
+  assert.deepEqual([...ROTAS_DA_CONTA], ["perfil", "notificacoes", "configuracoes"]);
+  assert.deepEqual([...ROTAS_PRINCIPAIS, ...ROTAS_DA_BIBLIOTECA, "perfil"].sort(), [...ROTAS_DA_NAVEGACAO].sort());
   for (const nome of ["inicio", "perfil", "cursos", "agenda", "atendimentos", "salvos", "historico", "acompanhando", "notificacoes", "configuracoes"]) {
     const caminho = nome === "inicio" ? "/meu-potala" : `/meu-potala/${nome}`;
     assert.equal(resolverRota(caminho).rota?.nome, nome, caminho);
@@ -41,13 +42,38 @@ test("navegação: cinco abas principais, biblioteca à parte, nenhuma rota perd
   const html = renderizarCabecalho({ estado: ESTADO, rota: rota("salvos"), dados: base() });
   const principal = html.match(/<ul class="mp-nav-principal">([\s\S]*?)<\/ul>/)[1];
   const biblioteca = html.match(/<ul class="mp-nav-biblioteca"[^>]*>([\s\S]*?)<\/ul>/)[1];
-  assert.equal((principal.match(/<li>/g) || []).length, 5);
+  const conta = html.match(/<ul class="mp-nav-conta"[^>]*>([\s\S]*?)<\/ul>/)[1];
+  assert.equal((principal.match(/<li>/g) || []).length, 4);
   assert.match(biblioteca, /href="\/meu-potala\/salvos" aria-current="page">Salvos/);
   assert.match(biblioteca, /href="\/meu-potala\/historico">Histórico/);
   assert.match(biblioteca, /href="\/meu-potala\/acompanhando">Acompanhando/);
-  /* A faixa que a SPA mantém rolada é a primeira <ul> da .mp-nav: a principal. */
+  assert.match(conta, /href="\/meu-potala\/perfil">Perfil/);
+  assert.match(conta, /class="mp-nav-avisos" href="\/meu-potala\/notificacoes"/);
+  assert.match(conta, /href="\/meu-potala\/configuracoes">Configurações/);
   assert.ok(html.indexOf("mp-nav-principal") < html.indexOf("mp-nav-biblioteca"));
   assert.doesNotMatch(principal, /aria-current/);
+});
+
+test("menu: botão Mais controla a lista e fica ativo nas rotas da biblioteca e da conta", () => {
+  const html = renderizarMenu({ estado: ESTADO, rota: rota("perfil"), dados: base() });
+  assert.match(html, /<button type="button" class="mp-nav-mais"[^>]*data-acao="menu-mais"[^>]*aria-expanded="false" aria-controls="mp-nav-extra"[^>]*data-ativo/);
+  assert.match(html, /id="mp-nav-extra"/);
+  assert.doesNotMatch(renderizarMenu({ estado: ESTADO, rota: rota("agenda"), dados: base() }), /data-ativo/);
+  assert.doesNotMatch(html, /Área profissional/);
+});
+
+test("menu: conta com vínculo profissional ganha grupo próprio com links âncora", () => {
+  const html = renderizarMenu({ estado: ESTADO, rota: rota("inicio"), dados: base({ perfisProfissionais: [{ id: "p1", nome: "Dra. Lia" }], aulasDoProfessor: [{ id: "t1" }] }) });
+  assert.match(html, /Área profissional/);
+  assert.match(html, /href="\/meu-potala\/atendimentos#mp-agenda-profissional">Consultas que atendo/);
+  assert.match(html, /href="\/meu-potala\/cursos#mp-aulas-do-professor">Turmas que ministro/);
+});
+
+test("estado vazio: ícone decorativo, título opcional e atalho como botão", () => {
+  const html = vazio({ texto: "Nada aqui.", titulo: "Vazio", link: { href: "/meu-potala/cursos", texto: "Ver cursos" } });
+  assert.match(html, /mp-vazio-icone" aria-hidden="true"/);
+  assert.match(html, /Vazio[\s\S]*Nada aqui\./);
+  assert.match(html, /mp-botao-secundario[^>]*>Ver cursos|Ver cursos<\/a>/);
 });
 
 test("dado de exemplo tem selo no alto; conta real não tem", () => {
@@ -137,8 +163,20 @@ test("profissional: trabalho em bloco próprio, sem oferecer pedido que a tela n
 
 test("atendimentos: o que está vivo vem antes; histórico recolhido sem perder seções", () => {
   const vazio = atendimentos.renderizar(base({ opcoesAtendimento: [{ id: "o1", service: "Acupuntura", professional: "Lia", modality: "presencial" }] }));
-  assert.ok(vazio.indexOf('id="mp-atendimentos-novo"') < vazio.indexOf('id="mp-atendimentos-pendentes"'), "sem nada vivo, o formulário vem primeiro");
-  assert.match(vazio, /<details class="mp-recolhido" data-vazio>/);
+  /* Sem nenhum pedido: convite acolhedor com botão e formulário; nada de quatro zeros nem de seções vazias. */
+  assert.match(vazio, /data-sem-atendimentos/);
+  assert.match(vazio, /Você ainda não pediu nenhum atendimento/);
+  assert.match(vazio, /href="#mp-atendimentos-novo">Solicitar atendimento/);
+  assert.ok(vazio.indexOf("data-sem-atendimentos") < vazio.indexOf('id="mp-atendimentos-novo"'), "convite antes do formulário");
+  assert.doesNotMatch(vazio, /mp-atendimentos-resumo|id="mp-atendimentos-pendentes"|id="mp-atendimentos-confirmados"/);
+  const desativado = atendimentos.renderizar(base({ atendimentoDisponivel: false }));
+  assert.match(desativado, /data-sem-atendimentos/);
+  assert.doesNotMatch(desativado, /Solicitar atendimento<\/a>|mp-atendimentos-resumo/);
+  assert.match(desativado, /continuam desativadas/);
+  /* Com histórico (mesmo só cancelado), os indicadores voltam. */
+  const soCancelado = atendimentos.renderizar(base({ atendimentos: [{ ...pendente, id: "x", status: "cancelada" }] }));
+  assert.match(soCancelado, /mp-atendimentos-resumo/);
+  assert.doesNotMatch(soCancelado, /data-sem-atendimentos/);
 
   const cheio = atendimentos.renderizar(base({ atendimentos: [pendente, confirmada], opcoesAtendimento: [{ id: "o1", service: "A", professional: "L", modality: "presencial" }] }));
   const ordem = ['class="mp-atalho"', 'id="mp-atendimentos-confirmados"', 'id="mp-atendimentos-pendentes"', 'id="mp-atendimentos-novo"', 'class="mp-recolhido"'].map((marca) => cheio.indexOf(marca));

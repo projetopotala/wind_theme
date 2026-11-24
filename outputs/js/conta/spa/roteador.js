@@ -30,14 +30,18 @@ export const ROTAS = Object.freeze([
 export const ROTAS_DA_NAVEGACAO = Object.freeze(["inicio", "perfil", "cursos", "agenda", "atendimentos", "salvos", "historico", "acompanhando"]);
 
 /*
- * As mesmas abas, em dois grupos. As principais são o que a pessoa vem fazer —
- * ver o que tem para agora, pedir ou acompanhar um atendimento, seguir um curso,
- * olhar a agenda, cuidar do perfil — e cabem numa faixa só, até no celular.
- * A biblioteca (Salvos, Histórico, Acompanhando) continua inteira, com os mesmos
- * endereços, mas num grupo menor ao lado: é para voltar a algo, não para agir.
+ * A navegação em três grupos, com os mesmos endereços de sempre.
+ *
+ * Principais: o que a pessoa vem fazer — ver o que tem para agora, pedir ou
+ * acompanhar um atendimento, seguir um curso, olhar a agenda. No desktop são o
+ * topo do menu lateral; no celular, as quatro abas da barra de baixo.
+ * Biblioteca: o que foi guardado e acompanhado — é para voltar a algo, não para agir.
+ * Conta: perfil, notificações e configurações.
+ * No celular, biblioteca e conta ficam atrás do botão "Mais".
  */
-export const ROTAS_PRINCIPAIS = Object.freeze(["inicio", "atendimentos", "cursos", "agenda", "perfil"]);
+export const ROTAS_PRINCIPAIS = Object.freeze(["inicio", "atendimentos", "cursos", "agenda"]);
 export const ROTAS_DA_BIBLIOTECA = Object.freeze(["salvos", "historico", "acompanhando"]);
+export const ROTAS_DA_CONTA = Object.freeze(["perfil", "notificacoes", "configuracoes"]);
 
 export function caminhoDa(nome) {
   const rota = ROTAS.find((candidata) => candidata.nome === nome);

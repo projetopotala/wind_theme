@@ -19,7 +19,8 @@ test("profissional com vínculo e zero consultas vê a própria agenda vazia, se
 test("cliente sem vínculo continua com a interface de cliente", () => {
   const html = atendimentos.renderizar({ perfisProfissionais: [], agendaProfissional: [], atendimentoDisponivel: true });
   assert.doesNotMatch(html, /mp-agenda-profissional/);
-  assert.match(html, /mp-atendimentos-resumo/);
+  assert.match(html, /data-sem-atendimentos/);
+  assert.match(html, /Solicitar um atendimento/);
 });
 test("profissional que também é cliente mantém os dois papéis", () => {
   const pedido = { id: "c3d1a4f2-0000-4000-8000-000000000001", servico: "S", modalidade: "online", status: "recebida" };
