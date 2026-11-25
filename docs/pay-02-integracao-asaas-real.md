@@ -125,8 +125,11 @@ Pré-requisitos: PR #116 e esta PR aprovadas; política de privacidade revisada;
    (contrato a confirmar, ponto R2).
 7. Repetir com: reentrega de evento, expiração sem pagar (exclusão da cobrança e liberação do horário), estorno do teste.
 8. Rodar a conciliação manualmente (POST com token) e conferir contadores e revisões.
-9. **Reversão imediata a qualquer anomalia**: `update pay_runtime_settings set charges_enabled=false`; remover
-   `PAYMENTS_ENABLED`; excluir o webhook no Asaas; resolver revisões abertas. Só então investigar.
+9. **Reversão imediata a qualquer anomalia (parada em dois níveis, ver `docs/pay-02-revisao-pre-producao.md`)**:
+   nível 1 = `update pay_runtime_settings set charges_enabled=false` (nenhuma cobrança nova; webhook, conciliação e
+   liberação de reservas **continuam** acompanhando as existentes). Só remover `PAYMENTS_ENABLED` ou excluir o webhook
+   quando **não houver cobrança aberta** (`pay_open_reviews()` vazia e nenhuma em `criando`/`aguardando_pagamento`/
+   `em_processamento`/`confirmado`); do contrário o Asaas passa a receber 503 e a fila de webhooks pode ser penalizada.
 10. Só depois do relatório da validação e de nova autorização: ativar para clientes e agendar a conciliação.
 
 Pontos do contrato do Asaas a confirmar na etapa 6/7 (foram implementados pela documentação, não por teste real):

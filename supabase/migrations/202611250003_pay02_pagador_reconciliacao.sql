@@ -172,14 +172,14 @@ create trigger appointment_payments_review_on_change after update on public.appo
 -- Dinheiro que chega e o sistema nao consegue encaixar vira revisao, nunca fica so como evento "obsoleto":
 --   * PAYMENT_RECEIVED/CONFIRMED que chega 'obsoleto' sobre cobranca cancelada ou estornada (um CONFIRMED atrasado sobre
 --     uma cobranca ja recebida e fora de ordem NORMAL e nao abre revisao; cancelada + RECEIVED vira 'divergente', que ja abre);
---   * PAYMENT_RECEIVED/CONFIRMED sem nenhuma cobranca correspondente no banco ('sem_correspondencia').
+--   * 'sem_correspondencia' NAO abre revisao aqui: a conta Asaas do Instituto e compartilhada com cobrancas alheias aos
+--     atendimentos (a revisao inundaria a fila do Owner) e o evento nao guarda a referencia externa para separar uma da
+--     outra. Orfas NOSSAS (referencia 'appointment:') sao detectadas pelo reconciliador, que filtra por esse prefixo.
 create function public.pay_review_on_event() returns trigger language plpgsql security definer set search_path = '' as $$
 begin
   if new.event in ('PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED') then
     if new.outcome = 'obsoleto' and new.payment_id is not null and new.from_status in ('cancelado', 'estornado') then
       perform public.pay_log_review(new.payment_id, new.provider_payment_id, 'divergencia_status', jsonb_build_object('evento', new.event, 'de', new.from_status));
-    elsif new.outcome = 'sem_correspondencia' then
-      perform public.pay_log_review(null, new.provider_payment_id, 'orfa_no_provedor', jsonb_build_object('evento', new.event));
     end if;
   end if;
   return new;

@@ -110,6 +110,24 @@ test("chave geral | nasce DESLIGADA: nenhuma cobranca nova (PT503), nem direto p
   assert.equal((await preparar("B", ids)).code, "PT503");
 }));
 
+test("parada de emergencia | com a chave desligada nenhuma cobranca nasce, mas as existentes continuam sendo acompanhadas (webhook, estorno, expiracao)", () => tx(async () => {
+  const ids = await semear();
+  const a = (await preparar("A", ids)).v; await registrar(a);
+  const b = (await preparar("B", ids)).v; await registrar(b);
+  await ligar(false);
+  // novas: bloqueadas
+  assert.equal((await svc(`insert into public.appointment_payments(request_id, client_id, offering_id, idempotency_key, external_reference, amount_cents, due_date, hold_expires_at)
+    values ($1,$2,$3,$4,'appointment:y',100,current_date, now()+interval '1 hour')`, [ids.A.req, U.A, OFERTA, KEY(8)])).code, "PT503");
+  // existentes: o dinheiro que chega e o estorno seguem sendo aplicados
+  assert.equal(await evento(a, "PAYMENT_RECEIVED"), "aplicado");
+  assert.equal((await estado(a.id)).status, "recebido");
+  assert.equal(await evento(a, "PAYMENT_REFUND_IN_PROGRESS"), "aplicado");
+  // e a reserva nao paga vence e pode ser liberada
+  await evento(b, "PAYMENT_DELETED");
+  await expirar(b);
+  assert.equal((await svc("select public.pay_release_expired_hold($1, now()) as v", [b.id])).rows[0].v, "liberada");
+}));
+
 test("chave geral | so o servidor a le; anon e authenticated nao enxergam nem alteram a tabela", () => tx(async () => {
   for (const q of [(s, p) => anon(s, p), (s, p) => cliente("A", s, p)]) {
     assert.equal((await q("select * from public.pay_runtime_settings")).ok, false);
@@ -266,12 +284,12 @@ test("revisao automatica | divergencia de valor e dinheiro para cobranca desconh
   assert.equal(await evento(a, "PAYMENT_RECEIVED", { valor: 9999 }), "divergencia");
   assert.equal((await estado(a.id)).status, "divergente");
   assert.deepEqual((await revisoes("divergencia_financeira")).map((r) => r.payment_id), [a.id]);
-  // dinheiro para uma cobranca que o banco nao conhece
+  // A conta Asaas e compartilhada: dinheiro de cobranca que o banco nao conhece e REGISTRADO como evento, mas NAO abre
+  // revisao (senao cada recebimento alheio aos atendimentos inundaria a fila). Orfas nossas sao achadas pelo reconciliador.
   assert.equal((await svc("select public.pay_apply_webhook_event('evt_x','PAYMENT_RECEIVED','2026-11-25','pay_desconhecida','appointment:nada',15000,null,'RECEIVED','PIX') as v")).rows[0].v.resultado, "sem_correspondencia");
-  assert.deepEqual((await revisoes("orfa_no_provedor")).map((r) => r.provider_payment_id), ["pay_desconhecida"]);
-  // evento informativo sem correspondencia NAO abre revisao
-  await svc("select public.pay_apply_webhook_event('evt_y','PAYMENT_UPDATED','2026-11-25','pay_outra','appointment:nada',15000,null,'PENDING','PIX')");
-  assert.equal((await revisoes("orfa_no_provedor")).length, 1);
+  assert.equal((await db.query("select count(*)::int as n from public.appointment_payment_events where provider_event_id = 'evt_x' and outcome = 'sem_correspondencia'")).rows[0].n, 1);
+  await svc("select public.pay_apply_webhook_event('evt_y','PAYMENT_RECEIVED','2026-11-25','pay_de_outro_uso',null,9900,null,'RECEIVED','PIX')");
+  assert.equal((await revisoes("orfa_no_provedor")).length, 0);
 }));
 
 /* ---------------- Expiracao e liberacao de reservas ---------------- */

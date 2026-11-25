@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { ASAAS_URLS, CONFIRMACAO_PRODUCAO, lerConfigAsaas } from "../../supabase/functions/_shared/pagamentos/config.ts";
 import { validarDocumento, validarNomePagador } from "../../supabase/functions/_shared/pagamentos/documento.ts";
 import { AsaasErro, criarClienteAsaas } from "../../supabase/functions/_shared/pagamentos/asaas-client.ts";
+import { criarWebhookHandler } from "../../supabase/functions/_shared/pagamentos/webhook.ts";
 import { criarCriarPagamentoHandler } from "../../supabase/functions/create-appointment-payment/handler.ts";
 
 /*
@@ -51,6 +52,25 @@ test("config producao | chave de um ambiente nao serve ao outro; segredos obriga
 
 test("config producao | o padrao de um ambiente vazio e DESLIGADO (nenhuma variavel => nada acontece)", () => {
   assert.deepEqual(lerConfigAsaas(() => undefined), { ativo: false, motivo: "desligado" });
+});
+
+/* ---------------- Webhook em conta compartilhada ---------------- */
+test("webhook | recebimento alheio aos atendimentos: 200, sem alarme; referencia 'appointment:' sem cobranca: 200 e log de possivel orfa (so ids)", async () => {
+  const mk = (resultado) => {
+    const logs = [];
+    const h = criarWebhookHandler({ env: base(), log: (l) => logs.push(l), registrar: async () => ({ data: { resultado } }) });
+    const enviar = (ref) => h(new Request("https://edge.example", { method: "POST", headers: { "content-type": "application/json", "asaas-access-token": TOKEN },
+      body: JSON.stringify({ id: "evt_1", event: "PAYMENT_RECEIVED", payment: { id: "pay_9", value: 150, externalReference: ref, status: "RECEIVED", billingType: "PIX" } }) }));
+    return { logs, enviar };
+  };
+  const a = mk("sem_correspondencia");
+  for (const ref of [undefined, "pedido-loja:77", "outro-sistema"]) assert.equal((await a.enviar(ref)).status, 200);
+  assert.equal(a.logs.length, 0, "cobrancas de outros usos da conta nao geram alarme");
+  assert.equal((await a.enviar("appointment:44444444-4444-4444-8444-444444444444")).status, 200);
+  assert.deepEqual(a.logs, [{ evento: "webhook_possivel_orfa", tipo: "PAYMENT_RECEIVED", eventId: "evt_1", pagamentoId: "pay_9" }]);
+  const b = mk("aplicado");
+  await b.enviar("appointment:44444444-4444-4444-8444-444444444444");
+  assert.equal(b.logs.length, 0);
 });
 
 /* ---------------- Cliente Asaas ---------------- */
