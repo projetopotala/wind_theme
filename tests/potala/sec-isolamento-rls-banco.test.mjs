@@ -282,10 +282,10 @@ test("RPC admin | cliente e profissional: listagens administrativas sao negadas"
 test("RPC admin | is_portal_admin(): false para cliente, profissional e anonimo; true so para o Owner", async () => {
   assert.equal((await chamar("OWNER", "public.is_portal_admin()")).rows[0].v, true, "controle positivo");
   for (const quem of ["A", "B", "C"]) assert.equal((await chamar(quem, "public.is_portal_admin()")).rows[0].v, false, quem);
-  /* anon: hoje a funcao executa e devolve false (EXECUTE de anon e um achado de endurecimento, nao um acesso).
-     Se um dia o EXECUTE for revogado, o resultado passa a ser GRANT; os dois estados sao seguros. */
+  /* anon: a SEC-04 revogou o EXECUTE de anon; a chamada deve ser negada por GRANT (nao basta devolver false). */
   const anon = await chamar("anon", "public.is_portal_admin()");
-  assert.ok(anon.ok ? anon.rows[0].v === false : anon.tipo === "GRANT", `anon: ${anon.ok ? JSON.stringify(anon.rows) : anon.message}`);
+  assert.equal(anon.ok, false, "anon nao pode mais executar is_portal_admin()");
+  assert.equal(anon.tipo, "GRANT", "anon: " + anon.message);
 });
 
 /* ------------------------------------------------------------------ */
