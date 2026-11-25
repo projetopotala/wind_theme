@@ -197,10 +197,10 @@ function criar(over = {}) {
   const calls = [];
   const deps = {
     env: env(), calls,
-    fetch: async (url, init) => { calls.push(["fetch", url, init]); return url.endsWith("/customers") ? Response.json({ id: "cus_1" }) : url.endsWith("/pixQrCode") ? Response.json({ encodedImage: "aW1n", payload: "000201", expirationDate: "2026-12-01 10:00:00" }) : Response.json({ id: "pay_1", status: "PENDING", value: 150, externalReference: PREPARADO.external_reference, dueDate: "2026-11-25" }); },
+    fetch: async (url, init) => { calls.push(["fetch", url, init]); return url.includes("/customers?") ? Response.json({ data: [] }) : url.endsWith("/customers") ? Response.json({ id: "cus_1" }) : url.endsWith("/pixQrCode") ? Response.json({ encodedImage: "aW1n", payload: "000201", expirationDate: "2026-12-01 10:00:00" }) : Response.json({ id: "pay_1", status: "PENDING", value: 150, externalReference: PREPARADO.external_reference, dueDate: "2026-11-25" }); },
     usuarioDoJwt: async (jwt) => (jwt === "jwt-valido" ? { id: "user-a" } : null),
     preparar: async (...a) => { calls.push(["preparar", ...a]); return { data: PREPARADO }; },
-    dadosCliente: async () => ({ nome: "Cliente Teste", email: "c@example.com", cpfCnpj: "12345678909", asaasClienteId: null }),
+    dadosCliente: async () => ({ nome: "Cliente Teste", email: "c@example.com", cpfCnpj: "52998224725", asaasClienteId: null }),
     salvarClienteAsaas: async (...a) => { calls.push(["salvarCliente", ...a]); },
     registrar: async (...a) => { calls.push(["registrar", ...a]); return {}; },
     falhar: async (...a) => { calls.push(["falhar", ...a]); },
@@ -263,14 +263,14 @@ test("criar | erros do banco viram respostas seguras (dono errado, horario perdi
 });
 
 test("criar | falha temporaria do Asaas: inconclusiva NAO cancela nem recria; 4xx cancela; sem CPF nao chama o Asaas", async () => {
-  const COM_CLIENTE = async () => ({ nome: "Cliente Teste", email: null, cpfCnpj: "12345678909", asaasClienteId: "cus_1" }); // so o POST da cobranca vai ao Asaas
+  const COM_CLIENTE = async () => ({ nome: "Cliente Teste", email: null, cpfCnpj: "52998224725", asaasClienteId: "cus_1" }); // so o POST da cobranca vai ao Asaas
   const timeout = criar({ dadosCliente: COM_CLIENTE, fetch: async () => { throw new Error("timeout"); } });
   assert.equal((await timeout.enviar({ request_id: REQ, idempotency_key: KEY })).status, 502);
   assert.equal(timeout.calls.some((x) => x[0] === "falhar"), false);
   const rejeitado = criar({ dadosCliente: COM_CLIENTE, fetch: async () => new Response("{}", { status: 400 }) });
   assert.equal((await rejeitado.enviar({ request_id: REQ, idempotency_key: KEY })).status, 502);
   assert.deepEqual(rejeitado.calls.find((x) => x[0] === "falhar").slice(1), [PREPARADO.id, "asaas_http_400"]);
-  const semCpf = criar({ dadosCliente: async () => ({ nome: "X", email: null, cpfCnpj: null, asaasClienteId: null }) });
+  const semCpf = criar({ dadosCliente: async () => ({ nome: "Cliente Teste", email: null, cpfCnpj: null, asaasClienteId: null }) });
   assert.equal((await semCpf.enviar({ request_id: REQ, idempotency_key: KEY })).status, 422);
   assert.equal(semCpf.calls.filter((x) => x[0] === "fetch").length, 0);
   const salvarFalha = criar({ registrar: async () => ({ error: true }) });
@@ -292,7 +292,7 @@ function criarB1(inner, over = {}) {
     fetch: async (url, init) => { calls.push(["fetch", url, init.method]); return inner(url, init); },
     usuarioDoJwt: async () => ({ id: "user-a" }),
     preparar: async (...a) => { calls.push(["preparar", ...a]); return { data: PREPARADO }; },
-    dadosCliente: async () => ({ nome: "Cliente Teste", email: null, cpfCnpj: "12345678909", asaasClienteId: "cus_1" }),
+    dadosCliente: async () => ({ nome: "Cliente Teste", email: null, cpfCnpj: "52998224725", asaasClienteId: "cus_1" }),
     salvarClienteAsaas: async () => {},
     registrar: async (...a) => { calls.push(["registrar", ...a]); return {}; },
     falhar: async (...a) => { calls.push(["falhar", ...a]); },
@@ -361,7 +361,7 @@ test("B1 | falha ao gravar o id externo: nao cancela, tenta 2 vezes, nao busca Q
   const log = c.calls.find((x) => x[0] === "log" && x[1].evento === "pay_id_externo_nao_persistido");
   assert.deepEqual([log[1].pagamentoId, log[1].asaasPagamentoId], [PREPARADO.id, "pay_1"]);
   const dentro = JSON.stringify(c.calls.filter((x) => x[0] === "log"));
-  assert.equal(dentro.includes(CHAVE) || dentro.includes("12345678909"), false);
+  assert.equal(dentro.includes(CHAVE) || dentro.includes("52998224725"), false);
 });
 
 test("B1 | estado deixado por queda entre a criacao externa e a gravacao ('criando' sem id): mesma chave ou outra ficam bloqueadas, sem Asaas e sem cancelar", async () => {
@@ -392,7 +392,7 @@ test("B1 | duas tentativas simultaneas (SIMULADO com repositorio em memoria): so
 });
 
 test("B1 | so cancela com prova de que nada foi criado: antes do POST (cliente) ou 4xx conclusivo; 408, 5xx e timeout do POST NAO cancelam", async () => {
-  const antes = criarB1(async () => { throw new Error("timeout"); }, { dadosCliente: async () => ({ nome: "X", email: null, cpfCnpj: "12345678909", asaasClienteId: null }) });
+  const antes = criarB1(async () => { throw new Error("timeout"); }, { dadosCliente: async () => ({ nome: "Cliente Teste", email: null, cpfCnpj: "52998224725", asaasClienteId: null }) });
   assert.equal((await antes.enviar()).status, 502);
   assert.deepEqual([antes.postsDeCobranca(), antes.falhas().map((f) => f[2])], [0, ["antes_da_cobranca"]]);
   const semDados = criarB1(asaasComQr(qrOk), { dadosCliente: async () => null });
@@ -419,13 +419,13 @@ test("asaas | 408 e inconclusivo (nao prova que a cobranca nao foi criada); 429 
 test("webhook | R8: evento valido de outra familia responde 200 e so registra tipo e id; malformado e nao autenticado seguem recusados", async () => {
   const logs = [];
   const w = webhook({ log: (l) => logs.push(l) });
-  const transferencia = { id: "evt_t1", event: "TRANSFER_DONE", dateCreated: "2026-11-25 10:00:00", transfer: { id: "tra_1", value: 10, bankAccount: { accountName: "Fulano de Tal", cpfCnpj: "12345678909" } } };
+  const transferencia = { id: "evt_t1", event: "TRANSFER_DONE", dateCreated: "2026-11-25 10:00:00", transfer: { id: "tra_1", value: 10, bankAccount: { accountName: "Fulano de Tal", cpfCnpj: "52998224725" } } };
   const r = await w.enviar(transferencia);
   assert.equal(r.status, 200);
   assert.deepEqual(await r.json(), { received: true, resultado: "ignorado" });
   assert.equal(w.registros.length, 0);
   assert.deepEqual(logs, [{ evento: "webhook_ignorado", tipo: "TRANSFER_DONE", eventId: "evt_t1" }]);
-  assert.equal(JSON.stringify(logs).includes("Fulano") || JSON.stringify(logs).includes("12345678909"), false);
+  assert.equal(JSON.stringify(logs).includes("Fulano") || JSON.stringify(logs).includes("52998224725"), false);
   // sem autenticacao: 401 e nada logado
   assert.equal((await w.enviar(transferencia, { "asaas-access-token": "x".repeat(40) })).status, 401);
   assert.equal(logs.length, 1);

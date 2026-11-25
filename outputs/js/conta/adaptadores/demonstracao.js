@@ -245,6 +245,10 @@ export function criarDadosDemonstracao({
       throw new Error("Agendamentos reais exigem uma conta conectada ao ambiente homologado.");
     },
 
+    /* PAY-02: a demonstracao nunca cobra nem fala com provedor de pagamento. */
+    async pagamentosPix() { return []; },
+    async criarPagamentoPix() { return { mensagem: "O pagamento não está disponível na demonstração." }; },
+
     async cancelarAtendimento() {
       throw new Error("Cancelamento real exige uma conta conectada ao ambiente homologado.");
     },

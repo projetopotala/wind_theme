@@ -68,6 +68,8 @@ const cliente = (k, sql, params) => como("authenticated", U[k], sql, params);
 // Cenario: A e B tem solicitacao com horario reservado (held) da mesma oferta, preco ativo de R$ 150,00.
 async function semear({ preco = true } = {}) {
   const ids = {};
+  // PAY-02: a chave geral de cobrancas nasce DESLIGADA; os testes de PAY-01 a ligam so dentro da transacao do cenario.
+  if ((await db.query("select to_regclass('public.pay_runtime_settings') as t")).rows[0].t) await db.query("update public.pay_runtime_settings set charges_enabled = true");
   if (preco) await db.query("insert into public.appointment_service_prices(offering_id, amount_cents, active) values ($1, 15000, true)", [OFERTA]);
   for (const k of ["A", "B"]) {
     const r = await db.query(`insert into public.appointment_requests(idempotency_key, service, modality, requester_name, contact_type, contact, preferred_date, preferred_period, requester_user_id, offering_id)

@@ -34,6 +34,7 @@ import notificacoes from "./vistas/notificacoes.js";
 import configuracoes from "./vistas/configuracoes.js";
 import atendimentos, { periodoEncerrado } from "./vistas/atendimentos.js";
 import { APPOINTMENT_REQUESTS_ENABLED } from "../../appointments/config.js";
+import { PAGAMENTOS_PIX_ATIVO } from "../pagamentos/config.js";
 import { erroDaUrl } from "../confirmar-conta.js";
 import { lerArtigosPublicados } from "../../blog/artigos-publicados.js";
 
@@ -112,6 +113,10 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.perfisProfissionais()
       .then((lista) => ({ nome: "perfisProfissionais", lista }))
       .catch((erro) => ({ nome: "perfisProfissionais", lista: [], erro })));
+    /* PAY-02: so le pagamentos proprios com a chave de exibicao ligada (desligada por padrao). Ler nao cria cobranca. */
+    if (PAGAMENTOS_PIX_ATIVO && APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.pagamentosPix()
+      .then((lista) => ({ nome: "pagamentosPix", lista }))
+      .catch((erro) => ({ nome: "pagamentosPix", lista: [], erro })));
     /* Turmas que a conta ministra (vínculo real no banco): entrada na aula sem matrícula. */
     leituras.push(sessao.aulasDoProfessor()
       .then((lista) => ({ nome: "aulasDoProfessor", lista }))
@@ -132,6 +137,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         dados.agendaProfissional ||= [];
         dados.aulasDoProfessor ||= [];
         dados.perfisProfissionais ||= [];
+        dados.pagamentosPix ||= [];
         dados.falhas = respostas.filter((resposta) => resposta.erro).map((resposta) => resposta.nome);
         dono = usuarioId;
         return dados;
@@ -260,7 +266,8 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     }
 
     const atual = sessao.obter();
-    const contexto = { ...dados, estado: atual, agora: new Date(), parametros: new URLSearchParams(janela.location.search), atendimentoDisponivel: APPOINTMENT_REQUESTS_ENABLED };
+    const contexto = { ...dados, estado: atual, agora: new Date(), parametros: new URLSearchParams(janela.location.search), atendimentoDisponivel: APPOINTMENT_REQUESTS_ENABLED,
+      pagamentosPix: PAGAMENTOS_PIX_ATIVO ? { ativo: true, porPedido: pagamentosPorPedido(dados.pagamentosPix), resultados: resultadosPix } : null };
     let corpo;
     try {
       corpo = VISTAS[rota.nome].renderizar(contexto);
@@ -405,7 +412,32 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     },
   };
 
+  /* PAY-02: estado so em memoria. A chave de idempotencia fica ate o Pix chegar: repetir o clique reaproveita a mesma cobranca. */
+  const resultadosPix = {};
+  const chavesPix = new Map();
+  const pagamentosPorPedido = (lista) => {
+    const mapa = {};
+    for (const linha of Array.isArray(lista) ? lista : []) if (linha?.request_id && !(linha.request_id in mapa)) mapa[linha.request_id] = linha;
+    return mapa;
+  };
+  const copiarPix = async (botao) => {
+    const campo = botao.closest("[data-pagamento-pix]")?.querySelector("[data-pix-codigo]");
+    const texto = campo?.value || "";
+    if (!texto) return;
+    try {
+      await globalThis.navigator.clipboard.writeText(texto);
+      anunciar("Código Pix copiado.");
+    } catch {
+      campo.focus?.(); campo.select?.();
+      anunciar("Não foi possível copiar sozinho. O código está selecionado: copie manualmente.");
+    }
+  };
+
   const aoClicar = (evento) => {
+    if (PAGAMENTOS_PIX_ATIVO) {
+      const copiar = evento.target.closest?.("[data-acao='copiar-pix']");
+      if (copiar && palco.contains(copiar)) { copiarPix(copiar); return; }
+    }
     const abrir = evento.target.closest?.("[data-conta-abrir]");
     if (abrir) {
       painel.abrir({ estado: abrir.dataset.contaAbrir, origem: abrir });
@@ -455,6 +487,26 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         dados = null;
         dono = null;
       }, "Inscrição cancelada.");
+      return;
+    }
+    /* PAY-02: a unica porta para gerar cobranca e este envio, por clique. Abrir a pagina nunca chega aqui. */
+    const pagarPix = PAGAMENTOS_PIX_ATIVO ? evento.target.closest?.("[data-form='pagar-pix']") : null;
+    if (pagarPix) {
+      evento.preventDefault();
+      const pedidoId = pagarPix.getAttribute("data-pedido") || "";
+      const campos = Object.fromEntries(new FormData(pagarPix));
+      const aviso = pagarPix.querySelector("[data-form-status]");
+      if (!globalThis.crypto?.randomUUID) { aviso.textContent = "Seu navegador não oferece a proteção necessária para pagar agora."; return; }
+      if (pagarPix.querySelector("[name='documento']") && (!String(campos.nome || "").trim() || !String(campos.documento || "").trim())) { aviso.textContent = "Informe o nome completo e o CPF ou CNPJ."; return; }
+      if (!chavesPix.has(pedidoId)) chavesPix.set(pedidoId, globalThis.crypto.randomUUID());
+      agir(pagarPix.querySelector("[type='submit']"), async () => {
+        const resposta = await sessao.criarPagamentoPix({ pedidoId, idempotencia: chavesPix.get(pedidoId), nome: campos.nome, documento: campos.documento });
+        /* O documento digitado nunca fica na tela nem em memoria: so o resultado volta. */
+        resultadosPix[pedidoId] = resposta;
+        if (resposta?.pix) chavesPix.delete(pedidoId);
+        dados = null;
+        dono = null;
+      }, null);
       return;
     }
     const semHorario = evento.target.closest?.("[data-form='atendimento-sem-horario']");

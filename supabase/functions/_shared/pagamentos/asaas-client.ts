@@ -20,21 +20,24 @@ export class AsaasErro extends Error {
 
 export type NovoClienteAsaas = { nome: string; cpfCnpj: string; email?: string; referenciaExterna: string };
 export type NovaCobrancaPix = { clienteId: string; valorCentavos: number; vencimento: string; referenciaExterna: string; descricao: string };
-export type CobrancaAsaas = { id: string; status: string; valorCentavos: number; referenciaExterna: string | null; vencimento: string | null };
+export type CobrancaAsaas = { id: string; status: string; valorCentavos: number; referenciaExterna: string | null; vencimento: string | null; removida?: boolean };
 export type PixQrCode = { imagemBase64: string; copiaECola: string; expiraEm: string };
 
 const REAL = (c: number) => Math.round(c) / 100;
 const centavos = (reais: unknown) => (typeof reais === "number" && Number.isFinite(reais) ? Math.round(reais * 100) : NaN);
 const texto = (v: unknown) => (typeof v === "string" && v.length > 0 ? v : null);
 
-export function criarClienteAsaas(opcoes: { baseUrl: string; apiKey: string; fetch: FetchLike; timeoutMs?: number; novoId?: () => string; log?: (linha: Record<string, unknown>) => void }) {
-  if (opcoes.baseUrl === ASAAS_URLS.producao) throw new Error("producao_bloqueada_na_pay_01");
-  if (opcoes.baseUrl !== ASAAS_URLS.sandbox) throw new Error("url_asaas_invalida");
+export function criarClienteAsaas(opcoes: { baseUrl: string; apiKey: string; fetch: FetchLike; timeoutMs?: number; novoId?: () => string; log?: (linha: Record<string, unknown>) => void; permitirProducao?: boolean }) {
+  // PAY-02: a URL de producao so e aceita com permissao explicita, que apenas a config de producao (3 travas) concede.
+  if (opcoes.baseUrl === ASAAS_URLS.producao && opcoes.permitirProducao !== true) throw new Error("producao_bloqueada_na_pay_01");
+  if (opcoes.baseUrl !== ASAAS_URLS.sandbox && opcoes.baseUrl !== ASAAS_URLS.producao) throw new Error("url_asaas_invalida");
   const timeoutMs = opcoes.timeoutMs ?? 12000;
   const novoId = opcoes.novoId ?? (() => crypto.randomUUID());
 
-  async function chamar(metodo: "GET" | "POST", caminho: string, corpo?: unknown): Promise<Record<string, unknown>> {
+  async function chamar(metodo: "GET" | "POST" | "DELETE", caminho: string, corpo?: unknown): Promise<Record<string, unknown>> {
     const correlationId = novoId();
+    // O log nunca leva query string (pode conter referencia externa) nem o id: so o formato do caminho.
+    const caminhoLog = caminho.split("?")[0].replace(/\/[^/]+$/, "/:id");
     let resposta: Response;
     try {
       resposta = await opcoes.fetch(`${opcoes.baseUrl}${caminho}`, {
@@ -44,10 +47,10 @@ export function criarClienteAsaas(opcoes: { baseUrl: string; apiKey: string; fet
         body: corpo === undefined ? undefined : JSON.stringify(corpo),
       });
     } catch {
-      opcoes.log?.({ evento: "asaas_transporte_falhou", metodo, caminho: caminho.replace(/\/[^/]+$/, "/:id"), correlationId });
+      opcoes.log?.({ evento: "asaas_transporte_falhou", metodo, caminho: caminhoLog, correlationId });
       throw new AsaasErro("inconclusivo", null, correlationId);
     }
-    opcoes.log?.({ evento: "asaas_resposta", metodo, caminho: caminho.replace(/\/[^/]+$/, "/:id"), status: resposta.status, correlationId });
+    opcoes.log?.({ evento: "asaas_resposta", metodo, caminho: caminhoLog, status: resposta.status, correlationId });
     // 408 (tempo esgotado) nao prova que nada foi criado: e inconclusivo, como timeout e 5xx.
     if (resposta.status >= 400 && resposta.status < 500 && resposta.status !== 408) throw new AsaasErro("rejeitado", resposta.status, correlationId);
     if (!resposta.ok) throw new AsaasErro("inconclusivo", resposta.status, correlationId);
@@ -61,7 +64,7 @@ export function criarClienteAsaas(opcoes: { baseUrl: string; apiKey: string; fet
     const valor = centavos(j.value);
     const status = texto(j.status);
     if (!id || !status || !Number.isInteger(valor) || valor <= 0) throw new AsaasErro("inconclusivo", 200, correlationId);
-    return { id, status, valorCentavos: valor, referenciaExterna: texto(j.externalReference), vencimento: texto(j.dueDate) };
+    return { id, status, valorCentavos: valor, referenciaExterna: texto(j.externalReference), vencimento: texto(j.dueDate), removida: j.deleted === true };
   }
 
   return {
@@ -80,6 +83,31 @@ export function criarClienteAsaas(opcoes: { baseUrl: string; apiKey: string; fet
       const cobranca = lerCobranca(j);
       if (cobranca.valorCentavos !== c.valorCentavos || cobranca.referenciaExterna !== c.referenciaExterna) throw new AsaasErro("inconclusivo", 200, "");
       return cobranca;
+    },
+    // PAY-02: busca de cliente pela referencia externa gravada na criacao (evita cliente duplicado apos timeout).
+    async listarClientesPorReferencia(ref: string): Promise<string[]> {
+      const j = await chamar("GET", `/customers?externalReference=${encodeURIComponent(ref)}&limit=10`);
+      if (!Array.isArray(j.data)) throw new AsaasErro("inconclusivo", 200, "");
+      return (j.data as Array<Record<string, unknown>>).map((c) => texto(c.id)).filter((x): x is string => x !== null);
+    },
+    // PAY-02: recuperacao de cobranca pelo externalReference (cobranca criada sem id interno persistido).
+    async listarCobrancasPorReferencia(ref: string): Promise<CobrancaAsaas[]> {
+      const j = await chamar("GET", `/payments?externalReference=${encodeURIComponent(ref)}&limit=10`);
+      if (!Array.isArray(j.data)) throw new AsaasErro("inconclusivo", 200, "");
+      return (j.data as Array<Record<string, unknown>>).map((c) => lerCobranca(c));
+    },
+    // PAY-02: varredura recente para achar cobrancas orfas (existem no Asaas e nao no banco).
+    async listarCobrancasDesde(dataISO: string, offset = 0): Promise<{ itens: Array<{ id: string; ref: string | null }>; temMais: boolean }> {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dataISO) || !Number.isInteger(offset) || offset < 0) throw new Error("parametro_invalido");
+      const j = await chamar("GET", `/payments?dateCreated%5Bge%5D=${dataISO}&limit=100&offset=${offset}`);
+      if (!Array.isArray(j.data)) throw new AsaasErro("inconclusivo", 200, "");
+      const itens = (j.data as Array<Record<string, unknown>>).map((c) => ({ id: texto(c.id), ref: texto(c.externalReference) })).filter((c): c is { id: string; ref: string | null } => c.id !== null);
+      return { itens, temMais: j.hasMore === true };
+    },
+    // PAY-02: cancela a cobranca no Asaas (so usado ao expirar a reserva). Sucesso = Asaas confirmou a exclusao.
+    async cancelarCobranca(id: string): Promise<void> {
+      const j = await chamar("DELETE", `/payments/${encodeURIComponent(id)}`);
+      if (j.deleted !== true) throw new AsaasErro("inconclusivo", 200, "");
     },
     async obterCobranca(id: string): Promise<CobrancaAsaas> {
       return lerCobranca(await chamar("GET", `/payments/${encodeURIComponent(id)}`));

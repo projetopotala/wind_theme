@@ -2,6 +2,7 @@ import { STATUS_DE_ATENDIMENTO } from "../../modelos.js";
 import { e, falhaDeCarregamento, leituraFalhou, papelProfissional, secao, vazio } from "./comum.js";
 import { aulasDoProfessor as secaoAulasDoProfessor } from "./aulas-do-professor.js";
 import { caminhoDaSala } from "../../../sala/estado-sala.js";
+import { painelPix } from "../../pagamentos/painel-pix.js";
 
 /*
  * O link existe só para consulta online confirmada e futura. Ele não prova
@@ -48,7 +49,17 @@ function horarioLegivel(valor) {
     : "Horário a confirmar";
 }
 
-function listaDePedidos(atendimentos, vazioTexto = "Você ainda não fez uma solicitação de atendimento.", tipo = "pedido", agora = new Date()) {
+/* PAY-02: painel Pix so aparece com a chave ligada (pix.ativo) e so em pedidos aguardando; desligado, nada muda. */
+function painelDoPedido(pedido, tipo, pix) {
+  if (tipo !== "pedido" || pix?.ativo !== true || !["recebida", "em_contato"].includes(pedido.status)) return "";
+  return painelPix({
+    pedido: { id: pedido.id, servico: pedido.servico, horario: pedido.inicio ? horarioLegivel(pedido.inicio) : "" },
+    pagamento: pix.porPedido?.[pedido.id] ?? null,
+    resultado: pix.resultados?.[pedido.id],
+  });
+}
+
+function listaDePedidos(atendimentos, vazioTexto = "Você ainda não fez uma solicitação de atendimento.", tipo = "pedido", agora = new Date(), pix = null) {
   if (!atendimentos.length) return vazio({ texto: vazioTexto });
   return `<ol class="mp-atendimentos-lista">${atendimentos.map((pedido) => `<li class="mp-atendimento">
     <div>
@@ -68,6 +79,7 @@ function listaDePedidos(atendimentos, vazioTexto = "Você ainda não fez uma sol
         : pedido.status === "encerrada"
           ? "Este pedido foi encerrado. Consulte sua Agenda para compromissos confirmados."
           : "Este pedido foi cancelado."}</p>
+    ${painelDoPedido(pedido, tipo, pix)}
   </li>`).join("")}</ol>`;
 }
 
@@ -259,7 +271,7 @@ export function separarAtendimentos(atendimentos = [], agora = new Date()) {
 }
 
 const vista = {
-  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], perfisProfissionais = [], aulasDoProfessor = [], atendimentoDisponivel = false, parametros = null, agora = new Date(), falhas = [] }) {
+  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], perfisProfissionais = [], aulasDoProfessor = [], atendimentoDisponivel = false, parametros = null, agora = new Date(), falhas = [], pagamentosPix = null }) {
     /*
      * Profissional é quem o banco reconhece: vínculo ativo com perfil profissional
      * ativo (perfisProfissionais) ou consultas atribuídas. Com zero consultas a
@@ -276,7 +288,7 @@ const vista = {
       if (!atendimentos.length) return agendaPropria;
       /* Os dois papéis, separados por um marco visível: o trabalho em cima, o que é seu embaixo. */
       const marco = "<p class=\"mp-papel\"><span>Como cliente</span> Os atendimentos que você pediu para você</p>";
-      return `${agendaPropria}${marco}${vista.renderizar({ atendimentos, opcoesAtendimento, horariosAtendimento, atendimentoDisponivel, parametros, agora })}`;
+      return `${agendaPropria}${marco}${vista.renderizar({ atendimentos, opcoesAtendimento, horariosAtendimento, atendimentoDisponivel, parametros, agora, pagamentosPix })}`;
     }
     /* Sem ler os pedidos não dá para dizer que não há nenhum (nem liberar um novo, que depende deles). */
     if (!atendimentos.length && leituraFalhou(falhas, "atendimentos")) {
@@ -297,7 +309,7 @@ const vista = {
     });
     const aguardando = secao({
       id: "mp-atendimentos-pendentes", kicker: "Em análise pela equipe", titulo: "Aguardando confirmação",
-      corpo: listaDePedidos(pendentes, "Nenhuma solicitação aguarda retorno da equipe."),
+      corpo: listaDePedidos(pendentes, "Nenhuma solicitação aguarda retorno da equipe.", "pedido", referencia, pagamentosPix),
     });
     const passados = anteriores.length + cancelados.length;
     const historico = `<details class="mp-recolhido"${passados ? "" : " data-vazio"}>

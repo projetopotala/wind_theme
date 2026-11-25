@@ -1,9 +1,10 @@
-// PAY-01: cria a intencao de pagamento (Pix) de uma solicitacao de atendimento.
+// PAY-01/PAY-02: cria a intencao de pagamento (Pix) de uma solicitacao de atendimento.
 //
-// - O navegador envia SOMENTE { request_id, idempotency_key }. O valor vem do banco (appointment_service_prices);
-//   qualquer campo extra, inclusive "amount"/"valor", e rejeitado.
+// - O navegador envia { request_id, idempotency_key } e, SOMENTE se o pagador ainda nao existe no Asaas,
+//   { payer: { nome, cpf_cnpj } }. O valor vem do banco (appointment_service_prices); qualquer outro campo,
+//   inclusive "amount"/"valor", e rejeitado. O documento e validado aqui, nunca gravado por inteiro e nunca logado.
 // - O usuario e identificado pelo JWT; o banco confere que a solicitacao e dele e que o horario ainda esta reservado.
-// - Desligado por padrao (PAYMENTS_ENABLED) e restrito ao Sandbox (ver _shared/pagamentos/config.ts).
+// - Desligado por padrao (PAYMENTS_ENABLED). Producao exige as 3 travas descritas em _shared/pagamentos/config.ts.
 //
 // Ordem das operacoes (correcao B1):
 //   1. reserva interna idempotente (linha "criando", sem id externo);
@@ -15,13 +16,14 @@
 //   * falha ANTES de enviar o POST da cobranca, ou
 //   * rejeicao 4xx conclusiva (exceto 408) do proprio POST da cobranca.
 // Resultado inconclusivo (timeout, 5xx, resposta ruim, id externo nao gravado) mantem a linha "criando" SEM id:
-// o indice de cobranca aberta bloqueia novas cobrancas ate reconciliacao (PAY-02; ver docs/pay-01).
+// o indice de cobranca aberta bloqueia novas cobrancas ate o reconciliador (reconcile-appointment-payments) agir.
 
 import { lerConfigAsaas } from "../_shared/pagamentos/config.ts";
 import { AsaasErro, criarClienteAsaas, type FetchLike } from "../_shared/pagamentos/asaas-client.ts";
+import { validarDocumento, validarNomePagador } from "../_shared/pagamentos/documento.ts";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const MAX_CORPO = 512;
+const MAX_CORPO = 1024;
 
 export type Preparado = {
   id: string; status: "criando" | "aguardando_pagamento" | string; external_reference: string; amount_cents: number;
@@ -35,8 +37,9 @@ export type CriarPagamentoDeps = {
   fetch: FetchLike;
   usuarioDoJwt(jwt: string): Promise<{ id: string } | null>;
   preparar(usuarioId: string, requestId: string, chave: string, holdMinutos: number): Promise<{ data?: Preparado | null; error?: { code?: string } | null }>;
+  // Cadastro minimo do pagador: so o id do cliente no Asaas e o e-mail da conta (nunca o documento completo).
   dadosCliente(usuarioId: string): Promise<DadosCliente | null>;
-  salvarClienteAsaas(usuarioId: string, asaasClienteId: string): Promise<void>;
+  salvarClienteAsaas(usuarioId: string, asaasClienteId: string, tipo?: "cpf" | "cnpj", ultimos4?: string): Promise<void>;
   // qr = null grava so o id externo (passo 3); com qr grava tambem o Pix. Idempotente para o mesmo id.
   registrar(pagamentoId: string, asaasPagamentoId: string, qr: QrSalvo | null): Promise<{ error?: unknown }>;
   falhar(pagamentoId: string, motivo: string): Promise<void>;
@@ -66,11 +69,21 @@ export function criarCriarPagamentoHandler(deps: CriarPagamentoDeps) {
     const texto = await request.text();
     if (texto.length > MAX_CORPO) return responder(413, { message: "Pedido grande demais." }, h);
     let requestId = ""; let chave = "";
+    let pagador: { nome: string; documento: NonNullable<ReturnType<typeof validarDocumento>> } | null = null;
     try {
       const corpo = JSON.parse(texto);
-      if (!corpo || Array.isArray(corpo) || Object.keys(corpo).sort().join(",") !== "idempotency_key,request_id"
+      const chaves = corpo && !Array.isArray(corpo) && typeof corpo === "object" ? Object.keys(corpo).sort().join(",") : "";
+      if (!corpo || Array.isArray(corpo) || (chaves !== "idempotency_key,request_id" && chaves !== "idempotency_key,payer,request_id")
         || !UUID.test(corpo.request_id) || !UUID.test(corpo.idempotency_key)) throw new Error("invalido");
       requestId = corpo.request_id.toLowerCase(); chave = corpo.idempotency_key.toLowerCase();
+      if ("payer" in corpo) {
+        const p = corpo.payer;
+        if (!p || Array.isArray(p) || typeof p !== "object" || Object.keys(p).sort().join(",") !== "cpf_cnpj,nome") throw new Error("invalido");
+        const nome = validarNomePagador(p.nome); const documento = validarDocumento(p.cpf_cnpj);
+        // 422 antes de reservar qualquer coisa: nada e criado, e a mensagem nao repete o que o usuario digitou.
+        if (!nome || !documento) return responder(422, { message: "Confira o nome completo e o CPF ou CNPJ informados.", payer_invalid: true }, h);
+        pagador = { nome, documento };
+      }
     } catch { return responder(400, { message: "Pedido inválido." }, h); }
 
     const usuario = await deps.usuarioDoJwt(jwt).catch(() => null);
@@ -79,11 +92,12 @@ export function criarCriarPagamentoHandler(deps: CriarPagamentoDeps) {
     const { data, error } = await deps.preparar(usuario.id, requestId, chave, config.holdMinutos).catch(() => ({ data: null, error: { code: "indisponivel" } }));
     if (error || !data) {
       const c = error?.code ?? "";
-      return responder(c === "42501" ? 403 : c === "P0002" ? 404 : c === "22023" || c === "PT409" ? 409 : c === "PT422" ? 422 : 502,
-        { message: c === "42501" ? "Acesso negado." : c === "PT422" ? "Este atendimento ainda não tem valor definido para pagamento online." : "Não foi possível preparar o pagamento." }, h);
+      // PT503: a chave geral de cobrancas no banco esta desligada (nenhuma cobranca nova nasce).
+      return responder(c === "42501" ? 403 : c === "P0002" ? 404 : c === "22023" || c === "PT409" ? 409 : c === "PT422" ? 422 : c === "PT503" ? 503 : 502,
+        { message: c === "42501" ? "Acesso negado." : c === "PT422" ? "Este atendimento ainda não tem valor definido para pagamento online." : c === "PT503" ? "O pagamento ainda não está disponível." : "Não foi possível preparar o pagamento." }, h);
     }
     const resumo = { payment_id: data.id, amount_cents: data.amount_cents, currency: "BRL", service: data.service_title, hold_expires_at: data.hold_expires_at };
-    const asaas = criarClienteAsaas({ baseUrl: config.baseUrl, apiKey: config.apiKey, fetch: deps.fetch, log: deps.log });
+    const asaas = criarClienteAsaas({ baseUrl: config.baseUrl, apiKey: config.apiKey, fetch: deps.fetch, log: deps.log, permitirProducao: config.ambiente === "production" });
     const idExterno = data.provider_payment_id;
 
     // (a) A cobranca JA existe no Asaas (nesta ou em tentativa anterior): nunca criar outra.
@@ -111,14 +125,25 @@ export function criarCriarPagamentoHandler(deps: CriarPagamentoDeps) {
     try {
       const cliente = await deps.dadosCliente(usuario.id);
       if (!cliente) { await deps.falhar(data.id, "cliente_indisponivel").catch(() => undefined); return responder(502, { message: "Não foi possível preparar o pagamento." }, h); }
-      if (!cliente.asaasClienteId && !cliente.cpfCnpj) {
-        await deps.falhar(data.id, "cliente_sem_documento").catch(() => undefined);
-        return responder(422, { message: "Precisamos do CPF para gerar o Pix. Complete seu cadastro e tente de novo." }, h);
-      }
       let clienteId = cliente.asaasClienteId;
       if (!clienteId) {
-        clienteId = (await asaas.criarCliente({ nome: cliente.nome, cpfCnpj: cliente.cpfCnpj as string, email: cliente.email ?? undefined, referenciaExterna: `user:${usuario.id}` })).id;
-        await deps.salvarClienteAsaas(usuario.id, clienteId);
+        // Documento: o informado agora (ja validado) ou, por compatibilidade, o que o adaptador entregar.
+        const documento = pagador?.documento ?? validarDocumento(cliente.cpfCnpj);
+        const nome = pagador?.nome ?? validarNomePagador(cliente.nome);
+        if (!documento || !nome) {
+          await deps.falhar(data.id, "cliente_sem_documento").catch(() => undefined);
+          return responder(422, { message: "Precisamos do seu nome completo e do CPF ou CNPJ para gerar o Pix.", needs_payer: true }, h);
+        }
+        // Evita cliente duplicado apos timeout: procura primeiro pela referencia externa gravada na criacao.
+        const existentes = await asaas.listarClientesPorReferencia(`user:${usuario.id}`);
+        if (existentes.length > 1) {
+          deps.log?.({ evento: "pay_cliente_ambiguo", pagamentoId: data.id, quantidade: existentes.length });
+          await deps.falhar(data.id, "cliente_ambiguo").catch(() => undefined); // nenhum POST de cobranca foi enviado
+          return responder(502, { message: "Não foi possível preparar o pagamento." }, h);
+        }
+        clienteId = existentes[0] ?? (await asaas.criarCliente({ nome, cpfCnpj: documento.digitos, email: cliente.email ?? undefined, referenciaExterna: `user:${usuario.id}` })).id;
+        // Se salvar falhar, o proximo pedido reencontra o cliente pela referencia externa: nao e motivo para abortar.
+        await deps.salvarClienteAsaas(usuario.id, clienteId, documento.tipo, documento.ultimos4).catch(() => deps.log?.({ evento: "pay_cliente_nao_salvo", asaasClienteId: clienteId }));
       }
       cobrancaEnviada = true; // a partir daqui o Asaas pode ter criado a cobranca
       cobranca = await asaas.criarCobrancaPix({ clienteId, valorCentavos: data.amount_cents, vencimento: data.due_date, referenciaExterna: data.external_reference, descricao: `Atendimento - ${data.service_title}` });
@@ -137,7 +162,7 @@ export function criarCriarPagamentoHandler(deps: CriarPagamentoDeps) {
 
     // Passo 3: grava o id externo antes de qualquer outra coisa (duas tentativas). Se nao gravar, NAO cancela:
     // a linha continua "criando" sem id, bloqueando novas cobrancas; o webhook PAYMENT_CREATED (por externalReference)
-    // ou a reconciliacao da PAY-02 vinculam o id. O id vai para o log para recuperacao manual.
+    // ou o reconciliador vinculam o id. O id vai para o log para recuperacao manual.
     let idGravado = false;
     for (let tentativa = 0; tentativa < 2 && !idGravado; tentativa++) {
       const r = await deps.registrar(data.id, cobranca.id, null).catch(() => ({ error: true }));

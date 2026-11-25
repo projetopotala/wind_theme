@@ -31,3 +31,7 @@ verify_jwt = true
 [functions.asaas-appointment-webhook]
 # PAY-01 (nao publicar). O Asaas nao envia JWT: o handler exige o segredo ASAAS_WEBHOOK_TOKEN em asaas-access-token (tempo constante) e falha fechado.
 verify_jwt = false
+
+[functions.reconcile-appointment-payments]
+# PAY-02 (nao publicar). Chamada por agendamento: o handler exige o segredo PAYMENTS_RECONCILE_TOKEN em x-reconcile-token (tempo constante) e falha fechado. Nunca cria cobranca.
+verify_jwt = false
