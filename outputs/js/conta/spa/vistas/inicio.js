@@ -19,7 +19,7 @@ import {
 } from "../../leituras.js";
 import { STATUS_DE_INSCRICAO, TIPOS_DE_ACOMPANHAMENTO, TIPOS_DE_COMPROMISSO, TIPOS_DE_ITEM } from "../../modelos.js";
 import { caminhoDa } from "../roteador.js";
-import { barraDeProgresso, capa, contarAvisosNovos, e, secao, vazio, verTudo } from "./comum.js";
+import { barraDeProgresso, capa, contarAvisosNovos, e, falhaDeCarregamento, leituraFalhou, secao, vazioOuFalha, verTudo } from "./comum.js";
 import { ligacaoDaSala, mostraInterfaceDeCliente, papelProfissional, separarAtendimentos } from "./atendimentos.js";
 import { SITUACAO_DO_PEDIDO } from "./cursos.js";
 import { quandoNoFuso } from "./aulas-do-professor.js";
@@ -49,7 +49,13 @@ export function proximoCompromisso({ agenda = [], atendimentos = [], agora = new
   return daAgenda ? { tipo: "agenda", item: daAgenda } : null;
 }
 
-function cartaoDoProximo(proximo, agora) {
+function cartaoDoProximo(proximo, agora, falhou = false) {
+  if (!proximo && falhou) {
+    return `<article class="mp-proximo mp-proximo-vazio">
+      <p class="mp-proximo-rotulo">Próximo compromisso</p>
+      ${falhaDeCarregamento({ texto: "Não conseguimos carregar os seus compromissos agora." })}
+    </article>`;
+  }
   if (!proximo) {
     return `<article class="mp-proximo mp-proximo-vazio">
       <p class="mp-proximo-rotulo">Próximo compromisso</p>
@@ -106,7 +112,8 @@ export function pendencias({ atendimentos = [], inscricoesCursos = [], notificac
   return itens;
 }
 
-function listaDePendencias(itens) {
+function listaDePendencias(itens, falhou = false) {
+  if (!itens.length && falhou) return falhaDeCarregamento({ texto: "Não conseguimos conferir o que espera por você agora." });
   if (!itens.length) return "<p class=\"mp-pendencias-vazio\">Nada esperando por você agora.</p>";
   return `<ul class="mp-pendencias">${itens.map((item) => `<li data-pendencia="${e(item.chave)}">
     <p class="mp-status" data-status="${e(item.status)}">${e(item.rotulo)}</p>
@@ -166,7 +173,7 @@ function blocoProfissional({ agendaProfissional = [], perfisProfissionais = [], 
 
 export default {
   renderizar(contexto) {
-    const { historico, inscricoes, progressos, agenda, salvos, acompanhando, agora, textosDoBlog = [], atendimentos = [] } = contexto;
+    const { historico, inscricoes, progressos, agenda, salvos, acompanhando, agora, textosDoBlog = [], atendimentos = [], falhas = [] } = contexto;
     const continuar = continuarDeOndeParou({ historico, inscricoes, progressos }, 3);
     const porInscricao = new Map(progressos.map((progresso) => [progresso.inscricaoId, progresso]));
     const cursosAtivos = inscricoes.filter((inscricao) => inscricao.status !== "concluido").slice(0, 3);
@@ -181,10 +188,10 @@ export default {
     const blocoAgora = `<section class="mp-agora" aria-labelledby="mp-agora-titulo">
       <h2 id="mp-agora-titulo" class="mp-sr">Agora</h2>
       <div class="mp-agora-grade">
-        ${cartaoDoProximo(destaque, agora)}
+        ${cartaoDoProximo(destaque, agora, leituraFalhou(falhas, "agenda", "atendimentos"))}
         <div class="mp-agora-pendencias">
           <p class="mp-proximo-rotulo">Aguardando${esperando.length ? ` <span class="mp-contador">${esperando.length}</span>` : ""}</p>
-          ${listaDePendencias(esperando)}
+          ${listaDePendencias(esperando, leituraFalhou(falhas, "atendimentos", "inscricoesCursos", "notificacoes", "preferencias"))}
         </div>
       </div>
       ${atalhos(contexto)}
@@ -225,7 +232,7 @@ export default {
             ${progresso?.total ? barraDeProgresso(fracaoDoProgresso(progresso), textoDoProgresso(progresso)) : ""}
           </li>`;
         }).join("")}</ul>`
-        : vazio({ texto: "Você ainda não está em nenhum curso.", link: { href: "/cursos.html", texto: "Conhecer os cursos" } }),
+        : vazioOuFalha({ falhas, colecoes: ["inscricoes"], textoDaFalha: "Não conseguimos carregar os seus cursos agora.", texto: "Você ainda não está em nenhum curso.", link: { href: "/cursos.html", texto: "Conhecer os cursos" } }),
     });
 
     const blocoAgenda = secao({
@@ -241,7 +248,7 @@ export default {
             <p class="mp-linha-titulo">${e(item.titulo)}</p>
             <p class="mp-cartao-detalhe">${e([TIPOS_DE_COMPROMISSO[item.tipo], item.local].filter(Boolean).join(" · "))}</p>
           </li>`).join("")}</ol>`
-        : vazio({ texto: idDestacado ? "Nada mais marcado depois do próximo compromisso." : "Nenhum compromisso marcado.", link: { href: "/programacao.html", texto: "Ver a programação" } }),
+        : vazioOuFalha({ falhas, colecoes: ["agenda"], textoDaFalha: "Não conseguimos carregar a sua agenda agora.", texto: idDestacado ? "Nada mais marcado depois do próximo compromisso." : "Nenhum compromisso marcado.", link: { href: "/programacao.html", texto: "Ver a programação" } }),
     });
 
     const blocoSalvos = secao({
@@ -253,7 +260,7 @@ export default {
       corpo: ultimosSalvos.length
         ? `<ul class="mp-lista-simples">${ultimosSalvos.map((item) => `
           <li><a href="${e(item.href)}"><span class="mp-cartao-tipo">${e(TIPOS_DE_ITEM[item.tipo])}</span>${e(item.titulo)}</a></li>`).join("")}</ul>`
-        : vazio({ texto: "Toque em “Salvar” em qualquer texto, curso ou evento para encontrá-lo aqui depois." }),
+        : vazioOuFalha({ falhas, colecoes: ["salvos"], textoDaFalha: "Não conseguimos carregar os seus salvos agora.", texto: "Toque em “Salvar” em qualquer texto, curso ou evento para encontrá-lo aqui depois." }),
     });
 
     const blocoAcompanhando = acompanhando.length

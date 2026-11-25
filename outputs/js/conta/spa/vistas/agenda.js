@@ -13,7 +13,7 @@
 
 import { agruparAgenda } from "../../leituras.js";
 import { TIPOS_DE_COMPROMISSO } from "../../modelos.js";
-import { e, secao, vazio } from "./comum.js";
+import { e, secao, vazioOuFalha } from "./comum.js";
 
 function hora(valor) {
   const data = new Date(valor);
@@ -40,7 +40,7 @@ function compromisso(item) {
 }
 
 export default {
-  renderizar({ agenda, agora }) {
+  renderizar({ agenda, agora, falhas = [] }) {
     const grupos = agruparAgenda(agenda, agora);
     const linha = grupos.length
       ? `<ol class="mp-agenda">${grupos.map((grupo) => `
@@ -48,7 +48,7 @@ export default {
           <h3 class="mp-agenda-data">${grupo.relativo ? `<span>${e(grupo.relativo)}</span> · ` : ""}${e(grupo.rotulo)}</h3>
           <ol class="mp-linha">${grupo.itens.map(compromisso).join("")}</ol>
         </li>`).join("")}</ol>`
-      : vazio({ texto: "Nenhum compromisso pela frente.", link: { href: "/programacao.html", texto: "Ver a programação" } });
+      : vazioOuFalha({ falhas, colecoes: ["agenda"], textoDaFalha: "Não conseguimos carregar a sua agenda agora.", texto: "Nenhum compromisso pela frente.", link: { href: "/programacao.html", texto: "Ver a programação" } });
 
     const anotar = `<p class="mp-texto">As aulas e os eventos em que você se inscreve entram sozinhos. Aqui você anota o que é só seu — uma prática em casa, um encontro, uma leitura marcada.</p>
       <form class="mp-form mp-form-compromisso" data-form="compromisso" novalidate>
