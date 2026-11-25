@@ -48,7 +48,8 @@ export function criarClienteAsaas(opcoes: { baseUrl: string; apiKey: string; fet
       throw new AsaasErro("inconclusivo", null, correlationId);
     }
     opcoes.log?.({ evento: "asaas_resposta", metodo, caminho: caminho.replace(/\/[^/]+$/, "/:id"), status: resposta.status, correlationId });
-    if (resposta.status >= 400 && resposta.status < 500) throw new AsaasErro("rejeitado", resposta.status, correlationId);
+    // 408 (tempo esgotado) nao prova que nada foi criado: e inconclusivo, como timeout e 5xx.
+    if (resposta.status >= 400 && resposta.status < 500 && resposta.status !== 408) throw new AsaasErro("rejeitado", resposta.status, correlationId);
     if (!resposta.ok) throw new AsaasErro("inconclusivo", resposta.status, correlationId);
     const json = await resposta.json().catch(() => null);
     if (!json || typeof json !== "object" || Array.isArray(json)) throw new AsaasErro("inconclusivo", resposta.status, correlationId);

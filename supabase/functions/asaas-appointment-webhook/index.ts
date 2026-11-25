@@ -9,6 +9,7 @@ Deno.serve((request: Request) => {
   const admin = createClient(env("SUPABASE_URL") ?? "", env("SUPABASE_SERVICE_ROLE_KEY") ?? "", { auth: { persistSession: false } });
   const handler = criarWebhookHandler({
     env,
+    log: (linha) => console.log(JSON.stringify(linha)),
     registrar: async (e) => await admin.rpc("pay_apply_webhook_event", {
       p_provider_event_id: e.eventId, p_event: e.evento, p_event_created: e.dataCriacao, p_provider_payment_id: e.pagamentoId,
       p_external_reference: e.referenciaExterna, p_value_cents: e.valorCentavos, p_original_value_cents: e.valorOriginalCentavos,

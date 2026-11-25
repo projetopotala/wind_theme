@@ -58,6 +58,27 @@ Feito na PAY-01 (sem alterar o agendamento): prazo da reserva por cobrança (`ho
 Regra inicial adotada: **só `recebido` libera a confirmação** (decisão pendente para `confirmado`).
 Fica para a PAY-02, atrás de flag: exigir o pagamento na confirmação, liberar o horário vencido (cancelar solicitação + cancelar a cobrança no Asaas), reembolso de pagamento tardio, falha de confirmação após pagamento. Atendimentos gratuitos, fluxo com aprovação profissional e usuários reais **não foram tocados**.
 
+## 5.1 Criação da cobrança sem duplicidade (correção B1)
+Ordem: (1) reserva interna idempotente (`criando`, sem id externo); (2) POST da cobrança no Asaas; (3) **grava na hora o `provider_payment_id`** (2 tentativas); (4) só então busca o QR Code. Falha no QR (4xx, 5xx, timeout) **preserva** a cobrança: a linha fica `aguardando_pagamento` com `pix_ready = false` e repetir a chamada (mesma chave ou outra) **só recupera o QR**, sem novo POST.
+
+| Situação | Estado/efeito |
+|---|---|
+| Criando, sem id externo | `criando`. Também é o estado de **resultado inconclusivo** (timeout/5xx/408/resposta ruim no POST, id não gravado). Bloqueia nova cobrança (índice) até reconciliação. |
+| Cobrança criada, QR indisponível | `aguardando_pagamento` + `pix_ready = false` (sem estado novo). |
+| Aguardando pagamento | `aguardando_pagamento` + `pix_ready = true`. |
+| Divergência | `divergente` (terminal até reconciliação manual). |
+
+Cancelamento interno (`pay_fail_creation`) só com **prova de que nada foi criado**: falha antes de enviar o POST da cobrança, ou 4xx conclusivo (exceto 408) do próprio POST. O banco recusa cancelar linha que já tem id externo. O índice de "cobrança aberta" inclui `vencido` (um Pix vencido ainda pode ser pago): só `PAYMENT_DELETED` confirmado pelo Asaas ou o cancelamento comprovado o libera.
+
+**Janela que continua existindo:** entre a resposta do Asaas e a gravação interna do id (queda do processo, falha do banco). Nada a elimina por completo. O que existe: a linha permanece `criando` e **bloqueia** nova cobrança; o webhook `PAYMENT_CREATED` vincula o id por `externalReference` (o webhook do Sandbox **deve assinar `PAYMENT_CREATED`**); o id é registrado em log (`pay_id_externo_nao_persistido`) quando a falha é detectada. Reconciliação ativa (`GET` por `externalReference`) fica para a PAY-02 e é **pré-requisito para ativar pagamentos**.
+
+## 5.2 Estorno em andamento (R4) e eventos de outras famílias (R8)
+- `PAYMENT_REFUND_IN_PROGRESS` não muda o estado financeiro nem o histórico, mas move `reservation_outcome` para `revisao`: `pay_payment_allows_confirmation` passa a falso. `PAYMENT_REFUND_DENIED` não devolve a elegibilidade sozinho. Nenhuma política de reembolso foi decidida.
+- Evento autenticado e válido de outra família (`event` sem prefixo `PAYMENT_`, ex.: transferência) responde 200 `{resultado:"ignorado"}` e registra só tipo e id no log. Malformado, sem token ou `PAYMENT_*` sem `payment` continuam recusados (400/401).
+
+## 5.3 Data do pagamento (R2) — pendência do Sandbox
+A documentação oficial mostra no objeto `payment` os campos `confirmedDate`, `paymentDate`, `clientPaymentDate` e `creditDate` com exemplos **só de data** (AAAA-MM-DD) e o envelope traz `dateCreated` (data e hora do evento). Como o prazo da reserva é de minutos, a data sem hora não decide "pago dentro do prazo". **Nada foi alterado:** a política continua usando o momento do processamento. Validar no Sandbox o que o Pix realmente envia (granularidade e fuso) antes de qualquer mudança, que exige aprovação do Owner. A documentação oficial descreve o fluxo do Pix como `PAYMENT_CREATED → PAYMENT_RECEIVED` (com atraso: `→ PAYMENT_OVERDUE → PAYMENT_RECEIVED`), sem `PAYMENT_CONFIRMED`.
+
 ## 6. Variáveis de ambiente (nomes; nenhum valor aqui)
 `PAYMENTS_ENABLED` (padrão desligado), `ASAAS_ENV` (`sandbox`), `ASAAS_API_KEY` (Sandbox), `ASAAS_WEBHOOK_TOKEN`, `PAYMENT_HOLD_MINUTES` (30; 5–1440), `PAYMENT_ALLOWED_ORIGINS`. Somente como secrets das Edge Functions.
 

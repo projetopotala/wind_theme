@@ -20,6 +20,7 @@ export type ResultadoRegistro = { resultado: "aplicado" | "duplicado" | "sem_mud
 export type WebhookDeps = {
   env(nome: string): string | undefined;
   registrar(evento: EventoNormalizado): Promise<{ data?: ResultadoRegistro | null; error?: unknown }>;
+  log?(linha: Record<string, unknown>): void;
 };
 
 function iguais(a: string, b: string) {
@@ -47,6 +48,15 @@ export function normalizarEvento(bruto: unknown): EventoNormalizado | null {
   };
 }
 
+// Envelope valido ({ id, event }) cuja familia NAO e de cobrancas (event nao comeca por PAYMENT_).
+export function eventoDeOutraFamilia(bruto: unknown): { eventId: string; evento: string } | null {
+  if (!bruto || typeof bruto !== "object" || Array.isArray(bruto)) return null;
+  const e = bruto as Record<string, unknown>;
+  const eventId = str(e.id, 120); const evento = str(e.event, 80);
+  if (!eventId || !evento || !/^[A-Z][A-Z0-9_]*$/.test(evento) || evento.startsWith("PAYMENT_")) return null;
+  return { eventId, evento };
+}
+
 export function criarWebhookHandler(deps: WebhookDeps) {
   return async (request: Request): Promise<Response> => {
     const corpo = { "Cache-Control": "no-store" };
@@ -58,9 +68,19 @@ export function criarWebhookHandler(deps: WebhookDeps) {
     if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) return Response.json({ received: false }, { status: 400, headers: corpo });
     const texto = await request.text();
     if (texto.length > MAX_CORPO) return Response.json({ received: false }, { status: 413, headers: corpo });
-    let evento: EventoNormalizado | null = null;
-    try { evento = normalizarEvento(JSON.parse(texto)); } catch { evento = null; }
-    if (!evento) return Response.json({ received: false }, { status: 400, headers: corpo });
+    let json: unknown = null;
+    try { json = JSON.parse(texto); } catch { json = null; }
+    const evento = normalizarEvento(json);
+    if (!evento) {
+      // R8: evento VALIDO e autenticado de outra familia (transferencia, assinatura, nota...) nao e falha de entrega:
+      // responde 200 e registra so nome e id no log (nunca o corpo). Malformado continua 400; PAYMENT_* sem `payment` tambem.
+      const outro = eventoDeOutraFamilia(json);
+      if (outro) {
+        deps.log?.({ evento: "webhook_ignorado", tipo: outro.evento, eventId: outro.eventId });
+        return Response.json({ received: true, resultado: "ignorado" }, { status: 200, headers: corpo });
+      }
+      return Response.json({ received: false }, { status: 400, headers: corpo });
+    }
     const registro = await deps.registrar(evento).catch(() => ({ error: true }) as { data?: null; error?: unknown });
     if (registro.error || !registro.data) return Response.json({ received: false }, { status: 503, headers: { ...corpo, "Retry-After": "30" } });
     return Response.json({ received: true, resultado: registro.data.resultado }, { status: 200, headers: corpo });

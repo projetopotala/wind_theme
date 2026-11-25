@@ -19,7 +19,7 @@ Deno.serve((request: Request) => {
     // PAY-02: onde ficam nome/CPF do cliente e o id do cliente no Asaas ainda e decisao pendente (LGPD).
     dadosCliente: async () => null,
     salvarClienteAsaas: async () => undefined,
-    registrar: async (id, asaasId, qr) => await admin.rpc("pay_register_provider_charge", { p_payment_id: id, p_provider_payment_id: asaasId, p_pix_payload: qr.copiaECola, p_pix_expires_at: qr.expiraEm }),
+    registrar: async (id, asaasId, qr) => await admin.rpc("pay_register_provider_charge", { p_payment_id: id, p_provider_payment_id: asaasId, p_pix_payload: qr?.copiaECola ?? null, p_pix_expires_at: qr?.expiraEm ?? null }),
     falhar: async (id, motivo) => { await admin.rpc("pay_fail_creation", { p_payment_id: id, p_reason: motivo }); },
     log: (linha) => console.log(JSON.stringify(linha)),
   });

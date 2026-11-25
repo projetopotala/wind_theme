@@ -70,9 +70,12 @@ create table public.appointment_payments (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+-- "Aberta" = qualquer cobranca que ainda pode existir ou receber dinheiro no Asaas. Inclui 'vencido': um Pix vencido
+-- ainda pode ser pago (o QR vale meses), entao o indice so e liberado por cancelamento comprovado (PAYMENT_DELETED ou
+-- pay_fail_creation, que exige prova de que nada foi criado) ou por estorno. Nova cobranca exige reconciliacao.
 create unique index appointment_payments_uma_aberta_por_solicitacao
   on public.appointment_payments (request_id)
-  where status in ('criando', 'aguardando_pagamento', 'em_processamento', 'confirmado', 'recebido', 'em_contestacao', 'divergente');
+  where status in ('criando', 'aguardando_pagamento', 'em_processamento', 'confirmado', 'recebido', 'vencido', 'em_contestacao', 'divergente');
 create index appointment_payments_cliente on public.appointment_payments (client_id, created_at desc);
 
 -- 3) Eventos (append-only).
@@ -225,7 +228,7 @@ language sql stable security definer set search_path = '' as $$
       left join public.op_records d on d.collection = 'activity_definitions' and d.id = o.document ->> 'definition_id'
       where o.collection = 'activity_offerings' and o.id = p.offering_id), p.offering_id),
     'hold_expires_at', p.hold_expires_at, 'due_date', p.due_date, 'provider_payment_id', p.provider_payment_id,
-    'replayed', p_replayed)
+    'pix_ready', p.pix_copy_paste is not null, 'replayed', p_replayed)
 $$;
 
 create function public.pay_prepare_appointment_payment(p_user_id uuid, p_request_id uuid, p_idempotency_key uuid, p_hold_minutes integer default 30)
@@ -257,7 +260,7 @@ begin
     raise exception 'O horario nao esta mais reservado para esta solicitacao.' using errcode = '22023';
   end if;
   select * into pay from public.appointment_payments
-   where request_id = r.id and status in ('criando', 'aguardando_pagamento', 'em_processamento', 'confirmado', 'recebido', 'em_contestacao', 'divergente');
+   where request_id = r.id and status in ('criando', 'aguardando_pagamento', 'em_processamento', 'confirmado', 'recebido', 'vencido', 'em_contestacao', 'divergente');
   if found then return public.pay_payment_json(pay, true); end if;
   select * into preco from public.appointment_service_prices where offering_id = r.offering_id and active;
   if not found then
@@ -286,20 +289,25 @@ begin
     raise exception 'A cobranca ja esta vinculada a outro identificador do provedor.' using errcode = '23503';
   end if;
   -- Se o webhook PAYMENT_CREATED chegou antes, o estado ja avancou: nao o fazemos retroceder.
+  -- Chamada em duas etapas (B1): 1) so o id externo (payload nulo), logo apos criar a cobranca; 2) o Pix, quando o QR
+  -- estiver disponivel (ou numa recuperacao posterior). Um payload nulo nunca apaga um Pix ja gravado.
   update public.appointment_payments
-     set provider_payment_id = p_provider_payment_id, pix_copy_paste = p_pix_payload, pix_expires_at = p_pix_expires_at,
+     set provider_payment_id = p_provider_payment_id,
+         pix_copy_paste = coalesce(p_pix_payload, pix_copy_paste), pix_expires_at = coalesce(p_pix_expires_at, pix_expires_at),
          status = case when status = 'criando' then 'aguardando_pagamento' else status end
    where id = p_payment_id returning * into pay;
   return public.pay_payment_json(pay, false);
 end;
 $$;
 
+-- So cancela uma criacao que PROVADAMENTE nao gerou cobranca externa: status 'criando' E sem id do provedor.
+-- Uma cobranca com id externo nunca e cancelada aqui (so o Asaas cancela, via PAYMENT_DELETED).
 create function public.pay_fail_creation(p_payment_id uuid, p_reason text) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
   update public.appointment_payments
      set status = 'cancelado', failure_reason = left(coalesce(p_reason, 'falha_criacao'), 120)
-   where id = p_payment_id and status = 'criando';
+   where id = p_payment_id and status = 'criando' and provider_payment_id is null;
 end;
 $$;
 
@@ -350,6 +358,7 @@ begin
       select * into r from public.appointment_requests where id = pay.request_id;
       select * into slot from public.appointment_slots where id = r.appointment_slot_id;
       desfecho := case
+        when pay.reservation_outcome = 'revisao' then 'revisao' -- estorno ja em andamento: nao volta a ser elegivel
         when found and r.status in ('recebida', 'em_contato', 'encerrada') and slot.held_by_request_id = r.id
              and slot.status in ('held', 'booked') and (slot.status = 'booked' or pay.hold_expires_at >= now())
           then 'elegivel' else 'pagamento_tardio' end;
@@ -364,6 +373,15 @@ begin
            refunded_at = case when novo_estado = 'estornado' then coalesce(refunded_at, now()) else refunded_at end,
            reservation_outcome = desfecho, last_event_at = now()
      where id = pay.id;
+  end if;
+
+  -- R4: estorno em andamento NAO muda o estado financeiro (o historico fica), mas tira a elegibilidade para confirmar
+  -- o atendimento: a cobranca vai para revisao manual. Nenhuma politica de reembolso e decidida aqui; REFUND_DENIED
+  -- tambem nao devolve a elegibilidade sozinho (exige revisao do Owner).
+  if p_event = 'PAYMENT_REFUND_IN_PROGRESS' and resultado = 'sem_mudanca'
+     and pay.reservation_outcome in ('elegivel', 'pendente') then
+    update public.appointment_payments set reservation_outcome = 'revisao', last_event_at = now() where id = pay.id;
+    resultado := 'aplicado';
   end if;
 
   insert into public.appointment_payment_events (provider_event_id, payment_id, provider_payment_id, event, event_created,

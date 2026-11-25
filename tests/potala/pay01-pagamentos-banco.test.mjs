@@ -474,3 +474,119 @@ test("rollback | remove tudo, recusa se houver registros financeiros e permite r
   assert.ok((await objetos()).fn >= 13);
   await b.close();
 });
+
+/* ---------------- B1: id externo preservado; indice so e liberado por cancelamento comprovado ----------------
+ * Concorrencia REAL entre conexoes nao e simulavel em PGlite (conexao unica): a serializacao vem de `for update` e do
+ * indice unico, validados aqui apenas pela logica sequencial. */
+const contar = async (req) => Number((await db.query("select count(*)::int as n from public.appointment_payments where request_id=$1", [req])).rows[0].n);
+
+test("B1 | registro em duas etapas: id externo primeiro (sem Pix), Pix depois; payload nulo nunca apaga o Pix; outro id e recusado", () => tx(async () => {
+  const ids = await semear();
+  const p = (await preparar("A", ids)).v;
+  assert.deepEqual([p.provider_payment_id, p.pix_ready, p.status], [null, false, "criando"]);
+  const r1 = await svc("select public.pay_register_provider_charge($1,$2,null,null) as v", [p.id, prov(p)]);
+  assert.equal(r1.ok, true, r1.message);
+  assert.deepEqual([r1.rows[0].v.status, r1.rows[0].v.provider_payment_id, r1.rows[0].v.pix_ready], ["aguardando_pagamento", prov(p), false]);
+  const r2 = await svc("select public.pay_register_provider_charge($1,$2,'000201',now() + interval '1 day') as v", [p.id, prov(p)]);
+  assert.equal(r2.rows[0].v.pix_ready, true);
+  const r3 = await svc("select public.pay_register_provider_charge($1,$2,null,null) as v", [p.id, prov(p)]);
+  assert.equal(r3.rows[0].v.pix_ready, true);
+  assert.equal((await db.query("select pix_copy_paste from public.appointment_payments where id=$1", [p.id])).rows[0].pix_copy_paste, "000201");
+  assert.equal((await svc("select public.pay_register_provider_charge($1,'pay_outro',null,null)", [p.id])).ok, false);
+}));
+
+test("B1 | pay_fail_creation NAO cancela cobranca com id externo; o indice segue bloqueando outra cobranca (mesma chave ou outra)", () => tx(async () => {
+  const ids = await semear();
+  const p = (await preparar("A", ids)).v;
+  await svc("select public.pay_register_provider_charge($1,$2,null,null)", [p.id, prov(p)]);
+  assert.equal((await svc("select public.pay_fail_creation($1,'asaas_http_400')", [p.id])).ok, true);
+  const st = (await db.query("select status, failure_reason from public.appointment_payments where id=$1", [p.id])).rows[0];
+  assert.deepEqual([st.status, st.failure_reason], ["aguardando_pagamento", null]);
+  for (const n of [1, 77]) {
+    const o = await preparar("A", ids, n);
+    assert.deepEqual([o.v.id, o.v.replayed], [p.id, true], `chave ${n}`);
+  }
+  assert.equal(await contar(ids.A.req), 1);
+}));
+
+test("B1 | linha 'criando' que ja ganhou id por evento informativo (PAYMENT_UPDATED) tambem nao pode ser cancelada por pay_fail_creation", () => tx(async () => {
+  const ids = await semear();
+  const p = (await preparar("A", ids)).v;
+  assert.equal(await evento(p, "PAYMENT_UPDATED"), "sem_mudanca"); // vincula o id por externalReference sem sair de 'criando'
+  const antes = (await db.query("select status, provider_payment_id from public.appointment_payments where id=$1", [p.id])).rows[0];
+  assert.deepEqual([antes.status, antes.provider_payment_id], ["criando", prov(p)]);
+  await svc("select public.pay_fail_creation($1,'qualquer')", [p.id]);
+  assert.equal((await estado(p.id)).status, "criando");
+  assert.equal((await preparar("A", ids, 77)).v.replayed, true);
+  assert.equal(await contar(ids.A.req), 1);
+}));
+
+test("B1 | criacao inconclusiva ('criando' sem id): nova tentativa (qualquer chave) devolve a MESMA linha; pay_fail_creation so cancela quando nada foi criado", () => tx(async () => {
+  const ids = await semear();
+  const p = (await preparar("A", ids)).v;
+  for (const n of [1, 77]) {
+    const o = await preparar("A", ids, n);
+    assert.deepEqual([o.v.id, o.v.replayed, o.v.status, o.v.provider_payment_id], [p.id, true, "criando", null], `chave ${n}`);
+  }
+  assert.equal(await contar(ids.A.req), 1);
+  await svc("select public.pay_fail_creation($1,'antes_da_cobranca')", [p.id]); // aqui e legitimo: sem id externo
+  assert.equal((await estado(p.id)).status, "cancelado");
+  const nova = await preparar("A", ids, 78);
+  assert.deepEqual([nova.v.id === p.id, nova.v.replayed], [false, false]);
+}));
+
+test("B1 | queda entre a criacao externa e a gravacao interna: fica 'criando' ate o PAYMENT_CREATED (por externalReference) vincular o id; depois so recupera o QR", () => tx(async () => {
+  const ids = await semear();
+  const p = (await preparar("A", ids)).v; // processo caiu aqui: Asaas criou a cobranca, o banco nao soube o id
+  assert.equal((await preparar("A", ids, 77)).v.replayed, true); // bloqueado, sem segunda cobranca
+  assert.equal(await evento(p, "PAYMENT_CREATED"), "aplicado"); // vincula por externalReference
+  const linha = (await db.query("select status, provider_payment_id, pix_copy_paste from public.appointment_payments where id=$1", [p.id])).rows[0];
+  assert.deepEqual([linha.status, linha.provider_payment_id, linha.pix_copy_paste], ["aguardando_pagamento", prov(p), null]);
+  const rep = (await preparar("A", ids, 77)).v;
+  assert.deepEqual([rep.id, rep.provider_payment_id, rep.pix_ready], [p.id, prov(p), false]); // o handler recupera o QR com este id
+  const reg = await svc("select public.pay_register_provider_charge($1,$2,'000201',now() + interval '1 day') as v", [p.id, prov(p)]);
+  assert.equal(reg.rows[0].v.pix_ready, true);
+  assert.equal(await contar(ids.A.req), 1);
+}));
+
+test("B1 | 'vencido' ainda bloqueia nova cobranca (o Pix vencido pode ser pago); so o cancelamento confirmado pelo Asaas libera o indice", () => tx(async () => {
+  const ids = await semear();
+  const p = await pagoAte("A", ids, ["PAYMENT_CREATED", "PAYMENT_OVERDUE"]);
+  assert.equal((await estado(p.id)).status, "vencido");
+  const o = await preparar("A", ids, 78);
+  assert.deepEqual([o.v.id, o.v.replayed], [p.id, true]);
+  assert.equal(await contar(ids.A.req), 1);
+  assert.equal(await evento(p, "PAYMENT_DELETED"), "aplicado");
+  assert.equal((await estado(p.id)).status, "cancelado");
+  const nova = await preparar("A", ids, 79);
+  assert.deepEqual([nova.v.id === p.id, nova.v.replayed], [false, false]);
+  assert.equal(await contar(ids.A.req), 2);
+}));
+
+test("B1 | criar a cobranca nunca e pagamento: sem PAYMENT_RECEIVED nada e recebido nem libera confirmacao", () => tx(async () => {
+  const ids = await semear();
+  const p = await pagoAte("A", ids, ["PAYMENT_CREATED"]);
+  const st = await estado(p.id);
+  assert.deepEqual([st.status, st.received_at, st.confirmed_at, st.reservation_outcome], ["aguardando_pagamento", null, null, "pendente"]);
+  assert.equal(await permite(ids.A.req), false);
+}));
+
+test("R4 | estorno em andamento: estado e historico preservados, elegibilidade vai para revisao e a confirmacao deixa de ser permitida", () => tx(async () => {
+  const ids = await semear();
+  const p = await pagoAte("A", ids, ["PAYMENT_RECEIVED"]);
+  assert.deepEqual([(await estado(p.id)).reservation_outcome, await permite(ids.A.req)], ["elegivel", true]);
+  assert.equal(await evento(p, "PAYMENT_REFUND_IN_PROGRESS", { id: "evt_refund_1" }), "aplicado");
+  assert.equal(await evento(p, "PAYMENT_REFUND_IN_PROGRESS", { id: "evt_refund_1" }), "duplicado");
+  const st = await estado(p.id);
+  assert.deepEqual([st.status, st.reservation_outcome, await permite(ids.A.req)], ["recebido", "revisao", false]);
+  const hist = (await db.query("select event, outcome, from_status, to_status from public.appointment_payment_events where payment_id=$1 order by id", [p.id])).rows;
+  assert.deepEqual(hist.at(-1), { event: "PAYMENT_REFUND_IN_PROGRESS", outcome: "aplicado", from_status: "recebido", to_status: "recebido" });
+  assert.equal(hist.length, 2);
+  assert.equal(await evento(p, "PAYMENT_REFUND_DENIED"), "sem_mudanca"); // nao devolve a elegibilidade sozinho
+  assert.deepEqual([(await estado(p.id)).reservation_outcome, await permite(ids.A.req)], ["revisao", false]);
+  // estorno em andamento antes do RECEIVED (fora de ordem): continua em revisao depois de recebido
+  const q = await pagoAte("B", ids, ["PAYMENT_CREATED", "PAYMENT_REFUND_IN_PROGRESS"]);
+  assert.equal((await estado(q.id)).reservation_outcome, "revisao");
+  await evento(q, "PAYMENT_RECEIVED");
+  assert.deepEqual([(await estado(q.id)).status, (await estado(q.id)).reservation_outcome, await permite(ids.B.req)], ["recebido", "revisao", false]);
+}));
