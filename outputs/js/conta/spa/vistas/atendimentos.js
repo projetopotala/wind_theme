@@ -1,5 +1,5 @@
 import { STATUS_DE_ATENDIMENTO } from "../../modelos.js";
-import { e, papelProfissional, secao, vazio } from "./comum.js";
+import { e, falhaDeCarregamento, leituraFalhou, papelProfissional, secao, vazio } from "./comum.js";
 import { aulasDoProfessor as secaoAulasDoProfessor } from "./aulas-do-professor.js";
 import { caminhoDaSala } from "../../../sala/estado-sala.js";
 
@@ -259,7 +259,7 @@ export function separarAtendimentos(atendimentos = [], agora = new Date()) {
 }
 
 const vista = {
-  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], perfisProfissionais = [], aulasDoProfessor = [], atendimentoDisponivel = false, parametros = null, agora = new Date() }) {
+  renderizar({ atendimentos = [], opcoesAtendimento = [], horariosAtendimento = [], agendaProfissional = [], perfisProfissionais = [], aulasDoProfessor = [], atendimentoDisponivel = false, parametros = null, agora = new Date(), falhas = [] }) {
     /*
      * Profissional é quem o banco reconhece: vínculo ativo com perfil profissional
      * ativo (perfisProfissionais) ou consultas atribuídas. Com zero consultas a
@@ -268,11 +268,19 @@ const vista = {
     const consultasProfissionais = Array.isArray(agendaProfissional) ? agendaProfissional : [];
     const aulasMinistradas = Array.isArray(aulasDoProfessor) ? aulasDoProfessor : [];
     if (papelProfissional({ agendaProfissional, perfisProfissionais, aulasDoProfessor })) {
-      const agendaPropria = `${secaoAulasDoProfessor(aulasMinistradas, agora)}${agendaDeQuemAtende(consultasProfissionais)}`;
+      /* Agenda que não carregou não é "nenhuma consulta": mostra a falha no lugar da lista. */
+      const agendaFalhou = !consultasProfissionais.length && leituraFalhou(falhas, "agendaProfissional");
+      const agendaPropria = `${secaoAulasDoProfessor(aulasMinistradas, agora)}${agendaFalhou
+        ? secao({ id: "mp-agenda-profissional", kicker: "Sua agenda de atendimentos", titulo: "Consultas", corpo: falhaDeCarregamento({ texto: "Não conseguimos carregar a sua agenda de atendimentos agora." }) })
+        : agendaDeQuemAtende(consultasProfissionais)}`;
       if (!atendimentos.length) return agendaPropria;
       /* Os dois papéis, separados por um marco visível: o trabalho em cima, o que é seu embaixo. */
       const marco = "<p class=\"mp-papel\"><span>Como cliente</span> Os atendimentos que você pediu para você</p>";
       return `${agendaPropria}${marco}${vista.renderizar({ atendimentos, opcoesAtendimento, horariosAtendimento, atendimentoDisponivel, parametros, agora })}`;
+    }
+    /* Sem ler os pedidos não dá para dizer que não há nenhum (nem liberar um novo, que depende deles). */
+    if (!atendimentos.length && leituraFalhou(falhas, "atendimentos")) {
+      return secao({ id: "mp-atendimentos-falha", kicker: "Atendimentos", titulo: "Seus atendimentos", corpo: falhaDeCarregamento({ texto: "Não conseguimos carregar os seus atendimentos agora." }) });
     }
     const referencia = agora instanceof Date ? agora : new Date(agora);
     const { pendentes, confirmados, anteriores, cancelados } = separarAtendimentos(atendimentos, referencia);

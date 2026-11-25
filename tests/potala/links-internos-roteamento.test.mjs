@@ -29,10 +29,24 @@ test("o link de Minha area profissional na Central nao usa barra final", () => {
   assert.doesNotMatch(link[0], /href="\/meu-potala\/"/);
 });
 
-test("a Vercel cobre /meu-potala e seus subcaminhos, mas nao a barra final isolada", () => {
+test("a Vercel cobre /meu-potala e seus subcaminhos, com e sem barra final", () => {
   assert.ok(rewrites.includes("/meu-potala"));
   assert.ok(rewrites.includes("/meu-potala/:path*"));
-  assert.ok(!rewrites.includes("/meu-potala/"));
+  // Barra final: a regra "/meu-potala/:path*" nao a cobre sozinha (404 em producao).
+  assert.ok(rewrites.includes("/meu-potala/"));
+  assert.ok(rewrites.includes("/meu-potala/:path+/"));
+});
+
+test("as regras de barra final do Meu Potala apontam para a mesma pagina e nao ha trailingSlash global", () => {
+  const config = JSON.parse(readFileSync(join(raiz, "vercel.json"), "utf8"));
+  const destinos = config.rewrites
+    .filter((r) => r.source.startsWith("/meu-potala"))
+    .map((r) => r.destination);
+  assert.equal(destinos.length, 4);
+  assert.deepEqual([...new Set(destinos)], ["/meu-potala.html"]);
+  assert.equal("trailingSlash" in config, false);
+  assert.equal("cleanUrls" in config, false);
+  assert.equal("redirects" in config, false);
 });
 
 test("nenhum link interno usa '/segmento/' sem rewrite exato ou index.html", () => {

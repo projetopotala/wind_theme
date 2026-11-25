@@ -39,6 +39,24 @@ export function vazio({ texto, titulo = "", link = null }) {
   return `<div class="mp-vazio"><span class="mp-vazio-icone" aria-hidden="true"></span><div class="mp-vazio-texto">${titulo ? `<p class="mp-vazio-titulo">${e(titulo)}</p>` : ""}<p>${e(texto)}</p>${saida}</div></div>`;
 }
 
+/*
+ * Falha de leitura NÃO é lista vazia. Quando a consulta de uma coleção falha, a tela
+ * não pode dizer "nada marcado" (a pessoa entenderia que não tem nada). `app.js`
+ * entrega em `falhas` os nomes das coleções que não chegaram; aqui a seção decide.
+ */
+export function leituraFalhou(falhas, ...nomes) {
+  return Array.isArray(falhas) && nomes.some((nome) => falhas.includes(nome));
+}
+
+export function falhaDeCarregamento({ texto = "Não conseguimos carregar esta parte agora." } = {}) {
+  return `<div class="mp-vazio mp-vazio-falha" role="alert" data-falha-carregamento><span class="mp-vazio-icone" aria-hidden="true"></span><div class="mp-vazio-texto"><p class="mp-vazio-titulo">Não carregou</p><p>${e(texto)}</p><button type="button" class="mp-botao mp-botao-secundario mp-botao-pequeno" data-acao="recarregar">Tentar novamente</button></div></div>`;
+}
+
+/* Estado vazio só quando a leitura terminou bem; se falhou, mostra a falha com "Tentar novamente". */
+export function vazioOuFalha({ falhas, colecoes = [], texto, titulo = "", link = null, textoDaFalha }) {
+  return leituraFalhou(falhas, ...colecoes) ? falhaDeCarregamento({ texto: textoDaFalha }) : vazio({ texto, titulo, link });
+}
+
 export function barraDeProgresso(fracao, rotulo) {
   const porcento = Math.round(Math.min(1, Math.max(0, Number(fracao) || 0)) * 100);
   return `<div class="mp-progresso" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${porcento}" aria-label="${e(rotulo || `${porcento}% percorrido`)}"><span style="--mp-avanco:${porcento}%"></span></div>`;

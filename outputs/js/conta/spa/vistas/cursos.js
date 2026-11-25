@@ -12,7 +12,7 @@
 
 import { fracaoDoProgresso, quandoLegivel, textoDoProgresso } from "../../leituras.js";
 import { STATUS_DE_INSCRICAO } from "../../modelos.js";
-import { barraDeProgresso, capa, e, secao, vazio } from "./comum.js";
+import { barraDeProgresso, capa, e, leituraFalhou, secao, vazioOuFalha } from "./comum.js";
 import { aulasDoProfessor as secaoAulasDoProfessor, avisoDeSala } from "./aulas-do-professor.js";
 
 /*
@@ -81,17 +81,19 @@ export function pedidosDeInscricao(pedidos = []) {
 }
 
 export default {
-  renderizar({ inscricoes, progressos, agora, inscricoesCursos = [], aulasDoProfessor = [] }) {
+  renderizar({ inscricoes, progressos, agora, inscricoesCursos = [], aulasDoProfessor = [], falhas = [] }) {
     /* Turmas que a pessoa ministra vêm primeiro; não dependem de inscrição nem de pagamento. */
     const pedidos = `${secaoAulasDoProfessor(aulasDoProfessor, agora)}${pedidosDeInscricao(inscricoesCursos)}`;
-    if (!inscricoes.length && pedidos) return pedidos;
+    /* Com alguma leitura falha, o que chegou aparece, mas a lista não é dada como vazia. */
+    const algumaFalha = leituraFalhou(falhas, "inscricoes", "inscricoesCursos", "aulasDoProfessor");
+    if (!inscricoes.length && pedidos && !algumaFalha) return pedidos;
     if (!inscricoes.length) {
-      return secao({
+      return `${pedidos}${secao({
         id: "mp-cursos",
         kicker: "Meus cursos",
-        titulo: "Nenhum curso por enquanto",
-        corpo: vazio({ texto: "Quando você se inscrever em um curso, ele aparece aqui com a próxima aula e o seu progresso.", link: { href: "/cursos.html", texto: "Conhecer os cursos" } }),
-      });
+        titulo: algumaFalha ? "Seus cursos" : "Nenhum curso por enquanto",
+        corpo: vazioOuFalha({ falhas, colecoes: ["inscricoes", "inscricoesCursos", "aulasDoProfessor"], textoDaFalha: "Não conseguimos carregar os seus cursos agora.", texto: "Quando você se inscrever em um curso, ele aparece aqui com a próxima aula e o seu progresso.", link: { href: "/cursos.html", texto: "Conhecer os cursos" } }),
+      })}`;
     }
 
     const porInscricao = new Map(progressos.map((progresso) => [progresso.inscricaoId, progresso]));

@@ -43,7 +43,15 @@
       "destination": "/meu-potala.html"
     },
     {
+      "source": "/meu-potala/",
+      "destination": "/meu-potala.html"
+    },
+    {
       "source": "/meu-potala/:path*",
+      "destination": "/meu-potala.html"
+    },
+    {
+      "source": "/meu-potala/:path+/",
       "destination": "/meu-potala.html"
     }
   ]
