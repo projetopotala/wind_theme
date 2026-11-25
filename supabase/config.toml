@@ -23,3 +23,11 @@ verify_jwt = false
 # Assistente publico (IA-01). Visitante anonimo: a chave publicavel e validada pelo wrapper no POST.
 # A OPENAI_API_KEY fica so nos segredos da funcao; IA_ATIVO=true liga, qualquer outro valor desliga.
 verify_jwt = false
+
+[functions.create-appointment-payment]
+# PAY-01 (desligado por PAYMENTS_ENABLED; nao publicar). Usuario autenticado: a plataforma valida o JWT e o banco confere o dono da solicitacao.
+verify_jwt = true
+
+[functions.asaas-appointment-webhook]
+# PAY-01 (nao publicar). O Asaas nao envia JWT: o handler exige o segredo ASAAS_WEBHOOK_TOKEN em asaas-access-token (tempo constante) e falha fechado.
+verify_jwt = false
