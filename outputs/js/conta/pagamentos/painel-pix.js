@@ -28,6 +28,19 @@ export function imagemDoQr(base64) {
     ? `data:image/png;base64,${base64}` : null;
 }
 
+// PAY-08: recompõe a imagem no navegador usando somente o payload persistido.
+// A biblioteca e vendorizada no proprio Portal; nada e enviado a um gerador externo.
+export function imagemQrDoCopiaECola(copia, fabrica = globalThis.qrcode) {
+  if (typeof copia !== "string" || !copia || copia.length > 4096 || typeof fabrica !== "function") return null;
+  try {
+    const qr = fabrica(0, "M");
+    qr.addData(copia, "Byte");
+    qr.make();
+    const imagem = qr.createDataURL(6, 8);
+    return /^data:image\/(?:gif|png);base64,[A-Za-z0-9+/=]+$/.test(imagem) ? imagem : null;
+  } catch { return null; }
+}
+
 function formularioDoPagador(pedidoId, invalido) {
   return `<p class="mp-nota">Para gerar o Pix precisamos do seu nome completo e do seu CPF ou CNPJ. O documento é enviado ao Asaas, nosso processador de pagamentos, e não fica guardado no Portal.</p>
     ${invalido ? "<p class=\"mp-aviso\" role=\"alert\">Confira o nome completo e o CPF ou CNPJ informados.</p>" : ""}
@@ -42,7 +55,7 @@ function formularioDoPagador(pedidoId, invalido) {
 function blocoDoPix(pagamento, resultado) {
   const copia = textoParaCopiar(pagamento) ?? (typeof resultado?.pix?.copia_e_cola === "string" && resultado.pix.copia_e_cola ? resultado.pix.copia_e_cola : null);
   if (!copia) return "";
-  const imagem = imagemDoQr(resultado?.pix?.imagem_base64);
+  const imagem = imagemDoQr(resultado?.pix?.imagem_base64) ?? imagemQrDoCopiaECola(copia);
   const expira = quandoExpira(pagamento?.pix_expires_at || resultado?.pix?.expira_em);
   return `<div class="mp-pix" data-pix>
     ${imagem ? `<img class="mp-pix-qr" src="${esc(imagem)}" alt="QR Code do Pix para pagar o atendimento" width="200" height="200">` : ""}

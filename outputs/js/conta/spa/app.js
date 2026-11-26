@@ -34,7 +34,7 @@ import notificacoes from "./vistas/notificacoes.js";
 import configuracoes from "./vistas/configuracoes.js";
 import atendimentos, { periodoEncerrado } from "./vistas/atendimentos.js";
 import { APPOINTMENT_REQUESTS_ENABLED } from "../../appointments/config.js";
-import { PAGAMENTOS_PIX_ATIVO, PAGAMENTOS_PIX_INFORMATIVO } from "../pagamentos/config.js";
+import { PAGAMENTOS_PIX_ATIVO, PAGAMENTOS_PIX_INFORMATIVO, SUPORTE_PILOTO_PIX } from "../pagamentos/config.js";
 import { erroDaUrl } from "../confirmar-conta.js";
 import { lerArtigosPublicados } from "../../blog/artigos-publicados.js";
 
@@ -113,8 +113,13 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     if (APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.perfisProfissionais()
       .then((lista) => ({ nome: "perfisProfissionais", lista }))
       .catch((erro) => ({ nome: "perfisProfissionais", lista: [], erro })));
-    /* PAY-02: so le pagamentos proprios com a chave de exibicao ligada (desligada por padrao). Ler nao cria cobranca. */
-    if ((PAGAMENTOS_PIX_ATIVO || PAGAMENTOS_PIX_INFORMATIVO) && APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.pagamentosPix()
+    /* PAY-08: no piloto, o servidor devolve somente o pedido exato autorizado para esta conta. */
+    if (SUPORTE_PILOTO_PIX && APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.pilotosPix()
+      .then((lista) => ({ nome: "pilotosPix", lista }))
+      // A Preview pode anteceder a migration: falha fechada, sem expor o piloto nem degradar o restante do Meu Potala.
+      .catch(() => ({ nome: "pilotosPix", lista: [] })));
+    /* Ler pagamentos proprios nao cria cobranca. No piloto, preserva o QR de uma cobranca ja criada apos reload/revogacao. */
+    if ((PAGAMENTOS_PIX_ATIVO || PAGAMENTOS_PIX_INFORMATIVO || SUPORTE_PILOTO_PIX) && APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.pagamentosPix()
       .then((lista) => ({ nome: "pagamentosPix", lista }))
       .catch((erro) => ({ nome: "pagamentosPix", lista: [], erro })));
     /* Turmas que a conta ministra (vínculo real no banco): entrada na aula sem matrícula. */
@@ -138,6 +143,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         dados.aulasDoProfessor ||= [];
         dados.perfisProfissionais ||= [];
         dados.pagamentosPix ||= [];
+        dados.pilotosPix ||= [];
         dados.falhas = respostas.filter((resposta) => resposta.erro).map((resposta) => resposta.nome);
         dono = usuarioId;
         return dados;
@@ -266,9 +272,12 @@ export async function montarMeuPotala({ documento = document, janela = window } 
     }
 
     const atual = sessao.obter();
+    const pedidosPiloto = (dados.pilotosPix || []).map((item) => item?.request_id).filter(Boolean);
+    const temPagamentoPiloto = (dados.pagamentosPix || []).length > 0;
     const contexto = { ...dados, estado: atual, agora: new Date(), parametros: new URLSearchParams(janela.location.search), atendimentoDisponivel: APPOINTMENT_REQUESTS_ENABLED,
       pagamentosPix: PAGAMENTOS_PIX_ATIVO ? { ativo: true, porPedido: pagamentosPorPedido(dados.pagamentosPix), resultados: resultadosPix }
-        : PAGAMENTOS_PIX_INFORMATIVO ? { ativo: false, informativo: true, leituraFalhou: dados.falhas.includes("pagamentosPix"), porPedido: pagamentosPorPedido(dados.pagamentosPix) } : null };
+        : (pedidosPiloto.length || temPagamentoPiloto) ? { ativo: false, pedidosAutorizados: pedidosPiloto, porPedido: pagamentosPorPedido(dados.pagamentosPix), resultados: resultadosPix }
+          : PAGAMENTOS_PIX_INFORMATIVO ? { ativo: false, informativo: true, leituraFalhou: dados.falhas.includes("pagamentosPix"), porPedido: pagamentosPorPedido(dados.pagamentosPix) } : null };
     let corpo;
     try {
       corpo = VISTAS[rota.nome].renderizar(contexto);
@@ -435,7 +444,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
   };
 
   const aoClicar = (evento) => {
-    if (PAGAMENTOS_PIX_ATIVO) {
+    if (PAGAMENTOS_PIX_ATIVO || SUPORTE_PILOTO_PIX) {
       const copiar = evento.target.closest?.("[data-acao='copiar-pix']");
       if (copiar && palco.contains(copiar)) { copiarPix(copiar); return; }
     }
@@ -491,7 +500,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       return;
     }
     /* PAY-02: a unica porta para gerar cobranca e este envio, por clique. Abrir a pagina nunca chega aqui. */
-    const pagarPix = PAGAMENTOS_PIX_ATIVO ? evento.target.closest?.("[data-form='pagar-pix']") : null;
+    const pagarPix = (PAGAMENTOS_PIX_ATIVO || SUPORTE_PILOTO_PIX) ? evento.target.closest?.("[data-form='pagar-pix']") : null;
     if (pagarPix) {
       evento.preventDefault();
       const pedidoId = pagarPix.getAttribute("data-pedido") || "";
