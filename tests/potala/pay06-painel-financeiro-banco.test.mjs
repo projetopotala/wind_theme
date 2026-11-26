@@ -53,7 +53,6 @@ async function como(papel, uid, sql, params = []) {
   }
 }
 const svc = (sql, params) => como("service_role", null, sql, params);
-const cliente = (k, sql, params) => como("authenticated", U[k], sql, params);
 const anon = (sql, params) => como("anon", null, sql, params);
 const ligar = (v = true) => db.query("update public.pay_runtime_settings set charges_enabled = $1", [v]);
 
