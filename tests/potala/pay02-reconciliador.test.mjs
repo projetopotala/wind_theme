@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { criarReconciliadorHandler } from "../../supabase/functions/reconcile-appointment-payments/handler.ts";
 
 /*
@@ -12,6 +13,15 @@ const SEGREDO = "segredo-reconciliador-FICTICIO-".padEnd(48, "r");
 const ENV = { PAYMENTS_ENABLED: "true", ASAAS_ENV: "sandbox", ASAAS_API_KEY: CHAVE, ASAAS_WEBHOOK_TOKEN: TOKEN_WH, PAYMENTS_RECONCILE_TOKEN: SEGREDO };
 const REF = "appointment:44444444-4444-4444-8444-444444444444";
 const PAG = "55555555-5555-4555-8555-555555555555";
+
+test("agendamento preparado | nasce pausado, usa Vault e nao versiona token", () => {
+  const sql = readFileSync(new URL("../../ops/payments/reconciliation/01-criar-segredo-e-job.sql", import.meta.url), "utf8");
+  assert.match(sql, /begin;[\s\S]*cron\.schedule[\s\S]*active := false[\s\S]*commit;/i,
+    "agendamento e pausa precisam ficar invisiveis ate o mesmo commit");
+  assert.match(sql, /vault\.decrypted_secrets[\s\S]*potala_pay_reconcile_token/);
+  assert.match(sql, /'\*\/5 \* \* \* \*'/);
+  assert.doesNotMatch(sql, /PAYMENTS_RECONCILE_TOKEN\s*=\s*\S+/);
+});
 
 const cob = (extra = {}) => ({ id: "pay_1", status: "PENDING", value: 150, externalReference: REF, dueDate: "2026-11-26", ...extra });
 const linha = (extra = {}) => ({ payment_id: PAG, provider_payment_id: "pay_1", external_reference: REF, status: "aguardando_pagamento", amount_cents: 15000, pix_ready: true, motivo: "conferir", ...extra });
@@ -225,8 +235,19 @@ test("orfas | cobrancas do Asaas com nossa referencia que o banco desconhece vir
     rotas: { "GET /payments": { data: [{ id: "pay_x", externalReference: "appointment:a" }, { id: "pay_y", externalReference: "outro-sistema:1" }, { id: "pay_z" }], hasMore: false } },
     desconhecidas: (itens) => itens.filter((i) => i.id === "pay_x") });
   const corpo = await (await m.chamar()).json();
+  assert.equal(corpo.asaas_autenticado, true, "GET autenticado e valido comprova a conexao real");
   assert.deepEqual([corpo.orfas, m.tipos(), m.revisoes[0][1]], [1, ["orfa_no_provedor"], "pay_x"]);
   assert.deepEqual([m.eventos.length, m.liberadas.length, m.posts().length, m.fetches.some((f) => f.chave.startsWith("DELETE"))], [0, 0, 0, false]);
+});
+
+test("conectividade | erros=0 nao substitui prova de GET autenticado concluido", async () => {
+  const ok = montar({ rotas: { "GET /payments": { data: [], hasMore: false } } });
+  const respostaOk = await (await ok.chamar()).json();
+  assert.deepEqual([respostaOk.asaas_autenticado, respostaOk.erros], [true, 0]);
+
+  const falha = montar({ rotas: { "GET /payments": new Response("{}", { status: 401 }) } });
+  const respostaFalha = await (await falha.chamar()).json();
+  assert.deepEqual([respostaFalha.asaas_autenticado, respostaFalha.erros], [false, 1]);
 });
 
 test("orfas | so refs com o prefixo appointment: sao enviadas ao banco; paginacao limitada a 5 paginas", async () => {

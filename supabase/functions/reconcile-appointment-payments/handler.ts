@@ -64,7 +64,7 @@ export function criarReconciliadorHandler(deps: ReconciliadorDeps) {
     if (!iguais(recebido, segredo)) return responder(401, { message: "Não autorizado." });
 
     const asaas = criarClienteAsaas({ baseUrl: config.baseUrl, apiKey: config.apiKey, fetch: deps.fetch, log: deps.log, permitirProducao: config.ambiente === "production" });
-    const n = { vinculadas: 0, qr_recuperados: 0, eventos_aplicados: 0, revisoes_abertas: 0, canceladas_no_asaas: 0, reservas_liberadas: 0, erros: 0, orfas: 0 };
+    const n = { asaas_autenticado: false, vinculadas: 0, qr_recuperados: 0, eventos_aplicados: 0, revisoes_abertas: 0, canceladas_no_asaas: 0, reservas_liberadas: 0, erros: 0, orfas: 0 };
     const revisar = async (pagId: string | null, asaasId: string | null, tipo: TipoRevisao, detalhe: Record<string, unknown>) => {
       await deps.abrirRevisao(pagId, asaasId, tipo, detalhe).then(() => { n.revisoes_abertas++; }).catch(() => { n.erros++; });
     };
@@ -146,6 +146,9 @@ export function criarReconciliadorHandler(deps: ReconciliadorDeps) {
       let offset = 0; const vistas: Array<{ id: string; ref: string | null }> = [];
       for (let p = 0; p < PAGINAS_ORFAS; p++) {
         const pagina = await asaas.listarCobrancasDesde(desde, offset);
+        // Esta flag só existe depois de uma resposta 200 autenticada e estruturalmente
+        // válida do Asaas. `erros: 0`, sozinho, não comprova conectividade.
+        n.asaas_autenticado = true;
         vistas.push(...pagina.itens.filter((i) => i.ref?.startsWith(PREFIXO_REFERENCIA)));
         if (!pagina.temMais) break;
         offset += 100;
