@@ -255,7 +255,7 @@ test("criar | idempotencia: repetir devolve a cobranca existente sem chamar o As
 });
 
 test("criar | erros do banco viram respostas seguras (dono errado, horario perdido, sem preco)", async () => {
-  for (const [code, status] of [["42501", 403], ["P0002", 404], ["22023", 409], ["PT409", 409], ["PT422", 422], ["XX000", 502]]) {
+  for (const [code, status] of [["42501", 403], ["PT403", 403], ["P0002", 404], ["22023", 409], ["PT409", 409], ["PT422", 422], ["XX000", 502]]) {
     const c = criar({ preparar: async () => ({ data: null, error: { code } }) });
     assert.equal((await c.enviar({ request_id: REQ, idempotency_key: KEY })).status, status, code);
     assert.equal(c.calls.filter((x) => x[0] === "fetch").length, 0);

@@ -11,6 +11,7 @@ import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
  */
 const DIR = new URL("../../supabase/migrations/", import.meta.url);
 const ROLLBACK = new URL("../../supabase/rollbacks/202611250003_rollback_pay02_pagador_reconciliacao.sql", import.meta.url);
+const PAY08_ROLLBACK = new URL("../../supabase/rollbacks/202611260002_rollback_pay08_piloto_pix.sql", import.meta.url);
 const U = { A: "00000000-0000-0000-0000-0000000000a1", B: "00000000-0000-0000-0000-0000000000b1", OWNER: "00000000-0000-0000-0000-0000000000f1" };
 const OFERTA = "pay02-oferta";
 
@@ -368,9 +369,10 @@ test("liberar reserva | com outra cobranca aberta para a mesma solicitacao, nao 
 /* ---------------- Migration ---------------- */
 test("migration | so objetos novos; PAY-01 intacta; reversao remove somente a PAY-02 e a PAY-02 pode ser reaplicada", () => tx(async () => {
   const tabelas = async () => (await db.query("select table_name from information_schema.tables where table_schema='public' and table_name like 'pay\\_%' order by 1")).rows.map((r) => r.table_name);
-  assert.deepEqual(await tabelas(), ["pay_payer_profiles", "pay_reconciliation_log", "pay_runtime_settings"]);
+  assert.deepEqual(await tabelas(), ["pay_payer_profiles", "pay_pilot_authorizations", "pay_reconciliation_log", "pay_runtime_settings"]);
   assert.equal((await db.query("select count(*)::int n from public.pay_runtime_settings where charges_enabled")).rows[0].n, 0, "nasce desligada");
   assert.equal((await db.query("select count(*)::int n from public.appointment_service_prices")).rows[0].n, 0, "nenhum preco criado");
+  await db.exec(readFileSync(PAY08_ROLLBACK, "utf8"));
   await db.exec(readFileSync(ROLLBACK, "utf8"));
   assert.deepEqual(await tabelas(), []);
   assert.ok((await db.query("select to_regclass('public.appointment_payments') t")).rows[0].t, "PAY-01 permanece");
