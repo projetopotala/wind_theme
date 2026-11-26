@@ -112,3 +112,22 @@
   .admin-home .op-dashboard-shortcuts { grid-template-columns: 1fr; gap: 8px; }
   .admin-home .op-dashboard-shortcuts :is(a, button) { padding: 12px 14px; }
 }
+/* PAY-06: painel financeiro (Pix), somente leitura. Mobile primeiro. */
+.pg-painel{margin-top:1.5rem;display:grid;gap:.8rem}
+.pg-painel h3,.pg-painel p{margin:0}
+.pg-resumo{display:grid;gap:.4rem;border:1px solid var(--admin-hairline,rgba(0,0,0,.18));border-radius:.7rem;padding:.8rem 1rem}
+.pg-chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.4rem}
+.pg-chips li{border:1px solid var(--admin-hairline,rgba(0,0,0,.18));border-radius:999px;padding:.15rem .6rem;font-size:.85rem}
+.pg-filtro{display:grid;gap:.25rem;font-size:.9rem;max-width:20rem}
+.pg-lista{list-style:none;margin:0;padding:0;display:grid;gap:.8rem}
+.pg-item{border:1px solid var(--admin-hairline,rgba(0,0,0,.18));border-radius:.7rem;padding:.8rem 1rem;display:grid;gap:.35rem;overflow-wrap:anywhere}
+.pg-item[data-falha]{border-color:var(--admin-gold,#b88a4f);border-width:2px}
+.pg-item h3{font-size:1.05rem}
+.pg-situacao{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
+.pg-alerta{border:1px solid currentColor;border-radius:999px;padding:0 .45rem;margin-left:.4rem;letter-spacing:0}
+.pg-detalhe,.pg-trava{font-size:.88rem}
+.pg-falha,.pg-erro{font-weight:600}
+.pg-eventos,.pg-revisoes{margin:.4rem 0 0;padding-left:1.1rem;display:grid;gap:.3rem;font-size:.88rem}
+.pg-eventos li[data-falha],.pg-revisoes li[data-falha]{font-weight:600}
+.pg-item .op-button,.pg-painel>.op-button{justify-self:start;min-height:44px}
+@media (min-width:760px){.pg-item{grid-template-columns:1fr auto;align-items:start}.pg-item>*{grid-column:1}.pg-item>.op-button{grid-column:2;grid-row:1}}
