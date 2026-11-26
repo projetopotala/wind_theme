@@ -158,4 +158,3 @@ grant execute on function public.admin_set_pay_pilot_authorization(uuid, uuid, t
 grant execute on function public.pay_pilot_authorized(uuid, uuid) to service_role;
 grant execute on function public.pay_charge_allowed(uuid, uuid) to service_role;
 grant execute on function public.pay_prepare_appointment_payment(uuid, uuid, uuid, integer) to service_role;
-
