@@ -18,6 +18,7 @@ import { createServicosAtendimento } from "./servicos-atendimento.js";
 import { createOperationsClient } from "./operations/client.js";
 import { createOperationsController } from "./operations/controller.js";
 import { carregarRecebidos } from "./recebidos.js";
+import { createPagamentosPixAdmin } from "./pagamentos-pix-admin.js";
 import { createAppointmentPanel } from "./appointment-panel.js";
 import { createAccessPanel } from "./access-panel.js";
 import { createEditarSite } from "../site/editar-site.js";
@@ -120,6 +121,9 @@ async function abrirOperacao(client, access) {
     operations,
     onSalvo() { operationsController?.render(); void atendimentosPanel?.reload(); },
   });
+  /* PAY-06: pagamentos por Pix, somente leitura, dentro de Financeiro. So o Owner ativo (area oculta para os demais; o banco recusa de qualquer forma). */
+  const pagamentosPix = createPagamentosPixAdmin({ root: panel.querySelector("[data-pagamentos-pix-admin]"), client });
+  panel.querySelector("[data-admin-nav] [data-section=\"financeiro\"]")?.addEventListener("click", () => { void pagamentosPix?.iniciar(); });
   carregarRecebidos(client)
     .then((dados) => operationsController?.definirRecebidos(dados))
     .catch((error) => operationsController?.definirRecebidos({ erro: error.message }));
