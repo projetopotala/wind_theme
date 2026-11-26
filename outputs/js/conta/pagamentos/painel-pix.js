@@ -113,3 +113,48 @@ export function resultadoDaResposta(status, corpo) {
   if (b.retry_same_request === true) return { mensagem: typeof b.message === "string" ? b.message : "O Pix ainda não está disponível. Tente de novo em instantes." };
   return { mensagem: "Não foi possível preparar o pagamento agora." };
 }
+
+// PAY-05: painel INFORMATIVO. Nunca desenha QR Code, Copia e Cola, botao nem formulario: so mostra valor e situacao que o servidor gravou.
+const AGUARDANDO = new Set(["criando", "aguardando_pagamento", "em_processamento", "confirmado"]);
+
+export function categoriaDoPagamento(pagamento, { leituraFalhou = false } = {}) {
+  if (leituraFalhou) return "indisponivel";
+  if (!pagamento || typeof pagamento.status !== "string") return "indisponivel";
+  if (pagamento.status === "recebido") return "confirmado";
+  if (pagamento.status === "vencido") return "expirado";
+  if (AGUARDANDO.has(pagamento.status)) return "pendente";
+  return "outro";
+}
+
+const TEXTOS_INFORMATIVOS = {
+  pendente: { situacao: "Pagamento pendente", nota: "O pagamento deste atendimento ainda não foi concluído. Se você já pagou, aguarde: não é preciso pagar de novo." },
+  confirmado: { situacao: "Pagamento confirmado", nota: "O Instituto recebeu o pagamento deste atendimento." },
+  expirado: { situacao: "Pagamento expirado", nota: "O prazo para pagar terminou. Se você já pagou, aguarde a conferência; se não, fale com o Instituto." },
+};
+
+export function painelPixInformativo({ pedido, pagamento = null, leituraFalhou = false } = {}) {
+  const categoria = categoriaDoPagamento(pagamento, { leituraFalhou });
+  const valor = Number.isInteger(pagamento?.amount_cents) ? formatarReais(pagamento.amount_cents) : null;
+  let situacao; let nota;
+  if (categoria === "indisponivel") {
+    situacao = "Pagamento por Pix ainda não disponível";
+    nota = leituraFalhou
+      ? "Não foi possível ver a situação do pagamento agora. Tente de novo em instantes."
+      : "Quando o pagamento por Pix for liberado, avisaremos aqui. Você não precisa pagar nada agora.";
+  } else if (categoria === "outro") {
+    const s = situacaoFinanceira(pagamento.status);
+    situacao = s.titulo; nota = `${s.descricao} ${s.proximoPasso}`;
+  } else ({ situacao, nota } = TEXTOS_INFORMATIVOS[categoria]);
+  const linhas = [
+    pedido?.servico ? `<li><span>Atendimento</span> ${esc(pedido.servico)}</li>` : "",
+    `<li><span>Valor</span> ${esc(valor ?? "Será informado antes de qualquer pagamento")}</li>`,
+    "<li><span>Forma de pagamento</span> Pix</li>",
+    `<li><span>Situação</span> ${esc(situacao)}</li>`,
+  ].join("");
+  return `<section class="mp-pagamento" data-pagamento-informativo data-categoria="${esc(categoria)}" data-status="${esc(pagamento?.status || "nenhum")}" aria-label="Situação do pagamento">
+    <h4>Pagamento</h4>
+    <ul class="mp-pagamento-resumo">${linhas}</ul>
+    <p class="mp-nota">${esc(nota)}</p>
+    <p class="mp-nota">${esc(AJUDA_EM_CASO_DE_ERRO)}</p>
+  </section>`;
+}

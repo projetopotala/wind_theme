@@ -2,7 +2,7 @@ import { STATUS_DE_ATENDIMENTO } from "../../modelos.js";
 import { e, falhaDeCarregamento, leituraFalhou, papelProfissional, secao, vazio } from "./comum.js";
 import { aulasDoProfessor as secaoAulasDoProfessor } from "./aulas-do-professor.js";
 import { caminhoDaSala } from "../../../sala/estado-sala.js";
-import { painelPix } from "../../pagamentos/painel-pix.js";
+import { painelPix, painelPixInformativo } from "../../pagamentos/painel-pix.js";
 
 /*
  * O link existe só para consulta online confirmada e futura. Ele não prova
@@ -51,7 +51,12 @@ function horarioLegivel(valor) {
 
 /* PAY-02: painel Pix so aparece com a chave ligada (pix.ativo) e so em pedidos aguardando; desligado, nada muda. */
 function painelDoPedido(pedido, tipo, pix) {
-  if (tipo !== "pedido" || pix?.ativo !== true || !["recebida", "em_contato"].includes(pedido.status)) return "";
+  if (tipo !== "pedido" || !["recebida", "em_contato"].includes(pedido.status)) return "";
+  /* PAY-05: modo informativo (valor e situacao, sem acao de pagar). So com a chave informativa ligada e a de pagamento desligada. */
+  if (pix?.informativo === true && pix?.ativo !== true) {
+    return painelPixInformativo({ pedido: { id: pedido.id, servico: pedido.servico }, pagamento: pix.porPedido?.[pedido.id] ?? null, leituraFalhou: pix.leituraFalhou === true });
+  }
+  if (pix?.ativo !== true) return "";
   return painelPix({
     pedido: { id: pedido.id, servico: pedido.servico, horario: pedido.inicio ? horarioLegivel(pedido.inicio) : "" },
     pagamento: pix.porPedido?.[pedido.id] ?? null,

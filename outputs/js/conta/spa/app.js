@@ -34,7 +34,7 @@ import notificacoes from "./vistas/notificacoes.js";
 import configuracoes from "./vistas/configuracoes.js";
 import atendimentos, { periodoEncerrado } from "./vistas/atendimentos.js";
 import { APPOINTMENT_REQUESTS_ENABLED } from "../../appointments/config.js";
-import { PAGAMENTOS_PIX_ATIVO } from "../pagamentos/config.js";
+import { PAGAMENTOS_PIX_ATIVO, PAGAMENTOS_PIX_INFORMATIVO } from "../pagamentos/config.js";
 import { erroDaUrl } from "../confirmar-conta.js";
 import { lerArtigosPublicados } from "../../blog/artigos-publicados.js";
 
@@ -114,7 +114,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       .then((lista) => ({ nome: "perfisProfissionais", lista }))
       .catch((erro) => ({ nome: "perfisProfissionais", lista: [], erro })));
     /* PAY-02: so le pagamentos proprios com a chave de exibicao ligada (desligada por padrao). Ler nao cria cobranca. */
-    if (PAGAMENTOS_PIX_ATIVO && APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.pagamentosPix()
+    if ((PAGAMENTOS_PIX_ATIVO || PAGAMENTOS_PIX_INFORMATIVO) && APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.pagamentosPix()
       .then((lista) => ({ nome: "pagamentosPix", lista }))
       .catch((erro) => ({ nome: "pagamentosPix", lista: [], erro })));
     /* Turmas que a conta ministra (vínculo real no banco): entrada na aula sem matrícula. */
@@ -267,7 +267,8 @@ export async function montarMeuPotala({ documento = document, janela = window } 
 
     const atual = sessao.obter();
     const contexto = { ...dados, estado: atual, agora: new Date(), parametros: new URLSearchParams(janela.location.search), atendimentoDisponivel: APPOINTMENT_REQUESTS_ENABLED,
-      pagamentosPix: PAGAMENTOS_PIX_ATIVO ? { ativo: true, porPedido: pagamentosPorPedido(dados.pagamentosPix), resultados: resultadosPix } : null };
+      pagamentosPix: PAGAMENTOS_PIX_ATIVO ? { ativo: true, porPedido: pagamentosPorPedido(dados.pagamentosPix), resultados: resultadosPix }
+        : PAGAMENTOS_PIX_INFORMATIVO ? { ativo: false, informativo: true, leituraFalhou: dados.falhas.includes("pagamentosPix"), porPedido: pagamentosPorPedido(dados.pagamentosPix) } : null };
     let corpo;
     try {
       corpo = VISTAS[rota.nome].renderizar(contexto);
