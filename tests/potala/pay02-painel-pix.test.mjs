@@ -132,7 +132,7 @@ test("tela | abrir a tela NUNCA gera cobranca: o painel e so HTML com botao; o s
   const bloco = app.slice(app.indexOf("[data-form='pagar-pix']") - 300, app.indexOf("[data-form='pagar-pix']") + 1800);
   assert.ok(bloco.includes("criarPagamentoPix(") && bloco.includes("evento.preventDefault()"), "dentro do tratador do envio");
   assert.ok(app.includes("PAGAMENTOS_PIX_ATIVO ? evento.target.closest?.(\"[data-form='pagar-pix']\")"), "tratador inerte com a chave desligada");
-  assert.ok(app.includes("if (PAGAMENTOS_PIX_ATIVO && APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.pagamentosPix()"), "leitura so com a chave ligada");
+  assert.ok(app.includes("if ((PAGAMENTOS_PIX_ATIVO || PAGAMENTOS_PIX_INFORMATIVO) && APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.pagamentosPix()"), "leitura so com a chave de pagamento ou a informativa ligada (PAY-05)");
 });
 
 test("adaptador de demonstracao nunca cobra: sem pagamentos e resposta de indisponivel, sem rede", () => {
