@@ -23,6 +23,17 @@ test("agendamento preparado | nasce pausado, usa Vault e nao versiona token", ()
   assert.doesNotMatch(sql, /PAYMENTS_RECONCILE_TOKEN\s*=\s*\S+/);
 });
 
+test("aplicador operacional | recupera token apenas do DPAPI e limpa memoria/ambiente", () => {
+  const ps = readFileSync(new URL("../../ops/payments/reconciliation/aplicar-reconciliacao.ps1", import.meta.url), "utf8");
+  assert.match(ps, /payments-reconcile-token\.dpapi/);
+  assert.match(ps, /ConvertTo-SecureString/);
+  assert.match(ps, /SecureStringToBSTR/);
+  assert.match(ps, /ZeroFreeBSTR/);
+  assert.match(ps, /Remove-Item Env:PAY_RECONCILE_TOKEN/);
+  assert.doesNotMatch(ps, /pay03-travado\.env/);
+  assert.doesNotMatch(ps, /PAYMENTS_RECONCILE_TOKEN\s*=/);
+});
+
 const cob = (extra = {}) => ({ id: "pay_1", status: "PENDING", value: 150, externalReference: REF, dueDate: "2026-11-26", ...extra });
 const linha = (extra = {}) => ({ payment_id: PAG, provider_payment_id: "pay_1", external_reference: REF, status: "aguardando_pagamento", amount_cents: 15000, pix_ready: true, motivo: "conferir", ...extra });
 const expirado = (extra = {}) => ({ payment_id: PAG, request_id: "req", status: "aguardando_pagamento", provider_payment_id: "pay_1", amount_cents: 15000, external_reference: REF, ...extra });
