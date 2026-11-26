@@ -83,6 +83,11 @@ export function criarWebhookHandler(deps: WebhookDeps) {
     }
     const registro = await deps.registrar(evento).catch(() => ({ error: true }) as { data?: null; error?: unknown });
     if (registro.error || !registro.data) return Response.json({ received: false }, { status: 503, headers: { ...corpo, "Retry-After": "30" } });
+    // Referencia NOSSA sem cobranca no banco = possivel orfa (a conta e compartilhada; o resto e de outros usos e fica quieto).
+    // So ids no log, nunca o corpo; o reconciliador abre a revisao.
+    if (registro.data.resultado === "sem_correspondencia" && evento.referenciaExterna?.startsWith("appointment:")) {
+      deps.log?.({ evento: "webhook_possivel_orfa", tipo: evento.evento, eventId: evento.eventId, pagamentoId: evento.pagamentoId });
+    }
     return Response.json({ received: true, resultado: registro.data.resultado }, { status: 200, headers: corpo });
   };
 }

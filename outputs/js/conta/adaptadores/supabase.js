@@ -19,6 +19,7 @@
 import { SUPABASE_CONFIG } from "../../supabase/config.js";
 import { DadosIndisponiveis, ErroDeConta, codigoDoErro } from "../mensagens.js";
 import { FABRICAS, criarPerfil, criarUsuario } from "../modelos.js";
+import { corpoDoPedidoDePagamento, resultadoDaResposta } from "../pagamentos/painel-pix.js";
 
 export const TABELAS = Object.freeze({
   salvos: "saved_items",
@@ -492,6 +493,27 @@ export function criarDadosSupabase({ client } = {}) {
         throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");
       }
       return { id: data.id, status: data.status };
+    },
+
+    /* PAY-02: leitura dos PROPRIOS pagamentos (RLS + grant de colunas; sem documento, sem id do provedor). So roda com a chave de exibicao ligada. */
+    async pagamentosPix() {
+      const { data, error } = await client.from("appointment_payments")
+        .select("request_id, status, amount_cents, pix_copy_paste, pix_expires_at, hold_expires_at, updated_at")
+        .order("created_at", { ascending: false }).limit(50);
+      if (error) throw falhouDados(error);
+      return Array.isArray(data) ? data : [];
+    },
+
+    /* PAY-02: unica chamada que pode gerar cobranca; so acontece por clique do cliente. O servidor decide valor, servico e travas. */
+    async criarPagamentoPix({ pedidoId, idempotencia, nome, documento }) {
+      if (!UUID_DO_RECIBO.test(String(pedidoId)) || !UUID_DO_RECIBO.test(String(idempotencia))) throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");
+      const { data, error } = await client.functions.invoke("create-appointment-payment", { body: corpoDoPedidoDePagamento({ pedidoId, idempotencia, nome, documento }) });
+      if (!error) return resultadoDaResposta(200, data);
+      const resposta = error.context;
+      if (!resposta || typeof resposta.status !== "number") throw falhouDados(error);
+      let corpo = null;
+      try { corpo = await resposta.json(); } catch { corpo = null; }
+      return resultadoDaResposta(resposta.status, corpo);
     },
 
     async cancelarAtendimento(id) {

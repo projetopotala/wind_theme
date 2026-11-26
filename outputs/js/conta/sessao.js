@@ -270,6 +270,16 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
       return aposUsarDados(await dados.solicitarAtendimento(pedido, usuarioId));
     },
 
+    async pagamentosPix() {
+      exigirConta();
+      return aposUsarDados(await dados.pagamentosPix());
+    },
+
+    async criarPagamentoPix(pedido) {
+      exigirConta();
+      return aposUsarDados(await dados.criarPagamentoPix(pedido));
+    },
+
     async solicitarHorarioAtendimento(pedido) {
       exigirConta();
       return aposUsarDados(await dados.solicitarHorarioAtendimento(pedido));
