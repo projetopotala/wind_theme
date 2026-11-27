@@ -55,6 +55,14 @@ test("painel | depois de recarregar, Copia e Cola e QR sao recompostos localment
   assert.equal(imagemQrDoCopiaECola("x", () => { throw new Error("falha"); }), null);
 });
 
+test("painel | Pix com prazo vencido nao reaparece como QR ou Copia e Cola valido", () => {
+  const h = painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, pix_expires_at: "2020-01-01T00:00:00Z" } });
+  assert.equal(h.includes("data-pix>"), false);
+  assert.equal(h.includes("data-pix-codigo"), false);
+  assert.equal(h.includes("mp-pix-qr"), false);
+  assert.equal(h.includes("pagar-pix"), false, "cobranca existente nao oferece outra cobranca");
+});
+
 test("painel | biblioteca vendorizada gera um QR real do payload persistido e corresponde ao SRI da pagina", () => {
   const arquivo = readFileSync(new URL("../../outputs/vendor/qrcode-generator-1.4.4.js", import.meta.url));
   const contextoQr = {};

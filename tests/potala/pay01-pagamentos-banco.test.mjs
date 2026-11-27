@@ -66,7 +66,7 @@ const svc = (sql, params) => como("service_role", null, sql, params);
 const cliente = (k, sql, params) => como("authenticated", U[k], sql, params);
 
 // Cenario: A e B tem solicitacao com horario reservado (held) da mesma oferta, preco ativo de R$ 150,00.
-async function semear({ preco = true } = {}) {
+async function semear({ preco = true, piloto = true } = {}) {
   const ids = {};
   // PAY-02: a chave geral de cobrancas nasce DESLIGADA; os testes de PAY-01 a ligam so dentro da transacao do cenario.
   if ((await db.query("select to_regclass('public.pay_runtime_settings') as t")).rows[0].t) await db.query("update public.pay_runtime_settings set charges_enabled = true");
@@ -78,6 +78,11 @@ async function semear({ preco = true } = {}) {
       values ($1, $2, now() + interval '3 days', now() + interval '3 days 1 hour', 'held', $3, $4) returning id`, [OFERTA, `prof-${k}`, r.rows[0].id, U.OWNER]);
     await db.query("update public.appointment_requests set appointment_slot_id = $1 where id = $2", [s.rows[0].id, r.rows[0].id]);
     ids[k] = { req: r.rows[0].id, slot: s.rows[0].id };
+  }
+  if (piloto && (await db.query("select to_regclass('public.pay_pilot_authorizations') as t")).rows[0].t) {
+    await db.query(`insert into public.pay_pilot_authorizations(request_id,user_id,expires_at,enabled,created_by)
+      values ($1,$2,now()+interval '2 hours',true,$3),($4,$5,now()+interval '2 hours',true,$3)`,
+    [ids.A.req, U.A, U.OWNER, ids.B.req, U.B]);
   }
   return ids;
 }
@@ -133,7 +138,7 @@ test("privilegios | apenas a listagem minima do proprio piloto e autenticada; en
 
 /* ---------------- PAY-08: piloto restrito ---------------- */
 test("PAY-08 | nasce vazio, cliente nao se autoriza e somente Owner ativo administra o par pedido/cliente", () => tx(async () => {
-  const ids = await semear();
+  const ids = await semear({ piloto: false });
   await db.query("update public.pay_runtime_settings set charges_enabled=false");
   assert.equal((await db.query("select count(*)::int n from public.pay_pilot_authorizations")).rows[0].n, 0);
   assert.equal((await cliente("A", "select * from public.pay_pilot_authorizations")).ok, false, "sem leitura direta");
@@ -147,12 +152,14 @@ test("PAY-08 | nasce vazio, cliente nao se autoriza e somente Owner ativo admini
   assert.equal(errado.ok, false); assert.equal(errado.code, "22023");
 }));
 
-test("PAY-08 | charges_enabled=false bloqueia o publico; autorizacao exata e vigente libera uma unica cobranca idempotente", () => tx(async () => {
-  const ids = await semear();
+test("PAY-08 | as duas travas sao obrigatorias; chave aberta libera somente autorizacao exata e vigente", () => tx(async () => {
+  const ids = await semear({ piloto: false });
   await db.query("update public.pay_runtime_settings set charges_enabled=false");
   assert.equal((await preparar("A", ids, 101)).code, "PT503", "tentativa direta sem piloto");
   assert.equal((await preparar("B", ids, 102)).code, "PT503", "outro pedido continua bloqueado");
   assert.equal((await autorizarPiloto(ids)).ok, true);
+  assert.equal((await preparar("A", ids, 103)).code, "PT503", "piloto nunca contorna a parada global");
+  await db.query("update public.pay_runtime_settings set charges_enabled=true");
   const primeiro = await preparar("A", ids, 103);
   assert.equal(primeiro.ok, true, primeiro.message);
   const repetido = await preparar("A", ids, 103);
@@ -162,8 +169,8 @@ test("PAY-08 | charges_enabled=false bloqueia o publico; autorizacao exata e vig
 }));
 
 test("PAY-08 | expirada/revogada bloqueiam imediatamente novas cobrancas; preco e slot continuam obrigatorios", () => tx(async () => {
-  const ids = await semear();
-  await db.query("update public.pay_runtime_settings set charges_enabled=false");
+  const ids = await semear({ piloto: false });
+  await db.query("update public.pay_runtime_settings set charges_enabled=true");
   await ownerAtivo();
   await db.query("insert into public.pay_pilot_authorizations(request_id,user_id,expires_at,enabled,created_by) values ($1,$2,now()-interval '1 minute',true,$3)", [ids.A.req, U.A, U.OWNER]);
   assert.equal((await preparar("A", ids, 105)).code, "PT503", "expirada");
@@ -176,6 +183,23 @@ test("PAY-08 | expirada/revogada bloqueiam imediatamente novas cobrancas; preco 
   await db.query("update public.appointment_service_prices set active=true where offering_id=$1", [OFERTA]);
   await db.query("update public.appointment_slots set status='available',held_by_request_id=null where id=$1", [ids.A.slot]);
   assert.equal((await preparar("A", ids, 108)).code, "22023", "piloto nao substitui slot futuro reservado");
+}));
+
+test("PAY-08 | revogar novas cobrancas nao interrompe webhook nem reconciliacao de cobranca existente", () => tx(async () => {
+  const ids = await semear({ piloto: false });
+  await db.query("update public.pay_runtime_settings set charges_enabled=true");
+  assert.equal((await autorizarPiloto(ids)).ok, true);
+  const pay = (await preparar("A", ids, 109)).v;
+  await svc("select public.pay_register_provider_charge($1,$2,null,null)", [pay.id, prov(pay)]);
+  await db.query("update public.appointment_payments set created_at=now()-interval '30 minutes' where id=$1", [pay.id]);
+  await db.query("update public.pay_pilot_authorizations set enabled=false where request_id=$1", [ids.A.req]);
+  await db.query("update public.pay_runtime_settings set charges_enabled=false");
+  const fila = await svc("select payment_id, motivo from public.pay_list_reconcilable(now(), 10)");
+  assert.equal(fila.ok, true, fila.message);
+  assert.deepEqual(fila.rows, [{ payment_id: pay.id, motivo: "sem_qr" }]);
+  assert.equal(await evento(pay, "PAYMENT_RECEIVED"), "aplicado");
+  assert.equal((await estado(pay.id)).status, "recebido");
+  assert.equal((await preparar("B", ids, 110)).code, "PT503", "nenhuma nova cobranca nasce durante o acompanhamento");
 }));
 
 test("privilegios | anon e authenticated nao chamam as RPCs financeiras (GRANT negado)", () => tx(async () => {

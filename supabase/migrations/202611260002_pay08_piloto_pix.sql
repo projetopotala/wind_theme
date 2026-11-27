@@ -1,6 +1,6 @@
 -- PAY-08: autorizacao restrita do primeiro Pix real por solicitacao e cliente.
--- A tabela nasce vazia. A chave global continua fechada; somente uma autorizacao
--- vigente, criada pelo Owner ativo, permite uma nova cobranca para o par exato.
+-- A tabela nasce vazia. Uma nova cobranca exige simultaneamente a chave global
+-- aberta e uma autorizacao vigente, criada pelo Owner ativo, para o par exato.
 
 create table public.pay_pilot_authorizations (
   request_id uuid primary key references public.appointment_requests (id) on delete cascade,
@@ -35,10 +35,12 @@ language sql stable security definer set search_path = '' as $$
   )
 $$;
 
--- A chave global continua soberana. O piloto apenas abre o par exato pedido/cliente.
+-- As duas travas sao obrigatorias: a chave global e a autorizacao do par exato.
+-- Assim, o piloto nunca enfraquece a parada de emergencia e abrir a chave global
+-- nao libera pedidos fora do piloto.
 create function public.pay_charge_allowed(p_user_id uuid, p_request_id uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
-  select public.pay_charges_enabled() or public.pay_pilot_authorized(p_user_id, p_request_id)
+  select public.pay_charges_enabled() and public.pay_pilot_authorized(p_user_id, p_request_id)
 $$;
 
 -- Lista minima para o proprio cliente: sem dados administrativos e sem acesso direto a tabela.

@@ -22,6 +22,13 @@ function quandoExpira(valor) {
     : "";
 }
 
+function pixAindaValido(pagamento, resultado) {
+  const valor = pagamento?.pix_expires_at || resultado?.pix?.expira_em;
+  if (!valor) return true;
+  const data = new Date(valor);
+  return !Number.isNaN(data.valueOf()) && data.valueOf() > Date.now();
+}
+
 // Imagem do QR: so base64 puro e de tamanho razoavel; qualquer outra coisa e ignorada (o Copia e Cola continua valendo).
 export function imagemDoQr(base64) {
   return typeof base64 === "string" && base64.length > 0 && base64.length <= 60000 && BASE64.test(base64)
@@ -54,7 +61,7 @@ function formularioDoPagador(pedidoId, invalido) {
 
 function blocoDoPix(pagamento, resultado) {
   const copia = textoParaCopiar(pagamento) ?? (typeof resultado?.pix?.copia_e_cola === "string" && resultado.pix.copia_e_cola ? resultado.pix.copia_e_cola : null);
-  if (!copia) return "";
+  if (!copia || !pixAindaValido(pagamento, resultado)) return "";
   const imagem = imagemDoQr(resultado?.pix?.imagem_base64) ?? imagemQrDoCopiaECola(copia);
   const expira = quandoExpira(pagamento?.pix_expires_at || resultado?.pix?.expira_em);
   return `<div class="mp-pix" data-pix>

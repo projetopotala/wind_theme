@@ -57,7 +57,7 @@ const cliente = (k, sql, params) => como("authenticated", U[k], sql, params);
 const anon = (sql, params) => como("anon", null, sql, params);
 const ligar = (v = true) => db.query("update public.pay_runtime_settings set charges_enabled = $1", [v]);
 
-async function semear({ habilitar = true } = {}) {
+async function semear({ habilitar = true, piloto = true } = {}) {
   const ids = {};
   if (habilitar) await ligar(true);
   await db.query("insert into public.appointment_service_prices(offering_id, amount_cents, active) values ($1, 15000, true)", [OFERTA]);
@@ -68,6 +68,11 @@ async function semear({ habilitar = true } = {}) {
       values ($1, $2, now() + interval '3 days', now() + interval '3 days 1 hour', 'held', $3, $4) returning id`, [OFERTA, `prof-${k}`, r.rows[0].id, U.OWNER]);
     await db.query("update public.appointment_requests set appointment_slot_id = $1 where id = $2", [s.rows[0].id, r.rows[0].id]);
     ids[k] = { req: r.rows[0].id, slot: s.rows[0].id };
+  }
+  if (piloto) {
+    await db.query(`insert into public.pay_pilot_authorizations(request_id,user_id,expires_at,enabled,created_by)
+      values ($1,$2,now()+interval '2 hours',true,$3),($4,$5,now()+interval '2 hours',true,$3)`,
+    [ids.A.req, U.A, U.OWNER, ids.B.req, U.B]);
   }
   return ids;
 }
