@@ -102,7 +102,9 @@ export function renderizarPrecos(precos = [], ocupado = false) {
       <label>Preço do atendimento (R$)<input data-pg-price-value inputmode="decimal" autocomplete="off" value="${e(valor)}" placeholder="0,00" ${bloqueada || ocupado ? "disabled" : ""}></label>
       <p class="pg-detalhe">${item.amount_cents == null ? "Nenhum preço cadastrado." : `${e(reais(item.amount_cents))} · ${item.price_active ? "ativo" : "inativo"}`}</p>
       <div class="pg-acoes"><button type="button" class="op-button" data-pg-price-save ${bloqueada || ocupado ? "disabled" : ""}>Salvar preço</button>
-      ${item.amount_cents == null ? "" : `<button type="button" class="op-button" data-pg-price-toggle data-active="${item.price_active ? "true" : "false"}" ${bloqueada || ocupado ? "disabled" : ""}>${item.price_active ? "Desativar preço" : "Ativar preço"}</button>`}</div>
+      ${item.amount_cents == null ? "" : `<button type="button" class="op-button" data-pg-price-toggle data-active="${item.price_active ? "true" : "false"}" ${bloqueada || ocupado ? "disabled" : ""}>${item.price_active ? "Desativar preço" : "Ativar preço"}</button>
+      <button type="button" class="op-button" data-pg-offering-payments data-enabled="${item.payments_enabled ? "true" : "false"}" ${bloqueada || !item.price_active || ocupado ? "disabled" : ""}>${item.payments_enabled ? "Desativar Pix nesta oferta" : "Habilitar Pix nesta oferta"}</button>`}</div>
+      <p class="pg-detalhe">Pix por oferta: <strong>${item.payments_enabled ? "habilitado" : "desativado"}</strong>. A trava global continua obrigatória.</p>
     </li>`;
   }).join("")}</ul>`;
   return `<section class="pg-config" aria-labelledby="pg-precos-titulo"><header><h4 id="pg-precos-titulo">Preços dos atendimentos</h4>
@@ -226,6 +228,12 @@ export function createPagamentosPixAdmin({ root, client, confirmar = (texto) => 
       if (!expira || Number.isNaN(expira.valueOf()) || expira <= new Date()) { estado = { ...estado, acaoErro: "Informe uma validade futura para a autorização." }; desenhar(); return; }
       if (!confirmar("Autorizar somente este pedido para o piloto Pix? Isso não gera cobrança.")) return;
       void executar(() => client.rpc("admin_set_pay_pilot_authorization_for_request", { p_request_id: id, p_expires_at: expira.toISOString(), p_enabled: true }), "Pedido autorizado para o piloto Pix."); return;
+    }
+    const politica = evento.target.closest?.("[data-pg-offering-payments]");
+    if (politica) {
+      const item = politica.closest("[data-pg-price-item]"); const id = item?.getAttribute("data-pg-price-item"); const ativa = politica.dataset.enabled === "true";
+      if (!confirmar(`${ativa ? "Desativar" : "Habilitar"} pagamentos Pix para novos pedidos desta oferta? A trava global permanece obrigatória.`)) return;
+      void executar(() => client.rpc("admin_set_pay_offering_policy", { p_offering_id: id, p_enabled: !ativa, p_require_prepayment: true }), ativa ? "Pix desativado nesta oferta." : "Pix habilitado nesta oferta."); return;
     }
     const revogar = evento.target.closest?.("[data-pg-pilot-revoke]");
     if (revogar) {

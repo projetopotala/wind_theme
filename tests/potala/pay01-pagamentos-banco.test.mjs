@@ -119,12 +119,12 @@ async function pagoAte(k, ids, eventos) { // cria, registra no "Asaas" e aplica 
 }
 
 /* ---------------- Privilegios e isolamento ---------------- */
-test("privilegios | apenas a listagem minima do proprio piloto e autenticada; entradas financeiras so por service_role", async () => {
+test("privilegios | apenas leituras minimas dos proprios pedidos sao autenticadas; entradas financeiras so por service_role", async () => {
   const fns = (await db.query("select p.oid::regprocedure::text as sig, p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'pay\\_%'")).rows;
   assert.ok(fns.length >= 13);
   for (const f of fns) {
     for (const papel of ["anon", "authenticated"]) {
-      const esperado = papel === "authenticated" && f.proname === "pay_my_pilot_requests";
+      const esperado = papel === "authenticated" && ["pay_my_pilot_requests", "pay_my_appointment_payment_options"].includes(f.proname);
       assert.equal((await db.query("select has_function_privilege($1,$2::regprocedure,'execute') v", [papel, f.sig])).rows[0].v, esperado, `${papel} executa ${f.sig}`);
     }
   }

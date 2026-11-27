@@ -118,6 +118,10 @@ export async function montarMeuPotala({ documento = document, janela = window } 
       .then((lista) => ({ nome: "pilotosPix", lista }))
       // A Preview pode anteceder a migration: falha fechada, sem expor o piloto nem degradar o restante do Meu Potala.
       .catch(() => ({ nome: "pilotosPix", lista: [] })));
+    if (SUPORTE_PILOTO_PIX && APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.opcoesPagamentoPix()
+      .then((lista) => ({ nome: "opcoesPagamentoPix", lista }))
+      // A Preview pode anteceder PAY-11: falha fechada, sem liberar qualquer botao.
+      .catch(() => ({ nome: "opcoesPagamentoPix", lista: [] })));
     /* Ler pagamentos proprios nao cria cobranca. No piloto, preserva o QR de uma cobranca ja criada apos reload/revogacao. */
     if ((PAGAMENTOS_PIX_ATIVO || PAGAMENTOS_PIX_INFORMATIVO || SUPORTE_PILOTO_PIX) && APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.pagamentosPix()
       .then((lista) => ({ nome: "pagamentosPix", lista }))
@@ -144,6 +148,7 @@ export async function montarMeuPotala({ documento = document, janela = window } 
         dados.perfisProfissionais ||= [];
         dados.pagamentosPix ||= [];
         dados.pilotosPix ||= [];
+        dados.opcoesPagamentoPix ||= [];
         dados.falhas = respostas.filter((resposta) => resposta.erro).map((resposta) => resposta.nome);
         dono = usuarioId;
         return dados;
@@ -273,10 +278,12 @@ export async function montarMeuPotala({ documento = document, janela = window } 
 
     const atual = sessao.obter();
     const pedidosPiloto = (dados.pilotosPix || []).map((item) => item?.request_id).filter(Boolean);
+    const opcoesPix = Object.fromEntries((dados.opcoesPagamentoPix || []).filter((item) => item?.request_id).map((item) => [item.request_id, item]));
+    const pedidosOperacionais = Object.values(opcoesPix).filter((item) => item.mode === "normal" && item.charge_allowed === true).map((item) => item.request_id);
     const temPagamentoPiloto = (dados.pagamentosPix || []).length > 0;
     const contexto = { ...dados, estado: atual, agora: new Date(), parametros: new URLSearchParams(janela.location.search), atendimentoDisponivel: APPOINTMENT_REQUESTS_ENABLED,
       pagamentosPix: PAGAMENTOS_PIX_ATIVO ? { ativo: true, porPedido: pagamentosPorPedido(dados.pagamentosPix), resultados: resultadosPix }
-        : (pedidosPiloto.length || temPagamentoPiloto) ? { ativo: false, pedidosAutorizados: pedidosPiloto, porPedido: pagamentosPorPedido(dados.pagamentosPix), resultados: resultadosPix }
+        : (pedidosPiloto.length || pedidosOperacionais.length || temPagamentoPiloto || Object.keys(opcoesPix).length) ? { ativo: false, pedidosAutorizados: [...pedidosPiloto, ...pedidosOperacionais], opcoes: opcoesPix, porPedido: pagamentosPorPedido(dados.pagamentosPix), resultados: resultadosPix }
           : PAGAMENTOS_PIX_INFORMATIVO ? { ativo: false, informativo: true, leituraFalhou: dados.falhas.includes("pagamentosPix"), porPedido: pagamentosPorPedido(dados.pagamentosPix) } : null };
     let corpo;
     try {

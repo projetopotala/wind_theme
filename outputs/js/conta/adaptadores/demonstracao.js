@@ -248,6 +248,7 @@ export function criarDadosDemonstracao({
     /* PAY-02: a demonstracao nunca cobra nem fala com provedor de pagamento. */
     async pagamentosPix() { return []; },
     async pilotosPix() { return []; },
+    async opcoesPagamentoPix() { return []; },
     async criarPagamentoPix() { return { mensagem: "O pagamento não está disponível na demonstração." }; },
 
     async cancelarAtendimento() {

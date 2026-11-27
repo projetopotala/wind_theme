@@ -128,7 +128,7 @@ test("historico com erro nao derruba a lista", async () => {
 test("integracao: area exclusiva do Owner, sem acesso direto a tabelas e carregamento so ao abrir Financeiro", () => {
   const fonte = readFileSync(new URL("../../outputs/js/admin/pagamentos-pix-admin.js", import.meta.url), "utf8");
   const rpcs = [...fonte.matchAll(/rpc\("([a-z_]+)"/g)].map((m) => m[1]);
-  assert.deepEqual([...new Set(rpcs)].sort(), ["admin_list_appointment_payment_events", "admin_list_appointment_payments", "admin_list_appointment_service_prices", "admin_list_pay_pilot_candidates", "admin_pay_overview", "admin_set_appointment_service_price", "admin_set_pay_pilot_authorization_for_request"]);
+  assert.deepEqual([...new Set(rpcs)].sort(), ["admin_list_appointment_payment_events", "admin_list_appointment_payments", "admin_list_appointment_service_prices", "admin_list_pay_pilot_candidates", "admin_pay_overview", "admin_set_appointment_service_price", "admin_set_pay_offering_policy", "admin_set_pay_pilot_authorization_for_request"]);
   for (const proibido of [".from(", ".insert(", ".update(", ".delete(", ".upsert(", "functions.invoke", "create-appointment-payment", "fetch("]) assert.equal(fonte.includes(proibido), false, proibido);
   const html = readFileSync(new URL("../../outputs/admin.html", import.meta.url), "utf8");
   const bloco = html.match(/<section[^>]*data-pagamentos-pix-admin[^>]*>/)?.[0] || "";
