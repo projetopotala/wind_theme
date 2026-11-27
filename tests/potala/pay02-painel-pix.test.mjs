@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { runInNewContext } from "node:vm";
 import { PAGAMENTOS_PIX_ATIVO, SUPORTE_PILOTO_PIX } from "../../outputs/js/conta/pagamentos/config.js";
-import { AJUDA_EM_CASO_DE_ERRO, corpoDoPedidoDePagamento, imagemDoQr, imagemQrDoCopiaECola, painelPix, resultadoDaResposta } from "../../outputs/js/conta/pagamentos/painel-pix.js";
+import { AJUDA_EM_CASO_DE_ERRO, AVISO_PRAZO_ENCERRADO, corpoDoPedidoDePagamento, imagemDoQr, imagemQrDoCopiaECola, painelPix, resultadoDaResposta } from "../../outputs/js/conta/pagamentos/painel-pix.js";
 import atendimentos from "../../outputs/js/conta/spa/vistas/atendimentos.js";
 
 /* PAY-02 | Interface Pix do Meu Potala: pura, escapada, desligada por padrao e sem cobranca automatica. Sem rede. */
@@ -61,6 +61,73 @@ test("painel | Pix com prazo vencido nao reaparece como QR ou Copia e Cola valid
   assert.equal(h.includes("data-pix-codigo"), false);
   assert.equal(h.includes("mp-pix-qr"), false);
   assert.equal(h.includes("pagar-pix"), false, "cobranca existente nao oferece outra cobranca");
+});
+
+/* PAY-08 UX | prazo do Pix encerrado no navegador: o texto nao manda pagar por um codigo que nao aparece. */
+const PASSADO = "2020-01-01T00:00:00Z";
+const FUTURO = "2099-01-01T00:00:00Z";
+const INSTRUCAO_DE_PAGAR = /Pague pelo QR Code|Pague até|antes do prazo/;
+
+test("painel | prazo encerrado com status aguardando: sem QR, sem codigo, sem instrucao de pagar; avisa que o prazo terminou", () => {
+  const h = painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, pix_expires_at: PASSADO } });
+  for (const ausente of ["data-pix>", "data-pix-codigo", "mp-pix-qr", "copiar-pix", "pagar-pix", "<img", "<textarea"]) assert.equal(h.includes(ausente), false, ausente);
+  assert.equal(INSTRUCAO_DE_PAGAR.test(h), false, "nao orienta a pagar por codigo expirado");
+  assert.ok(h.includes(AVISO_PRAZO_ENCERRADO));
+  assert.match(h, /O prazo deste Pix terminou\. Estamos aguardando a atualização da situação do pagamento\. Se precisar de ajuda, entre em contato com o Instituto Potala\./);
+  assert.match(h, /<p class="mp-aviso" role="status" data-pix-prazo-encerrado>/);
+  assert.match(h, /data-status="aguardando_pagamento"/, "o status continua sendo o que o servidor gravou");
+  assert.match(h, /Aguardando o pagamento/);
+});
+
+test("painel | prazo encerrado vindo da resposta da tentativa (sem linha no banco) tambem nao orienta a pagar", () => {
+  const h = painelPix({ pedido: PEDIDO, resultado: { pix: { ...PIX, expira_em: PASSADO } } });
+  assert.ok(h.includes(AVISO_PRAZO_ENCERRADO));
+  assert.equal(INSTRUCAO_DE_PAGAR.test(h), false);
+  assert.equal(h.includes("mp-pix-qr"), false);
+});
+
+test("painel | Pix dentro do prazo: QR, codigo, copiar e instrucoes seguem iguais; nenhum aviso de prazo encerrado", () => {
+  const h = painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, pix_expires_at: FUTURO }, resultado: { pix: PIX } });
+  assert.match(h, /mp-pix-qr/); assert.match(h, /data-pix-codigo/); assert.match(h, /data-acao="copiar-pix"/);
+  assert.match(h, /Pague pelo QR Code/); assert.match(h, /Pague até/);
+  assert.equal(h.includes("data-pix-prazo-encerrado"), false);
+  assert.equal(h.includes(AVISO_PRAZO_ENCERRADO), false);
+});
+
+test("painel | Pix valido sem prazo informado ou com data ilegivel nao e tratado como encerrado", () => {
+  const semPrazo = { ...PAGO, pix_expires_at: null };
+  assert.equal(painelPix({ pedido: PEDIDO, pagamento: semPrazo }).includes("data-pix-prazo-encerrado"), false);
+  assert.equal(painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, pix_expires_at: "nao-e-data" } }).includes("data-pix-prazo-encerrado"), false);
+});
+
+test("painel | vencido/recebido pelo servidor: continuam com o texto do status, sem o aviso de prazo do navegador", () => {
+  const vencido = painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, status: "vencido", pix_expires_at: PASSADO } });
+  assert.match(vencido, /Pagamento vencido/); assert.match(vencido, /O prazo para pagar terminou/);
+  assert.equal(vencido.includes("data-pix-prazo-encerrado"), false);
+  const recebido = painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, status: "recebido", pix_expires_at: PASSADO } });
+  assert.match(recebido, /Pagamento recebido/); assert.match(recebido, /O valor foi recebido pelo Instituto/);
+  assert.equal(recebido.includes("data-pix-prazo-encerrado"), false);
+  assert.equal(recebido.includes("mp-pix-qr"), false);
+});
+
+test("painel | reload com QR ainda valido recompoe o QR localmente; apos o prazo, some e mostra so o aviso", () => {
+  const fabrica = () => ({ addData() {}, make() {}, createDataURL: () => "data:image/gif;base64,aW1hZ2Vt" });
+  const anterior = globalThis.qrcode; globalThis.qrcode = fabrica;
+  try {
+    const valido = painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, pix_expires_at: FUTURO } });
+    assert.match(valido, /<img[^>]+data:image\/gif;base64,aW1hZ2Vt/); assert.equal(valido.includes("data-pix-prazo-encerrado"), false);
+    const vencido = painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, pix_expires_at: PASSADO } });
+    assert.equal(vencido.includes("<img"), false); assert.ok(vencido.includes("data-pix-prazo-encerrado"));
+  } finally { globalThis.qrcode = anterior; }
+});
+
+test("painel | aviso de prazo encerrado nao cria botao de novo Pix e usa apenas o estilo de aviso ja responsivo do Portal", () => {
+  const h = painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, pix_expires_at: PASSADO } });
+  assert.equal(/<button/.test(h), false, "sem botao: gerar outro Pix exige prova de seguranca no backend");
+  const css = readFileSync(new URL("../../outputs/css/conta.css", import.meta.url), "utf8");
+  assert.match(css, /\.mp-aviso\b/);
+  assert.match(css, /\.mp-pagamento \{[^}]*min-width: 0/);
+  assert.match(css, /@media \(max-width: 520px\)[\s\S]*\.mp-pagamento \.mp-botao \{ width: 100%/);
 });
 
 test("painel | biblioteca vendorizada gera um QR real do payload persistido e corresponde ao SRI da pagina", () => {
