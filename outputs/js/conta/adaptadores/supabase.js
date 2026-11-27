@@ -504,6 +504,13 @@ export function criarDadosSupabase({ client } = {}) {
       return Array.isArray(data) ? data : [];
     },
 
+    /* PAY-08: o banco devolve somente pedidos desta conta com piloto vigente. */
+    async pilotosPix() {
+      const { data, error } = await client.rpc("pay_my_pilot_requests");
+      if (error) throw falhouDados(error);
+      return Array.isArray(data) ? data : [];
+    },
+
     /* PAY-02: unica chamada que pode gerar cobranca; so acontece por clique do cliente. O servidor decide valor, servico e travas. */
     async criarPagamentoPix({ pedidoId, idempotencia, nome, documento }) {
       if (!UUID_DO_RECIBO.test(String(pedidoId)) || !UUID_DO_RECIBO.test(String(idempotencia))) throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");

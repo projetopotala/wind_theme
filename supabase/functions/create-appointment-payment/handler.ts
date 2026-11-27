@@ -93,8 +93,8 @@ export function criarCriarPagamentoHandler(deps: CriarPagamentoDeps) {
     if (error || !data) {
       const c = error?.code ?? "";
       // PT503: a chave geral de cobrancas no banco esta desligada (nenhuma cobranca nova nasce).
-      return responder(c === "42501" ? 403 : c === "P0002" ? 404 : c === "22023" || c === "PT409" ? 409 : c === "PT422" ? 422 : c === "PT503" ? 503 : 502,
-        { message: c === "42501" ? "Acesso negado." : c === "PT422" ? "Este atendimento ainda não tem valor definido para pagamento online." : c === "PT503" ? "O pagamento ainda não está disponível." : "Não foi possível preparar o pagamento." }, h);
+      return responder(c === "42501" || c === "PT403" ? 403 : c === "P0002" ? 404 : c === "22023" || c === "PT409" ? 409 : c === "PT422" ? 422 : c === "PT503" ? 503 : 502,
+        { message: c === "42501" || c === "PT403" ? "Este pedido não está autorizado para o piloto Pix." : c === "PT422" ? "Este atendimento ainda não tem valor definido para pagamento online." : c === "PT503" ? "O pagamento ainda não está disponível." : "Não foi possível preparar o pagamento." }, h);
     }
     const resumo = { payment_id: data.id, amount_cents: data.amount_cents, currency: "BRL", service: data.service_title, hold_expires_at: data.hold_expires_at };
     const asaas = criarClienteAsaas({ baseUrl: config.baseUrl, apiKey: config.apiKey, fetch: deps.fetch, log: deps.log, permitirProducao: config.ambiente === "production" });

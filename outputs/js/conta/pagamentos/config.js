@@ -8,3 +8,8 @@ export const PAGAMENTOS_PIX_ATIVO = false;
 // e sem formulario. DESLIGADA por padrao: com false a tela publica nao muda. Nao gera cobranca nem chama o servidor financeiro;
 // so le, quando ligada, as linhas de pagamento da propria pessoa (leitura protegida por RLS).
 export const PAGAMENTOS_PIX_INFORMATIVO = false;
+
+// PAY-08: a capacidade piloto nao e uma liberacao global. A tela consulta o servidor e so
+// recebe o id de um pedido do proprio cliente quando existe autorizacao vigente do Owner.
+// A tabela nasce vazia; portanto nenhum botao aparece por padrao.
+export const SUPORTE_PILOTO_PIX = true;

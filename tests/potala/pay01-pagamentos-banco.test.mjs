@@ -66,7 +66,7 @@ const svc = (sql, params) => como("service_role", null, sql, params);
 const cliente = (k, sql, params) => como("authenticated", U[k], sql, params);
 
 // Cenario: A e B tem solicitacao com horario reservado (held) da mesma oferta, preco ativo de R$ 150,00.
-async function semear({ preco = true } = {}) {
+async function semear({ preco = true, piloto = true } = {}) {
   const ids = {};
   // PAY-02: a chave geral de cobrancas nasce DESLIGADA; os testes de PAY-01 a ligam so dentro da transacao do cenario.
   if ((await db.query("select to_regclass('public.pay_runtime_settings') as t")).rows[0].t) await db.query("update public.pay_runtime_settings set charges_enabled = true");
@@ -79,12 +79,26 @@ async function semear({ preco = true } = {}) {
     await db.query("update public.appointment_requests set appointment_slot_id = $1 where id = $2", [s.rows[0].id, r.rows[0].id]);
     ids[k] = { req: r.rows[0].id, slot: s.rows[0].id };
   }
+  if (piloto && (await db.query("select to_regclass('public.pay_pilot_authorizations') as t")).rows[0].t) {
+    await db.query(`insert into public.pay_pilot_authorizations(request_id,user_id,expires_at,enabled,created_by)
+      values ($1,$2,now()+interval '2 hours',true,$3),($4,$5,now()+interval '2 hours',true,$3)`,
+    [ids.A.req, U.A, U.OWNER, ids.B.req, U.B]);
+  }
   return ids;
 }
 const KEY = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 async function preparar(k, ids, n = k === "A" ? 1 : 2, quem = U[k]) {
   const r = await svc("select public.pay_prepare_appointment_payment($1,$2,$3,30) as v", [quem, ids[k].req, KEY(n)]);
   return r.ok ? { ok: true, v: r.rows[0].v } : r;
+}
+async function ownerAtivo() {
+  await db.query("insert into public.users(id,email,name,role,active) values ($1,$2,'Owner','owner',true) on conflict (id) do update set role='owner',active=true", [U.OWNER, "owner@pay01.test"]);
+}
+async function autorizarPiloto(ids, k = "A", { expira = "2 hours", enabled = true, user = U[k] } = {}) {
+  await ownerAtivo();
+  return como("authenticated", U.OWNER,
+    "select public.admin_set_pay_pilot_authorization($1,$2,now() + $3::interval,$4) as v",
+    [ids[k].req, user, expira, enabled]);
 }
 let evN = 0;
 const prov = (pay) => `pay_${pay.id.slice(0, 8)}`;
@@ -105,11 +119,14 @@ async function pagoAte(k, ids, eventos) { // cria, registra no "Asaas" e aplica 
 }
 
 /* ---------------- Privilegios e isolamento ---------------- */
-test("privilegios | nenhuma funcao pay_* e executavel por anon/authenticated; entradas do servidor so por service_role", async () => {
+test("privilegios | apenas a listagem minima do proprio piloto e autenticada; entradas financeiras so por service_role", async () => {
   const fns = (await db.query("select p.oid::regprocedure::text as sig, p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'pay\\_%'")).rows;
   assert.ok(fns.length >= 13);
   for (const f of fns) {
-    for (const papel of ["anon", "authenticated"]) assert.equal((await db.query("select has_function_privilege($1,$2::regprocedure,'execute') v", [papel, f.sig])).rows[0].v, false, `${papel} executa ${f.sig}`);
+    for (const papel of ["anon", "authenticated"]) {
+      const esperado = papel === "authenticated" && f.proname === "pay_my_pilot_requests";
+      assert.equal((await db.query("select has_function_privilege($1,$2::regprocedure,'execute') v", [papel, f.sig])).rows[0].v, esperado, `${papel} executa ${f.sig}`);
+    }
   }
   for (const nome of ["pay_prepare_appointment_payment", "pay_register_provider_charge", "pay_fail_creation", "pay_apply_webhook_event", "pay_list_expired_holds", "pay_payment_allows_confirmation", "pay_next_state"]) {
     const f = fns.find((x) => x.proname === nome);
@@ -118,6 +135,72 @@ test("privilegios | nenhuma funcao pay_* e executavel por anon/authenticated; en
   const sec = (await db.query("select proname, prosecdef, proconfig from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and proname in ('pay_prepare_appointment_payment','pay_apply_webhook_event','pay_register_provider_charge','pay_fail_creation')")).rows;
   for (const f of sec) { assert.equal(f.prosecdef, true); assert.ok((f.proconfig ?? []).some((c) => /^search_path=/.test(c)), f.proname); }
 });
+
+/* ---------------- PAY-08: piloto restrito ---------------- */
+test("PAY-08 | nasce vazio, cliente nao se autoriza e somente Owner ativo administra o par pedido/cliente", () => tx(async () => {
+  const ids = await semear({ piloto: false });
+  await db.query("update public.pay_runtime_settings set charges_enabled=false");
+  assert.equal((await db.query("select count(*)::int n from public.pay_pilot_authorizations")).rows[0].n, 0);
+  assert.equal((await cliente("A", "select * from public.pay_pilot_authorizations")).ok, false, "sem leitura direta");
+  assert.equal((await cliente("A", "select public.admin_set_pay_pilot_authorization($1,$2,now()+interval '1 hour',true)", [ids.A.req, U.A])).code, "42501");
+  const ok = await autorizarPiloto(ids);
+  assert.equal(ok.ok, true, ok.message);
+  const listaA = await cliente("A", "select * from public.pay_my_pilot_requests()");
+  assert.deepEqual(listaA.rows.map((x) => x.request_id), [ids.A.req]);
+  assert.deepEqual((await cliente("B", "select * from public.pay_my_pilot_requests()")).rows, []);
+  const errado = await autorizarPiloto(ids, "A", { user: U.B });
+  assert.equal(errado.ok, false); assert.equal(errado.code, "22023");
+}));
+
+test("PAY-08 | as duas travas sao obrigatorias; chave aberta libera somente autorizacao exata e vigente", () => tx(async () => {
+  const ids = await semear({ piloto: false });
+  await db.query("update public.pay_runtime_settings set charges_enabled=false");
+  assert.equal((await preparar("A", ids, 101)).code, "PT503", "tentativa direta sem piloto");
+  assert.equal((await preparar("B", ids, 102)).code, "PT503", "outro pedido continua bloqueado");
+  assert.equal((await autorizarPiloto(ids)).ok, true);
+  assert.equal((await preparar("A", ids, 103)).code, "PT503", "piloto nunca contorna a parada global");
+  await db.query("update public.pay_runtime_settings set charges_enabled=true");
+  const primeiro = await preparar("A", ids, 103);
+  assert.equal(primeiro.ok, true, primeiro.message);
+  const repetido = await preparar("A", ids, 103);
+  assert.deepEqual([repetido.v.id, repetido.v.replayed], [primeiro.v.id, true]);
+  assert.equal((await db.query("select count(*)::int n from public.appointment_payments")).rows[0].n, 1, "dois cliques nao duplicam");
+  assert.equal((await preparar("B", ids, 104)).code, "PT503", "autorizacao nao vaza a outro pedido");
+}));
+
+test("PAY-08 | expirada/revogada bloqueiam imediatamente novas cobrancas; preco e slot continuam obrigatorios", () => tx(async () => {
+  const ids = await semear({ piloto: false });
+  await db.query("update public.pay_runtime_settings set charges_enabled=true");
+  await ownerAtivo();
+  await db.query("insert into public.pay_pilot_authorizations(request_id,user_id,expires_at,enabled,created_by) values ($1,$2,now()-interval '1 minute',true,$3)", [ids.A.req, U.A, U.OWNER]);
+  assert.equal((await preparar("A", ids, 105)).code, "PT503", "expirada");
+  assert.equal((await autorizarPiloto(ids)).ok, true);
+  await db.query("update public.pay_pilot_authorizations set enabled=false where request_id=$1", [ids.A.req]);
+  assert.equal((await preparar("A", ids, 106)).code, "PT503", "revogada");
+  await db.query("update public.pay_pilot_authorizations set enabled=true,expires_at=now()+interval '1 hour' where request_id=$1", [ids.A.req]);
+  await db.query("update public.appointment_service_prices set active=false where offering_id=$1", [OFERTA]);
+  assert.equal((await preparar("A", ids, 107)).code, "PT422", "piloto nao substitui preco aprovado");
+  await db.query("update public.appointment_service_prices set active=true where offering_id=$1", [OFERTA]);
+  await db.query("update public.appointment_slots set status='available',held_by_request_id=null where id=$1", [ids.A.slot]);
+  assert.equal((await preparar("A", ids, 108)).code, "22023", "piloto nao substitui slot futuro reservado");
+}));
+
+test("PAY-08 | revogar novas cobrancas nao interrompe webhook nem reconciliacao de cobranca existente", () => tx(async () => {
+  const ids = await semear({ piloto: false });
+  await db.query("update public.pay_runtime_settings set charges_enabled=true");
+  assert.equal((await autorizarPiloto(ids)).ok, true);
+  const pay = (await preparar("A", ids, 109)).v;
+  await svc("select public.pay_register_provider_charge($1,$2,null,null)", [pay.id, prov(pay)]);
+  await db.query("update public.appointment_payments set created_at=now()-interval '30 minutes' where id=$1", [pay.id]);
+  await db.query("update public.pay_pilot_authorizations set enabled=false where request_id=$1", [ids.A.req]);
+  await db.query("update public.pay_runtime_settings set charges_enabled=false");
+  const fila = await svc("select payment_id, motivo from public.pay_list_reconcilable(now(), 10)");
+  assert.equal(fila.ok, true, fila.message);
+  assert.deepEqual(fila.rows, [{ payment_id: pay.id, motivo: "sem_qr" }]);
+  assert.equal(await evento(pay, "PAYMENT_RECEIVED"), "aplicado");
+  assert.equal((await estado(pay.id)).status, "recebido");
+  assert.equal((await preparar("B", ids, 110)).code, "PT503", "nenhuma nova cobranca nasce durante o acompanhamento");
+}));
 
 test("privilegios | anon e authenticated nao chamam as RPCs financeiras (GRANT negado)", () => tx(async () => {
   const ids = await semear();

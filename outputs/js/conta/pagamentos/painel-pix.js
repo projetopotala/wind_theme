@@ -22,10 +22,30 @@ function quandoExpira(valor) {
     : "";
 }
 
+function pixAindaValido(pagamento, resultado) {
+  const valor = pagamento?.pix_expires_at || resultado?.pix?.expira_em;
+  if (!valor) return true;
+  const data = new Date(valor);
+  return !Number.isNaN(data.valueOf()) && data.valueOf() > Date.now();
+}
+
 // Imagem do QR: so base64 puro e de tamanho razoavel; qualquer outra coisa e ignorada (o Copia e Cola continua valendo).
 export function imagemDoQr(base64) {
   return typeof base64 === "string" && base64.length > 0 && base64.length <= 60000 && BASE64.test(base64)
     ? `data:image/png;base64,${base64}` : null;
+}
+
+// PAY-08: recompõe a imagem no navegador usando somente o payload persistido.
+// A biblioteca e vendorizada no proprio Portal; nada e enviado a um gerador externo.
+export function imagemQrDoCopiaECola(copia, fabrica = globalThis.qrcode) {
+  if (typeof copia !== "string" || !copia || copia.length > 4096 || typeof fabrica !== "function") return null;
+  try {
+    const qr = fabrica(0, "M");
+    qr.addData(copia, "Byte");
+    qr.make();
+    const imagem = qr.createDataURL(6, 8);
+    return /^data:image\/(?:gif|png);base64,[A-Za-z0-9+/=]+$/.test(imagem) ? imagem : null;
+  } catch { return null; }
 }
 
 function formularioDoPagador(pedidoId, invalido) {
@@ -41,8 +61,8 @@ function formularioDoPagador(pedidoId, invalido) {
 
 function blocoDoPix(pagamento, resultado) {
   const copia = textoParaCopiar(pagamento) ?? (typeof resultado?.pix?.copia_e_cola === "string" && resultado.pix.copia_e_cola ? resultado.pix.copia_e_cola : null);
-  if (!copia) return "";
-  const imagem = imagemDoQr(resultado?.pix?.imagem_base64);
+  if (!copia || !pixAindaValido(pagamento, resultado)) return "";
+  const imagem = imagemDoQr(resultado?.pix?.imagem_base64) ?? imagemQrDoCopiaECola(copia);
   const expira = quandoExpira(pagamento?.pix_expires_at || resultado?.pix?.expira_em);
   return `<div class="mp-pix" data-pix>
     ${imagem ? `<img class="mp-pix-qr" src="${esc(imagem)}" alt="QR Code do Pix para pagar o atendimento" width="200" height="200">` : ""}

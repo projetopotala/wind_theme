@@ -1,8 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { PAGAMENTOS_PIX_ATIVO } from "../../outputs/js/conta/pagamentos/config.js";
-import { AJUDA_EM_CASO_DE_ERRO, corpoDoPedidoDePagamento, imagemDoQr, painelPix, resultadoDaResposta } from "../../outputs/js/conta/pagamentos/painel-pix.js";
+import { createHash } from "node:crypto";
+import { runInNewContext } from "node:vm";
+import { PAGAMENTOS_PIX_ATIVO, SUPORTE_PILOTO_PIX } from "../../outputs/js/conta/pagamentos/config.js";
+import { AJUDA_EM_CASO_DE_ERRO, corpoDoPedidoDePagamento, imagemDoQr, imagemQrDoCopiaECola, painelPix, resultadoDaResposta } from "../../outputs/js/conta/pagamentos/painel-pix.js";
 import atendimentos from "../../outputs/js/conta/spa/vistas/atendimentos.js";
 
 /* PAY-02 | Interface Pix do Meu Potala: pura, escapada, desligada por padrao e sem cobranca automatica. Sem rede. */
@@ -13,6 +15,7 @@ const PAGO = { request_id: ID, status: "aguardando_pagamento", amount_cents: 150
 
 test("chave de exibicao: DESLIGADA por padrao e a pagina nao a ativa sozinha", () => {
   assert.equal(PAGAMENTOS_PIX_ATIVO, false);
+  assert.equal(SUPORTE_PILOTO_PIX, true, "capacidade piloto depende da autorizacao vazia no servidor");
 });
 
 test("painel | sem pagamento: mostra resumo e UM botao; nao chama nada, nao mostra Pix nem erro", () => {
@@ -40,9 +43,37 @@ test("painel | Pix gerado: QR, Copia e Cola, valor, validade e instrucoes; o ser
   assert.equal(h.includes("data-form=\"pagar-pix\""), false, "ja ha Pix: nao oferece gerar outro");
 });
 
-test("painel | depois de recarregar a pagina o Copia e Cola continua (vem do banco), sem imagem", () => {
-  const h = painelPix({ pedido: PEDIDO, pagamento: PAGO });
-  assert.match(h, /data-pix/); assert.equal(h.includes("<img"), false); assert.equal(h.includes("pagar-pix"), false);
+test("painel | depois de recarregar, Copia e Cola e QR sao recompostos localmente sem nova cobranca", () => {
+  const fabrica = () => ({ addData: (texto, modo) => assert.deepEqual([texto, modo], [PAGO.pix_copy_paste, "Byte"]), make() {}, createDataURL: () => "data:image/gif;base64,aW1hZ2Vt" });
+  assert.equal(imagemQrDoCopiaECola(PAGO.pix_copy_paste, fabrica), "data:image/gif;base64,aW1hZ2Vt");
+  const anterior = globalThis.qrcode; globalThis.qrcode = fabrica;
+  try {
+    const h = painelPix({ pedido: PEDIDO, pagamento: PAGO });
+    assert.match(h, /data-pix/); assert.match(h, /<img[^>]+data:image\/gif;base64,aW1hZ2Vt/); assert.equal(h.includes("pagar-pix"), false);
+  } finally { globalThis.qrcode = anterior; }
+  assert.equal(imagemQrDoCopiaECola("", fabrica), null);
+  assert.equal(imagemQrDoCopiaECola("x", () => { throw new Error("falha"); }), null);
+});
+
+test("painel | Pix com prazo vencido nao reaparece como QR ou Copia e Cola valido", () => {
+  const h = painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, pix_expires_at: "2020-01-01T00:00:00Z" } });
+  assert.equal(h.includes("data-pix>"), false);
+  assert.equal(h.includes("data-pix-codigo"), false);
+  assert.equal(h.includes("mp-pix-qr"), false);
+  assert.equal(h.includes("pagar-pix"), false, "cobranca existente nao oferece outra cobranca");
+});
+
+test("painel | biblioteca vendorizada gera um QR real do payload persistido e corresponde ao SRI da pagina", () => {
+  const arquivo = readFileSync(new URL("../../outputs/vendor/qrcode-generator-1.4.4.js", import.meta.url));
+  const contextoQr = {};
+  runInNewContext(arquivo.toString("utf8"), contextoQr);
+  const imagem = imagemQrDoCopiaECola(PAGO.pix_copy_paste, contextoQr.qrcode);
+  assert.match(imagem, /^data:image\/gif;base64,/);
+  assert.ok(imagem.length > 500, "imagem contem a matriz QR, nao um placeholder");
+  const sri = `sha256-${createHash("sha256").update(arquivo).digest("base64")}`;
+  const html = readFileSync(new URL("../../outputs/meu-potala.html", import.meta.url), "utf8");
+  assert.match(html, /\/vendor\/qrcode-generator-1\.4\.4\.js/);
+  assert.ok(html.includes(`integrity="${sri}"`), "SRI fixa exatamente o arquivo auditado");
 });
 
 test("painel | estados: confirmado/recebido/vencido/cancelado/divergente nao oferecem novo Pix e nao pedem pagar de novo", () => {
@@ -122,6 +153,14 @@ test("tela | chave ligada: painel so em pedido aguardando; confirmados, anterior
   assert.equal(atendimentos.renderizar(contexto({ atendimentos: outros, pagamentosPix: pix })).includes("data-pagamento-pix"), false);
 });
 
+test("tela | piloto mostra o pagamento somente no pedido explicitamente autorizado pelo servidor", () => {
+  const outro = { ...pedidoPendente, id: "22222222-2222-4222-8222-222222222222", servico: "Outro" };
+  const html = atendimentos.renderizar(contexto({ atendimentos: [pedidoPendente, outro], pagamentosPix: { ativo: false, pedidosAutorizados: [ID], porPedido: {}, resultados: {} } }));
+  assert.equal((html.match(/data-pagamento-pix/g) || []).length, 1);
+  assert.match(html, new RegExp(`data-pedido="${ID}"`));
+  assert.equal(html.includes(`data-pedido="${outro.id}"`), false);
+});
+
 test("tela | abrir a tela NUNCA gera cobranca: o painel e so HTML com botao; o servidor so e chamado no envio do formulario", () => {
   const pix = { ativo: true, porPedido: { [ID]: PAGO }, resultados: {} };
   const html = atendimentos.renderizar(contexto({ pagamentosPix: pix }));
@@ -131,13 +170,15 @@ test("tela | abrir a tela NUNCA gera cobranca: o painel e so HTML com botao; o s
   assert.equal(usos.length, 1, "uma unica chamada em app.js");
   const bloco = app.slice(app.indexOf("[data-form='pagar-pix']") - 300, app.indexOf("[data-form='pagar-pix']") + 1800);
   assert.ok(bloco.includes("criarPagamentoPix(") && bloco.includes("evento.preventDefault()"), "dentro do tratador do envio");
-  assert.ok(app.includes("PAGAMENTOS_PIX_ATIVO ? evento.target.closest?.(\"[data-form='pagar-pix']\")"), "tratador inerte com a chave desligada");
-  assert.ok(app.includes("if ((PAGAMENTOS_PIX_ATIVO || PAGAMENTOS_PIX_INFORMATIVO) && APPOINTMENT_REQUESTS_ENABLED) leituras.push(sessao.pagamentosPix()"), "leitura so com a chave de pagamento ou a informativa ligada (PAY-05)");
+  assert.ok(app.includes("(PAGAMENTOS_PIX_ATIVO || SUPORTE_PILOTO_PIX) ? evento.target.closest?.(\"[data-form='pagar-pix']\")"), "tratador aceita apenas painel global ou piloto desenhado pelo servidor");
+  assert.ok(app.includes("PAGAMENTOS_PIX_ATIVO || PAGAMENTOS_PIX_INFORMATIVO || SUPORTE_PILOTO_PIX"), "leitura segura contempla o piloto (PAY-08)");
+  assert.ok(app.includes("sessao.pilotosPix()"), "elegibilidade vem do servidor");
 });
 
 test("adaptador de demonstracao nunca cobra: sem pagamentos e resposta de indisponivel, sem rede", () => {
   const src = readFileSync(new URL("../../outputs/js/conta/adaptadores/demonstracao.js", import.meta.url), "utf8");
   assert.ok(src.includes("async pagamentosPix() { return []; }"));
+  assert.ok(src.includes("async pilotosPix() { return []; }"));
   assert.ok(src.includes("async criarPagamentoPix() { return { mensagem:"));
   assert.equal(/functions\.invoke|fetch\(/.test(src.slice(src.indexOf("async pagamentosPix()"), src.indexOf("async cancelarAtendimento()"))), false);
 });

@@ -52,11 +52,12 @@ function horarioLegivel(valor) {
 /* PAY-02: painel Pix so aparece com a chave ligada (pix.ativo) e so em pedidos aguardando; desligado, nada muda. */
 function painelDoPedido(pedido, tipo, pix) {
   if (tipo !== "pedido" || !["recebida", "em_contato"].includes(pedido.status)) return "";
+  const autorizado = pix?.ativo === true || pix?.pedidosAutorizados?.includes(pedido.id) || pix?.porPedido?.[pedido.id];
   /* PAY-05: modo informativo (valor e situacao, sem acao de pagar). So com a chave informativa ligada e a de pagamento desligada. */
   if (pix?.informativo === true && pix?.ativo !== true) {
     return painelPixInformativo({ pedido: { id: pedido.id, servico: pedido.servico }, pagamento: pix.porPedido?.[pedido.id] ?? null, leituraFalhou: pix.leituraFalhou === true });
   }
-  if (pix?.ativo !== true) return "";
+  if (!autorizado) return "";
   return painelPix({
     pedido: { id: pedido.id, servico: pedido.servico, horario: pedido.inicio ? horarioLegivel(pedido.inicio) : "" },
     pagamento: pix.porPedido?.[pedido.id] ?? null,

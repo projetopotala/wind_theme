@@ -11,6 +11,7 @@ import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
  */
 const DIR = new URL("../../supabase/migrations/", import.meta.url);
 const ROLLBACK = new URL("../../supabase/rollbacks/202611250003_rollback_pay02_pagador_reconciliacao.sql", import.meta.url);
+const PAY08_ROLLBACK = new URL("../../supabase/rollbacks/202611260002_rollback_pay08_piloto_pix.sql", import.meta.url);
 const U = { A: "00000000-0000-0000-0000-0000000000a1", B: "00000000-0000-0000-0000-0000000000b1", OWNER: "00000000-0000-0000-0000-0000000000f1" };
 const OFERTA = "pay02-oferta";
 
@@ -56,7 +57,7 @@ const cliente = (k, sql, params) => como("authenticated", U[k], sql, params);
 const anon = (sql, params) => como("anon", null, sql, params);
 const ligar = (v = true) => db.query("update public.pay_runtime_settings set charges_enabled = $1", [v]);
 
-async function semear({ habilitar = true } = {}) {
+async function semear({ habilitar = true, piloto = true } = {}) {
   const ids = {};
   if (habilitar) await ligar(true);
   await db.query("insert into public.appointment_service_prices(offering_id, amount_cents, active) values ($1, 15000, true)", [OFERTA]);
@@ -67,6 +68,11 @@ async function semear({ habilitar = true } = {}) {
       values ($1, $2, now() + interval '3 days', now() + interval '3 days 1 hour', 'held', $3, $4) returning id`, [OFERTA, `prof-${k}`, r.rows[0].id, U.OWNER]);
     await db.query("update public.appointment_requests set appointment_slot_id = $1 where id = $2", [s.rows[0].id, r.rows[0].id]);
     ids[k] = { req: r.rows[0].id, slot: s.rows[0].id };
+  }
+  if (piloto) {
+    await db.query(`insert into public.pay_pilot_authorizations(request_id,user_id,expires_at,enabled,created_by)
+      values ($1,$2,now()+interval '2 hours',true,$3),($4,$5,now()+interval '2 hours',true,$3)`,
+    [ids.A.req, U.A, U.OWNER, ids.B.req, U.B]);
   }
   return ids;
 }
@@ -368,9 +374,10 @@ test("liberar reserva | com outra cobranca aberta para a mesma solicitacao, nao 
 /* ---------------- Migration ---------------- */
 test("migration | so objetos novos; PAY-01 intacta; reversao remove somente a PAY-02 e a PAY-02 pode ser reaplicada", () => tx(async () => {
   const tabelas = async () => (await db.query("select table_name from information_schema.tables where table_schema='public' and table_name like 'pay\\_%' order by 1")).rows.map((r) => r.table_name);
-  assert.deepEqual(await tabelas(), ["pay_payer_profiles", "pay_reconciliation_log", "pay_runtime_settings"]);
+  assert.deepEqual(await tabelas(), ["pay_payer_profiles", "pay_pilot_authorizations", "pay_reconciliation_log", "pay_runtime_settings"]);
   assert.equal((await db.query("select count(*)::int n from public.pay_runtime_settings where charges_enabled")).rows[0].n, 0, "nasce desligada");
   assert.equal((await db.query("select count(*)::int n from public.appointment_service_prices")).rows[0].n, 0, "nenhum preco criado");
+  await db.exec(readFileSync(PAY08_ROLLBACK, "utf8"));
   await db.exec(readFileSync(ROLLBACK, "utf8"));
   assert.deepEqual(await tabelas(), []);
   assert.ok((await db.query("select to_regclass('public.appointment_payments') t")).rows[0].t, "PAY-01 permanece");

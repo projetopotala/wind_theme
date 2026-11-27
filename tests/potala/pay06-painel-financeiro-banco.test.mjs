@@ -68,6 +68,9 @@ async function semear({ habilitar = true } = {}) {
     await db.query("update public.appointment_requests set appointment_slot_id = $1 where id = $2", [s.rows[0].id, r.rows[0].id]);
     ids[k] = { req: r.rows[0].id, slot: s.rows[0].id };
   }
+  await db.query(`insert into public.pay_pilot_authorizations(request_id,user_id,expires_at,enabled,created_by)
+    values ($1,$2,now()+interval '2 hours',true,$3),($4,$5,now()+interval '2 hours',true,$3)`,
+  [ids.A.req, U.A, U.OWNER, ids.B.req, U.B]);
   return ids;
 }
 const KEY = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
