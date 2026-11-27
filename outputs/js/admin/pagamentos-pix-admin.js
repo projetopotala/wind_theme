@@ -1,9 +1,4 @@
-/*
- * PAY-06: painel financeiro (Pix) na Central, dentro da secao Financeiro. SOMENTE LEITURA e so para o Owner ativo.
- * Le por admin_pay_overview, admin_list_appointment_payments e admin_list_appointment_payment_events; o banco recusa quem nao e
- * Owner ativo (42501). Nao ha botao que gere, cancele, confirme ou edite cobranca: o estado do pagamento so muda pelo servidor.
- * Nao mostra CPF, nome do cliente, contato, codigo Pix nem identificadores do provedor (as funcoes nem os devolvem).
- */
+/* PAY-06 + PAY-10: acompanhamento financeiro, precos e piloto Pix na mesma Central. Todas as escritas usam RPCs Owner-only. */
 const ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 const e = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ESC[c]);
 
@@ -30,6 +25,15 @@ export const emFalha = (item) => item?.status === "divergente" || item?.status =
 
 const REAL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 export const reais = (c) => (Number.isInteger(c) && c >= 0 ? REAL.format(c / 100) : "—");
+export function centavosDoCampo(valor) {
+  const texto = String(valor ?? "").trim().replace(/\s|R\$/gi, "");
+  if (!texto) return null;
+  const normal = texto.includes(",") ? texto.replace(/\./g, "").replace(",", ".") : texto;
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normal)) return null;
+  const [inteiro, decimal = ""] = normal.split(".");
+  const centavos = Number(inteiro) * 100 + Number(decimal.padEnd(2, "0"));
+  return Number.isSafeInteger(centavos) && centavos > 0 && centavos <= 99999999 ? centavos : null;
+}
 export function quando(valor) {
   const d = valor ? new Date(valor) : null;
   return d && !Number.isNaN(d.valueOf()) ? new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(d) : "—";
@@ -84,18 +88,62 @@ export function renderizarHistorico(h, erro = "") {
   </div>`;
 }
 
-export function renderizarPainel({ carregando = false, erro = "", visao = null, lista = [], filtro = "", aberto = "", historico = null, historicoErro = "" } = {}) {
+const ESTADOS_AUTORIZACAO = Object.freeze({ none: "Não autorizada", active: "Ativa", expired: "Expirada", revoked: "Revogada" });
+export function renderizarPrecos(precos = [], ocupado = false) {
+  const lista = Array.isArray(precos) ? precos : [];
+  const corpo = !lista.length ? '<p class="pg-vazio" role="status">Nenhuma oferta ativa foi encontrada.</p>' : `<ul class="pg-config-lista">${lista.map((item) => {
+    const bloqueada = item.test_or_demo || !item.professional_eligible;
+    const motivo = item.test_or_demo ? "Oferta ou profissional identificado como teste/demonstração." : !item.professional_eligible ? "Profissional inativo, não publicado ou incompatível." : "";
+    const valor = Number.isInteger(item.amount_cents) ? (item.amount_cents / 100).toFixed(2).replace(".", ",") : "";
+    return `<li class="pg-config-item" data-pg-price-item="${e(item.offering_id)}"${bloqueada ? " data-bloqueado" : ""}>
+      <div><p class="pg-situacao">${item.published ? "Oferta publicada" : "Oferta não publicada"}</p><h5>${e(item.title || item.offering_id)}</h5>
+      <p class="pg-detalhe">Profissional: ${e(item.professional_name || "Não identificado")}</p></div>
+      ${motivo ? `<p class="pg-falha" role="status">${e(motivo)}</p>` : ""}
+      <label>Preço do atendimento (R$)<input data-pg-price-value inputmode="decimal" autocomplete="off" value="${e(valor)}" placeholder="0,00" ${bloqueada || ocupado ? "disabled" : ""}></label>
+      <p class="pg-detalhe">${item.amount_cents == null ? "Nenhum preço cadastrado." : `${e(reais(item.amount_cents))} · ${item.price_active ? "ativo" : "inativo"}`}</p>
+      <div class="pg-acoes"><button type="button" class="op-button" data-pg-price-save ${bloqueada || ocupado ? "disabled" : ""}>Salvar preço</button>
+      ${item.amount_cents == null ? "" : `<button type="button" class="op-button" data-pg-price-toggle data-active="${item.price_active ? "true" : "false"}" ${bloqueada || ocupado ? "disabled" : ""}>${item.price_active ? "Desativar preço" : "Ativar preço"}</button>`}</div>
+    </li>`;
+  }).join("")}</ul>`;
+  return `<section class="pg-config" aria-labelledby="pg-precos-titulo"><header><h4 id="pg-precos-titulo">Preços dos atendimentos</h4>
+    <p class="op-muted">O valor é vinculado à oferta e não altera cobranças já criadas. Ofertas de teste não podem ser ativadas.</p></header>${corpo}</section>`;
+}
+
+export function renderizarPiloto(candidatos = [], ocupado = false) {
+  const lista = Array.isArray(candidatos) ? candidatos : [];
+  const corpo = !lista.length ? '<p class="pg-vazio" role="status">Nenhum pedido autenticado está disponível para o piloto.</p>' : `<ul class="pg-config-lista">${lista.map((item) => {
+    const estado = ESTADOS_AUTORIZACAO[item.authorization_state] || item.authorization_state;
+    const autorizar = item.authorization_state !== "active";
+    const revogar = item.authorization_state !== "none" && item.authorization_state !== "revoked";
+    return `<li class="pg-config-item" data-pg-pilot-item="${e(item.request_id)}"${item.eligible ? "" : " data-bloqueado"}>
+      <div><p class="pg-situacao">Pedido ${e(curto(item.request_id))} · ${e(item.request_status)}</p><h5>${e(item.offering_title || "Atendimento")}</h5>
+      <p class="pg-detalhe">Cliente: ${e(item.client_name || "Cliente autenticado")} · horário: ${e(quando(item.slot_starts_at))}</p></div>
+      <p class="pg-detalhe">Autorização: <strong>${e(estado)}</strong>${item.authorization_expires_at ? ` · até ${e(quando(item.authorization_expires_at))}` : ""}${item.payment_status ? ` · pagamento ${e(SITUACOES_DE_PAGAMENTO[item.payment_status] || item.payment_status)}` : ""}</p>
+      ${item.ineligible_reason ? `<p class="pg-falha" role="status">${e(item.ineligible_reason)}</p>` : ""}
+      ${autorizar ? `<label>Validade da autorização<input data-pg-pilot-expiry type="datetime-local" ${!item.eligible || ocupado ? "disabled" : ""}></label>` : ""}
+      <div class="pg-acoes">${autorizar ? `<button type="button" class="op-button" data-pg-pilot-authorize ${!item.eligible || ocupado ? "disabled" : ""}>Autorizar Pix de teste</button>` : ""}
+      ${revogar ? `<button type="button" class="op-button" data-pg-pilot-revoke ${ocupado ? "disabled" : ""}>Revogar autorização</button>` : ""}</div>
+    </li>`;
+  }).join("")}</ul>`;
+  return `<section class="pg-config" aria-labelledby="pg-piloto-titulo"><header><h4 id="pg-piloto-titulo">Pagamentos Pix de teste</h4>
+    <p class="pg-aviso">Autorizar um pedido não gera cobrança e não substitui a trava financeira geral. Pagamentos permanecem bloqueados.</p></header>${corpo}</section>`;
+}
+
+export function renderizarPainel({ carregando = false, erro = "", acaoErro = "", mensagem = "", ocupado = false, visao = null, lista = [], precos = [], candidatos = [], filtro = "", aberto = "", historico = null, historicoErro = "" } = {}) {
   const topo = `<header class="pg-cabecalho"><h3 id="pg-titulo">Pagamentos por Pix</h3>
-    <p class="op-muted">Acompanhamento somente leitura. Nada aqui gera, cancela ou altera cobranças.</p></header>`;
+    <p class="op-muted">Acompanhe pagamentos e prepare preços e autorizações individuais. Nenhuma ação desta tela abre a trava geral ou gera cobrança.</p></header>`;
   if (carregando) return `${topo}<p class="pg-carregando" role="status">Carregando pagamentos…</p>`;
   if (erro) return `${topo}<p class="pg-erro" role="alert">${e(erro)}</p><button type="button" class="op-button" data-pg-recarregar>Tentar de novo</button>`;
-  return `${topo}${renderizarResumo(visao)}${renderizarLista(lista, { filtro, aberto, historico, historicoErro })}<button type="button" class="op-button" data-pg-recarregar>Atualizar</button>`;
+  return `${topo}${acaoErro ? `<p class="pg-erro" role="alert">${e(acaoErro)}</p>` : ""}${mensagem ? `<p class="pg-sucesso" role="status">${e(mensagem)}</p>` : ""}
+    ${renderizarResumo(visao)}${renderizarPrecos(precos, ocupado)}${renderizarPiloto(candidatos, ocupado)}
+    <section class="pg-config" aria-labelledby="pg-historico-titulo"><header><h4 id="pg-historico-titulo">Histórico de pagamentos</h4><p class="op-muted">Somente leitura; o estado financeiro muda apenas pelo servidor.</p></header>
+    ${renderizarLista(lista, { filtro, aberto, historico, historicoErro })}</section><button type="button" class="op-button" data-pg-recarregar>Atualizar</button>`;
 }
 
 /* Liga o painel a um elemento. So chama RPCs de leitura; recusa montar sem cliente. */
-export function createPagamentosPixAdmin({ root, client } = {}) {
+export function createPagamentosPixAdmin({ root, client, confirmar = (texto) => globalThis.confirm?.(texto) === true } = {}) {
   if (!root || !client?.rpc) return null;
-  let estado = { carregando: false, erro: "", visao: null, lista: [], filtro: "", aberto: "", historico: null, historicoErro: "" };
+  let estado = { carregando: false, ocupado: false, erro: "", acaoErro: "", mensagem: "", visao: null, lista: [], precos: [], candidatos: [], filtro: "", aberto: "", historico: null, historicoErro: "" };
   let geracao = 0;
   let carregou = false;
   const desenhar = () => { root.innerHTML = renderizarPainel(estado); };
@@ -104,19 +152,35 @@ export function createPagamentosPixAdmin({ root, client } = {}) {
     const minha = ++geracao;
     estado = { ...estado, carregando: true, erro: "" }; desenhar();
     try {
-      const [v, l] = await Promise.all([
+      const [v, l, p, c] = await Promise.all([
         client.rpc("admin_pay_overview"),
         client.rpc("admin_list_appointment_payments", { p_status: estado.filtro || null, p_limit: 50 }),
+        client.rpc("admin_list_appointment_service_prices"),
+        client.rpc("admin_list_pay_pilot_candidates"),
       ]);
       if (v.error) throw v.error;
       if (l.error) throw l.error;
+      if (p.error) throw p.error;
+      if (c.error) throw c.error;
       if (minha !== geracao) return;
-      estado = { ...estado, carregando: false, visao: v.data, lista: Array.isArray(l.data) ? l.data : [], aberto: "", historico: null, historicoErro: "" };
+      estado = { ...estado, carregando: false, ocupado: false, visao: v.data, lista: Array.isArray(l.data) ? l.data : [], precos: Array.isArray(p.data) ? p.data : [], candidatos: Array.isArray(c.data) ? c.data : [], aberto: "", historico: null, historicoErro: "" };
     } catch (erro) {
       if (minha !== geracao) return;
       estado = { ...estado, carregando: false, erro: mensagemDeErro(erro) };
     }
     desenhar();
+  }
+
+  async function executar(acao, mensagem) {
+    estado = { ...estado, ocupado: true, acaoErro: "", mensagem: "" }; desenhar();
+    try {
+      const { error } = await acao();
+      if (error) throw error;
+      estado = { ...estado, mensagem };
+      await carregar();
+    } catch (erro) {
+      estado = { ...estado, ocupado: false, acaoErro: mensagemDeErro(erro) }; desenhar();
+    }
   }
 
   async function abrirHistorico(id) {
@@ -139,6 +203,36 @@ export function createPagamentosPixAdmin({ root, client } = {}) {
     if (evento.target.closest?.("[data-pg-recarregar]")) { void carregar(); return; }
     const h = evento.target.closest?.("[data-pg-historico]");
     if (h) void abrirHistorico(h.getAttribute("data-pg-historico"));
+    const salvar = evento.target.closest?.("[data-pg-price-save]");
+    if (salvar) {
+      const item = salvar.closest("[data-pg-price-item]"); const id = item?.getAttribute("data-pg-price-item");
+      const centavos = centavosDoCampo(item?.querySelector("[data-pg-price-value]")?.value);
+      if (!centavos) { estado = { ...estado, acaoErro: "Informe um preço válido maior que zero." }; desenhar(); return; }
+      if (!confirmar(`Salvar ${reais(centavos)} como preço desta oferta?`)) return;
+      void executar(() => client.rpc("admin_set_appointment_service_price", { p_offering_id: id, p_amount_cents: centavos, p_active: true }), "Preço salvo e ativado."); return;
+    }
+    const alternar = evento.target.closest?.("[data-pg-price-toggle]");
+    if (alternar) {
+      const item = alternar.closest("[data-pg-price-item]"); const id = item?.getAttribute("data-pg-price-item");
+      const centavos = centavosDoCampo(item?.querySelector("[data-pg-price-value]")?.value); const ativo = alternar.dataset.active === "true";
+      if (!centavos) { estado = { ...estado, acaoErro: "Informe um preço válido maior que zero." }; desenhar(); return; }
+      if (!confirmar(`${ativo ? "Desativar" : "Ativar"} o preço desta oferta?`)) return;
+      void executar(() => client.rpc("admin_set_appointment_service_price", { p_offering_id: id, p_amount_cents: centavos, p_active: !ativo }), ativo ? "Preço desativado." : "Preço ativado."); return;
+    }
+    const autorizar = evento.target.closest?.("[data-pg-pilot-authorize]");
+    if (autorizar) {
+      const item = autorizar.closest("[data-pg-pilot-item]"); const id = item?.getAttribute("data-pg-pilot-item");
+      const valor = item?.querySelector("[data-pg-pilot-expiry]")?.value; const expira = valor ? new Date(valor) : null;
+      if (!expira || Number.isNaN(expira.valueOf()) || expira <= new Date()) { estado = { ...estado, acaoErro: "Informe uma validade futura para a autorização." }; desenhar(); return; }
+      if (!confirmar("Autorizar somente este pedido para o piloto Pix? Isso não gera cobrança.")) return;
+      void executar(() => client.rpc("admin_set_pay_pilot_authorization_for_request", { p_request_id: id, p_expires_at: expira.toISOString(), p_enabled: true }), "Pedido autorizado para o piloto Pix."); return;
+    }
+    const revogar = evento.target.closest?.("[data-pg-pilot-revoke]");
+    if (revogar) {
+      const item = revogar.closest("[data-pg-pilot-item]"); const id = item?.getAttribute("data-pg-pilot-item");
+      if (!confirmar("Revogar a autorização deste pedido? Cobranças existentes continuarão sendo acompanhadas.")) return;
+      void executar(() => client.rpc("admin_set_pay_pilot_authorization_for_request", { p_request_id: id, p_expires_at: null, p_enabled: false }), "Autorização revogada.");
+    }
   });
   root.addEventListener("change", (evento) => {
     const f = evento.target.closest?.("[data-pg-filtro]");
