@@ -121,6 +121,21 @@ test("painel | reload com QR ainda valido recompoe o QR localmente; apos o prazo
   } finally { globalThis.qrcode = anterior; }
 });
 
+test("painel | prazo encerrado SEM codigo salvo: nao oferece 'Pagar com Pix'; so o aviso (o servidor ainda ve a cobranca aberta)", () => {
+  const h = painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, pix_copy_paste: null, pix_expires_at: PASSADO } });
+  assert.ok(h.includes(AVISO_PRAZO_ENCERRADO));
+  for (const ausente of ["pagar-pix", "Pagar com Pix", "Gerar Pix", "<form", "<button", "mp-pix-qr", "data-pix-codigo"]) assert.equal(h.includes(ausente), false, ausente);
+  assert.match(h, /data-status="aguardando_pagamento"/, "o navegador nao decide que a cobranca foi cancelada");
+});
+
+test("painel | recuperacao legitima preservada: aguardando sem codigo e sem prazo vencido continua oferecendo a mesma tentativa", () => {
+  for (const pagamento of [{ ...PAGO, pix_copy_paste: null, pix_expires_at: null }, { ...PAGO, pix_copy_paste: null, pix_expires_at: FUTURO }]) {
+    const h = painelPix({ pedido: PEDIDO, pagamento });
+    assert.match(h, /data-form="pagar-pix"/); assert.match(h, /Pagar com Pix/);
+    assert.equal(h.includes("data-pix-prazo-encerrado"), false);
+  }
+});
+
 test("painel | aviso de prazo encerrado nao cria botao de novo Pix e usa apenas o estilo de aviso ja responsivo do Portal", () => {
   const h = painelPix({ pedido: PEDIDO, pagamento: { ...PAGO, pix_expires_at: PASSADO } });
   assert.equal(/<button/.test(h), false, "sem botao: gerar outro Pix exige prova de seguranca no backend");

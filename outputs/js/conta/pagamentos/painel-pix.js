@@ -114,7 +114,9 @@ export function painelPix({ pedido, pagamento = null, resultado = undefined } = 
     : situacao ? `<p class="mp-nota">${esc(situacao.descricao)} ${esc(situacao.proximoPasso)}</p>` : "";
   const erro = resultado?.mensagem && !resultado?.needsPayer && !resultado?.payerInvalid
     ? `<p class="mp-aviso" role="alert" data-pix-erro>${esc(resultado.mensagem)} ${esc(AJUDA_EM_CASO_DE_ERRO)}</p>` : "";
-  const formulario = podeGerar ? `<form class="mp-form mp-pix-form" data-form="pagar-pix" data-pedido="${esc(pedidoId)}" novalidate>
+  // Prazo encerrado: o servidor ainda considera a cobranca aberta (e nunca cria outra para a mesma solicitacao); repetir o pedido
+  // so induziria tentativas inuteis. O navegador nao cancela nada: apenas deixa de oferecer o formulario ate o servidor atualizar o status.
+  const formulario = podeGerar && !prazoEncerrado ? `<form class="mp-form mp-pix-form" data-form="pagar-pix" data-pedido="${esc(pedidoId)}" novalidate>
     ${resultado?.needsPayer || resultado?.payerInvalid ? formularioDoPagador(pedidoId, resultado.payerInvalid) : ""}
     <p class="mp-form-status" data-form-status role="status"></p>
     <button class="mp-botao" type="submit"${carregando ? " disabled aria-busy=\"true\"" : ""}>${resultado?.needsPayer || resultado?.payerInvalid ? "Gerar Pix" : "Pagar com Pix"}</button>
