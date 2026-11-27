@@ -62,9 +62,33 @@ test("trava global AND politica: outro cliente/pedido e consulta confirmada nunc
 }));
 
 test("desativar oferta bloqueia novas cobrancas e registra auditoria sem tocar pagamentos",()=>tx(async()=>{
- await seed(); await as(U.OWNER,"select public.admin_set_pay_offering_policy($1,true,true)",[OFFER]);
+ const {req}=await seed(); await as(U.OWNER,"select public.admin_set_pay_offering_policy($1,true,true)",[OFFER]);
+ await db.exec("update public.pay_runtime_settings set charges_enabled=true");
+ assert.equal((await as(U.CLIENT,"select public.pay_charge_allowed($1,$2) v",[U.CLIENT,req],"service_role")).rows[0].v,true);
+ await db.query("update public.op_records set document=jsonb_set(document,'{active}','false') where collection='activity_offerings' and id=$1",[OFFER]);
+ assert.equal((await as(U.CLIENT,"select public.pay_charge_allowed($1,$2) v",[U.CLIENT,req],"service_role")).rows[0].v,false,"oferta inativa bloqueia pedido ja held");
  await as(U.OWNER,"select public.admin_set_pay_offering_policy($1,false,true)",[OFFER]);
  assert.equal((await db.query("select enabled from public.pay_offering_policies where offering_id=$1",[OFFER])).rows[0].enabled,false);
  assert.equal((await db.query("select count(*)::int n from public.appointment_payments")).rows[0].n,0);
  assert.equal((await db.query("select count(*)::int n from public.op_records where collection='audit_events' and document->>'action' like 'pay_offering.%'")).rows[0].n,2);
+}));
+
+test("cancelamento administrativo e bloqueado enquanto existe cobranca acompanhada",()=>tx(async()=>{
+ const {req,slot}=await seed(); await as(U.OWNER,"select public.admin_set_pay_offering_policy($1,true,true)",[OFFER]);
+ await db.exec("update public.pay_runtime_settings set charges_enabled=true");
+ const preparo=await as(U.CLIENT,"select public.pay_prepare_appointment_payment($1,$2,gen_random_uuid(),30)",[U.CLIENT,req],"service_role");
+ assert.equal(preparo.ok,true,preparo.message);
+ assert.equal((await db.query("select count(*)::int n from public.appointment_payments where request_id=$1",[req])).rows[0].n,1);
+ const horario=(await db.query("select starts_at,ends_at from public.appointment_slots where id=$1",[slot])).rows[0];
+ const agenda={id:"pay11-cancel",title:"Atendimento",kind:"appointment",status:"booked",appointment_request_id:req,offering_id:OFFER,professional_id:PROF,mode:"online",starts_at:horario.starts_at,ends_at:horario.ends_at};
+ await db.exec("set session_replication_role=replica");
+ await db.query("insert into public.op_records(collection,id,document) values('schedule_items','pay11-cancel',$1::jsonb)",[JSON.stringify(agenda)]);
+ await db.exec("set session_replication_role=origin");
+ await db.query("update public.appointment_requests set reservation_schedule_id='pay11-cancel',professional_profile_id=$2,status='encerrada' where id=$1",[req,PROF]);
+ await db.exec("savepoint cancelamento");
+ let bloqueio=null; try { await db.exec("update public.op_records set document=jsonb_set(document,'{status}','\"cancelled\"') where collection='schedule_items' and id='pay11-cancel'"); }
+ catch(e) { bloqueio=e; await db.exec("rollback to savepoint cancelamento"); }
+ assert.ok(bloqueio); assert.equal(bloqueio.code,"PT409",String(bloqueio.message)); assert.match(String(bloqueio.message),/pagamento|cobranca/i);
+ await db.query("update public.appointment_payments set status='cancelado' where request_id=$1",[req]);
+ await db.exec("update public.op_records set document=jsonb_set(document,'{status}','\"cancelled\"') where collection='schedule_items' and id='pay11-cancel'");
 }));

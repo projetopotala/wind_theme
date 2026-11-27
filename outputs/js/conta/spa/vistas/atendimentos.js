@@ -54,7 +54,7 @@ function painelDoPedido(pedido, tipo, pix) {
   const opcao = pix?.opcoes?.[pedido.id] || null;
   if (tipo === "confirmada" && opcao?.amount_cents > 0) {
     const valor = new Intl.NumberFormat("pt-BR", { style: "currency", currency: opcao.currency || "BRL" }).format(opcao.amount_cents / 100);
-    return `<div class="mp-pagamento-informativo" data-pagamento-confirmado><p><strong>Valor do atendimento: ${e(valor)}</strong></p><p class="mp-nota">Consulta já confirmada. Nenhuma cobrança retroativa será criada.</p></div>`;
+    return `<div class="mp-pagamento-informativo" data-pagamento-confirmado><p><strong>Preço atual da oferta: ${e(valor)}</strong></p><p class="mp-nota">Informação de referência. Esta consulta já foi confirmada e nenhuma cobrança retroativa será criada.</p></div>`;
   }
   if (tipo !== "pedido" || !["recebida", "em_contato"].includes(pedido.status)) return "";
   const autorizado = pix?.ativo === true || pix?.pedidosAutorizados?.includes(pedido.id) || pix?.porPedido?.[pedido.id];

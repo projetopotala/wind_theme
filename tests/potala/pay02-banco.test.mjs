@@ -381,10 +381,10 @@ test("migration | so objetos novos; PAY-01 intacta; reversao remove somente a PA
   await db.exec(readFileSync(PAY11_ROLLBACK, "utf8"));
   await db.exec(readFileSync(PAY08_ROLLBACK, "utf8"));
   await db.exec(readFileSync(ROLLBACK, "utf8"));
-  assert.deepEqual(await tabelas(), []);
+  assert.deepEqual(await tabelas(), ["pay_offering_policies"], "rollback PAY-11 preserva configuracao fechada para auditoria");
   assert.ok((await db.query("select to_regclass('public.appointment_payments') t")).rows[0].t, "PAY-01 permanece");
   assert.equal((await db.query("select count(*)::int n from pg_trigger where tgname in ('appointment_payments_insert_guard','appointment_payments_review_on_change','appointment_payment_events_review')")).rows[0].n, 0);
   assert.ok((await db.query("select to_regprocedure('public.pay_apply_webhook_event(text,text,text,text,text,integer,integer,text,text)') t")).rows[0].t);
   await db.exec(readFileSync(new URL("202611250003_pay02_pagador_reconciliacao.sql", DIR), "utf8"));
-  assert.deepEqual(await tabelas(), ["pay_payer_profiles", "pay_reconciliation_log", "pay_runtime_settings"]);
+  assert.deepEqual(await tabelas(), ["pay_offering_policies", "pay_payer_profiles", "pay_reconciliation_log", "pay_runtime_settings"]);
 }));

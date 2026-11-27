@@ -11,5 +11,5 @@ test("Central mostra opt-in por oferta sem controle da trava global",()=>{
 test("consulta confirmada mostra valor sem CTA ou cobranca retroativa",()=>{
  const id="11111111-1111-4111-8111-111111111111";
  const html=atendimentos.renderizar({atendimentos:[{id,servico:"Meditação",modalidade:"online",status:"encerrada",reservaId:"r",inicio:"2027-01-10T15:00:00Z",fim:"2027-01-10T16:00:00Z"}],agora:new Date("2027-01-01T12:00:00Z"),pagamentosPix:{ativo:false,opcoes:{[id]:{amount_cents:15000,currency:"BRL",confirmed:true}},porPedido:{}}});
- assert.match(html,/Valor do atendimento:.*150,00/); assert.match(html,/Nenhuma cobrança retroativa/); assert.doesNotMatch(html,/Pagar com Pix/);
+ assert.match(html,/Preço atual da oferta:.*150,00/); assert.match(html,/Informação de referência/); assert.match(html,/nenhuma cobrança retroativa/); assert.doesNotMatch(html,/Pagar com Pix|pagamento pendente/i);
 });
