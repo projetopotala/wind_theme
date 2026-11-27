@@ -59,6 +59,7 @@ const ERRO = {
   limite: "Você fez muitas perguntas em pouco tempo. Aguarde um pouco e tente de novo.",
   pausado: "O assistente atingiu o limite de uso de hoje. Volte mais tarde ou fale com a Recepção.",
   falha: "Não consegui responder agora. Tente de novo em instantes ou fale com a Recepção.",
+  acesso: "Esta demonstração exige acesso autorizado.",
 };
 
 function json(status: number, corpo: Record<string, unknown>, headers: Record<string, string>) {
@@ -210,6 +211,7 @@ const inteiro = (v: string | undefined, padrao: number, min: number, max: number
 export function lerConfiguracao(env: Env) {
   return {
     ativo: env("IA_ATIVO") === "true",
+    demoRestrita: env("IA_DEMO_RESTRITA") === "true",
     apiKey: env("OPENAI_API_KEY") || "",
     modelo: (env("IA_MODELO") || "gpt-6-luna").trim(),
     esforco: ["none", "low", "medium"].includes(env("IA_ESFORCO") || "") ? env("IA_ESFORCO") as string : "none",
@@ -226,12 +228,14 @@ export function lerConfiguracao(env: Env) {
   };
 }
 
-export function createAssistantHandler({ env, reservarUso, registrarTokens, carregarConhecimento, chamarModelo, agora = () => new Date(), registrar = (evento: string, dados?: Record<string, unknown>) => console.log(JSON.stringify({ evento, ...dados })) }: {
+export function createAssistantHandler({ env, reservarUso, registrarTokens, carregarConhecimento, chamarModelo, autorizarDemo = async () => false, agora = () => new Date(), registrar = (evento: string, dados?: Record<string, unknown>) => console.log(JSON.stringify({ evento, ...dados })) }: {
   env: Env;
   reservarUso: (args: Record<string, unknown>) => Promise<{ error?: ErroRpc }>;
   registrarTokens: (tokens: number) => Promise<unknown>;
   carregarConhecimento: () => Promise<Documento[]>;
   chamarModelo: (chamada: ChamadaModelo) => Promise<RespostaModelo>;
+  /** Só é consultado quando IA_DEMO_RESTRITA=true; falhas sempre negam acesso. */
+  autorizarDemo?: () => Promise<boolean>;
   agora?: () => Date;
   registrar?: (evento: string, dados?: Record<string, unknown>) => void;
 }) {
@@ -243,9 +247,20 @@ export function createAssistantHandler({ env, reservarUso, registrarTokens, carr
     const pronto = cfg.ativo && cfg.apiKey && cfg.segredoHash && cfg.origens.length && cfg.modelo && cfg.fonteIp;
     /* Ensaio: só com IA_ATIVO desligado. Exercita identidade e cotas no banco e NUNCA chama a OpenAI. */
     const ensaio = !cfg.ativo && cfg.ensaio && cfg.segredoHash && cfg.origens.length && cfg.fonteIp;
-    if (request.method === "GET") return json(200, { ativo: Boolean(pronto) }, headers);
+    if (request.method === "GET") {
+      let autorizado = true;
+      if (pronto && cfg.demoRestrita) {
+        try { autorizado = await autorizarDemo(); } catch { autorizado = false; }
+      }
+      return json(200, { ativo: Boolean(pronto && autorizado) }, headers);
+    }
     if (request.method !== "POST") return json(405, { erro: "metodo" }, headers);
     if (!pronto && !ensaio) return json(503, { erro: "desativado", mensagem: ERRO.desativado }, headers);
+    if (cfg.demoRestrita) {
+      let autorizado = false;
+      try { autorizado = await autorizarDemo(); } catch { /* falha fechada */ }
+      if (!autorizado) return json(403, { erro: "acesso", mensagem: ERRO.acesso }, headers);
+    }
 
     let corpo;
     try { corpo = await lerJsonPequeno(request); }

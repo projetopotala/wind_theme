@@ -4,7 +4,8 @@ import { criarFonteDeConhecimento } from "./conhecimento.ts";
 
 /*
  * Edge Function assistente-potala (IA-01). `verify_jwt=false` em config.toml: o
- * visitante é anônimo; a chave publicável é validada pelo wrapper no POST.
+ * uso público aceita a chave publicável; IA_DEMO_RESTRITA=true exige sessão
+ * autenticada e confirmação de Owner antes de qualquer cota ou chamada ao modelo.
  *
  * Segredos (painel do Supabase > Edge Functions > Secrets; nunca no Git):
  *   OPENAI_API_KEY, IA_SEGREDO_HASH.
@@ -40,18 +41,24 @@ const semBanco = createAssistantHandler({ env,
   chamarModelo: async () => { throw new Error("inalcancavel"); },
 });
 
-const post = withSupabase({ auth: "publishable", cors: "disabled" }, async (request, context) => {
+const post = withSupabase({ auth: ["user", "publishable"], cors: "disabled" }, async (request, context) => {
   const admin = context.supabaseAdmin.schema("public");
   const handle = createAssistantHandler({ env,
     reservarUso: (args) => admin.rpc("ia_reservar_uso", args),
     registrarTokens: (tokens) => admin.rpc("ia_registrar_tokens", { p_tokens: tokens }),
     carregarConhecimento: () => fonte.carregar(),
     chamarModelo: (chamada) => chamarOpenAI(chamada),
+    autorizarDemo: async () => {
+      if (context.authMode !== "user") return false;
+      const { data, error } = await context.supabase.rpc("site_is_owner");
+      return !error && data === true;
+    },
   });
   return handle(request);
 });
 
 export default {
-  // GET (situação: ativo ou não) e OPTIONS não chamam banco nem OpenAI.
-  fetch: (request: Request) => request.method === "POST" ? post(request) : semBanco(request),
+  // OPTIONS só devolve CORS. GET/POST passam pelo wrapper: na demonstração
+  // restrita, o GET também confirma Owner para não expor um chat utilizável.
+  fetch: (request: Request) => request.method === "OPTIONS" ? semBanco(request) : post(request),
 };

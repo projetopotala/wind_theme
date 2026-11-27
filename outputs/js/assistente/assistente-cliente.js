@@ -15,6 +15,8 @@ export const LIMITE_PERGUNTA = 600;
 export const MAX_HISTORICO = 12;
 const CHAVE_SESSAO = "potala.assistente.v1";
 const FUNCAO = "assistente-potala";
+const URL_SDK_SUPABASE = new URL("../../vendor/supabase.js", import.meta.url).href;
+let sdkDaSessaoPrometido = null;
 
 /* Onde está o backend nesta origem: Production fixo; LAB e local pelos arquivos de ambiente. Outras: nenhum. */
 export async function resolverBackend(origem = globalThis.location?.origin || "", carregar = (c) => import(c)) {
@@ -43,6 +45,51 @@ export class ErroDoAssistente extends Error {
   constructor(mensagem, status = 0) { super(mensagem); this.name = "ErroDoAssistente"; this.status = status; }
 }
 
+function haSessaoSupabaseGuardada(armazenamento = globalThis.localStorage) {
+  try {
+    for (let indice = 0; indice < (armazenamento?.length || 0); indice += 1) {
+      if (/^sb-[a-z0-9]+-auth-token$/.test(armazenamento.key(indice) || "")) return true;
+    }
+  } catch { /* armazenamento pode estar bloqueado */ }
+  return false;
+}
+
+/* A página pública não baixa o SDK de autenticação para visitantes anônimos.
+ * Só restauramos o SDK quando já existe uma sessão, para poder demonstrar a IA
+ * restrita ao owner sem guardar nem expor o JWT no módulo do assistente. */
+async function carregarSdkDaSessao(documento = globalThis.document) {
+  if (globalThis.supabase?.createClient) return true;
+  if (!haSessaoSupabaseGuardada() || !documento?.head) return false;
+  if (!sdkDaSessaoPrometido) {
+    sdkDaSessaoPrometido = new Promise((resolver) => {
+      const existente = documento.querySelector?.('script[data-assistente-supabase-sdk]');
+      const script = existente || documento.createElement("script");
+      const concluir = () => resolver(Boolean(globalThis.supabase?.createClient));
+      script.addEventListener?.("load", concluir, { once: true });
+      script.addEventListener?.("error", () => resolver(false), { once: true });
+      if (!existente) {
+        script.src = URL_SDK_SUPABASE;
+        script.async = true;
+        script.setAttribute("data-assistente-supabase-sdk", "");
+        documento.head.append(script);
+      }
+    }).catch(() => false);
+  }
+  return sdkDaSessaoPrometido;
+}
+
+/* Só é usado na origem oficial quando o backend pede uma demonstração restrita.
+ * A sessão continua no Supabase Auth; o JWT nunca é persistido pelo assistente. */
+export async function obterTokenDaSessao() {
+  try {
+    if (!await carregarSdkDaSessao()) return "";
+    const { getSupabaseClient } = await import("../supabase/client.js");
+    const { data, error } = await getSupabaseClient().auth.getSession();
+    if (error) return "";
+    return typeof data?.session?.access_token === "string" ? data.session.access_token : "";
+  } catch { return ""; }
+}
+
 /* Links que o navegador aceita desenhar: os mesmos da regra do servidor, de novo. */
 export function linksSeguros(links) {
   if (!Array.isArray(links)) return [];
@@ -52,20 +99,27 @@ export function linksSeguros(links) {
     .slice(0, 4);
 }
 
-export function criarTransporteReal({ url, chave }, fetchImpl = globalThis.fetch?.bind(globalThis)) {
-  const cabecalhos = { apikey: chave, "Content-Type": "application/json" };
+export function criarTransporteReal({ url, chave, obterToken = obterTokenDaSessao }, fetchImpl = globalThis.fetch?.bind(globalThis)) {
+  const cabecalhos = async (comCorpo = false) => {
+    const token = await obterToken();
+    return {
+      apikey: chave,
+      ...(comCorpo ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
   return {
     modo: "real",
     async ativo() {
       try {
-        const r = await fetchImpl(url, { method: "GET", headers: { apikey: chave }, signal: AbortSignal.timeout(5000) });
+        const r = await fetchImpl(url, { method: "GET", headers: await cabecalhos(), signal: AbortSignal.timeout(5000) });
         return r.ok && (await r.json())?.ativo === true;
       } catch { return false; }
     },
     async perguntar(mensagens) {
       let r;
       try {
-        r = await fetchImpl(url, { method: "POST", headers: cabecalhos, body: JSON.stringify({ mensagens }), signal: AbortSignal.timeout(35000) });
+        r = await fetchImpl(url, { method: "POST", headers: await cabecalhos(true), body: JSON.stringify({ mensagens }), signal: AbortSignal.timeout(35000) });
       } catch { throw new ErroDoAssistente(MENSAGENS_DE_ERRO.rede); }
       let dados = null;
       try { dados = await r.json(); } catch { /* corpo inválido */ }
