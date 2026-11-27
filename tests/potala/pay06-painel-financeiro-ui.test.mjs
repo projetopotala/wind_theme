@@ -5,7 +5,7 @@ import {
   createPagamentosPixAdmin, emFalha, mensagemDeErro, renderizarHistorico, renderizarLista, renderizarPainel, renderizarResumo, reais,
 } from "../../outputs/js/admin/pagamentos-pix-admin.js";
 
-/* PAY-06 | Interface do painel financeiro: somente leitura, estados, falhas e dados minimos. Sem rede nem banco. */
+/* PAY-06 | Historico financeiro continua somente leitura; PAY-10 acrescenta configuracao por RPCs Owner-only. */
 const ID = "11111111-1111-4111-8111-111111111111";
 const ITEM = { id: ID, status: "aguardando_pagamento", amount_cents: 15000, servico: "Atendimento teste", created_at: "2026-11-26T12:00:00Z", updated_at: "2026-11-26T12:05:00Z",
   due_date: "2026-11-27", confirmed_at: null, received_at: null, refunded_at: null, reservation_outcome: "pendente", failure_reason: null, last_event_at: null, eventos: 0, eventos_com_falha: 0, revisoes_abertas: 0 };
@@ -48,12 +48,11 @@ test("historico: carregando, erro, vazio, eventos e revisoes", () => {
   assert.match(h, /Valor diferente do esperado/); assert.match(h, /em aberto/); assert.match(h, /data-falha/);
 });
 
-test("somente leitura: nenhuma acao de escrita, formulario ou campo; so Ver historico, Atualizar e Tentar de novo", () => {
-  const html = renderizarPainel({ visao: VISAO, lista: [ITEM, { ...ITEM, id: "b", status: "recebido" }], aberto: ID, historico: { eventos: [], revisoes: [] } })
-    + renderizarPainel({ erro: "x" }) + renderizarPainel({ carregando: true });
+test("historico de cobrancas permanece somente leitura", () => {
+  const html = renderizarLista([ITEM, { ...ITEM, id: "b", status: "recebido" }], { aberto: ID, historico: { eventos: [], revisoes: [] } });
   for (const proibida of PROIBIDAS) assert.equal(html.includes(proibida), false, proibida);
   const botoes = [...html.matchAll(/<button[^>]*data-pg-([a-z]+)/g)].map((m) => m[1]);
-  assert.deepEqual([...new Set(botoes)].sort(), ["historico", "recarregar"]);
+  assert.deepEqual([...new Set(botoes)].sort(), ["historico"]);
 });
 
 test("dados minimos e escape: texto externo nunca vira HTML; nada de CPF, Pix ou provedor na tela", () => {
@@ -74,7 +73,9 @@ function clienteFalso(respostas = {}) {
   const chamadas = [];
   return { chamadas, rpc: async (nome, args) => { chamadas.push([nome, args]); const r = respostas[nome]; return typeof r === "function" ? r(args) : (r ?? { data: null, error: null }); } };
 }
-const OK = { admin_pay_overview: { data: VISAO, error: null }, admin_list_appointment_payments: { data: [ITEM], error: null }, admin_list_appointment_payment_events: { data: { eventos: [], revisoes: [] }, error: null } };
+const OK = { admin_pay_overview: { data: VISAO, error: null }, admin_list_appointment_payments: { data: [ITEM], error: null },
+  admin_list_appointment_service_prices: { data: [], error: null }, admin_list_pay_pilot_candidates: { data: [], error: null },
+  admin_list_appointment_payment_events: { data: { eventos: [], revisoes: [] }, error: null } };
 
 test("so monta com raiz e cliente; sem eles nao faz nada", () => {
   assert.equal(createPagamentosPixAdmin({}), null);
@@ -87,10 +88,10 @@ test("conta que nao e Owner (area oculta): nenhuma chamada ao banco", async () =
   assert.deepEqual(cliente.chamadas, []); assert.equal(raiz.innerHTML, "");
 });
 
-test("Owner: carrega uma vez, chama somente as funcoes de leitura e desenha a lista", async () => {
+test("Owner: carrega uma vez as quatro leituras da Central e desenha a lista", async () => {
   const cliente = clienteFalso(OK); const raiz = raizFalsa(); const p = createPagamentosPixAdmin({ root: raiz, client: cliente });
   await p.iniciar(); await p.iniciar();
-  assert.deepEqual(cliente.chamadas.map((c) => c[0]).sort(), ["admin_list_appointment_payments", "admin_pay_overview"]);
+  assert.deepEqual(cliente.chamadas.map((c) => c[0]).sort(), ["admin_list_appointment_payments", "admin_list_appointment_service_prices", "admin_list_pay_pilot_candidates", "admin_pay_overview"]);
   assert.match(raiz.innerHTML, /Atendimento teste/);
   assert.deepEqual(cliente.chamadas.find((c) => c[0] === "admin_list_appointment_payments")[1], { p_status: null, p_limit: 50 });
 });
@@ -124,10 +125,10 @@ test("historico com erro nao derruba a lista", async () => {
 });
 
 /* -------- integracao estatica -------- */
-test("integracao: so leitura no codigo, area exclusiva do Owner na pagina e carregamento so ao abrir Financeiro", () => {
+test("integracao: area exclusiva do Owner, sem acesso direto a tabelas e carregamento so ao abrir Financeiro", () => {
   const fonte = readFileSync(new URL("../../outputs/js/admin/pagamentos-pix-admin.js", import.meta.url), "utf8");
   const rpcs = [...fonte.matchAll(/rpc\("([a-z_]+)"/g)].map((m) => m[1]);
-  assert.deepEqual([...new Set(rpcs)].sort(), ["admin_list_appointment_payment_events", "admin_list_appointment_payments", "admin_pay_overview"]);
+  assert.deepEqual([...new Set(rpcs)].sort(), ["admin_list_appointment_payment_events", "admin_list_appointment_payments", "admin_list_appointment_service_prices", "admin_list_pay_pilot_candidates", "admin_pay_overview", "admin_set_appointment_service_price", "admin_set_pay_pilot_authorization_for_request"]);
   for (const proibido of [".from(", ".insert(", ".update(", ".delete(", ".upsert(", "functions.invoke", "create-appointment-payment", "fetch("]) assert.equal(fonte.includes(proibido), false, proibido);
   const html = readFileSync(new URL("../../outputs/admin.html", import.meta.url), "utf8");
   const bloco = html.match(/<section[^>]*data-pagamentos-pix-admin[^>]*>/)?.[0] || "";
