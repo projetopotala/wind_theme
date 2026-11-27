@@ -8,6 +8,10 @@ const clamp = (value, minimum = 0, maximum = 1) => (
 
 const PATH_ENTRANCE_DURATION = 1800;
 const PATH_ENTRANCE_REVEAL = 0.075;
+// Presença máxima do fio de luz. Antes ele chegava a 100% e lia como haste
+// artificial sobre a paisagem; a 62% continua guiando o olhar, mas como brilho
+// quente apoiado no caminho, e não como objeto desenhado por cima da cena.
+const PATH_PRESENCE = 0.62;
 
 /** Estado visual da chegada do trajeto, separado da GPU para ser verificável. */
 export function pathEntranceState({
@@ -125,8 +129,8 @@ void main() {
 
   float eixo = abs(vSide) * 7.0;
   float distance = eixo / estreita;
-  float core = 1.0 - smoothstep(0.48, 0.9, distance);
-  float glow = exp(-distance * distance / 4.2) * 0.32;
+  float core = 1.0 - smoothstep(0.12, 2.3, distance);
+  float glow = exp(-distance * distance / 7.5) * 0.26;
   // Uma segunda queda, bem mais larga e fraca, separa luz de linha pintada.
   // Ela varia ao longo do arco com a rolagem, sem criar animação contínua.
   float aura = exp(-eixo * eixo / 12.0) * 0.18;
@@ -261,7 +265,7 @@ export function pathVisualProfile({ width = 1440, height = 900 } = {}) {
     offsetPixels,
     worldWidth: ribbonPixels * 0.5 * visibleHeight / safeHeight,
     tipFade: mobile ? 0.052 : 0.062,
-    headGlow: mobile ? 5.2 : 6.4,
+    headGlow: mobile ? 2.1 : 2.6,
   };
 }
 
@@ -358,12 +362,12 @@ export function createHomePath(canvas, {
       // O halo, e é ele que dá o dourado. Chapada em 0xf3e2c2 a fita inteira
       // lia clara demais; em 0xe6bd78, que veio antes, lia como fio de metal.
       // Aqui só a queda lateral carrega a cor, e o coração continua claro.
-      uGold: { value: new THREE.Color(0xf0d7a0) },
+      uGold: { value: new THREE.Color(0xe9b25a) },
       // O coração. Claro, mas não branco: quem carrega a impressão de cor é
       // ele, porque é o único trecho com alfa cheio — medido, o halo fica em
       // 41 de alfa a 4px do eixo e some em 12px. Um coração branco com halo
       // dourado continuava lendo como fio branco.
-      uCore: { value: new THREE.Color(0xfff6df) },
+      uCore: { value: new THREE.Color(0xf8e4b8) },
     },
     vertexShader: RIBBON_VERTEX,
     fragmentShader: RIBBON_FRAGMENT,
@@ -399,7 +403,7 @@ export function createHomePath(canvas, {
       reducedMotion,
     });
     material.uniforms.uReveal.value = entrance.reveal;
-    material.uniforms.uOpacity.value = entrance.opacity;
+    material.uniforms.uOpacity.value = entrance.opacity * PATH_PRESENCE;
     renderer.render(scene, camera);
     return entrance;
   }

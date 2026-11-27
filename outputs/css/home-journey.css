@@ -153,8 +153,70 @@ body[data-story-page="true"]::before {
   content: "";
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 18%, rgba(255, 223, 160, .18), transparent 42%),
+    radial-gradient(circle at 50% 18%, rgba(255, 223, 160, .08), transparent 42%),
     linear-gradient(90deg, rgba(36, 25, 17, .2), transparent 35%, transparent 65%, rgba(36, 25, 17, .2));
+}
+
+/*
+ * REFINO VISUAL DA TRAVESSIA — gradação, luz e névoa DENTRO da paisagem.
+ *
+ * Os dois pseudo-elementos vivem no próprio `.journey-landscape`, então andam
+ * com a câmera (o deslocamento lateral) junto da imagem e do vídeo. Nenhum
+ * intercepta clique, toque ou rolagem, e nenhum entra no fluxo da página.
+ *
+ * ::before é a gradação: chão assentado, distância fria (separa as montanhas por
+ * perspectiva atmosférica) e a luz baixa de fim de tarde sobre a estrada. Usa
+ * soft-light para escurecer e esquentar sem esmagar o que a imagem já tem.
+ * ::after é a névoa: duas faixas largas e muito suaves, acima da estrada (a
+ * estrada começa em ~75% do alto), à deriva lenta — só transform, que é
+ * composto pela GPU e não força repintura.
+ */
+.journey-landscape::before,
+.journey-landscape::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.journey-landscape::before {
+  z-index: 2;
+  inset: 0;
+  mix-blend-mode: soft-light;
+  background:
+    radial-gradient(ellipse 26% 24% at 53% 97%, rgba(255, 198, 120, .55), transparent 72%),
+    linear-gradient(to top, rgba(28, 20, 12, .78), rgba(28, 20, 12, .3) 22%, transparent 44%),
+    linear-gradient(to bottom, rgba(24, 38, 58, .0) 20%, rgba(70, 92, 124, .36) 38%, rgba(70, 92, 124, 0) 58%),
+    linear-gradient(to bottom, rgba(58, 40, 24, .42), transparent 32%);
+}
+
+.journey-landscape::after {
+  z-index: 3;
+  inset: 0 -18%;
+  background:
+    radial-gradient(ellipse 34% 6% at 36% 61%, rgba(255, 238, 210, .2), transparent 100%),
+    radial-gradient(ellipse 30% 5% at 70% 66%, rgba(255, 232, 196, .16), transparent 100%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .journey-landscape::after {
+    animation: travessia-nevoa 90s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+}
+
+@keyframes travessia-nevoa {
+  from { transform: translate3d(-3%, 0, 0); }
+  to { transform: translate3d(3%, 0, 0); }
+}
+
+/*
+ * O fio de luz nasce da estrada e se dissolve na névoa: a máscara é vertical e
+ * estática (sem animação, sem custo por quadro). Sem ela o fio era uma haste
+ * isolada no ar, sem relação com o chão — o que lia como linha artificial.
+ */
+.journey-road {
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 26%, rgba(0, 0, 0, .4) 46%, transparent 68%);
+  mask-image: linear-gradient(to top, #000 0%, #000 26%, rgba(0, 0, 0, .4) 46%, transparent 68%);
 }
 
 .journey-road {
