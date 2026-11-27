@@ -15,6 +15,8 @@ const ESTADOS_COM_PIX = new Set(["aguardando_pagamento"]);
 
 export const AJUDA_EM_CASO_DE_ERRO = "Se algo não funcionar, não pague de novo: fale com o Instituto e informe o seu atendimento.";
 
+export const AVISO_PRAZO_ENCERRADO = "O prazo deste Pix terminou. Estamos aguardando a atualização da situação do pagamento. Se precisar de ajuda, entre em contato com o Instituto Potala.";
+
 function quandoExpira(valor) {
   const data = valor ? new Date(valor) : null;
   return data && !Number.isNaN(data.valueOf())
@@ -27,6 +29,14 @@ function pixAindaValido(pagamento, resultado) {
   if (!valor) return true;
   const data = new Date(valor);
   return !Number.isNaN(data.valueOf()) && data.valueOf() > Date.now();
+}
+
+// Somente uma data valida e ja passada conta como prazo encerrado; data ilegivel nao autoriza dizer que o prazo terminou.
+function prazoDoPixEncerrado(pagamento, resultado) {
+  const valor = pagamento?.pix_expires_at || resultado?.pix?.expira_em;
+  if (!valor) return false;
+  const data = new Date(valor);
+  return !Number.isNaN(data.valueOf()) && data.valueOf() <= Date.now();
 }
 
 // Imagem do QR: so base64 puro e de tamanho razoavel; qualquer outra coisa e ignorada (o Copia e Cola continua valendo).
@@ -96,10 +106,17 @@ export function painelPix({ pedido, pagamento = null, resultado = undefined } = 
   ].join("");
 
   const pix = estado && ESTADOS_COM_PIX.has(estado) || resultado?.pix ? blocoDoPix(pagamento, resultado) : "";
-  const explicacao = situacao ? `<p class="mp-nota">${esc(situacao.descricao)} ${esc(situacao.proximoPasso)}</p>` : "";
+  // Prazo do Pix encerrado NO NAVEGADOR enquanto o servidor ainda diz "aguardando": nao orienta a pagar por um codigo que nao aparece.
+  // O status financeiro continua sendo o gravado pelo servidor; so o texto de orientacao muda.
+  const prazoEncerrado = estado !== null && ESTADOS_COM_PIX.has(estado) && prazoDoPixEncerrado(pagamento, resultado);
+  const explicacao = prazoEncerrado
+    ? `<p class="mp-aviso" role="status" data-pix-prazo-encerrado>${esc(AVISO_PRAZO_ENCERRADO)}</p>`
+    : situacao ? `<p class="mp-nota">${esc(situacao.descricao)} ${esc(situacao.proximoPasso)}</p>` : "";
   const erro = resultado?.mensagem && !resultado?.needsPayer && !resultado?.payerInvalid
     ? `<p class="mp-aviso" role="alert" data-pix-erro>${esc(resultado.mensagem)} ${esc(AJUDA_EM_CASO_DE_ERRO)}</p>` : "";
-  const formulario = podeGerar ? `<form class="mp-form mp-pix-form" data-form="pagar-pix" data-pedido="${esc(pedidoId)}" novalidate>
+  // Prazo encerrado: o servidor ainda considera a cobranca aberta (e nunca cria outra para a mesma solicitacao); repetir o pedido
+  // so induziria tentativas inuteis. O navegador nao cancela nada: apenas deixa de oferecer o formulario ate o servidor atualizar o status.
+  const formulario = podeGerar && !prazoEncerrado ? `<form class="mp-form mp-pix-form" data-form="pagar-pix" data-pedido="${esc(pedidoId)}" novalidate>
     ${resultado?.needsPayer || resultado?.payerInvalid ? formularioDoPagador(pedidoId, resultado.payerInvalid) : ""}
     <p class="mp-form-status" data-form-status role="status"></p>
     <button class="mp-botao" type="submit"${carregando ? " disabled aria-busy=\"true\"" : ""}>${resultado?.needsPayer || resultado?.payerInvalid ? "Gerar Pix" : "Pagar com Pix"}</button>
