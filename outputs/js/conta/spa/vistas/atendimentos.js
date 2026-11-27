@@ -51,6 +51,11 @@ function horarioLegivel(valor) {
 
 /* PAY-02: painel Pix so aparece com a chave ligada (pix.ativo) e so em pedidos aguardando; desligado, nada muda. */
 function painelDoPedido(pedido, tipo, pix) {
+  const opcao = pix?.opcoes?.[pedido.id] || null;
+  if (tipo === "confirmada" && opcao?.amount_cents > 0) {
+    const valor = new Intl.NumberFormat("pt-BR", { style: "currency", currency: opcao.currency || "BRL" }).format(opcao.amount_cents / 100);
+    return `<div class="mp-pagamento-informativo" data-pagamento-confirmado><p><strong>Valor do atendimento: ${e(valor)}</strong></p><p class="mp-nota">Consulta já confirmada. Nenhuma cobrança retroativa será criada.</p></div>`;
+  }
   if (tipo !== "pedido" || !["recebida", "em_contato"].includes(pedido.status)) return "";
   const autorizado = pix?.ativo === true || pix?.pedidosAutorizados?.includes(pedido.id) || pix?.porPedido?.[pedido.id];
   /* PAY-05: modo informativo (valor e situacao, sem acao de pagar). So com a chave informativa ligada e a de pagamento desligada. */
@@ -311,7 +316,7 @@ const vista = {
     /* O que está vivo (confirmado, aguardando) fica à vista; o que passou, recolhido. */
     const confirmadas = secao({
       id: "mp-atendimentos-confirmados", classe: "mp-secao-destaque", kicker: "Próximos atendimentos", titulo: "Consultas confirmadas",
-      corpo: listaDePedidos(confirmados, "Quando uma consulta futura for confirmada, ela aparecerá aqui e na sua Agenda.", "confirmada", referencia),
+      corpo: listaDePedidos(confirmados, "Quando uma consulta futura for confirmada, ela aparecerá aqui e na sua Agenda.", "confirmada", referencia, pagamentosPix),
     });
     const aguardando = secao({
       id: "mp-atendimentos-pendentes", kicker: "Em análise pela equipe", titulo: "Aguardando confirmação",
@@ -322,7 +327,7 @@ const vista = {
       <summary>Histórico e cancelamentos <span class="mp-recolhido-total">${passados}</span></summary>
       ${secao({
     id: "mp-atendimentos-historico", classe: "mp-secao-discreta", kicker: "Histórico", titulo: "Horários confirmados anteriores",
-    corpo: listaDePedidos(anteriores, "Nenhum horário confirmado anterior.", "anterior"),
+    corpo: listaDePedidos(anteriores, "Nenhum horário confirmado anterior.", "anterior", referencia, pagamentosPix),
   })}${secao({
     id: "mp-atendimentos-cancelados", classe: "mp-secao-discreta", kicker: "Cancelamentos", titulo: "Solicitações canceladas",
     corpo: listaDePedidos(cancelados, "Nenhuma solicitação cancelada."),

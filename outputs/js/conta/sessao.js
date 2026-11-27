@@ -280,6 +280,11 @@ export function criarSessao({ autenticacao, dados = null, agora = () => new Date
       return aposUsarDados(await dados.pilotosPix());
     },
 
+    async opcoesPagamentoPix() {
+      exigirConta();
+      return aposUsarDados(await dados.opcoesPagamentoPix());
+    },
+
     async criarPagamentoPix(pedido) {
       exigirConta();
       return aposUsarDados(await dados.criarPagamentoPix(pedido));

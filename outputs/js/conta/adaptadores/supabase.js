@@ -511,6 +511,13 @@ export function criarDadosSupabase({ client } = {}) {
       return Array.isArray(data) ? data : [];
     },
 
+    /* PAY-11: valor e elegibilidade decididos pelo servidor para os pedidos desta conta. */
+    async opcoesPagamentoPix() {
+      const { data, error } = await client.rpc("pay_my_appointment_payment_options");
+      if (error) throw falhouDados(error);
+      return Array.isArray(data) ? data : [];
+    },
+
     /* PAY-02: unica chamada que pode gerar cobranca; so acontece por clique do cliente. O servidor decide valor, servico e travas. */
     async criarPagamentoPix({ pedidoId, idempotencia, nome, documento }) {
       if (!UUID_DO_RECIBO.test(String(pedidoId)) || !UUID_DO_RECIBO.test(String(idempotencia))) throw new ErroDeConta("ATENDIMENTO_SEM_RECIBO");
